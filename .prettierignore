@@ -7,3 +7,7 @@ dist
 # from, so it must stay byte-identical to upstream. Formatting it would silently
 # move the pin.
 docs/okf/SPEC-v0.2.md
+
+# Verbatim session transcripts, extracted mechanically from the session log.
+# Reformatting one would silently alter the record it exists to preserve.
+docs/workshop/**/raw.md
