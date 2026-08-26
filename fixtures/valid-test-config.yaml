@@ -1,0 +1,143 @@
+# valid-test-config.yaml — the fixture the config reader is implemented against.
+#
+# A SYNTHETIC config, not this repo's. This `fixtures/` directory IS the synthetic
+# repo root, so every path below is written relative to it and nothing here can be
+# confused with a real `markdown-harness.config.yaml`. Its job is coverage: it
+# reaches every key in the vocabulary, including the ones no real file in this repo
+# would exercise.
+#
+# Rules are an ORDERED list. For any file the harness walks top-down and the FIRST
+# matching rule is the complete set of constraints that applies. Nothing merges and
+# nothing is inherited, so the most specific rules come first and the broadest last
+# — reversed, a narrow rule silently wins for zero files.
+#
+# Governance is opt-in: a file no rule matches is invisible to the harness. There is
+# no Floor, so a rule that asserts nothing about a field leaves that field unchecked
+# even when another rule elsewhere constrains it.
+#
+# Shape reference: ../src/config/contract.ts and ../src/config/constraints.ts
+# Constraints derive from the OKF text vendored at ../docs/okf/SPEC-v0.2.md.
+
+frontmatter:
+  rules:
+    # ── Reserved filenames ─────────────────────────────────────────────────────
+    # Keyed on the basename, so they match at any depth and sit above every
+    # directory rule. `fileName` is sugar for `path: ["**/<name>"]`.
+    - fileName: index.md
+      intent: 'OKF §8 (Index files): an index enumerates a directory, and carries no frontmatter'
+      frontmatter: forbidden
+
+    - fileName: log.md
+      intent: 'OKF §9 (Log files): a log is an update history, never a concept'
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: log, intent: The update history of a scope, newest first. }
+
+    # ── Provenance exemplar ────────────────────────────────────────────────────
+    # One exact path, deliberately ABOVE the broad research rule below: this pair
+    # is what proves first-match ordering on real files rather than asserting it.
+    # Reaches every named format and both nesting depths.
+    - path: [docs/research/provenance.md]
+      intent: The one document that records its own provenance in full
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: research, intent: Findings gathered to settle a question, with sources. }
+        description: { presence: required }
+        generated.by: { presence: required, format: actor }
+        generated.at: { presence: required, format: datetime }
+        # A constraint on the LIST itself…
+        sources: { minItems: 1 }
+        # …and constraints on EVERY ENTRY of it. Different addresses, so the two
+        # never share a shape.
+        sources[].id: { presence: required }
+        sources[].resource: { presence: required, format: uri }
+        sources[].author: { format: actor }
+        sources[].last_modified: { format: datetime }
+        sources[].usage_count: { presence: optional }
+        verified[].by: { format: actor }
+        verified[].at: { format: datetime }
+        usage_window.from: { format: datetime }
+        usage_window.to: { format: datetime }
+        stale_after: { format: datetime }
+
+    # ── Research, broadly ──────────────────────────────────────────────────────
+    - path: [docs/research/**/*.md]
+      # Vendored text falls THROUGH this rule and is matched by nothing after it,
+      # so it ends up ungoverned — which is the only use `excludeFiles` has under
+      # first-match.
+      excludeFiles: [docs/research/vendor/**]
+      intent: Research is indexed, and an index entry copies the description
+      unknownKeys: allowed # the default, written out once for coverage
+      anyOf: [sources, generated]
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: research, intent: Findings gathered to settle a question, with sources. }
+        description: { presence: required, maxLength: 200 }
+        tags: { minItems: 1, maxItems: 5, itemMaxLength: 20 }
+
+    # ── Skills ─────────────────────────────────────────────────────────────────
+    # The cross-field case. The harness has never heard of "skill": this is a path
+    # glob plus a generic constraint.
+    - path: [docs/skills/**/SKILL.md]
+      intent: A skill is addressed by exactly one of its two names
+      exactlyOneOf: [name, title]
+      fields:
+        type:
+          presence: required
+          # `intent` is optional on an allowed value — this record exercises its
+          # absence, and a failed membership check still has to render it.
+          allowed:
+            - { value: skill }
+        description: { presence: required }
+
+    # ── Reference ──────────────────────────────────────────────────────────────
+    # The only rule that closes its key set, and the only one carrying `pattern`.
+    - path: [docs/reference/**/*.md]
+      intent: Reference pages are looked up by slug and say how far they can be trusted
+      unknownKeys: forbidden
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: reference, intent: Lookup data an agent consults rather than reads through. }
+        description: { presence: required }
+        status:
+          allowed:
+            - { value: draft, intent: Written down, not yet trusted. }
+            - { value: stable, intent: Safe to rely on. }
+            - { value: deprecated, intent: Still here, no longer to be followed. }
+        slug:
+          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+          # MANDATORY beside `pattern` — without it the regex leaks into the
+          # violation, which is the whole reason the key exists.
+          intent: Slugs are lowercase words joined by single hyphens
+        draft:
+          presence: forbidden
+          intent: Reference material ships finished or not at all
+
+    # ── Workflows ──────────────────────────────────────────────────────────────
+    - path: [docs/workflows/**/*.md]
+      intent: A workflow names itself and says when to reach for it
+      allOf: [title, description]
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: workflow, intent: How to carry out a task in this repo. }
+        title: { minLength: 3, maxLength: 80 }
+
+    # ── Type presence only ─────────────────────────────────────────────────────
+    # The narrowest useful payload there is. Under the old Floor this rule needed
+    # no payload at all, because `type` was required everywhere by construction.
+    # With the Floor gone, "say what you are" is an ordinary opt-in like any other,
+    # and a rule that omitted it would leave these files governed but unchecked.
+    - path: [docs/plain/**/*.md]
+      intent: Everything under plain/ still has to say what it is
+      fields:
+        type: { presence: required }
