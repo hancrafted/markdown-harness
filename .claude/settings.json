@@ -1,0 +1,6 @@
+{
+  "agent": "archgate:developer",
+  "permissions": {
+    "allow": ["Skill(archgate:architect)", "Skill(archgate:quality-manager)", "Skill(archgate:adr-author)"]
+  }
+}
