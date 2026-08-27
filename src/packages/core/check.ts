@@ -11,7 +11,7 @@ import type { ConfigRejected } from '../contract/config-rejected.ts';
 import type { FrontmatterRule } from '../contract/config.ts';
 import type { Corpus, SourceFile } from '../contract/corpus.ts';
 import { evaluate } from '../frontmatter-harness/evaluate.ts';
-import { readRules } from './lib/config/parse.ts';
+import { emptyRuleList, readRules } from './lib/config/parse.ts';
 import { tally } from './lib/corpus/coverage.ts';
 import { normalize } from './lib/corpus/normalize.ts';
 import { resolve, ruleRef, type Resolution } from './lib/corpus/select.ts';
@@ -19,9 +19,7 @@ import { extract } from './lib/frontmatter/extract.ts';
 
 export function check(configText: string, corpus: Corpus): CheckReport | ConfigRejected {
   const rules = readRules(configText);
-  if (rules.length === 0) {
-    return { report: 'config-rejected', faults: [{ code: 'empty-rule-list', at: 'frontmatter.rules' }] };
-  }
+  if (rules.length === 0) return emptyRuleList();
 
   const { files, resolutions } = walk(rules, corpus);
   // Every rule gets a row, in config order, including the ones that won

@@ -70,8 +70,21 @@ export function ruleRef(rule: FrontmatterRule): RuleRef {
  */
 function outcome(rule: FrontmatterRule, path: RepoPath, decided: boolean): RuleOutcome {
   if (!selectors(rule).some((glob) => matches(path, glob))) return 'unmatched';
-  if (rule.excludeFiles?.some((glob) => matches(path, glob))) return 'excluded';
+  if (exclusions(rule, path).length > 0) return 'excluded';
   return decided ? 'shadowed' : 'won';
+}
+
+/**
+ * The globs from this rule's own `excludeFiles` that match, verbatim.
+ *
+ * EVERY match, not the first: a steering answer reports these so the Operator
+ * knows which line to delete, and deleting one of two changes nothing. Shared
+ * with `outcome` above so there is one definition of which exclusions fired —
+ * it costs the short-circuit and buys a report that cannot disagree with the
+ * resolution it describes.
+ */
+export function exclusions(rule: FrontmatterRule, path: RepoPath): readonly Glob[] {
+  return (rule.excludeFiles ?? []).filter((glob) => matches(path, glob));
 }
 
 /** Every rule against one path, top-down. First match wins; the rest are recorded, not discarded. */
