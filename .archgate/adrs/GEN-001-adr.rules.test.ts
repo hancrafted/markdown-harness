@@ -23,13 +23,10 @@ function globToRegExp(pattern: string): RegExp {
   return new RegExp(`^${escaped}$`);
 }
 
-// `symlinks` model archgate's behavior: ctx.glob lists them but ctx.readFile
-// throws (archgate does not follow symlinks). Regular entries live in `files`.
-function makeCtx(files: Record<string, string>, opts?: { config?: unknown; symlinks?: string[] }) {
+function makeCtx(files: Record<string, string>, opts?: { config?: unknown }) {
   const violations: Reported[] = [];
   const warnings: Reported[] = [];
-  const symlinks = opts?.symlinks ?? [];
-  const allPaths = [...Object.keys(files), ...symlinks];
+  const allPaths = [...Object.keys(files)];
   const ctx = {
     projectRoot: '/repo',
     scopedFiles: allPaths,
@@ -40,7 +37,6 @@ function makeCtx(files: Record<string, string>, opts?: { config?: unknown; symli
     },
     async readFile(path: string) {
       if (path in files) return files[path];
-      if (symlinks.includes(path)) throw new Error(`ELOOP: not followed: ${path}`);
       throw new Error(`ENOENT: ${path}`);
     },
     async readJSON(path: string) {
@@ -58,7 +54,6 @@ function makeCtx(files: Record<string, string>, opts?: { config?: unknown; symli
 
 const ADR_PATH = '.archgate/adrs/GEN-001-adr.md';
 const RULES_PATH = '.archgate/adrs/GEN-001-adr.rules.ts';
-const LINK_PATH = '.claude/rules/gen-001-adr.md';
 
 const FM = `---
 type: adr
@@ -66,6 +61,7 @@ id: GEN-001
 title: "ADR Contract"
 domain: general
 rules: true
+files: [".archgate/adrs/**/*.{md,ts}"]
 paths: [".archgate/adrs/**/*.md"]
 ---`;
 
@@ -131,12 +127,65 @@ describe('adr-frontmatter', () => {
     expect(violations.some((v) => /field order must be/.test(v.message))).toBe(true);
   });
 
+  it('fails when files: is absent', async () => {
+    const files = passingFiles();
+    files[ADR_PATH] = VALID_ADR.replace('files: [".archgate/adrs/**/*.{md,ts}"]\n', '');
+    const { ctx, violations } = makeCtx(files);
+    await rules['adr-frontmatter'].check(ctx);
+    expect(violations.some((v) => /empty required key 'files'/.test(v.message))).toBe(true);
+  });
+
+  it('fails when files: is an empty value', async () => {
+    const files = passingFiles();
+    files[ADR_PATH] = VALID_ADR.replace('files: [".archgate/adrs/**/*.{md,ts}"]', 'files:');
+    const { ctx, violations } = makeCtx(files);
+    await rules['adr-frontmatter'].check(ctx);
+    expect(violations.some((v) => /empty required key 'files'/.test(v.message))).toBe(true);
+  });
+
+  it('fails when files: is ordered after paths:', async () => {
+    const files = passingFiles();
+    files[ADR_PATH] = VALID_ADR.replace(
+      'files: [".archgate/adrs/**/*.{md,ts}"]\npaths: [".archgate/adrs/**/*.md"]',
+      'paths: [".archgate/adrs/**/*.md"]\nfiles: [".archgate/adrs/**/*.{md,ts}"]',
+    );
+    const { ctx, violations } = makeCtx(files);
+    await rules['adr-frontmatter'].check(ctx);
+    expect(violations.some((v) => /field order must be/.test(v.message))).toBe(true);
+  });
+
   it('fails when rules: true has no sibling .rules.ts', async () => {
     const files = passingFiles();
     delete files[RULES_PATH];
     const { ctx, violations } = makeCtx(files);
     await rules['adr-frontmatter'].check(ctx);
     expect(violations.some((v) => /sibling.*does not exist/.test(v.message))).toBe(true);
+  });
+});
+
+describe('adr-size-budget', () => {
+  it('passes an ADR under the budget', async () => {
+    const { ctx, violations } = makeCtx(passingFiles());
+    await rules['adr-size-budget'].check(ctx);
+    expect(violations).toEqual([]);
+  });
+
+  it('fails an ADR over the budget', async () => {
+    const files = passingFiles();
+    files[ADR_PATH] = VALID_ADR + 'x'.repeat(12_000);
+    const { ctx, violations } = makeCtx(files);
+    await rules['adr-size-budget'].check(ctx);
+    expect(violations.some((v) => /over the 12000-character budget/.test(v.message))).toBe(true);
+  });
+
+  it('counts astral rule markers as one character each', async () => {
+    // 11_999 code points + one 📜 (two UTF-16 units) is 12_000 by wc -m and
+    // 12_001 by String.length — the budget must agree with wc -m.
+    const files = passingFiles();
+    files[ADR_PATH] = 'a'.repeat(11_999) + '\u{1F4DC}';
+    const { ctx, violations } = makeCtx(files);
+    await rules['adr-size-budget'].check(ctx);
+    expect(violations).toEqual([]);
   });
 });
 
@@ -153,36 +202,6 @@ describe('adr-required-sections', () => {
     const { ctx, violations } = makeCtx(files);
     await rules['adr-required-sections'].check(ctx);
     expect(violations.some((v) => /missing the mandatory section '## References'/.test(v.message))).toBe(true);
-  });
-});
-
-describe('adr-claude-rules-symlink', () => {
-  it('passes when a scoped ADR has a runtime symlink', async () => {
-    const { ctx, violations } = makeCtx(passingFiles(), { symlinks: [LINK_PATH] });
-    await rules['adr-claude-rules-symlink'].check(ctx);
-    expect(violations).toEqual([]);
-  });
-
-  it('fails when a scoped ADR has no runtime symlink', async () => {
-    const { ctx, violations } = makeCtx(passingFiles());
-    await rules['adr-claude-rules-symlink'].check(ctx);
-    expect(violations.some((v) => /no runtime symlink/.test(v.message))).toBe(true);
-  });
-
-  it('fails when an ADR with empty paths still has a runtime entry', async () => {
-    const files = passingFiles();
-    files[ADR_PATH] = VALID_ADR.replace('paths: [".archgate/adrs/**/*.md"]', 'paths: []');
-    const { ctx, violations } = makeCtx(files, { symlinks: [LINK_PATH] });
-    await rules['adr-claude-rules-symlink'].check(ctx);
-    expect(violations.some((v) => /a runtime entry exists/.test(v.message))).toBe(true);
-  });
-
-  it('fails on an orphaned ADR-named runtime symlink', async () => {
-    const { ctx, violations } = makeCtx(passingFiles(), {
-      symlinks: [LINK_PATH, '.claude/rules/gen-999-ghost.md'],
-    });
-    await rules['adr-claude-rules-symlink'].check(ctx);
-    expect(violations.some((v) => /has no backing ADR/.test(v.message))).toBe(true);
   });
 });
 
@@ -388,7 +407,7 @@ describe('adr-governed-files', () => {
   });
 });
 
-describe('adr-paths-inline', () => {
+describe('adr-glob-inline', () => {
   it('passes an inline flow list and an absent paths key', async () => {
     const files = passingFiles();
     files['.archgate/adrs/GEN-052-scopeless.md'] = VALID_ADR.replace('paths: [".archgate/adrs/**/*.md"]\n', '').replace(
@@ -396,7 +415,7 @@ describe('adr-paths-inline', () => {
       'id: GEN-052',
     );
     const { ctx, violations } = makeCtx(files);
-    await rules['adr-paths-inline'].check(ctx);
+    await rules['adr-glob-inline'].check(ctx);
     expect(violations).toEqual([]);
   });
 
@@ -404,15 +423,26 @@ describe('adr-paths-inline', () => {
     const files = passingFiles();
     files[ADR_PATH] = VALID_ADR.replace('paths: [".archgate/adrs/**/*.md"]', 'paths:\n  - ".archgate/adrs/**/*.md"');
     const { ctx, violations } = makeCtx(files);
-    await rules['adr-paths-inline'].check(ctx);
+    await rules['adr-glob-inline'].check(ctx);
     expect(violations.some((v) => /must be an inline flow list/.test(v.message))).toBe(true);
+  });
+
+  it('fails a block-style files list', async () => {
+    const files = passingFiles();
+    files[ADR_PATH] = VALID_ADR.replace(
+      'files: [".archgate/adrs/**/*.{md,ts}"]',
+      'files:\n  - ".archgate/adrs/**/*.{md,ts}"',
+    );
+    const { ctx, violations } = makeCtx(files);
+    await rules['adr-glob-inline'].check(ctx);
+    expect(violations.some((v) => /'files:' must be an inline flow list/.test(v.message))).toBe(true);
   });
 
   it('fails a null paths value', async () => {
     const files = passingFiles();
     files[ADR_PATH] = VALID_ADR.replace('paths: [".archgate/adrs/**/*.md"]', 'paths: null');
     const { ctx, violations } = makeCtx(files);
-    await rules['adr-paths-inline'].check(ctx);
+    await rules['adr-glob-inline'].check(ctx);
     expect(violations.some((v) => /must be an inline flow list/.test(v.message))).toBe(true);
   });
 });
