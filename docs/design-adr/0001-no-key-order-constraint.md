@@ -84,5 +84,9 @@ be speculative.
    not as an open question. Its own research question — whether `files` joins `GEN-001`'s
    enforced prefix — was answered upstream and shipped; its value here is §0, §1, §3.4 and §4.
 
-This records reasoning only. The governing decision belongs in `ARCH-002-config-language`, and
-`archgate:adr-author` should fold points 1–3 into it.
+This records reasoning only, and it stays reasoning. An earlier draft assigned points 1–3 to an
+`ARCH-002-config-language` ADR; under
+[`0002-archgate-records-disciplines-scoped-by-glob.md`](./0002-archgate-records-disciplines-scoped-by-glob.md)
+that ADR will not exist, because the config language is a product contract rather than an ADR
+Discipline. The contract lives in `src/config/contract.ts` and the fixture corpus. Points 1–3 bind
+whoever implements the fast-classify path, from here.
