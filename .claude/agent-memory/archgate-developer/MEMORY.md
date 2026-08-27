@@ -1,0 +1,1 @@
+- [No invented prose](feedback-no-invented-prose.md) — paste the config fragment verbatim instead of hand-writing a sentence about it
