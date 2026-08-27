@@ -147,6 +147,25 @@ describe('valid-test-config.yaml obeys the config-validity rules', () => {
     expect(vocabulary.size).toBeGreaterThan(1);
   });
 
+  it('gives every allowed record only the keys an allowed record has', () => {
+    // This caught a real defect the moment it was written, and the defect had
+    // been in the fixture since the fixture existed. Written as a YAML FLOW
+    // mapping, `{ value: draft, intent: Written down, not yet trusted. }` is
+    // three entries, not two: an unquoted scalar terminates at the comma, so
+    // the intent read `Written down` and `not yet trusted.` became a third key
+    // holding null. Five records were silently truncated mid-sentence.
+    //
+    // Nothing noticed because nothing had ever READ an intent — the other
+    // assertions here check that a key is present, never what it holds. A
+    // misparsed value in a trust tool is the worst available bug, so the
+    // specification asserts its own shape now.
+    for (const entry of everyAllowedValue()) {
+      expect(Object.keys(entry).sort(), JSON.stringify(entry)).toEqual(
+        ['intent', 'value'].filter((key) => key in entry),
+      );
+    }
+  });
+
   it('rejects an intent that is present but empty', () => {
     for (const carrier of [...everyConstraint(), ...everyAllowedValue()]) {
       if ('intent' in carrier) expect(carrier.intent).toBeTruthy();

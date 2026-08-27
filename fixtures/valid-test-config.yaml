@@ -33,7 +33,7 @@ frontmatter:
         type:
           presence: required
           allowed:
-            - { value: log, intent: The update history of a scope, newest first. }
+            - { value: log, intent: 'The update history of a scope, newest first.' }
 
     # ── Provenance exemplar ────────────────────────────────────────────────────
     # One exact path, deliberately ABOVE the broad research rule below: this pair
@@ -45,7 +45,7 @@ frontmatter:
         type:
           presence: required
           allowed:
-            - { value: research, intent: Findings gathered to settle a question, with sources. }
+            - { value: research, intent: 'Findings gathered to settle a question, with sources.' }
         description: { presence: required }
         generated.by: { presence: required, format: actor }
         generated.at: { presence: required, format: datetime }
@@ -77,7 +77,7 @@ frontmatter:
         type:
           presence: required
           allowed:
-            - { value: research, intent: Findings gathered to settle a question, with sources. }
+            - { value: research, intent: 'Findings gathered to settle a question, with sources.' }
         description: { presence: required, maxLength: 200 }
         tags: { minItems: 1, maxItems: 5, itemMaxLength: 20 }
 
@@ -109,9 +109,9 @@ frontmatter:
         description: { presence: required }
         status:
           allowed:
-            - { value: draft, intent: Written down, not yet trusted. }
+            - { value: draft, intent: 'Written down, not yet trusted.' }
             - { value: stable, intent: Safe to rely on. }
-            - { value: deprecated, intent: Still here, no longer to be followed. }
+            - { value: deprecated, intent: 'Still here, no longer to be followed.' }
         slug:
           pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
           # MANDATORY beside `pattern` — without it the regex leaks into the

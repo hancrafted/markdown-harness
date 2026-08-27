@@ -64,6 +64,69 @@ export interface FrontmatterViolation extends ViolationCommon {
   found: Observed;
 }
 
+/**
+ * The value is outside the closed set the rule permits.
+ *
+ * `operand` is the WHOLE set, uncapped and in config order, each entry with its
+ * meaning. That is what lets the failure be fixed without opening the config,
+ * and it is why an `allowed` entry is a record rather than a bare string: a
+ * config that mixed the two forms would make a partial map the display source.
+ */
+export interface AllowedViolation extends ViolationCommon {
+  constraint: 'allowed';
+  operand: readonly AllowedOption[];
+  found: Observed;
+}
+
+/**
+ * The value does not match the rule's regular expression.
+ *
+ * THE ONE VARIANT WITH NO `operand`, and the reason no field anywhere in this
+ * contract holds a regex. The config language makes a sibling `intent`
+ * mandatory beside `pattern` precisely so that this variant has something to
+ * say without it.
+ */
+export interface PatternViolation extends ViolationCommon {
+  constraint: 'pattern';
+  found: Observed;
+}
+
+/**
+ * A frontmatter key this rule does not name, under `unknownKeys: forbidden`.
+ *
+ * No `operand`: `forbidden` is the only value that can produce a violation.
+ * `known` is carried instead, because it is not recoverable from the report
+ * alone and every violation stanza has to be self-sufficient — the Contributor
+ * fixing this one should not need the config to learn what the rule does name.
+ */
+export interface UnknownKeysViolation extends ViolationCommon {
+  constraint: 'unknownKeys';
+  at: FieldAddress;
+  /** The TOP-LEVEL segments of the rule's addresses, deduped, in config order. */
+  known: readonly string[];
+  found: Observed;
+}
+
+/** The three constraints that name several addresses and assert something about the set. */
+export type CrossFieldConstraint = 'exactlyOneOf' | 'anyOf' | 'allOf';
+
+/**
+ * A set of addresses the rule named, and the wrong number of them present.
+ *
+ * `at` is null because the constraint names no single field. Evidence is the
+ * SATISFIED SET rather than a count: `satisfied: []` and
+ * `satisfied: ['name', 'title']` fail `exactlyOneOf` for opposite reasons, and a
+ * count could not tell a Contributor which arm to remove.
+ */
+export interface CrossFieldViolation extends ViolationCommon {
+  constraint: CrossFieldConstraint;
+  at: null;
+  /** The addresses the rule named, in config order. */
+  operand: readonly FieldAddress[];
+  /** Which of them were present and non-empty. */
+  satisfied: readonly FieldAddress[];
+}
+
 /** The field must appear (present and non-empty), or must not appear. */
 export interface PresenceViolation extends ViolationCommon {
   constraint: 'presence';
@@ -71,7 +134,13 @@ export interface PresenceViolation extends ViolationCommon {
   found: Observed;
 }
 
-export type Violation = FrontmatterViolation | PresenceViolation;
+export type Violation =
+  | AllowedViolation
+  | CrossFieldViolation
+  | FrontmatterViolation
+  | PatternViolation
+  | PresenceViolation
+  | UnknownKeysViolation;
 
 /** Every constraint key that can appear as a `constraint` discriminant. */
 export type ConstraintFired = Violation['constraint'];

@@ -13,7 +13,10 @@ import type { FieldConstraints } from '../contract/constraints.ts';
 import type { Frontmatter } from '../contract/frontmatter.ts';
 import type { Violation } from '../contract/violation.ts';
 import { instances, type Instance } from './lib/address.ts';
+import { CHECKS, CHECK_ORDER } from './lib/checks.ts';
+import { crossField } from './lib/crossfield.ts';
 import { isEmpty, observe } from './lib/presence.ts';
+import { unknownKeys } from './lib/unknown.ts';
 
 export function evaluate(rule: FrontmatterRule, frontmatter: Frontmatter): readonly Violation[] {
   // `frontmatter: forbidden` excludes every payload key, so this arm is the
@@ -23,9 +26,10 @@ export function evaluate(rule: FrontmatterRule, frontmatter: Frontmatter): reado
     return [{ constraint: 'frontmatter', at: null, found: observe(frontmatter), intent: rule.intent }];
   }
 
-  return Object.entries(rule.fields ?? {}).flatMap(([address, constraints]) =>
+  const fields = Object.entries(rule.fields ?? {}).flatMap(([address, constraints]) =>
     instances(frontmatter, address).flatMap((instance) => atAddress(constraints, instance, rule.intent)),
   );
+  return ordered([...fields, ...crossField(rule, frontmatter, rule.intent), ...unknownKeys(rule, frontmatter)]);
 }
 
 /**
@@ -37,15 +41,43 @@ export function evaluate(rule: FrontmatterRule, frontmatter: Frontmatter): reado
  * about one hole.
  */
 function atAddress(constraints: FieldConstraints, instance: Instance, ruleIntent: string): readonly Violation[] {
-  const gate = presence(constraints, instance, ruleIntent);
-  if (gate !== null) return [gate];
-  return [];
-}
-
-function presence(constraints: FieldConstraints, instance: Instance, ruleIntent: string): Violation | null {
-  const found = observe(instance.value);
   // A constraint-level `intent` wins over the rule's, for this constraint only.
   const intent = constraints.intent ?? ruleIntent;
+  const gate = presence(constraints, instance, intent);
+  if (gate !== null) return [gate];
+
+  return CHECK_ORDER.map((key) => CHECKS[key](constraints, instance, intent)).filter(
+    (violation): violation is Violation => violation !== null,
+  );
+}
+
+/**
+ * Deterministic order, by address.
+ *
+ * NOT by config order and NOT by frontmatter order: design-ADR 0001 records
+ * that the config language constrains neither, quoting YAML 1.2.2 that mapping
+ * key order is "a serialization detail" that "should not be used". A report
+ * ordered by either would depend on exactly what the specification says not to
+ * depend on. Sorted by address, the same corpus produces the same report
+ * whatever order its keys were written in — and a frozen report survives a YAML
+ * library that does not preserve order.
+ *
+ * Digit runs are zero-padded for the comparison, so `sources[2]` sorts before
+ * `sources[10]`.
+ */
+function ordered(violations: readonly Violation[]): readonly Violation[] {
+  return [...violations].sort((left, right) => sortKey(left).localeCompare(sortKey(right)));
+}
+
+function sortKey(violation: Violation): string {
+  // A rule-level constraint names no field and concerns the whole file, so it
+  // sorts before every field. `constraint` breaks a tie at one address.
+  const at = violation.at === null ? '' : violation.at.replace(/\d+/g, (run) => run.padStart(8, '0'));
+  return `${at}\u0000${violation.constraint}`;
+}
+
+function presence(constraints: FieldConstraints, instance: Instance, intent: string): Violation | null {
+  const found = observe(instance.value);
 
   if (constraints.presence === 'required' && isEmpty(instance.value)) {
     return { constraint: 'presence', at: instance.at, operand: 'required', found, intent };
