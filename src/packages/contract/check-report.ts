@@ -15,6 +15,8 @@
  */
 
 import type { RepoPath } from './corpus.ts';
+import type { RuleRef } from './values.ts';
+import type { Violation } from './violation.ts';
 
 export interface CheckReport {
   report: 'check';
@@ -45,6 +47,21 @@ export interface CheckTotals {
   governed: number;
 }
 
-export interface FileReport {
+/**
+ * One governed file with a fault.
+ *
+ * `rule` sits HERE, not on each violation. Under first match every violation in
+ * a file comes from the same rule, so hoisting it makes a merged report
+ * unrepresentable rather than merely wrong.
+ *
+ * A union rather than an optional field: as more fault kinds land, each stays a
+ * variant a reader has to handle, never a field it can forget to read.
+ */
+export type FileReport = ViolationsReport;
+
+export interface ViolationsReport {
   path: RepoPath;
+  rule: RuleRef;
+  fault: 'violations';
+  violations: readonly Violation[];
 }

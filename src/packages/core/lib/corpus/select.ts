@@ -5,6 +5,7 @@
 
 import type { FrontmatterRule, Glob } from '../../../contract/config.ts';
 import type { RepoPath } from '../../../contract/corpus.ts';
+import type { SelectorRef } from '../../../contract/values.ts';
 import { matches } from '../../glob.ts';
 
 /** The rule that won, and where it sits. Positional: rule identity IS its index. */
@@ -21,6 +22,16 @@ export interface Winner {
  */
 export function selectors(rule: FrontmatterRule): readonly Glob[] {
   return rule.fileName === undefined ? (rule.path ?? []) : [`**/${rule.fileName}`];
+}
+
+/**
+ * The selector as the Operator WROTE it, sugar unexpanded.
+ *
+ * The report shows a rule the way its author would recognise it: a rule keyed
+ * on `fileName: index.md` reads back as that, not as `**\/index.md`.
+ */
+export function selectorRef(rule: FrontmatterRule): SelectorRef {
+  return rule.fileName === undefined ? { path: rule.path ?? [] } : { fileName: rule.fileName };
 }
 
 /**
