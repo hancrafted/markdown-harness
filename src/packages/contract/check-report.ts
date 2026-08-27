@@ -32,7 +32,43 @@ export interface CheckReport {
    * reason: tenet 6 says it is never reported.
    */
   files: readonly FileReport[];
+  /** One entry per rule, in config order — including the rules that governed nothing. */
+  coverage: readonly RuleCoverage[];
   totals: CheckTotals;
+}
+
+/**
+ * How one rule fared across the whole corpus.
+ *
+ * The stated cost of first match (tenet 5) is that EVERY LOSING RULE IS SILENT.
+ * A rule that wins no file reports nothing, so an ordering mistake or a typo in
+ * a glob is invisible forever — and invisible in exactly the direction a trust
+ * tool cannot afford, since the missing output looks identical to a clean one.
+ * This is the single diagnostic that design most needs, and the only one that
+ * costs a full files x rules match matrix rather than falling out of the walk.
+ *
+ * Keyed by `ruleId`, which is what makes it useful: before rules were named,
+ * "your rule was shadowed" could only point at a position that moves.
+ */
+export interface RuleCoverage {
+  rule: RuleRef;
+  /** Files this rule governs: it selected them, and no rule above it had already. */
+  won: number;
+  /** Files it selected that a rule ABOVE it had already taken. */
+  shadowed: number;
+  /**
+   * The rules that took them, by `ruleId`, deduped, in config order.
+   *
+   * Always present, `[]` when nothing shadowed: an optional field would give
+   * one fact two shapes and every consumer would handle both forever.
+   *
+   * This is the field that could not exist before rules were named. "Something
+   * above you won" is not actionable; "`index-files` won" is, and it stays true
+   * next week when a rule is inserted above both of them.
+   */
+  shadowedBy: readonly string[];
+  /** Files it selected that its OWN `excludeFiles` removed before it could win. */
+  excluded: number;
 }
 
 /**
@@ -46,6 +82,17 @@ export interface CheckReport {
  * the file.
  */
 export interface CheckTotals {
+  /**
+   * A KNOWN REDUNDANCY, recorded rather than discovered later: this is now the
+   * sum of `coverage[].won`, so by the rule above it could go.
+   *
+   * It stays because it is the headline count, and reading it should not
+   * require knowing that a rule list exists. It is computed FROM `coverage`
+   * rather than counted a second time, so the two cannot disagree — the drift
+   * argument that removed `conforming` does not reach it. Dropping it is a
+   * `format: 2` change and nothing else moves; `format: 1` is unshipped, so it
+   * is still free.
+   */
   governed: number;
 }
 

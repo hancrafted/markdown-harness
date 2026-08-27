@@ -8,10 +8,29 @@ import type { RepoPath } from '../../../contract/corpus.ts';
 import type { RuleRef } from '../../../contract/values.ts';
 import { matches } from '../../glob.ts';
 
-/** The rule that won, and where it sits. Positional: rule identity IS its index. */
-export interface Winner {
-  index: number;
-  rule: FrontmatterRule;
+/**
+ * How one rule fared against ONE path.
+ *
+ * Named rather than boolean because `coverage` needs all four, and they are the
+ * four different answers to "why isn't my rule applying?": it selected nothing,
+ * something above it took the file, its own `excludeFiles` removed the file
+ * first, or it governs.
+ */
+export type RuleOutcome = 'won' | 'shadowed' | 'excluded' | 'unmatched';
+
+/**
+ * One path against the whole rule list.
+ *
+ * `winner` alone would be cheaper — the walk could stop at the first match —
+ * but then every losing rule stays silent, which is the stated cost of tenet 5
+ * and the thing `coverage` exists to pay off. Resolving and tallying from ONE
+ * pass is also what stops the report and its coverage from disagreeing.
+ */
+export interface Resolution {
+  /** The governing rule, or `null` — and `null` means invisible, not unconstrained. */
+  winner: FrontmatterRule | null;
+  /** One outcome per rule, in config order. */
+  outcomes: readonly RuleOutcome[];
 }
 
 /**
@@ -44,16 +63,27 @@ export function ruleRef(rule: FrontmatterRule): RuleRef {
  * Exclusion wins within a rule and takes no part in ordering: it answers one
  * yes/no question BEFORE that rule can win, which is what lets an excluded file
  * fall through to a later, broader rule.
+ *
+ * `decided` is whether a rule above this one has already won. It is the only
+ * thing that separates `won` from `shadowed`, and it is why the outcome of one
+ * rule cannot be computed without the ones above it.
  */
-function governs(rule: FrontmatterRule, path: RepoPath): boolean {
-  if (rule.excludeFiles?.some((glob) => matches(path, glob))) return false;
-  return selectors(rule).some((glob) => matches(path, glob));
+function outcome(rule: FrontmatterRule, path: RepoPath, decided: boolean): RuleOutcome {
+  if (!selectors(rule).some((glob) => matches(path, glob))) return 'unmatched';
+  if (rule.excludeFiles?.some((glob) => matches(path, glob))) return 'excluded';
+  return decided ? 'shadowed' : 'won';
 }
 
-/** The first matching rule, or `null` — and `null` means invisible, not unconstrained. */
-export function winner(rules: readonly FrontmatterRule[], path: RepoPath): Winner | null {
-  for (const [index, rule] of rules.entries()) {
-    if (governs(rule, path)) return { index, rule };
+/** Every rule against one path, top-down. First match wins; the rest are recorded, not discarded. */
+export function resolve(rules: readonly FrontmatterRule[], path: RepoPath): Resolution {
+  const outcomes: RuleOutcome[] = [];
+  let winner: FrontmatterRule | null = null;
+
+  for (const rule of rules) {
+    const fared = outcome(rule, path, winner !== null);
+    if (fared === 'won') winner = rule;
+    outcomes.push(fared);
   }
-  return null;
+
+  return { winner, outcomes };
 }

@@ -305,6 +305,64 @@ describe('the frozen report over the whole corpus', () => {
   });
 });
 
+describe('coverage is the one diagnostic first-match cannot give you for free', () => {
+  it('names every rule with the files it won, so an inert rule is visible', () => {
+    // The stated cost of tenet 5 is that every LOSING rule is silent. A rule
+    // that wins nothing — almost always an ordering mistake, occasionally a
+    // typo in a glob — is otherwise invisible forever, and no violation it
+    // would have reported ever appears. This is the whole reason the full
+    // files x rules matrix is worth computing.
+    //
+    // Keyed by `ruleId`. Counts are read off the fixture tree by hand, not
+    // recomputed the way the resolver computes them.
+    expect(checked().coverage.map((entry) => [entry.rule.ruleId, entry.won])).toEqual([
+      ['index-files', 2],
+      ['log-files', 1],
+      ['provenance-exemplar', 1],
+      ['research', 2],
+      ['skills', 2],
+      ['reference', 2],
+      ['workflows', 1],
+      ['plain', 2],
+    ]);
+  });
+
+  it('says why a rule did not win the files it selected', () => {
+    // `won: 0` is the alarm; these three are the diagnosis, and each points at
+    // a different fix. `shadowedBy` is what naming rules bought: it says WHICH
+    // rule above took the file, where a position could only have said "one of
+    // the ones before you" about a number that moves.
+    //
+    // The research rule selects five files under `docs/research/`. It wins
+    // `bad-actor.md` and `survey.md`; `index.md` and `provenance.md` go to
+    // rules above it; `vendor/upstream.md` is removed by its own
+    // `excludeFiles` before it can win, which is the only use exclusion has
+    // under first match.
+    const research = checked().coverage.find((entry) => entry.rule.ruleId === 'research');
+
+    expect(research).toEqual({
+      rule: {
+        ruleId: 'research',
+        selector: { path: ['docs/research/**/*.md'] },
+        intent: 'Research is indexed, and an index entry copies the description',
+      },
+      won: 2,
+      shadowed: 2,
+      // Deduped, in CONFIG order — which is also the order they sit above this
+      // rule, so it reads as a list of what to look at first.
+      shadowedBy: ['index-files', 'provenance-exemplar'],
+      excluded: 1,
+    });
+  });
+
+  it('finds no inert rule in the fixture config', () => {
+    // Named separately from the table because it is a different claim: the
+    // table pins the numbers, this pins the property the diagnostic exists for.
+    // Filtered rather than asserted with `every`, so a failure says WHICH rule.
+    expect(checked().coverage.filter((entry) => entry.won === 0)).toEqual([]);
+  });
+});
+
 describe('the corpus is a specification, so it states what it does not yet cover', () => {
   /**
    * Every form a fault can take. `presence` is split, because `required` and

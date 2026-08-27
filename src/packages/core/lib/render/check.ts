@@ -3,7 +3,7 @@
  * are specification.
  */
 
-import type { CheckReport, FileReport } from '../../../contract/check-report.ts';
+import type { CheckReport, FileReport, RuleCoverage } from '../../../contract/check-report.ts';
 import type { RuleRef } from '../../../contract/values.ts';
 import type { Violation } from '../../../contract/violation.ts';
 import { stanza } from './violation.ts';
@@ -63,6 +63,39 @@ function summary(report: CheckReport): string {
   );
 }
 
+/**
+ * How a rule that governed nothing lost the files it selected.
+ *
+ * Both numbers print even when they are zero, and that is the point: two zeros
+ * say nothing above took the files and nothing was excluded, which leaves only
+ * one explanation — the selector matched no file at all. Omitting the zeros
+ * would leave the Operator to infer that.
+ */
+function lost(entry: RuleCoverage): readonly string[] {
+  const by = entry.shadowedBy.length === 0 ? '' : `, by ${entry.shadowedBy.join(' and ')}`;
+  return [
+    `  ${entry.rule.ruleId}   ${selectorOf(entry.rule)}`,
+    `    because:   ${entry.rule.intent}`,
+    `    shadowed:  ${entry.shadowed}${by}`,
+    `    excluded:  ${entry.excluded}`,
+    '',
+  ];
+}
+
+/**
+ * The rules that never applied — printed LAST, and only when there are any.
+ *
+ * The report above this is about the corpus; this is about the config, and it
+ * is the one fault a clean run can be hiding. Conditional on the DATA, like the
+ * Module name, so a config with no ordering mistake gets no section about
+ * ordering mistakes.
+ */
+function inert(report: CheckReport): readonly string[] {
+  const never = report.coverage.filter((entry) => entry.won === 0);
+  if (never.length === 0) return [];
+  return ['', 'Rules that governed no files:', '', ...never.flatMap(lost)];
+}
+
 export function renderCheck(report: CheckReport): string {
-  return [...report.files.flatMap(block), summary(report), ''].join('\n');
+  return [...report.files.flatMap(block), summary(report), ...inert(report), ''].join('\n');
 }

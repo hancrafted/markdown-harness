@@ -112,6 +112,58 @@ describe('the file header names the rule and its reason once', () => {
   });
 });
 
+describe('an inert rule is the one thing the corpus cannot tell you about', () => {
+  // A config whose second rule can never win: `index.md` is taken above it and
+  // the only other file it selects is removed by its own `excludeFiles`. This
+  // is the ordering mistake `coverage` exists to catch, and it has to reach the
+  // page — a diagnostic only `--json` can see does not help the Operator who
+  // made the mistake.
+  const CONFIG = [
+    'frontmatter:',
+    '  rules:',
+    '    - ruleId: index-files',
+    '      fileName: index.md',
+    '      intent: An index enumerates a directory, and carries no frontmatter',
+    '      frontmatter: forbidden',
+    '    - ruleId: research',
+    '      path: [docs/research/**/*.md]',
+    '      excludeFiles: [docs/research/vendor/**]',
+    '      intent: Research says what it is',
+    '      fields:',
+    '        type: { presence: required }',
+    '',
+  ].join('\n');
+
+  const INERT = render(
+    check(CONFIG, {
+      root: 'fixtures',
+      files: [
+        { path: 'docs/research/index.md', text: '---\ntype: research\n---\n' },
+        { path: 'docs/research/vendor/upstream.md', text: '---\ntype: research\n---\n' },
+      ],
+    }),
+  );
+
+  it('names the rule, and says what happened to the files it selected', () => {
+    expect(INERT).toContain(
+      [
+        'Rules that governed no files:',
+        '',
+        '  research   path: docs/research/**/*.md',
+        '    because:   Research says what it is',
+        '    shadowed:  1, by index-files',
+        '    excluded:  1',
+      ].join('\n'),
+    );
+  });
+
+  it('stays silent when every rule governed something', () => {
+    // Conditional on the DATA, like the Module name: a config with no ordering
+    // mistake gets no section about ordering mistakes.
+    expect(TEXT).not.toContain('Rules that governed no files');
+  });
+});
+
 describe('rendering rules that are specification, not taste', () => {
   it('introduces no non-ASCII of its own', () => {
     // Harness prose is ASCII; author prose is verbatim. So every non-ASCII
