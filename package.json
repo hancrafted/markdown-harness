@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "markdown-harness": "./src/cli.ts",
+    "mh": "./src/cli.ts"
+  },
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
