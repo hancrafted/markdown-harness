@@ -118,14 +118,24 @@ export type CrossFieldConstraint = 'exactlyOneOf' | 'anyOf' | 'allOf';
  * `satisfied: ['name', 'title']` fail `exactlyOneOf` for opposite reasons, and a
  * count could not tell a Contributor which arm to remove.
  */
-export interface CrossFieldViolation extends ViolationCommon {
-  constraint: CrossFieldConstraint;
+export interface CrossFieldViolationOf<Key extends CrossFieldConstraint> extends ViolationCommon {
+  constraint: Key;
   at: null;
   /** The addresses the rule named, in config order. */
   operand: readonly FieldAddress[];
   /** Which of them were present and non-empty. */
   satisfied: readonly FieldAddress[];
 }
+
+/**
+ * Written as three members rather than one interface with a union-typed
+ * `constraint`, so that `constraint` is a TRUE discriminant. That is what lets
+ * the renderer dispatch through a table typed against the union instead of a
+ * switch — and the switch is illegal here, because ESLint caps complexity at 7
+ * and there are nine constraints.
+ */
+export type CrossFieldViolation =
+  CrossFieldViolationOf<'exactlyOneOf'> | CrossFieldViolationOf<'anyOf'> | CrossFieldViolationOf<'allOf'>;
 
 /**
  * The value is not in the shape the named format describes.
@@ -156,9 +166,3 @@ export type Violation =
   | PatternViolation
   | PresenceViolation
   | UnknownKeysViolation;
-
-/** Every constraint key that can appear as a `constraint` discriminant. */
-export type ConstraintFired = Violation['constraint'];
-
-/** Re-exported for the renderer's evidence table. */
-export type { AllowedOption, Observed };

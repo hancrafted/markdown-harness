@@ -33,6 +33,11 @@ export function check(configText: string, corpus: Corpus): CheckReport | ConfigR
     if (report !== null) files.push(report);
   }
 
+  // Sorted here rather than trusted from the caller: a frozen report must not
+  // depend on somebody's directory-iteration order, and `src/cli.ts` gets its
+  // paths from `globSync`.
+  files.sort((left, right) => left.path.localeCompare(right.path));
+
   return { report: 'check', format: 1, root: corpus.root, files, totals: { governed } };
 }
 

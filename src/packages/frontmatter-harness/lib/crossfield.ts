@@ -15,7 +15,7 @@
 import type { ConstrainingPayload } from '../../contract/config.ts';
 import type { FieldAddress } from '../../contract/constraints.ts';
 import type { Frontmatter } from '../../contract/frontmatter.ts';
-import type { CrossFieldConstraint, Violation } from '../../contract/violation.ts';
+import type { CrossFieldConstraint, CrossFieldViolationOf, Violation } from '../../contract/violation.ts';
 import { instances } from './address.ts';
 import { isEmpty } from './presence.ts';
 
@@ -31,18 +31,32 @@ const HOLDS: Record<CrossFieldConstraint, (satisfied: number, of: number) => boo
   allOf: (satisfied, of) => satisfied === of,
 };
 
-const KEYS: readonly CrossFieldConstraint[] = ['exactlyOneOf', 'anyOf', 'allOf'];
+/**
+ * Generic over the key, so the constructed literal has type
+ * `CrossFieldViolationOf<K>` and needs no cast. A non-generic builder taking
+ * `constraint: CrossFieldConstraint` would produce a value TypeScript cannot
+ * match to any single member of the union.
+ */
+function crossCheck<Key extends CrossFieldConstraint>(
+  constraint: Key,
+  operand: readonly FieldAddress[] | undefined,
+  context: { frontmatter: Frontmatter; intent: string },
+): readonly CrossFieldViolationOf<Key>[] {
+  if (operand === undefined) return [];
+  const satisfied = operand.filter((address) => satisfies(context.frontmatter, address));
+  if (HOLDS[constraint](satisfied.length, operand.length)) return [];
+  return [{ constraint, at: null, operand, satisfied, intent: context.intent }];
+}
 
 export function crossField(
   payload: ConstrainingPayload,
   frontmatter: Frontmatter,
   intent: string,
 ): readonly Violation[] {
-  return KEYS.flatMap((constraint) => {
-    const operand = payload[constraint];
-    if (operand === undefined) return [];
-    const satisfied = operand.filter((address) => satisfies(frontmatter, address));
-    if (HOLDS[constraint](satisfied.length, operand.length)) return [];
-    return [{ constraint, at: null, operand, satisfied, intent }];
-  });
+  const context = { frontmatter, intent };
+  return [
+    ...crossCheck('exactlyOneOf', payload.exactlyOneOf, context),
+    ...crossCheck('anyOf', payload.anyOf, context),
+    ...crossCheck('allOf', payload.allOf, context),
+  ];
 }

@@ -249,3 +249,119 @@ describe('an unmatched constraint is not a weaker constraint — it does not exi
     expect(checked().files.map((file) => file.path)).not.toContain('docs/research/bad-actor.md');
   });
 });
+
+describe('the frozen report over the whole corpus', () => {
+  /** Every fault the corpus produces, flattened: one row per violation. */
+  function rows(): readonly (readonly [string, string, string | null])[] {
+    return checked().files.flatMap((file) =>
+      file.fault === 'violations'
+        ? file.violations.map((entry) => [file.path, entry.constraint, entry.at] as const)
+        : [[file.path, file.fault, null] as const],
+    );
+  }
+
+  it('is exactly this', () => {
+    // The acceptance criterion for the whole build. Sorted by path, then by
+    // address within a file, so this table is the same table on any machine and
+    // under any YAML library.
+    expect(rows()).toEqual([
+      ['docs/plain/untyped.md', 'presence', 'type'],
+      ['docs/reference/legacy.md', 'unknownKeys', 'reviewedBy'],
+      ['docs/reference/legacy.md', 'pattern', 'slug'],
+      ['docs/reference/legacy.md', 'allowed', 'status'],
+      ['docs/research/index.md', 'frontmatter', null],
+      ['docs/skills/legacy/SKILL.md', 'exactlyOneOf', null],
+    ]);
+  });
+
+  it('counts 6 violations across 4 files, 13 governed, 9 conforming, 1 invisible', () => {
+    const report = checked();
+
+    expect(rows()).toHaveLength(6);
+    expect(report.files).toHaveLength(4);
+    expect(report.totals.governed).toBe(13);
+    // Both derived, deliberately: only `governed` is not recoverable from the
+    // rest, so only `governed` is stored.
+    expect(report.totals.governed - report.files.length).toBe(9);
+    expect(CORPUS.files.length - report.totals.governed).toBe(1);
+  });
+
+  it('declares the format version and echoes the root as given', () => {
+    expect(checked().format).toBe(1);
+    expect(checked().root).toBe('fixtures');
+  });
+});
+
+describe('the corpus is a specification, so it states what it does not yet cover', () => {
+  /**
+   * Every form a fault can take. `presence` is split, because `required` and
+   * `forbidden` are different clauses that happen to share a key.
+   */
+  const FORMS: readonly string[] = [
+    'allOf',
+    'allowed',
+    'anyOf',
+    'exactlyOneOf',
+    'format',
+    'frontmatter',
+    'itemMaxLength',
+    'maxItems',
+    'maxLength',
+    'minItems',
+    'minLength',
+    'pattern',
+    'per-entry',
+    'presence:forbidden',
+    'presence:required',
+    'unknownKeys',
+    'unparseable-frontmatter',
+  ];
+
+  /**
+   * Forms NO FIXTURE FILE FAILS.
+   *
+   * `fixtures.test.ts` proves every config KEY is written. This proves which
+   * violation FORMS are produced — and under "the corpus is the specification",
+   * a form with no failing fixture is a clause of the specification that has
+   * never been read back.
+   *
+   * The list is asserted in both directions, so adding a fixture without
+   * shortening it fails, and shortening it without adding a fixture fails too.
+   * A permanently-red test would have said the same thing once and then been
+   * ignored.
+   */
+  const UNCOVERED: readonly string[] = [
+    'allOf',
+    'anyOf',
+    'format',
+    'itemMaxLength',
+    'maxItems',
+    'maxLength',
+    'minItems',
+    'minLength',
+    'per-entry',
+    'presence:forbidden',
+    'unparseable-frontmatter',
+  ];
+
+  function produced(): ReadonlySet<string> {
+    const forms = checked().files.flatMap((file) =>
+      file.fault !== 'violations'
+        ? [file.fault]
+        : file.violations.flatMap((entry) => [
+            entry.constraint === 'presence' ? `presence:${entry.operand}` : entry.constraint,
+            ...(entry.at?.includes('[') ? ['per-entry'] : []),
+          ]),
+    );
+    return new Set(forms);
+  }
+
+  it('names eleven clauses no fixture file exercises', () => {
+    expect([...produced()].sort()).toEqual(FORMS.filter((form) => !UNCOVERED.includes(form)));
+    expect(UNCOVERED).toHaveLength(11);
+  });
+
+  it.each(FORMS.filter((form) => !UNCOVERED.includes(form)))('produces the %s form', (form) => {
+    expect(produced()).toContain(form);
+  });
+});
