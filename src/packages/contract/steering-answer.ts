@@ -31,14 +31,36 @@
 import type { Glob, UnknownKeys } from './config.ts';
 import type { FieldAddress, FieldConstraints } from './constraints.ts';
 import type { RepoPath } from './corpus.ts';
-import type { RuleRef } from './values.ts';
+import type { RuleRef, SilentRule } from './values.ts';
+
+/**
+ * Whether the path was read as a file or a folder.
+ *
+ * Decided from the LAST SEGMENT ALONE — a folder unless it carries an extension
+ * — because `query` never touches disk and a folder is indistinguishable from an
+ * extensionless file without looking. Folder is therefore the DEFAULT.
+ */
+export type PathKind = 'file' | 'folder';
 
 export interface SteeringAnswer {
   report: 'steering';
   /** The report format version. A reader that does not know this number must not guess. */
   format: 1;
-  /** The path asked about, normalised — `/`-separated, no leading `./` or `/`. */
+  /**
+   * The path asked about, normalised — `/`-separated, no leading `./` or `/`,
+   * and exactly one TRAILING slash when it is a folder.
+   */
   path: RepoPath;
+  /**
+   * How `path` was read.
+   *
+   * Stated rather than left to be inferred from the trailing slash, for the same
+   * reason the coverage render prints its zeros: an inference the reader has to
+   * make is not a diagnostic. It also changes what `governs: null` means — about
+   * a file it is the final word, about a folder it says only that no rule
+   * selects the folder itself.
+   */
+  pathKind: PathKind;
   /**
    * The rule that governs this path, or `null`.
    *
@@ -51,11 +73,12 @@ export interface SteeringAnswer {
   /**
    * Rules that also select this path and are SILENT, because one above them won.
    *
-   * The stated cost of tenet 5, made visible for one path. Named only — their
-   * constraints are deliberately absent, because nothing merges and listing
-   * them would read as though something did.
+   * The stated cost of tenet 5, made visible for one path. Named and located
+   * only — neither their constraints nor their `intent` travel, because nothing
+   * merges and carrying either would read as though something did. See
+   * `SilentRule`.
    */
-  shadowed: readonly RuleRef[];
+  shadowed: readonly SilentRule[];
   /** Rules that select this path but whose own `excludeFiles` removed it before they could win. */
   excluded: readonly ExcludedRule[];
 }
@@ -80,7 +103,7 @@ export interface Governance {
  * what tells those two apart.
  */
 export interface ExcludedRule {
-  rule: RuleRef;
+  rule: SilentRule;
   /** The globs from this rule's own `excludeFiles` that matched, verbatim. */
   excludedBy: readonly Glob[];
 }

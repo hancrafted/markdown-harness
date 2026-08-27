@@ -20,8 +20,8 @@ import type { ConfigRejected } from '../contract/config-rejected.ts';
 import type { SteeringAnswer } from '../contract/steering-answer.ts';
 import { requirements } from '../frontmatter-harness/requirements.ts';
 import { emptyRuleList, readRules } from './lib/config/parse.ts';
-import { normalize } from './lib/corpus/normalize.ts';
-import { exclusions, resolve, ruleRef, type Outcome } from './lib/corpus/select.ts';
+import { forResolution, normalize, pathKind } from './lib/corpus/normalize.ts';
+import { exclusions, resolve, ruleRef, silentRule, type Outcome } from './lib/corpus/select.ts';
 
 export function query(configText: string, path: string): SteeringAnswer | ConfigRejected {
   const rules = readRules(configText);
@@ -29,7 +29,8 @@ export function query(configText: string, path: string): SteeringAnswer | Config
   // config must not be able to say that about every path.
   if (rules.length === 0) return emptyRuleList();
 
-  const repoPath = normalize(path);
+  const kind = pathKind(normalize(path));
+  const repoPath = forResolution(normalize(path), kind);
   const { winner, outcomes } = resolve(rules, repoPath);
   const fared = (want: Outcome) => outcomes.filter(({ outcome }) => outcome === want).map(({ rule }) => rule);
 
@@ -37,10 +38,11 @@ export function query(configText: string, path: string): SteeringAnswer | Config
     report: 'steering',
     format: 1,
     path: repoPath,
+    pathKind: kind,
     // `null` means invisible, not unconstrained — and `excluded` below is
     // usually the reason.
     governs: winner === null ? null : { rule: ruleRef(winner), requires: requirements(winner) },
-    shadowed: fared('shadowed').map(ruleRef),
-    excluded: fared('excluded').map((rule) => ({ rule: ruleRef(rule), excludedBy: exclusions(rule, repoPath) })),
+    shadowed: fared('shadowed').map(silentRule),
+    excluded: fared('excluded').map((rule) => ({ rule: silentRule(rule), excludedBy: exclusions(rule, repoPath) })),
   };
 }

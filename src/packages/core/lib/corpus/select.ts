@@ -5,7 +5,7 @@
 
 import type { FrontmatterRule, Glob } from '../../../contract/config.ts';
 import type { RepoPath } from '../../../contract/corpus.ts';
-import type { RuleRef } from '../../../contract/values.ts';
+import type { RuleRef, SilentRule } from '../../../contract/values.ts';
 import { matches } from '../../glob.ts';
 
 /**
@@ -70,6 +70,15 @@ export function ruleRef(rule: FrontmatterRule): RuleRef {
     selector: rule.fileName === undefined ? { path: rule.path ?? [] } : { fileName: rule.fileName },
     intent: rule.intent,
   };
+}
+
+/**
+ * The rule as a report names a rule that says nothing — `ruleId` and where it
+ * looks, and deliberately not why it exists. `SilentRule` carries the argument.
+ */
+export function silentRule(rule: FrontmatterRule): SilentRule {
+  const { ruleId, selector } = ruleRef(rule);
+  return { ruleId, selector };
 }
 
 /**

@@ -45,6 +45,55 @@ const TABLE: readonly [string, string, boolean, string][] = [
   ['docs/skills/legacy/SKILL.md', 'docs/skills/**/SKILL.md', true, 'a basename after `**/` matches at depth'],
   ['docs/skills/SKILL.md', 'docs/skills/**/SKILL.md', true, 'and matches with no intervening directory at all'],
 
+  // ── Folder paths: what a folder query has to live with ────────────────────
+  // A folder query matches a DIRECTORY path against globs that select FILES.
+  // These rows are why that needs a normalisation rule rather than good
+  // intentions, and they are the whole evidence for the one it got.
+  [
+    'docs/research/survey.md',
+    'docs/**',
+    true,
+    'a directory-shaped glob governs FILES too, so one config serves both query kinds and there ' +
+      'is no trade-off to make. The `*.md` suffixes in `fixtures/valid-test-config.yaml` are a ' +
+      'coverage device, not a convention.',
+  ],
+  ['docs', 'docs/**', false, 'a tree root does not match its own `/**` — the same rule as the `vendor` row above'],
+  [
+    'docs/research/',
+    'docs/research/**',
+    true,
+    'but WITH a trailing slash it does. This single row is why a folder query normalises to a ' +
+      'trailing slash: without it, the MOST SPECIFIC rule for a folder is not even a candidate, ' +
+      'and a config whose only rule is `docs/research/**` answers `governs: null` for ' +
+      '`docs/research` — "invisible", about a folder whose files it plainly governs.',
+  ],
+  [
+    'docs/research',
+    'docs/*',
+    true,
+    'RESIDUAL ONE, a false positive that the trailing slash does NOT fix: a rule selecting files ' +
+      'directly in `docs/` matches the DIRECTORY `docs/research` and governs nothing in it. ' +
+      'Compare the row below — `docs/*` does not match `docs/research/survey.md`, so the rule ' +
+      'genuinely reaches nothing under that folder.',
+  ],
+  ['docs/research/', 'docs/*', true, 'and it still matches once normalised, so the slash is no help here'],
+  ['docs/research/survey.md', 'docs/*', false, 'the row that proves the two above are a false positive'],
+  [
+    'docs/research/',
+    'docs/research/*',
+    false,
+    'RESIDUAL TWO, a false negative, and the worse direction: `*` needs a segment to consume, so ' +
+      'a rule written `X/*` is never found by a query for `X` itself, in either spelling. It ' +
+      "fails towards `governs: null`, which is the payload's strongest claim.",
+  ],
+  // Both residuals are one root cause: a folder query matches a DIRECTORY path
+  // against a glob that selects FILES, and only `**` survives that category
+  // error intact. Getting both right needs glob INTERSECTION — "could this glob
+  // match anything under here" — which `matchesGlob` does not offer. The
+  // trailing slash is chosen because it strictly DOMINATES the unnormalised
+  // form on everything measured here: it matches everywhere the bare path does,
+  // plus `X/**`, and that extra match is a true positive.
+
   // ── Two rows an adopter will meet ─────────────────────────────────────────
   [
     'docs/INDEX.md',

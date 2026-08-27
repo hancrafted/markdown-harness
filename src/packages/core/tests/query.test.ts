@@ -20,6 +20,67 @@ function asked(path: string): SteeringAnswer {
   return answer;
 }
 
+describe('a path is a folder unless its last segment carries an extension', () => {
+  // Two rules, directory-shaped, the broad one first — the config shape that
+  // makes a folder query mean anything. `docs/**` governs files as well as
+  // folders, so nothing is traded away to get this.
+  const CONFIG = [
+    'frontmatter:',
+    '  rules:',
+    '    - ruleId: everything',
+    '      path: [docs/**]',
+    '      intent: Everything under docs/ says what it is',
+    '      fields:',
+    '        type: { presence: required }',
+    '    - ruleId: research',
+    '      path: [docs/research/**]',
+    '      intent: Research is indexed, and an index entry copies the description',
+    '      fields:',
+    '        description: { presence: required }',
+    '',
+  ].join('\n');
+
+  function asked(path: string) {
+    const answer = query(CONFIG, path);
+    if (answer.report !== 'steering') throw new Error('config rejected');
+    return answer;
+  }
+
+  it('resolves a folder by the same first match, and says it read a folder', () => {
+    // First match wins, exactly as for a file: `everything` sits above
+    // `research` and takes it. No second resolution semantics.
+    const answer = asked('docs/research');
+
+    expect(answer.pathKind).toBe('folder');
+    // Normalised to a trailing slash, and echoed that way. Not cosmetic:
+    // `docs/research` does not match `docs/research/**` while `docs/research/`
+    // does, so without this the MOST SPECIFIC rule for a folder is not even a
+    // candidate — and a config whose only rule is `docs/research/**` would
+    // answer `governs: null` about a folder whose files it plainly governs.
+    expect(answer.path).toBe('docs/research/');
+    expect(answer.governs?.rule.ruleId).toBe('everything');
+    expect(answer.shadowed.map((entry) => entry.ruleId)).toEqual(['research']);
+  });
+
+  it('reads both spellings of a folder as the same folder', () => {
+    expect(asked('docs/research/')).toEqual(asked('docs/research'));
+  });
+
+  it('reads a last segment with an extension as a file, and leaves it alone', () => {
+    const answer = asked('docs/research/new-thing.md');
+
+    expect(answer.pathKind).toBe('file');
+    expect(answer.path).toBe('docs/research/new-thing.md');
+  });
+
+  it('reads an extensionless last segment as a folder, because it cannot look', () => {
+    // `query` never touches disk — that is the `git check-attr` seam — so a
+    // folder and an extensionless file are indistinguishable and the last
+    // segment is all there is to go on. `README` is read as a folder.
+    expect(asked('docs/research/README').path).toBe('docs/research/README/');
+  });
+});
+
 describe('a config fault is report content here too', () => {
   it('rejects an empty rule list rather than answering “ungoverned”', () => {
     // The dangerous answer, and the reason this cannot be left to `check`:
@@ -49,6 +110,7 @@ describe('a steering answer is about a path, never about a file', () => {
       report: 'steering',
       format: 1,
       path: 'docs/research/new-thing.md',
+      pathKind: 'file',
       governs: {
         rule: {
           ruleId: 'research',
@@ -97,6 +159,7 @@ describe('a steering answer is about a path, never about a file', () => {
       report: 'steering',
       format: 1,
       path: 'docs/reference/index.md',
+      pathKind: 'file',
       governs: {
         rule: {
           ruleId: 'index-files',
@@ -109,13 +172,16 @@ describe('a steering answer is about a path, never about a file', () => {
         // key, so there is nothing else this rule can be asking for.
         requires: { frontmatter: 'forbidden' },
       },
-      shadowed: [
-        {
-          ruleId: 'reference',
-          selector: { path: ['docs/reference/**/*.md'] },
-          intent: 'Reference pages are looked up by slug and say how far they can be trusted',
-        },
-      ],
+      // Named and located, NOT explained. A rule's `intent` is carried in a
+      // report so the Contributor — who never opens the config — gets the
+      // reason. For a rule that does not govern here, the Contributor has no
+      // business with the reason, and carrying it is actively dangerous: a
+      // sentence in the config author's voice, describing constraints that do
+      // not apply, handed to an agent that may well satisfy them. That is the
+      // merge tenet 5 forbids, reintroduced at the steering surface. The
+      // Operator can read the intent in the config, being the one role that
+      // opens it.
+      shadowed: [{ ruleId: 'reference', selector: { path: ['docs/reference/**/*.md'] } }],
       excluded: [],
     });
   });
@@ -133,17 +199,14 @@ describe('a steering answer is about a path, never about a file', () => {
       report: 'steering',
       format: 1,
       path: 'docs/research/vendor/new.md',
+      pathKind: 'file',
       governs: null,
       // Exclusion is answered BEFORE a rule can win, so it is not shadowing:
       // no rule took this path, the research rule declined it.
       shadowed: [],
       excluded: [
         {
-          rule: {
-            ruleId: 'research',
-            selector: { path: ['docs/research/**/*.md'] },
-            intent: 'Research is indexed, and an index entry copies the description',
-          },
+          rule: { ruleId: 'research', selector: { path: ['docs/research/**/*.md'] } },
           excludedBy: ['docs/research/vendor/**'],
         },
       ],
@@ -182,11 +245,7 @@ describe('a steering answer is about a path, never about a file', () => {
     expect(answer.shadowed).toEqual([]);
     expect(answer.excluded).toEqual([
       {
-        rule: {
-          ruleId: 'research',
-          selector: { path: ['docs/research/**/*.md'] },
-          intent: 'Research is indexed, and an index entry copies the description',
-        },
+        rule: { ruleId: 'research', selector: { path: ['docs/research/**/*.md'] } },
         excludedBy: ['docs/research/vendor/**'],
       },
     ]);

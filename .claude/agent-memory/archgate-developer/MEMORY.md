@@ -1,1 +1,2 @@
 - [No invented prose](feedback-no-invented-prose.md) — paste the config fragment verbatim instead of hand-writing a sentence about it
+- [Fixture config is not an exemplar](feedback-fixture-config-is-not-an-exemplar.md) — never generalise `fixtures/`' conventions into claims about real configs
