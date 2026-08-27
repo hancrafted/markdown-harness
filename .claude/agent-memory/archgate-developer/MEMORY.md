@@ -1,0 +1,2 @@
+- [Grilling format: prose, not the picker](feedback_grilling_format.md) — format grill rounds as ❓/➡️ prose with a stated recommendation
+- [Han: author and Operator of markdown-harness](user_role.md) — works by grilling; wants premises attacked and evidence cited
