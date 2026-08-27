@@ -28,6 +28,15 @@ Neither file below is a decision record. They hold the reasoning decisions get d
 - `docs/vision/architecture.md` — the tenets, and four decisions that are cheap now and expensive later. Read before adding a dependency, a config key, a write path, or an integration surface.
 - Issue #1 — provisional feature decisions, what was withdrawn and why, and every fact measured so far. Read before designing a feature, reopening a trade-off, or measuring something a second time.
 
+## Code layout
+
+Packages under `src/packages/` are deep modules, and dependency-cruiser enforces it at `error`.
+Read [src/packages/README.md](./src/packages/README.md) before adding a package, adding an entry
+point, or importing one. In short: a package's public surface is its **root files**, anything in a
+subfolder is private, and that holds for its own tests too.
+
+`src/cli.ts` is root code, outside every package, and the only file in the repo that touches disk.
+
 ## Agent skills
 
 ### Issue tracker

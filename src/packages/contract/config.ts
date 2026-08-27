@@ -12,7 +12,7 @@
  * What a rule asserts about one field lives in `./constraints`.
  */
 
-import type { FieldAddress, FieldConstraints } from './constraints';
+import type { FieldAddress, FieldConstraints } from './constraints.ts';
 
 // ---------------------------------------------------------------------------
 // The config file

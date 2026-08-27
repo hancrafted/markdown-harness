@@ -15,7 +15,7 @@
 # no Floor, so a rule that asserts nothing about a field leaves that field unchecked
 # even when another rule elsewhere constrains it.
 #
-# Shape reference: ../src/config/contract.ts and ../src/config/constraints.ts
+# Shape reference: ../src/packages/contract/config.ts and ../src/packages/contract/constraints.ts
 # Constraints derive from the OKF text vendored at ../docs/okf/SPEC-v0.2.md.
 
 frontmatter:

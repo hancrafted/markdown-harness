@@ -1,7 +1,7 @@
 /**
  * What a rule can assert about one frontmatter field.
  *
- * Split from `./contract` at a real seam: that module answers "which files does
+ * Split from `./config` at a real seam: that module answers "which files does
  * this rule select, and what kind of thing does it assert", this one answers
  * "what must be true of one value". The two change for different reasons — a
  * new selector touches the resolver, a new constraint touches the checker.
