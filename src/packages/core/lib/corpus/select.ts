@@ -11,12 +11,25 @@ import { matches } from '../../glob.ts';
 /**
  * How one rule fared against ONE path.
  *
- * Named rather than boolean because `coverage` needs all four, and they are the
- * four different answers to "why isn't my rule applying?": it selected nothing,
+ * Named rather than boolean because all four are needed, and they are the four
+ * different answers to "why isn't my rule applying?": it selected nothing,
  * something above it took the file, its own `excludeFiles` removed the file
  * first, or it governs.
  */
-export type RuleOutcome = 'won' | 'shadowed' | 'excluded' | 'unmatched';
+export type Outcome = 'won' | 'shadowed' | 'excluded' | 'unmatched';
+
+/**
+ * One rule, and how it fared on one path.
+ *
+ * The rule TRAVELS WITH its outcome rather than being recovered by position
+ * from the rule list. A parallel array would have reintroduced positional rule
+ * identity through the back door — implicitly, and in every consumer — one
+ * commit after `Winner.index` was removed for being exactly that.
+ */
+export interface RuleOutcome {
+  rule: FrontmatterRule;
+  outcome: Outcome;
+}
 
 /**
  * One path against the whole rule list.
@@ -29,7 +42,7 @@ export type RuleOutcome = 'won' | 'shadowed' | 'excluded' | 'unmatched';
 export interface Resolution {
   /** The governing rule, or `null` — and `null` means invisible, not unconstrained. */
   winner: FrontmatterRule | null;
-  /** One outcome per rule, in config order. */
+  /** One entry per rule, in config order. */
   outcomes: readonly RuleOutcome[];
 }
 
@@ -68,7 +81,7 @@ export function ruleRef(rule: FrontmatterRule): RuleRef {
  * thing that separates `won` from `shadowed`, and it is why the outcome of one
  * rule cannot be computed without the ones above it.
  */
-function outcome(rule: FrontmatterRule, path: RepoPath, decided: boolean): RuleOutcome {
+function fared(rule: FrontmatterRule, path: RepoPath, decided: boolean): Outcome {
   if (!selectors(rule).some((glob) => matches(path, glob))) return 'unmatched';
   if (exclusions(rule, path).length > 0) return 'excluded';
   return decided ? 'shadowed' : 'won';
@@ -93,9 +106,9 @@ export function resolve(rules: readonly FrontmatterRule[], path: RepoPath): Reso
   let winner: FrontmatterRule | null = null;
 
   for (const rule of rules) {
-    const fared = outcome(rule, path, winner !== null);
-    if (fared === 'won') winner = rule;
-    outcomes.push(fared);
+    const outcome = fared(rule, path, winner !== null);
+    if (outcome === 'won') winner = rule;
+    outcomes.push({ rule, outcome });
   }
 
   return { winner, outcomes };

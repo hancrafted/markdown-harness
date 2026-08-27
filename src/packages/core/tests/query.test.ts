@@ -121,7 +121,7 @@ describe('a steering answer is about a path, never about a file', () => {
   });
 
   it('says which glob excluded a path nothing governs', () => {
-    // The most surprising thing the harness can do, and the answer to it.
+    // The most surprising thing `markdown-harness` can do, and the answer to it.
     // `governs: null` is not "no constraints" — it is INVISIBLE (tenet 6):
     // nothing will ever be reported about a file here, by any rule, and a clean
     // run looks exactly the same as a file that does not exist.
@@ -148,6 +148,48 @@ describe('a steering answer is about a path, never about a file', () => {
         },
       ],
     });
+  });
+
+  it('reports an exclusion that fired even when deleting it would change nothing', () => {
+    // `excludedBy` says what FIRED. It is not a promise that removing it makes
+    // the rule apply, and this is the case that proves the difference:
+    // exclusion is answered before ordering, so `research` reports `excluded`
+    // although `everything` sits above it and would have taken the path anyway.
+    //
+    // The payload still tells the two apart, without the reader opening the
+    // config: `governs` names a rule that is not this one.
+    const CONFIG = [
+      'frontmatter:',
+      '  rules:',
+      '    - ruleId: everything',
+      '      path: [docs/**/*.md]',
+      '      intent: Everything under docs/ says what it is',
+      '      fields:',
+      '        type: { presence: required }',
+      '    - ruleId: research',
+      '      path: [docs/research/**/*.md]',
+      '      excludeFiles: [docs/research/vendor/**]',
+      '      intent: Research is indexed, and an index entry copies the description',
+      '      fields:',
+      '        description: { presence: required }',
+      '',
+    ].join('\n');
+
+    const answer = query(CONFIG, 'docs/research/vendor/new.md');
+    if (answer.report !== 'steering') throw new Error('config rejected');
+
+    expect(answer.governs?.rule.ruleId).toBe('everything');
+    expect(answer.shadowed).toEqual([]);
+    expect(answer.excluded).toEqual([
+      {
+        rule: {
+          ruleId: 'research',
+          selector: { path: ['docs/research/**/*.md'] },
+          intent: 'Research is indexed, and an index entry copies the description',
+        },
+        excludedBy: ['docs/research/vendor/**'],
+      },
+    ]);
   });
 
   it('answers identically for a path that does exist', () => {

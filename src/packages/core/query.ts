@@ -10,9 +10,10 @@
  * here could read a file even if it wanted to, and an agent can ask what will be
  * required of a file before writing a byte of it.
  *
- * There is deliberately no rendered `steering:` string in what comes back. See
- * `contract/steering-answer.ts` for why that absence is the point rather than an
- * omission.
+ * There is deliberately no rendered `steering:` string in what comes back, and
+ * `render()` does not accept a `SteeringAnswer` yet either. The first absence is
+ * a decision and the second is an unbuilt half; `contract/steering-answer.ts`
+ * keeps them apart.
  */
 
 import type { ConfigRejected } from '../contract/config-rejected.ts';
@@ -20,7 +21,7 @@ import type { SteeringAnswer } from '../contract/steering-answer.ts';
 import { requirements } from '../frontmatter-harness/requirements.ts';
 import { emptyRuleList, readRules } from './lib/config/parse.ts';
 import { normalize } from './lib/corpus/normalize.ts';
-import { exclusions, resolve, ruleRef, type RuleOutcome } from './lib/corpus/select.ts';
+import { exclusions, resolve, ruleRef, type Outcome } from './lib/corpus/select.ts';
 
 export function query(configText: string, path: string): SteeringAnswer | ConfigRejected {
   const rules = readRules(configText);
@@ -30,7 +31,7 @@ export function query(configText: string, path: string): SteeringAnswer | Config
 
   const repoPath = normalize(path);
   const { winner, outcomes } = resolve(rules, repoPath);
-  const fared = (outcome: RuleOutcome) => rules.filter((_, index) => outcomes[index] === outcome);
+  const fared = (want: Outcome) => outcomes.filter(({ outcome }) => outcome === want).map(({ rule }) => rule);
 
   return {
     report: 'steering',

@@ -18,9 +18,14 @@
  * own key names carry an agent on their own.
  *
  * So `requires` re-exposes the config's own vocabulary VERBATIM, down to which
- * keys the Operator did and did not write, and the rendering — including the
- * frontmatter skeleton — is derived by `render()` from this object, never
- * stored in it. Two channels, one artifact, no wording to keep in step.
+ * keys the Operator did and did not write.
+ *
+ * NOT BUILT YET, and named here so the gap is not mistaken for a decision:
+ * `render()` still takes `CheckReport | ConfigRejected`, so nothing renders this
+ * and the frontmatter skeleton the plan calls the highest-leverage part of the
+ * product has no code at all. When it lands it derives from this object and
+ * stores nothing back into it — two channels, one artifact, no wording to keep
+ * in step. Until then `--query` has a JSON channel and no text one.
  */
 
 import type { Glob, UnknownKeys } from './config.ts';
@@ -39,8 +44,8 @@ export interface SteeringAnswer {
    *
    * `null` is not "no constraints". It is INVISIBLE (tenet 6): nothing will
    * ever be reported about a file at this path, by any rule, and that is the
-   * single most surprising thing the harness can do. `excluded` below is
-   * usually why.
+   * single most surprising thing `markdown-harness` can do. `excluded` below
+   * is usually why.
    */
   governs: Governance | null;
   /**
@@ -65,9 +70,14 @@ export interface Governance {
  * A rule that would have selected this path, and the exclusion that stopped it.
  *
  * `excludedBy` is the reason `excluded` is not just a list of rules: the
- * actionable fact is WHICH glob fired, because that is the line the Operator
- * deletes. Every matching glob, not the first — if two match, deleting one
- * changes nothing, and "first" would be arbitrary.
+ * actionable fact is WHICH glob fired, in the Operator's own words. Every
+ * matching glob, not the first — "first" would be arbitrary, and with two
+ * matching, deleting one changes nothing.
+ *
+ * It is what fired, NOT a promise about what deleting it achieves. Exclusion is
+ * answered before ordering, so a rule sitting BELOW the winner reports
+ * `excluded` even though it would only have been shadowed anyway. `governs` is
+ * what tells those two apart.
  */
 export interface ExcludedRule {
   rule: RuleRef;
@@ -97,12 +107,19 @@ export interface NoFrontmatterRequirement {
 /**
  * The rule constrains the frontmatter it selects.
  *
- * Every optional key is present here IF AND ONLY IF the Operator wrote it. That
- * is deliberate and it is the sharp end of the verbatim principle: the config
- * language defaults an absent `unknownKeys` to `allowed`, but `allowed` is the
- * LANGUAGE's word and not the Operator's, and an answer that writes it has put a
- * word in their mouth. The plan wanted a fourth `presence` state — `unstated` —
- * for the same absence, and it goes for the same reason: nobody typed it.
+ * Every key that travels VERBATIM is present here if and only if the Operator
+ * wrote it — `unknownKeys`, `exactlyOneOf`, `anyOf`, `allOf`. That is the sharp
+ * end of the verbatim principle: the config language defaults an absent
+ * `unknownKeys` to `allowed`, but `allowed` is the LANGUAGE's word and not the
+ * Operator's, and an answer that writes it has put a word in their mouth. The
+ * plan wanted a fourth `presence` state — `unstated` — for the same absence, and
+ * it goes for the same reason: nobody typed it.
+ *
+ * `fields` is the exception and is always present, `[]` when the rule names no
+ * address. It is not one of the Operator's values travelling through: it is a
+ * list WE build, sorted and restructured, out of fragments that are theirs. One
+ * shape wins for what we compute, verbatim wins for what we quote — the same
+ * split that makes `shadowedBy` always an array.
  *
  * The cost is real and is the experiment: an agent reading this has to know the
  * language's defaults, or ask. If it cannot, that is goal 1's answer arriving,
