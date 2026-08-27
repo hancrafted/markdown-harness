@@ -1,2 +1,3 @@
 - [Grilling format: prose, not the picker](feedback_grilling_format.md) — format grill rounds as ❓/➡️ prose with a stated recommendation
 - [Han: author and Operator of markdown-harness](user_role.md) — works by grilling; wants premises attacked and evidence cited
+- [ADR prose: compress in place, never relocate](feedback_adr_prose_compression.md) — fit the budget with terse imperative one-liners, not a reference file
