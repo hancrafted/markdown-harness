@@ -5,7 +5,7 @@
 
 import type { FrontmatterRule, Glob } from '../../../contract/config.ts';
 import type { RepoPath } from '../../../contract/corpus.ts';
-import type { SelectorRef } from '../../../contract/values.ts';
+import type { RuleRef } from '../../../contract/values.ts';
 import { matches } from '../../glob.ts';
 
 /** The rule that won, and where it sits. Positional: rule identity IS its index. */
@@ -25,13 +25,19 @@ export function selectors(rule: FrontmatterRule): readonly Glob[] {
 }
 
 /**
- * The selector as the Operator WROTE it, sugar unexpanded.
+ * The rule as the report refers to it: by `ruleId`, never by position.
  *
- * The report shows a rule the way its author would recognise it: a rule keyed
- * on `fileName: index.md` reads back as that, not as `**\/index.md`.
+ * The selector travels as the Operator WROTE it, sugar unexpanded — a rule keyed
+ * on `fileName: index.md` reads back as that, not as `**\/index.md`. `intent` is
+ * the rule's own reason and the only copy of it in the report; a field
+ * constraint that overrides it does so inside its own fragment.
  */
-export function selectorRef(rule: FrontmatterRule): SelectorRef {
-  return rule.fileName === undefined ? { path: rule.path ?? [] } : { fileName: rule.fileName };
+export function ruleRef(rule: FrontmatterRule): RuleRef {
+  return {
+    ruleId: rule.ruleId,
+    selector: rule.fileName === undefined ? { path: rule.path ?? [] } : { fileName: rule.fileName },
+    intent: rule.intent,
+  };
 }
 
 /**

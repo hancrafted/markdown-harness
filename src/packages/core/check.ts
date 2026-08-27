@@ -12,7 +12,7 @@ import type { Corpus, SourceFile } from '../contract/corpus.ts';
 import { evaluate } from '../frontmatter-harness/evaluate.ts';
 import { readRules } from './lib/config/parse.ts';
 import { normalize } from './lib/corpus/normalize.ts';
-import { selectorRef, winner, type Winner } from './lib/corpus/select.ts';
+import { ruleRef, winner, type Winner } from './lib/corpus/select.ts';
 import { extract } from './lib/frontmatter/extract.ts';
 
 export function check(configText: string, corpus: Corpus): CheckReport | ConfigRejected {
@@ -42,10 +42,13 @@ export function check(configText: string, corpus: Corpus): CheckReport | ConfigR
 }
 
 function inspect(file: SourceFile, won: Winner): FileReport | null {
-  const path = normalize(file.path);
-  const rule = { index: won.index, selector: selectorRef(won.rule) };
   const extracted = extract(file.text);
+  const frontmatter = extracted.kind === 'present' ? extracted.frontmatter : null;
+  const violations = evaluate(won.rule, frontmatter);
 
-  const violations = evaluate(won.rule, extracted.kind === 'present' ? extracted.frontmatter : null);
-  return violations.length === 0 ? null : { path, rule, fault: 'violations', violations };
+  if (violations.length === 0) return null;
+  // Keyed by Module from the start: `frontmatter-harness` is the only Module
+  // today, and adding the key later would move every violation in every stored
+  // report.
+  return { path: normalize(file.path), rule: ruleRef(won.rule), violations: { frontmatter: violations } };
 }

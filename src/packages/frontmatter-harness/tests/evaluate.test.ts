@@ -13,6 +13,7 @@ describe('a failed membership check renders whatever the config gave it', () => 
     // its absence on purpose. The data must not put words in the config's mouth,
     // so the absence travels as `null` rather than as an invented sentence.
     const rule: FrontmatterRule = {
+      ruleId: 'skills',
       path: ['docs/skills/**/SKILL.md'],
       intent: 'A skill is addressed by exactly one of its two names',
       fields: { type: { presence: 'required', allowed: [{ value: 'skill' }] } },
@@ -21,10 +22,12 @@ describe('a failed membership check renders whatever the config gave it', () => 
     expect(evaluate(rule, { type: 'workflow' })).toEqual([
       {
         constraint: 'allowed',
-        at: 'type',
-        operand: [{ value: 'skill', intent: null }],
+        field: 'type',
         found: { kind: 'scalar', value: 'workflow' },
-        intent: 'A skill is addressed by exactly one of its two names',
+        // Verbatim, so the record that omitted its `intent` arrives exactly as
+        // the config wrote it — no invented sentence, and no normalising `intent`
+        // to null either. The absence IS the config's own text.
+        expected: { presence: 'required', allowed: [{ value: 'skill' }] },
       },
     ]);
   });
@@ -32,6 +35,7 @@ describe('a failed membership check renders whatever the config gave it', () => 
 
 describe('an address reaches one level into a nested shape', () => {
   const rule: FrontmatterRule = {
+    ruleId: 'provenance-exemplar',
     path: ['docs/research/provenance.md'],
     intent: 'The one document that records its own provenance in full',
     fields: {
@@ -55,7 +59,7 @@ describe('an address reaches one level into a nested shape', () => {
   it('reaches a key inside a mapping', () => {
     const violations = evaluate(rule, { ...conforming, generated: { by: 'not an actor', at: 'yesterday' } });
 
-    expect(violations.map((entry) => [entry.constraint, entry.at])).toEqual([
+    expect(violations.map((entry) => [entry.constraint, entry.field])).toEqual([
       ['format', 'generated.at'],
       ['format', 'generated.by'],
     ]);
@@ -68,7 +72,7 @@ describe('an address reaches one level into a nested shape', () => {
     // fault better than a number does.
     const broken = { ...conforming, sources: [{ resource: 'docs/ok.md' }, { resource: 'has a space' }] };
 
-    expect(evaluate(rule, broken).map((entry) => [entry.constraint, entry.at])).toEqual([
+    expect(evaluate(rule, broken).map((entry) => [entry.constraint, entry.field])).toEqual([
       ['format', 'sources[1].resource'],
     ]);
   });
@@ -76,12 +80,13 @@ describe('an address reaches one level into a nested shape', () => {
   it('checks every entry of a list independently', () => {
     const broken = { ...conforming, verified: [{ at: '2026-08-25T11:30:00Z' }, { at: 'soon' }, { at: 'also soon' }] };
 
-    expect(evaluate(rule, broken).map((entry) => entry.at)).toEqual(['verified[1].at', 'verified[2].at']);
+    expect(evaluate(rule, broken).map((entry) => entry.field)).toEqual(['verified[1].at', 'verified[2].at']);
   });
 });
 
 describe('format: actor reserves human and process as producer names', () => {
   const rule: FrontmatterRule = {
+    ruleId: 'provenance-exemplar',
     path: ['docs/research/provenance.md'],
     intent: 'The one document that records its own provenance in full',
     fields: { 'generated.by': { format: 'actor' } },

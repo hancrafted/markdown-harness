@@ -18,6 +18,7 @@ const rules = config.frontmatter?.rules ?? [];
 
 /** Every key a rule may carry. Grows only by deliberate amendment. */
 const RULE_KEYS = [
+  'ruleId',
   'path',
   'fileName',
   'excludeFiles',
@@ -49,7 +50,7 @@ const CONSTRAINT_KEYS = [
  * in `RULE_KEYS` is payload, derived rather than listed again — so a payload key
  * added above is covered here without a second edit.
  */
-const NON_PAYLOAD_KEYS: readonly string[] = ['path', 'fileName', 'excludeFiles', 'intent', 'frontmatter'];
+const NON_PAYLOAD_KEYS: readonly string[] = ['ruleId', 'path', 'fileName', 'excludeFiles', 'intent', 'frontmatter'];
 const PAYLOAD_KEYS = RULE_KEYS.filter((key) => !NON_PAYLOAD_KEYS.includes(key));
 
 const FORMATS: Format[] = ['datetime', 'uri', 'actor'];
@@ -113,6 +114,17 @@ describe('valid-test-config.yaml obeys the config-validity rules', () => {
 
   it('gives every rule an intent', () => {
     for (const rule of rules) expect(rule.intent).toBeTruthy();
+  });
+
+  it('gives every rule a ruleId, and no two the same', () => {
+    // The report refers to a rule by this and never by its index. Rules are
+    // ordered and first match wins, so position is semantic — but position is a
+    // terrible identity: inserting one rule renumbers every later one, and a
+    // stored report's `rules[5]` would name something else next week.
+    const ids = rules.map((rule) => rule.ruleId);
+
+    for (const id of ids) expect(id, JSON.stringify(ids)).toBeTruthy();
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('gives every pattern a sibling intent', () => {

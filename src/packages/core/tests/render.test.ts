@@ -1,7 +1,9 @@
-// The soft layer, asserted separately from the data — because it is the layer we
-// EXPECT to churn. A change to the report data is a contract change; a change to
-// the wording asserted here is a corpus change, and these tests are what make
-// the second cheap without making the first cheap too.
+// The text rendering, asserted separately from the data.
+//
+// There is much less to assert than there was. The renderer no longer writes
+// sentences — it serialises `expected` back to YAML with the same library that
+// parsed the config — so what these tests pin is the LAYOUT and the invariants,
+// not wording that somebody has to keep in step with the data.
 
 import { describe, expect, it } from 'vitest';
 import { check } from '../check.ts';
@@ -19,40 +21,51 @@ function stanza(heading: string): string {
   return lines.slice(start, end).join('\n');
 }
 
-describe('the render honours what the data guarantees', () => {
-  it('names the constraint and the field, and describes the pattern nowhere', () => {
-    // The data has no field that could hold the regex. The render must not
-    // reintroduce it by DESCRIBING it either — "lowercase words joined by single
-    // hyphens" appears here only because the Operator wrote it as the mandatory
-    // sibling `intent`, on the `Why:` line, in their own words.
+describe('a stanza is the evidence and the config fragment, and nothing of ours', () => {
+  it('shows the fragment verbatim, carrying its own reason', () => {
+    // Every word after `Expected:` was typed by the Operator. Nothing here was
+    // written by the harness, which is why there is no wording to review.
     expect(stanza('  slug  [pattern]')).toBe(
       [
         '  slug  [pattern]',
-        '    Found:  "Legacy_Reference"',
-        '    Wanted: a value matching the pattern this rule sets for slug',
-        '    Why:    Slugs are lowercase words joined by single hyphens',
+        '    Found:    "Legacy_Reference"',
+        '    Expected: pattern: ^[a-z0-9]+(-[a-z0-9]+)*$',
+        '              intent: Slugs are lowercase words joined by single hyphens',
       ].join('\n'),
     );
   });
 
-  it('puts the pattern nowhere in the rendered text', () => {
-    expect(TEXT).not.toContain('^[a-z0-9]');
-    expect(TEXT).not.toContain('[a-z0-9]+(-');
-  });
-
   it('hands over the whole vocabulary, uncapped, with each value’s meaning', () => {
-    // This is the highest-leverage stanza in the product: it is fixable without
-    // opening the config, because the vocabulary and the meanings arrived with
-    // the failure.
+    // The highest-leverage stanza in the product, and it now costs no rendering
+    // code at all: the meanings are part of the fragment, so pasting the
+    // fragment brings them along.
     expect(stanza('  status  [allowed]')).toBe(
       [
         '  status  [allowed]',
-        '    Found:  "retired"',
-        '    Wanted: one of the 3 values this rule permits',
-        '              draft       Written down, not yet trusted.',
-        '              stable      Safe to rely on.',
-        '              deprecated  Still here, no longer to be followed.',
-        '    Why:    Reference pages are looked up by slug and say how far they can be trusted',
+        '    Found:    "retired"',
+        '    Expected: allowed:',
+        '                - value: draft',
+        '                  intent: Written down, not yet trusted.',
+        '                - value: stable',
+        '                  intent: Safe to rely on.',
+        '                - value: deprecated',
+        '                  intent: Still here, no longer to be followed.',
+      ].join('\n'),
+    );
+  });
+
+  it('says what the rule DOES name when a key is unknown', () => {
+    expect(stanza('  reviewedBy  [unknownKeys]')).toBe(
+      [
+        '  reviewedBy  [unknownKeys]',
+        '    Found:    "nobody"',
+        '    Expected: unknownKeys: forbidden',
+        '              allowedKeys:',
+        '                - type',
+        '                - description',
+        '                - status',
+        '                - slug',
+        '                - draft',
       ].join('\n'),
     );
   });
@@ -61,16 +74,37 @@ describe('the render honours what the data guarantees', () => {
     expect(stanza('  (whole file)  [exactlyOneOf]')).toBe(
       [
         '  (whole file)  [exactlyOneOf]',
-        '    Found:  name and title',
-        '    Wanted: exactly one of name, title',
-        '    Why:    A skill is addressed by exactly one of its two names',
+        '    Found:    name and title',
+        '    Expected: exactlyOneOf:',
+        '                - name',
+        '                - title',
       ].join('\n'),
     );
   });
+});
 
-  it('shows which rule won, and how it selected', () => {
-    expect(TEXT).toContain('  governed by frontmatter.rules[0]   fileName: index.md');
-    expect(TEXT).toContain('  governed by frontmatter.rules[5]   path: docs/reference/**/*.md');
+describe('the file header names the rule and its reason once', () => {
+  it('identifies the rule by ruleId, never by position', () => {
+    expect(TEXT).toContain('  governed by index-files   fileName: index.md');
+    expect(TEXT).toContain('  governed by reference   path: docs/reference/**/*.md');
+    // Nothing anywhere refers to a rule by index. `rules[5]` was volatile:
+    // inserting one rule renumbered every later one.
+    expect(TEXT).not.toMatch(/rules\[\d+\]/);
+  });
+
+  it('prints the rule’s intent once per file rather than under every violation', () => {
+    const reason = '  because: Reference pages are looked up by slug and say how far they can be trusted';
+
+    expect(TEXT).toContain(reason);
+    expect(TEXT.split('\n').filter((line) => line === reason)).toHaveLength(1);
+  });
+
+  it('names the Module only when more than one reported', () => {
+    // `frontmatter-harness` is the only Module, so the key stays out of the way.
+    // The condition is on the DATA, so it is already correct for Module 2.
+    // A line that is ONLY the module name — not the `frontmatter` CONSTRAINT
+    // stanza, which legitimately reads `(whole file)  [frontmatter]`.
+    expect(TEXT.split('\n')).not.toContain('  [frontmatter]');
   });
 
   it('counts what the data does not store', () => {

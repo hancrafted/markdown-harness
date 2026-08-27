@@ -1,17 +1,19 @@
 /**
  * The report format — the other half of the portable artifact (tenet 4).
  *
- * Frozen at `format: 1`. The DATA carries no English: a constraint key plus
- * evidence is a complete basis for every sentence the tool can say, so putting
- * a `message` string beside them would store one fact twice, and two
- * representations of one fact drift. Prose lives only in `core/render.ts`.
+ * Frozen at `format: 1`. The DATA CARRIES NO PROSE OF OURS. A constraint key,
+ * the evidence, and the config fragment that failed are a complete basis for
+ * every sentence the tool can say, so a stored `message` would hold one fact
+ * twice and two representations of one fact drift.
  *
- * The line that buys: a change to this data is a CONTRACT change; a change to
- * the wording is a CORPUS change.
+ * Author prose does appear, and that is a different thing: a rule's `intent` and
+ * a field's `intent` are the Operator's own words, quoted verbatim, and quoting
+ * them is the point. What is absent is any sentence WE wrote.
  *
- * Author prose is different from harness prose and does appear here — a rule's
- * `intent` is evidence, in the Operator's own words, and quoting it verbatim is
- * the point.
+ * The renderer serialises this back to YAML and adds nothing, so there is no
+ * wording layer left to keep in step with the data — which is what makes the
+ * report the same artifact whether an agent reads it as JSON or a human reads it
+ * as text.
  */
 
 import type { RepoPath } from './corpus.ts';
@@ -54,14 +56,32 @@ export interface CheckTotals {
  * a file comes from the same rule, so hoisting it makes a merged report
  * unrepresentable rather than merely wrong.
  *
- * A union rather than an optional field: as more fault kinds land, each stays a
- * variant a reader has to handle, never a field it can forget to read.
+ * `violations` is keyed by MODULE. `frontmatter-harness` is the only Module
+ * today, and `architecture.md` lists the second Module's shape as deliberately
+ * open rather than hypothetical — so the key is here from the start, because
+ * adding one later would move every violation in every stored report.
+ *
+ * Recorded, since it is a bounded cost taken deliberately: a Module owns its own
+ * config section and therefore its own rule list, and resolves first-match
+ * INDEPENDENTLY. So one file can be governed by `frontmatter`'s rule and by
+ * Module 2's rule at the same time, and when that happens `rule` has to move
+ * inside the module key beside its violations. That is a `format: 2` change.
+ * Nothing else moves, because `violations` is already keyed.
  */
-export type FileReport = ViolationsReport;
-
-export interface ViolationsReport {
+export interface FileReport {
   path: RepoPath;
   rule: RuleRef;
-  fault: 'violations';
-  violations: readonly Violation[];
+  violations: ModuleViolations;
+}
+
+/**
+ * Violations by Module.
+ *
+ * `unparseable-frontmatter` has no home here yet, on purpose: no fixture file
+ * produces it, so designing its shape now would be speculation. It is one of
+ * the eleven clauses `core/tests/check.test.ts` names as uncovered, and it gets
+ * a shape in the same change as its fixture.
+ */
+export interface ModuleViolations {
+  frontmatter: readonly Violation[];
 }

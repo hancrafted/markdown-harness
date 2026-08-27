@@ -24,33 +24,24 @@ export type Observed =
   | { kind: 'mapping'; keys: readonly string[] };
 
 /**
- * One entry of an `allowed` set, as the Operator wrote it.
- *
- * `intent` is optional in the config and therefore nullable here. A failed
- * membership check prints the whole set uncapped with each value's meaning, so
- * the entry that omitted its intent still has to render — which is exactly what
- * `{ value: skill }` in the fixture config exists to force.
- */
-export interface AllowedOption {
-  value: string | number | boolean;
-  intent: string | null;
-}
-
-/**
  * Which rule spoke.
  *
- * Identity is POSITIONAL, and that is a known cost rather than an oversight:
- * inserting a rule renumbers every later one, so a stored report's `rules[5]`
- * may name a different rule next week. The fix is a `name:` key on rules — a
- * config language change, cheap now and expensive once adopters have configs.
+ * Identified by `ruleId`, never by position. Rules are ordered and first match
+ * wins, so a rule's POSITION is semantic — but position is a terrible IDENTITY:
+ * inserting one rule renumbers every later one, so a stored report's `rules[5]`
+ * can name a different rule next week, and "why isn't my rule applying?" cannot
+ * be answered about a moving target.
  *
- * The config address is derivable from `index` and so is not stored. The
- * selector is, because it is the answer to "why did THIS rule match?" and
- * cannot be recomputed from the report alone.
+ * `intent` is here rather than on each violation, and it is the only copy. A
+ * field constraint that carries its own `intent` overrides it, and that override
+ * travels inside the violation's `expected` fragment — so the two never store
+ * the same sentence twice, and no resolution step happens behind the seam.
+ * A rule-level constraint has no fragment of its own, so this is its reason.
  */
 export interface RuleRef {
-  index: number;
+  ruleId: string;
   selector: SelectorRef;
+  intent: string;
 }
 
 /** How the rule selected, as written — the `fileName` sugar is not expanded away. */

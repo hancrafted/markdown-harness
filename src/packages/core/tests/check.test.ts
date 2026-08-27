@@ -28,9 +28,7 @@ function reportFor(path: string): FileReport {
 }
 
 function violationsOf(path: string): readonly Violation[] {
-  const file = reportFor(path);
-  if (file.fault !== 'violations') throw new Error(`${path} reported ${file.fault}`);
-  return file.violations;
+  return reportFor(path).violations.frontmatter;
 }
 
 describe('a config fault is report content, not a throw', () => {
@@ -75,17 +73,16 @@ describe('presence', () => {
 
     expect(file).toEqual({
       path: 'docs/plain/untyped.md',
-      rule: { index: 7, selector: { path: ['docs/plain/**/*.md'] } },
-      fault: 'violations',
-      violations: [
-        {
-          constraint: 'presence',
-          at: 'type',
-          operand: 'required',
-          found: { kind: 'absent' },
-          intent: 'Everything under plain/ still has to say what it is',
-        },
-      ],
+      rule: {
+        ruleId: 'plain',
+        selector: { path: ['docs/plain/**/*.md'] },
+        intent: 'Everything under plain/ still has to say what it is',
+      },
+      violations: {
+        frontmatter: [
+          { constraint: 'presence', field: 'type', found: { kind: 'absent' }, expected: { presence: 'required' } },
+        ],
+      },
     });
   });
 });
@@ -113,16 +110,21 @@ describe('first match wins, nothing merges, nothing is inherited', () => {
 
     expect(file).toEqual({
       path: 'docs/research/index.md',
-      rule: { index: 0, selector: { fileName: 'index.md' } },
-      fault: 'violations',
-      violations: [
-        {
-          constraint: 'frontmatter',
-          at: null,
-          found: { kind: 'mapping', keys: ['type', 'description'] },
-          intent: 'OKF §8 (Index files): an index enumerates a directory, and carries no frontmatter',
-        },
-      ],
+      rule: {
+        ruleId: 'index-files',
+        selector: { fileName: 'index.md' },
+        intent: 'OKF §8 (Index files): an index enumerates a directory, and carries no frontmatter',
+      },
+      violations: {
+        frontmatter: [
+          {
+            constraint: 'frontmatter',
+            field: null,
+            found: { kind: 'mapping', keys: ['type', 'description'] },
+            expected: { frontmatter: 'forbidden' },
+          },
+        ],
+      },
     });
   });
 });
@@ -136,40 +138,52 @@ describe('a failed membership check hands over the whole vocabulary', () => {
 
     expect(violation).toEqual({
       constraint: 'allowed',
-      at: 'status',
-      operand: [
-        { value: 'draft', intent: 'Written down, not yet trusted.' },
-        { value: 'stable', intent: 'Safe to rely on.' },
-        { value: 'deprecated', intent: 'Still here, no longer to be followed.' },
-      ],
+      field: 'status',
       found: { kind: 'scalar', value: 'retired' },
-      intent: 'Reference pages are looked up by slug and say how far they can be trusted',
+      expected: {
+        allowed: [
+          { value: 'draft', intent: 'Written down, not yet trusted.' },
+          { value: 'stable', intent: 'Safe to rely on.' },
+          { value: 'deprecated', intent: 'Still here, no longer to be followed.' },
+        ],
+      },
     });
   });
 });
 
-describe('the regex has nowhere to leak from', () => {
-  const REGEX = '^[a-z0-9]+(-[a-z0-9]+)*$';
-
-  it('reports a pattern failure with no field that could hold the pattern', () => {
+describe('a pattern never arrives unexplained', () => {
+  it('reports the pattern with the sibling intent the config language requires', () => {
     const violation = violationsOf('docs/reference/legacy.md').find((entry) => entry.constraint === 'pattern');
 
     expect(violation).toEqual({
       constraint: 'pattern',
-      at: 'slug',
+      field: 'slug',
       found: { kind: 'scalar', value: 'Legacy_Reference' },
-      intent: 'Slugs are lowercase words joined by single hyphens',
+      // The fragment is verbatim, so the regex travels — and so does the
+      // mandatory sibling `intent`. Requiring that sibling is now the whole of
+      // what keeps the Kubernetes failure (`"failed rule: {Rule}"`) away: an
+      // unexplained pattern is a CONFIG error rather than a report we have to
+      // paper over.
+      expected: {
+        pattern: '^[a-z0-9]+(-[a-z0-9]+)*$',
+        intent: 'Slugs are lowercase words joined by single hyphens',
+      },
     });
-    // Structural rather than incidental: this variant has no `operand`, which is
-    // why the config language makes a sibling `intent` mandatory beside
-    // `pattern`. Kubernetes accepts `"failed rule: {Rule}"`; VS Code bolted
-    // `patternErrorMessage` on to escape it.
-    expect(Object.keys(violation ?? {})).not.toContain('operand');
   });
 
-  it('puts the pattern nowhere in the whole report', () => {
-    expect(JSON.stringify(checked())).not.toContain(REGEX);
-    expect(FIXTURE_CONFIG).toContain(REGEX);
+  it('never reports a pattern without one, anywhere in the corpus', () => {
+    // The invariant that replaced "no field may hold a regex". That one was
+    // structural and stronger; this one is checkable and is what the config
+    // language actually promises. Asserted over the whole corpus rather than one
+    // file, because a single example would not be an invariant.
+    const patterns = checked()
+      .files.flatMap((file) => file.violations.frontmatter)
+      .filter((violation) => 'pattern' in violation.expected);
+
+    expect(patterns.length).toBeGreaterThan(0);
+    for (const violation of patterns) {
+      expect('intent' in violation.expected && violation.expected.intent, JSON.stringify(violation)).toBeTruthy();
+    }
   });
 });
 
@@ -182,10 +196,12 @@ describe('unknownKeys closes the key set', () => {
 
     expect(violation).toEqual({
       constraint: 'unknownKeys',
-      at: 'reviewedBy',
-      known: ['type', 'description', 'status', 'slug', 'draft'],
+      field: 'reviewedBy',
       found: { kind: 'scalar', value: 'nobody' },
-      intent: 'Reference pages are looked up by slug and say how far they can be trusted',
+      expected: {
+        unknownKeys: 'forbidden',
+        allowedKeys: ['type', 'description', 'status', 'slug', 'draft'],
+      },
     });
   });
 
@@ -196,7 +212,7 @@ describe('unknownKeys closes the key set', () => {
     // frontmatter order would therefore depend on something the specification
     // says not to depend on. Sorted by address, this report is the same report
     // whatever order the keys were written in.
-    expect(violationsOf('docs/reference/legacy.md').map((entry) => [entry.constraint, entry.at])).toEqual([
+    expect(violationsOf('docs/reference/legacy.md').map((entry) => [entry.constraint, entry.field])).toEqual([
       ['unknownKeys', 'reviewedBy'],
       ['pattern', 'slug'],
       ['allowed', 'status'],
@@ -212,10 +228,9 @@ describe('exactlyOneOf means exactly one', () => {
     expect(violationsOf('docs/skills/legacy/SKILL.md')).toEqual([
       {
         constraint: 'exactlyOneOf',
-        at: null,
-        operand: ['name', 'title'],
-        satisfied: ['name', 'title'],
-        intent: 'A skill is addressed by exactly one of its two names',
+        field: null,
+        found: { satisfied: ['name', 'title'] },
+        expected: { exactlyOneOf: ['name', 'title'] },
       },
     ]);
   });
@@ -254,9 +269,7 @@ describe('the frozen report over the whole corpus', () => {
   /** Every fault the corpus produces, flattened: one row per violation. */
   function rows(): readonly (readonly [string, string, string | null])[] {
     return checked().files.flatMap((file) =>
-      file.fault === 'violations'
-        ? file.violations.map((entry) => [file.path, entry.constraint, entry.at] as const)
-        : [[file.path, file.fault, null] as const],
+      file.violations.frontmatter.map((entry) => [file.path, entry.constraint, entry.field] as const),
     );
   }
 
@@ -346,12 +359,10 @@ describe('the corpus is a specification, so it states what it does not yet cover
 
   function produced(): ReadonlySet<string> {
     const forms = checked().files.flatMap((file) =>
-      file.fault !== 'violations'
-        ? [file.fault]
-        : file.violations.flatMap((entry) => [
-            entry.constraint === 'presence' ? `presence:${entry.operand}` : entry.constraint,
-            ...(entry.at?.includes('[') ? ['per-entry'] : []),
-          ]),
+      file.violations.frontmatter.flatMap((entry) => [
+        entry.constraint === 'presence' ? `presence:${entry.expected.presence}` : entry.constraint,
+        ...(entry.field?.includes('[') ? ['per-entry'] : []),
+      ]),
     );
     return new Set(forms);
   }

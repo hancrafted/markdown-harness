@@ -25,15 +25,17 @@ function known(rule: FrontmatterRule): readonly string[] {
 
 export function unknownKeys(rule: FrontmatterRule, frontmatter: Frontmatter): readonly Violation[] {
   if (rule.unknownKeys !== 'forbidden' || frontmatter === null) return [];
-  const named = known(rule);
+  const allowedKeys = known(rule);
 
   return Object.keys(frontmatter)
-    .filter((key) => !named.includes(key))
+    .filter((key) => !allowedKeys.includes(key))
     .map((key) => ({
       constraint: 'unknownKeys' as const,
-      at: key,
-      known: named,
+      field: key,
       found: observe(frontmatter[key]),
-      intent: rule.intent,
+      // The one `expected` that is not purely verbatim: `unknownKeys: forbidden`
+      // alone would not say what the rule DOES name, and a Contributor fixing
+      // this cannot be required to open the config.
+      expected: { unknownKeys: 'forbidden' as const, allowedKeys },
     }));
 }

@@ -78,12 +78,33 @@ export type FrontmatterRule = RuleCommon & RuleSelector & RulePayload;
 /** Keys every rule carries, whatever it selects and whatever it asserts. */
 export interface RuleCommon {
   /**
+   * A stable name for this rule. MANDATORY, and unique across the rule list.
+   *
+   * Rules are ORDERED and first match wins, so a rule's position is semantic —
+   * but position is a terrible IDENTITY. Inserting one rule renumbers every
+   * later one, which means a stored report's `rules[5]` can name a different
+   * rule next week, and "why isn't my rule applying?" cannot be answered about
+   * a moving target. So the report never refers to a rule by index; it refers
+   * to it by this.
+   *
+   * Required rather than optional, and that is the cheap-now choice: an
+   * optional id gives the report two shapes for one field and every consumer
+   * has to handle both forever. There are no adopters yet, so requiring it
+   * costs one line per rule today and nothing else ever.
+   */
+  ruleId: string;
+
+  /**
    * Why this rule exists, in the config author's own words. MANDATORY.
    *
-   * Appended to every violation this rule reports — never substituted for the
-   * harness's own sentence, so an author cannot write prose that hides which
-   * constraint fired. A constraint-level `intent` wins over this one for that
-   * constraint; this is the fallback.
+   * The fallback reason for every violation this rule reports. A field
+   * constraint may carry its own `intent`, which wins for that field — and
+   * because a violation now reports the field's constraints VERBATIM, that
+   * override travels with them and needs no resolution step.
+   *
+   * This one is what a rule-level constraint reports, since `exactlyOneOf`,
+   * `unknownKeys` and `frontmatter: forbidden` sit on the rule rather than under
+   * a field and so have no fragment of their own to carry a reason.
    */
   intent: string;
 

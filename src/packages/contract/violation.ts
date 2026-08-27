@@ -2,34 +2,41 @@
  * One thing wrong with one file — discriminated on `constraint`, THE KEY THE
  * OPERATOR LITERALLY TYPED.
  *
- * This union is where the load-bearing decision of the whole design shows up:
- * **the data carries no English.** `constraint` plus evidence is a complete
- * basis for every sentence the tool can say, so a `message` field would store
- * one fact twice and two representations of one fact drift — the silent-defect
- * class tenet 7 says to spend money avoiding.
+ * `expected` is the config fragment that failed, VERBATIM. That single decision
+ * is what removed the message layer from this contract: the fragment already
+ * contains the constraint, its operand, and its `intent` where the Operator
+ * wrote one, so there is nothing left for a stored sentence to add. It costs
+ * nothing to produce and it always shows the whole picture rather than the one
+ * clause that happened to fire — which is what an agent about to rewrite the
+ * field actually needs.
  *
- * Four things stop being conventions and become unrepresentable:
- *
- *   - No field anywhere holds a regex. The `pattern` variant is the only one
- *     with NO `operand`, deliberately: a mandatory sibling `intent` carries the
- *     meaning instead. This is the failure Kubernetes accepts
- *     (`"failed rule: {Rule}"`) and VS Code bolted `patternErrorMessage` on to
- *     avoid.
- *   - There is no "ungoverned" variant to report into.
- *   - The rule reference hoists to the file, not to the violation, so a merged
- *     report has nowhere to live.
- *   - Author prose cannot substitute for the harness's sentence, because the
- *     data holds no sentence to substitute for.
+ * It is also why nothing here holds prose of ours. `constraint` says which
+ * clause failed, `found` says what was there, `expected` says what the config
+ * asked for in the config's own words. The renderer serialises `expected` back
+ * to YAML and adds no sentences, so a wording change is not a thing that can
+ * exist in this layer at all.
  *
  * Two absences worth naming. No `severity`: severity tiers are CONTESTED rather
  * than merely open, and a field nothing varies pre-empts the decision. No
  * `line`/`column`: line attribution is a property of one YAML library, and
  * importing it into the specification is what tenet 4 exists to prevent — for
  * `sources[1].resource` the instance address is the better locator anyway.
+ *
+ * One guarantee was deliberately traded away here, and it belongs on the record
+ * rather than being discovered later. The previous shape made a regex in a
+ * report UNREPRESENTABLE — the failure Kubernetes accepts
+ * (`"failed rule: {Rule}"`) and VS Code bolted `patternErrorMessage` on to
+ * avoid. A verbatim fragment necessarily carries `pattern`. The reasoning for
+ * accepting that: there are two consumers on two channels. `--json` is read by
+ * an agent, which is better served by the regex than by prose; the plain text is
+ * read by the Operator, who wrote the regex. That prior art is about END USERS,
+ * and per `CONTEXT.md` the Contributor never opens the config and is reached
+ * through their agent — through the JSON. The guarantee is now a property of
+ * what the renderer chooses to print, not of what the data is able to hold.
  */
 
-import type { FieldAddress, Format } from './constraints.ts';
-import type { AllowedOption, Observed } from './values.ts';
+import type { FieldAddress, FieldConstraints } from './constraints.ts';
+import type { Observed } from './values.ts';
 
 /** Carried by every variant, whatever fired. */
 interface ViolationCommon {
@@ -38,73 +45,54 @@ interface ViolationCommon {
    * `sources[1].resource`, with the list index RESOLVED rather than left as
    * `[]`. `null` for a rule-level constraint that names no single field.
    */
-  at: FieldAddress | null;
-  /**
-   * Why the constraint exists, in the Operator's own words, verbatim.
-   *
-   * The EFFECTIVE intent: a constraint-level `intent` wins over the rule's, and
-   * resolving that is a semantic of the config language rather than a display
-   * choice, so it happens behind the seam. Never null — a rule's `intent` is
-   * mandatory, so there is always a fallback.
-   *
-   * Appended to the harness's own sentence, never substituted for it.
-   */
-  intent: string;
+  field: FieldAddress | null;
 }
 
 /**
- * The rule declares its paths frontmatter-free, and this file has frontmatter.
+ * Every constraint key that sits UNDER a field address, and therefore reports
+ * the field's constraints verbatim.
  *
- * No `operand`: `forbidden` is the only value the key can hold, and a field that
- * never varies is a constant stored in every record.
+ * The list grows as checks land. `presence` is the gate; the rest sit behind it.
  */
-export interface FrontmatterViolation extends ViolationCommon {
-  constraint: 'frontmatter';
-  at: null;
-  found: Observed;
-}
+export type FieldConstraintKey = 'presence' | 'allowed' | 'format' | 'pattern';
 
 /**
- * The value is outside the closed set the rule permits.
+ * A constraint on one field failed.
  *
- * `operand` is the WHOLE set, uncapped and in config order, each entry with its
- * meaning. That is what lets the failure be fixed without opening the config,
- * and it is why an `allowed` entry is a record rather than a bare string: a
- * config that mixed the two forms would make a partial map the display source.
+ * Generic over the key rather than written out four times, because the shape is
+ * genuinely identical: what differs is only WHICH clause of `expected` fired,
+ * and that is exactly what `constraint` says.
  */
-export interface AllowedViolation extends ViolationCommon {
-  constraint: 'allowed';
-  operand: readonly AllowedOption[];
+export interface FieldViolation<Key extends FieldConstraintKey> extends ViolationCommon {
+  constraint: Key;
+  field: FieldAddress;
   found: Observed;
-}
-
-/**
- * The value does not match the rule's regular expression.
- *
- * THE ONE VARIANT WITH NO `operand`, and the reason no field anywhere in this
- * contract holds a regex. The config language makes a sibling `intent`
- * mandatory beside `pattern` precisely so that this variant has something to
- * say without it.
- */
-export interface PatternViolation extends ViolationCommon {
-  constraint: 'pattern';
-  found: Observed;
+  /** The field's constraints, verbatim from the config, including its own `intent` if it has one. */
+  expected: FieldConstraints;
 }
 
 /**
  * A frontmatter key this rule does not name, under `unknownKeys: forbidden`.
  *
- * No `operand`: `forbidden` is the only value that can produce a violation.
- * `known` is carried instead, because it is not recoverable from the report
- * alone and every violation stanza has to be self-sufficient — the Contributor
- * fixing this one should not need the config to learn what the rule does name.
+ * The one variant whose `expected` is not purely verbatim. `unknownKeys:
+ * forbidden` alone would not say what the rule DOES name, and a Contributor
+ * fixing this cannot be required to open the config, so `allowedKeys` is derived
+ * and travels with it: the top-level segments of the rule's addresses, deduped,
+ * in config order.
  */
 export interface UnknownKeysViolation extends ViolationCommon {
   constraint: 'unknownKeys';
-  at: FieldAddress;
-  /** The TOP-LEVEL segments of the rule's addresses, deduped, in config order. */
-  known: readonly string[];
+  field: FieldAddress;
   found: Observed;
+  expected: { unknownKeys: 'forbidden'; allowedKeys: readonly string[] };
+}
+
+/** The rule declares its paths frontmatter-free, and this file has frontmatter. */
+export interface FrontmatterViolation extends ViolationCommon {
+  constraint: 'frontmatter';
+  field: null;
+  found: Observed;
+  expected: { frontmatter: 'forbidden' };
 }
 
 /** The three constraints that name several addresses and assert something about the set. */
@@ -113,56 +101,30 @@ export type CrossFieldConstraint = 'exactlyOneOf' | 'anyOf' | 'allOf';
 /**
  * A set of addresses the rule named, and the wrong number of them present.
  *
- * `at` is null because the constraint names no single field. Evidence is the
- * SATISFIED SET rather than a count: `satisfied: []` and
- * `satisfied: ['name', 'title']` fail `exactlyOneOf` for opposite reasons, and a
- * count could not tell a Contributor which arm to remove.
+ * `field` is null because the constraint names no single field. `found` is the
+ * SATISFIED SET rather than a count: `[]` and `['name', 'title']` fail
+ * `exactlyOneOf` for opposite reasons, and a number could not tell a
+ * Contributor which arm to remove.
  */
 export interface CrossFieldViolationOf<Key extends CrossFieldConstraint> extends ViolationCommon {
   constraint: Key;
-  at: null;
-  /** The addresses the rule named, in config order. */
-  operand: readonly FieldAddress[];
-  /** Which of them were present and non-empty. */
-  satisfied: readonly FieldAddress[];
+  field: null;
+  found: { satisfied: readonly FieldAddress[] };
+  expected: Record<Key, readonly FieldAddress[]>;
 }
 
 /**
  * Written as three members rather than one interface with a union-typed
- * `constraint`, so that `constraint` is a TRUE discriminant. That is what lets
- * the renderer dispatch through a table typed against the union instead of a
- * switch — and the switch is illegal here, because ESLint caps complexity at 7
- * and there are nine constraints.
+ * `constraint`, so that `constraint` is a TRUE discriminant.
  */
 export type CrossFieldViolation =
   CrossFieldViolationOf<'exactlyOneOf'> | CrossFieldViolationOf<'anyOf'> | CrossFieldViolationOf<'allOf'>;
 
-/**
- * The value is not in the shape the named format describes.
- *
- * `operand` is the format's NAME, which is the whole reason a name beats a
- * regex: `format: actor` is self-evident where the alternation it stands for is
- * unreadable. A named format is therefore the one place a violation can
- * describe a shape without a pattern appearing anywhere in the data.
- */
-export interface FormatViolation extends ViolationCommon {
-  constraint: 'format';
-  operand: Format;
-  found: Observed;
-}
-
-/** The field must appear (present and non-empty), or must not appear. */
-export interface PresenceViolation extends ViolationCommon {
-  constraint: 'presence';
-  operand: 'required' | 'forbidden';
-  found: Observed;
-}
-
 export type Violation =
-  | AllowedViolation
-  | CrossFieldViolation
-  | FormatViolation
+  | FieldViolation<'presence'>
+  | FieldViolation<'allowed'>
+  | FieldViolation<'format'>
+  | FieldViolation<'pattern'>
+  | UnknownKeysViolation
   | FrontmatterViolation
-  | PatternViolation
-  | PresenceViolation
-  | UnknownKeysViolation;
+  | CrossFieldViolation;

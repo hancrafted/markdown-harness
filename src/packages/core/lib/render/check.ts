@@ -1,29 +1,49 @@
 /**
- * Rendering a check report. The soft layer — see `./violation.ts` for the
- * message corpus and the rendering rules that are specification.
+ * Rendering a check report. See `./violation.ts` for the rendering rules that
+ * are specification.
  */
 
 import type { CheckReport, FileReport } from '../../../contract/check-report.ts';
 import type { RuleRef } from '../../../contract/values.ts';
+import type { Violation } from '../../../contract/violation.ts';
 import { stanza } from './violation.ts';
 
-/**
- * `frontmatter.rules[5]` is DERIVED here, from the index, rather than stored on
- * every rule reference. Arithmetic on a report is the renderer's job, for the
- * same reason no `message` field exists in the data.
- */
 function selectorOf(rule: RuleRef): string {
-  return 'fileName' in rule.selector && rule.selector.fileName !== undefined
-    ? `fileName: ${rule.selector.fileName}`
-    : `path: ${(rule.selector.path ?? []).join(', ')}`;
+  return rule.selector.fileName === undefined
+    ? `path: ${(rule.selector.path ?? []).join(', ')}`
+    : `fileName: ${rule.selector.fileName}`;
 }
 
+/**
+ * The rule, named by `ruleId` and never by position, with its `intent` printed
+ * once here rather than repeated under every violation in the file.
+ */
 function header(file: FileReport): readonly string[] {
-  return [file.path, `  governed by frontmatter.rules[${file.rule.index}]   ${selectorOf(file.rule)}`, ''];
+  return [
+    file.path,
+    `  governed by ${file.rule.ruleId}   ${selectorOf(file.rule)}`,
+    `  because: ${file.rule.intent}`,
+    '',
+  ];
 }
 
+/**
+ * Violations are keyed by Module, and the Module is named on the page only when
+ * more than one reported.
+ *
+ * Conditional on the DATA rather than on a hardcoded module count, so it is
+ * correct once a second Module exists and quiet while there is only one. A
+ * `[frontmatter]` line above every stanza in a single-Module world is noise.
+ */
 function block(file: FileReport): readonly string[] {
-  return [...header(file), ...file.violations.flatMap((violation) => [...stanza(violation), ''])];
+  const modules = Object.entries(file.violations) as [string, readonly Violation[]][];
+  return [
+    ...header(file),
+    ...modules.flatMap(([module, violations]) => [
+      ...(modules.length > 1 ? [`  [${module}]`, ''] : []),
+      ...violations.flatMap((violation) => [...stanza(violation), '']),
+    ]),
+  ];
 }
 
 /**
@@ -34,7 +54,7 @@ function block(file: FileReport): readonly string[] {
  * `governed` is in it.
  */
 function summary(report: CheckReport): string {
-  const violations = report.files.reduce((total, file) => total + file.violations.length, 0);
+  const violations = report.files.reduce((total, file) => total + file.violations.frontmatter.length, 0);
   const conforming = report.totals.governed - report.files.length;
   if (violations === 0) return `No violations. ${report.totals.governed} files governed.`;
   return (

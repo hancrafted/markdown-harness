@@ -6,6 +6,12 @@
  * `module-may-not-depend-on-core` rule is what holds that, and it is what makes
  * `CONTEXT.md`'s claim that the Core is "the parts that know nothing about
  * markdown frontmatter" true of the code rather than only of the prose.
+ *
+ * Note what is NOT here any more: intent resolution. A violation reports the
+ * field's constraints VERBATIM, and a field's own `intent` is one of those
+ * constraints, so an override travels with the fragment. The rule's `intent` is
+ * the fallback and lives once, on the rule reference. Nothing resolves, nothing
+ * is copied, and the two can no longer disagree.
  */
 
 import type { FrontmatterRule } from '../contract/config.ts';
@@ -23,13 +29,15 @@ export function evaluate(rule: FrontmatterRule, frontmatter: Frontmatter): reado
   // whole of the rule and there is nothing else to evaluate.
   if (rule.frontmatter === 'forbidden') {
     if (frontmatter === null) return [];
-    return [{ constraint: 'frontmatter', at: null, found: observe(frontmatter), intent: rule.intent }];
+    return [
+      { constraint: 'frontmatter', field: null, found: observe(frontmatter), expected: { frontmatter: 'forbidden' } },
+    ];
   }
 
   const fields = Object.entries(rule.fields ?? {}).flatMap(([address, constraints]) =>
-    instances(frontmatter, address).flatMap((instance) => atAddress(constraints, instance, rule.intent)),
+    instances(frontmatter, address).flatMap((instance) => atAddress(constraints, instance)),
   );
-  return ordered([...fields, ...crossField(rule, frontmatter, rule.intent), ...unknownKeys(rule, frontmatter)]);
+  return ordered([...fields, ...crossField(rule, frontmatter), ...unknownKeys(rule, frontmatter)]);
 }
 
 /**
@@ -37,18 +45,29 @@ export function evaluate(rule: FrontmatterRule, frontmatter: Frontmatter): reado
  *
  * The presence gate comes first and, when it fails, is the ONLY thing reported
  * at this address: one missing `description` otherwise reports `presence`,
- * `maxLength` and `format` at once, and the Contributor reads three sentences
- * about one hole.
+ * `maxLength` and `format` at once, and the Contributor reads three faults about
+ * one hole. `expected` carries all three regardless, so nothing is hidden — it
+ * is the COUNT of violations that stays honest.
  */
-function atAddress(constraints: FieldConstraints, instance: Instance, ruleIntent: string): readonly Violation[] {
-  // A constraint-level `intent` wins over the rule's, for this constraint only.
-  const intent = constraints.intent ?? ruleIntent;
-  const gate = presence(constraints, instance, intent);
+function atAddress(expected: FieldConstraints, instance: Instance): readonly Violation[] {
+  const gate = presence(expected, instance);
   if (gate !== null) return [gate];
 
-  return CHECK_ORDER.map((key) => CHECKS[key](constraints, instance, intent)).filter(
+  return CHECK_ORDER.map((key) => CHECKS[key](expected, instance)).filter(
     (violation): violation is Violation => violation !== null,
   );
+}
+
+function presence(expected: FieldConstraints, instance: Instance): Violation | null {
+  const found = observe(instance.value);
+
+  if (expected.presence === 'required' && isEmpty(instance.value)) {
+    return { constraint: 'presence', field: instance.at, found, expected };
+  }
+  if (expected.presence === 'forbidden' && found.kind !== 'absent') {
+    return { constraint: 'presence', field: instance.at, found, expected };
+  }
+  return null;
 }
 
 /**
@@ -72,18 +91,6 @@ function ordered(violations: readonly Violation[]): readonly Violation[] {
 function sortKey(violation: Violation): string {
   // A rule-level constraint names no field and concerns the whole file, so it
   // sorts before every field. `constraint` breaks a tie at one address.
-  const at = violation.at === null ? '' : violation.at.replace(/\d+/g, (run) => run.padStart(8, '0'));
-  return `${at}\u0000${violation.constraint}`;
-}
-
-function presence(constraints: FieldConstraints, instance: Instance, intent: string): Violation | null {
-  const found = observe(instance.value);
-
-  if (constraints.presence === 'required' && isEmpty(instance.value)) {
-    return { constraint: 'presence', at: instance.at, operand: 'required', found, intent };
-  }
-  if (constraints.presence === 'forbidden' && found.kind !== 'absent') {
-    return { constraint: 'presence', at: instance.at, operand: 'forbidden', found, intent };
-  }
-  return null;
+  const field = violation.field === null ? '' : violation.field.replace(/\d+/g, (run) => run.padStart(8, '0'));
+  return `${field} ${violation.constraint}`;
 }

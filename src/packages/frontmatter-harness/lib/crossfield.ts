@@ -40,23 +40,26 @@ const HOLDS: Record<CrossFieldConstraint, (satisfied: number, of: number) => boo
 function crossCheck<Key extends CrossFieldConstraint>(
   constraint: Key,
   operand: readonly FieldAddress[] | undefined,
-  context: { frontmatter: Frontmatter; intent: string },
+  frontmatter: Frontmatter,
 ): readonly CrossFieldViolationOf<Key>[] {
   if (operand === undefined) return [];
-  const satisfied = operand.filter((address) => satisfies(context.frontmatter, address));
+  const satisfied = operand.filter((address) => satisfies(frontmatter, address));
   if (HOLDS[constraint](satisfied.length, operand.length)) return [];
-  return [{ constraint, at: null, operand, satisfied, intent: context.intent }];
+  return [
+    {
+      constraint,
+      field: null,
+      found: { satisfied },
+      // Verbatim: the rule-level key and the addresses it named, as written.
+      expected: { [constraint]: operand } as Record<Key, readonly FieldAddress[]>,
+    },
+  ];
 }
 
-export function crossField(
-  payload: ConstrainingPayload,
-  frontmatter: Frontmatter,
-  intent: string,
-): readonly Violation[] {
-  const context = { frontmatter, intent };
+export function crossField(payload: ConstrainingPayload, frontmatter: Frontmatter): readonly Violation[] {
   return [
-    ...crossCheck('exactlyOneOf', payload.exactlyOneOf, context),
-    ...crossCheck('anyOf', payload.anyOf, context),
-    ...crossCheck('allOf', payload.allOf, context),
+    ...crossCheck('exactlyOneOf', payload.exactlyOneOf, frontmatter),
+    ...crossCheck('anyOf', payload.anyOf, frontmatter),
+    ...crossCheck('allOf', payload.allOf, frontmatter),
   ];
 }
