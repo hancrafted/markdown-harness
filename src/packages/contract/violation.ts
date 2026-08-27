@@ -28,7 +28,7 @@
  * `sources[1].resource` the instance address is the better locator anyway.
  */
 
-import type { FieldAddress } from './constraints.ts';
+import type { FieldAddress, Format } from './constraints.ts';
 import type { AllowedOption, Observed } from './values.ts';
 
 /** Carried by every variant, whatever fired. */
@@ -127,6 +127,20 @@ export interface CrossFieldViolation extends ViolationCommon {
   satisfied: readonly FieldAddress[];
 }
 
+/**
+ * The value is not in the shape the named format describes.
+ *
+ * `operand` is the format's NAME, which is the whole reason a name beats a
+ * regex: `format: actor` is self-evident where the alternation it stands for is
+ * unreadable. A named format is therefore the one place a violation can
+ * describe a shape without a pattern appearing anywhere in the data.
+ */
+export interface FormatViolation extends ViolationCommon {
+  constraint: 'format';
+  operand: Format;
+  found: Observed;
+}
+
 /** The field must appear (present and non-empty), or must not appear. */
 export interface PresenceViolation extends ViolationCommon {
   constraint: 'presence';
@@ -137,6 +151,7 @@ export interface PresenceViolation extends ViolationCommon {
 export type Violation =
   | AllowedViolation
   | CrossFieldViolation
+  | FormatViolation
   | FrontmatterViolation
   | PatternViolation
   | PresenceViolation

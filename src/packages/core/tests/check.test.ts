@@ -224,3 +224,28 @@ describe('exactlyOneOf means exactly one', () => {
     expect(checked().files.map((file) => file.path)).not.toContain('docs/skills/writing/SKILL.md');
   });
 });
+
+describe('addressing reaches one level, and the three named formats', () => {
+  it('finds nothing wrong with the provenance exemplar', () => {
+    // The one file that reaches every named format and both nesting depths, and
+    // the one matched by the narrow rule sitting ABOVE the broad research rule.
+    // Conformance alone would also be produced by an addresser that reached
+    // nothing, so the Module tests below break each address in turn.
+    expect(checked().files.map((file) => file.path)).not.toContain('docs/research/provenance.md');
+  });
+});
+
+describe('an unmatched constraint is not a weaker constraint — it does not exist', () => {
+  it('passes a malformed actor that the winning rule says nothing about', () => {
+    // `docs/research/bad-actor.md` carries `generated.by: human/hancrafted`, a
+    // malformed Actor. The narrow provenance rule WOULD report it — but that
+    // rule did not win here, and the broad research rule says nothing about
+    // `generated`. Nothing merges.
+    //
+    // Under the old Floor this file FAILED, because actor form was checked on
+    // every governed file regardless of its winning rule. That guarantee is
+    // exactly what the Floor's removal traded away, and this file is the
+    // receipt.
+    expect(checked().files.map((file) => file.path)).not.toContain('docs/research/bad-actor.md');
+  });
+});

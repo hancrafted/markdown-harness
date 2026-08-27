@@ -22,6 +22,7 @@ import type { AllowedValue, FieldConstraints } from '../../contract/constraints.
 import type { AllowedOption } from '../../contract/values.ts';
 import type { Violation } from '../../contract/violation.ts';
 import type { Instance } from './address.ts';
+import { conformsTo } from './formats.ts';
 import { observe } from './presence.ts';
 
 /**
@@ -39,7 +40,7 @@ type Check = (constraints: FieldConstraints, instance: Instance, intent: string)
  * gate. `presence` itself is the gate, and `intent` is prose rather than a
  * check.
  */
-export type ValueConstraintKey = 'allowed' | 'pattern';
+export type ValueConstraintKey = 'allowed' | 'format' | 'pattern';
 
 /** `allowed` records are always records, never bare strings — so a partial map can never be the display source. */
 function options(allowed: readonly AllowedValue[]): readonly AllowedOption[] {
@@ -58,6 +59,18 @@ export const CHECKS: Record<ValueConstraintKey, Check> = {
     if (found.kind !== 'scalar') return null;
     if (constraints.allowed.some((entry) => entry.value === found.value)) return null;
     return { constraint: 'allowed', at: instance.at, operand: options(constraints.allowed), found, intent };
+  },
+
+  /**
+   * One of the named shapes. Checks FORM and only form — `datetime` never asks
+   * whether a date has passed, because there is no clock behind this seam.
+   */
+  format: (constraints, instance, intent) => {
+    if (constraints.format === undefined) return null;
+    const found = observe(instance.value);
+    if (found.kind !== 'scalar') return null;
+    if (conformsTo(constraints.format, String(found.value))) return null;
+    return { constraint: 'format', at: instance.at, operand: constraints.format, found, intent };
   },
 
   /**
@@ -82,4 +95,4 @@ export const CHECKS: Record<ValueConstraintKey, Check> = {
  * Ordering ACROSS addresses is the report's job, not this table's — a report
  * that depended on YAML mapping order would contradict design-ADR 0001.
  */
-export const CHECK_ORDER: readonly ValueConstraintKey[] = ['allowed', 'pattern'];
+export const CHECK_ORDER: readonly ValueConstraintKey[] = ['allowed', 'format', 'pattern'];
