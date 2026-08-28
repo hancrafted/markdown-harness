@@ -48,7 +48,7 @@ describe('a steering answer is about a path, never about a file', () => {
     // exists to run.
     expect(asked('docs/research/new-thing.md')).toEqual({
       report: 'steering',
-      format: 1,
+      format: 'v1',
       path: 'docs/research/new-thing.md',
       governedBy: {
         rule: {
@@ -95,7 +95,7 @@ describe('a steering answer is about a path, never about a file', () => {
     // Contributor's agent, which can act on none of it.
     expect(asked('docs/reference/index.md')).toEqual({
       report: 'steering',
-      format: 1,
+      format: 'v1',
       path: 'docs/reference/index.md',
       governedBy: {
         rule: {
@@ -123,7 +123,7 @@ describe('a steering answer is about a path, never about a file', () => {
     // config question, and `coverage` counts it against the rule that declined.
     expect(asked('docs/research/vendor/new.md')).toEqual({
       report: 'steering',
-      format: 1,
+      format: 'v1',
       path: 'docs/research/vendor/new.md',
       governedBy: null,
     });

@@ -300,7 +300,7 @@ describe('the frozen report over the whole corpus', () => {
   });
 
   it('declares the format version and echoes the root as given', () => {
-    expect(checked().format).toBe(1);
+    expect(checked().format).toBe('v1');
     expect(checked().root).toBe('fixtures');
   });
 });

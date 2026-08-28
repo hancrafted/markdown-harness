@@ -1,7 +1,7 @@
 /**
  * The report format — the other half of the portable artifact (tenet 4).
  *
- * Frozen at `format: 1`. The DATA CARRIES NO PROSE OF OURS. A constraint key,
+ * Frozen at `format: 'v1'`. The DATA CARRIES NO PROSE OF OURS. A constraint key,
  * the evidence, and the config fragment that failed are a complete basis for
  * every sentence the tool can say, so a stored `message` would hold one fact
  * twice and two representations of one fact drift.
@@ -17,13 +17,14 @@
  */
 
 import type { RepoPath } from './corpus.ts';
+import type { ReportFormat } from './format.ts';
 import type { RuleRef } from './values.ts';
 import type { Violation } from './violation.ts';
 
 export interface CheckReport {
   report: 'check';
-  /** The report format version. A reader that does not know this number must not guess. */
-  format: 1;
+  /** The report format version. A reader that does not know this name must not guess. */
+  format: ReportFormat;
   /** Echoed back as the caller passed it — never resolved to an absolute path, so a frozen report travels. */
   root: string;
   /**
@@ -90,7 +91,7 @@ export interface CheckTotals {
    * require knowing that a rule list exists. It is computed FROM `coverage`
    * rather than counted a second time, so the two cannot disagree — the drift
    * argument that removed `conforming` does not reach it. Dropping it is a
-   * `format: 2` change and nothing else moves; `format: 1` is unshipped, so it
+   * `'v2'` change and nothing else moves; `'v1'` is unshipped, so it
    * is still free.
    */
   governed: number;

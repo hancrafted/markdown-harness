@@ -33,7 +33,7 @@ export function query(configText: string, path: string): SteeringAnswer | Config
 
   return {
     report: 'steering',
-    format: 1,
+    format: 'v1',
     path: repoPath,
     // `null` means invisible, not unconstrained. WHY it is null — a rule above
     // won, or a rule's own `excludeFiles` fired — is the Operator's question,

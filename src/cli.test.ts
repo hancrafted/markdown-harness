@@ -78,7 +78,7 @@ describe('mh --check writes the artifact', () => {
       root: report.root,
       files: report.files.length,
       governed: report.totals.governed,
-    }).toEqual({ report: 'check', format: 1, root: 'fixtures', files: 4, governed: 13 });
+    }).toEqual({ report: 'check', format: 'v1', root: 'fixtures', files: 4, governed: 13 });
   });
 });
 

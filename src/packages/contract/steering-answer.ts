@@ -49,12 +49,13 @@
 import type { UnknownKeys } from './config.ts';
 import type { FieldAddress, FieldConstraints } from './constraints.ts';
 import type { RepoPath } from './corpus.ts';
+import type { ReportFormat } from './format.ts';
 import type { RuleRef } from './values.ts';
 
 export interface SteeringAnswer {
   report: 'steering';
-  /** The report format version. A reader that does not know this number must not guess. */
-  format: 1;
+  /** The report format version. A reader that does not know this name must not guess. */
+  format: ReportFormat;
   /** The path asked about, normalised — `/`-separated, no leading `./` or `/`. */
   path: RepoPath;
   /**

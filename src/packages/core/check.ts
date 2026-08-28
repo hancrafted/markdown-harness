@@ -30,7 +30,7 @@ export function check(configText: string, corpus: Corpus): CheckReport | ConfigR
   // number and the per-rule numbers are one measurement.
   const governed = coverage.reduce((total, entry) => total + entry.won, 0);
 
-  return { report: 'check', format: 1, root: corpus.root, files, coverage, totals: { governed } };
+  return { report: 'check', format: 'v1', root: corpus.root, files, coverage, totals: { governed } };
 }
 
 /** The faults found, and every rule's fate on every path — from ONE pass over the corpus. */
