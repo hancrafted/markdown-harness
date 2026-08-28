@@ -144,6 +144,49 @@ describe('an address reaches one level into a nested shape', () => {
 
     expect(evaluate(rule, broken).map((entry) => entry.field)).toEqual(['verified[1].at', 'verified[2].at']);
   });
+
+  // A document with NO frontmatter block at all is `null`, not `{}` — and 13 of
+  // the 14 files this repo's own config finds at fault are exactly that, which
+  // is why these two cases were reachable long before anything read them back.
+  const named: FrontmatterRule = {
+    ruleId: 'provenance-exemplar',
+    path: ['docs/research/provenance.md'],
+    intent: 'The one document that records its own provenance in full',
+    fields: { type: { presence: 'required' }, ...rule.fields },
+  };
+
+  it('demands the top-level field of a document with no frontmatter, and nothing nested', () => {
+    // A nested address over an absent container reaches NOTHING to report. The
+    // alternative is a violation at the literal `sources[].resource`, brackets
+    // unresolved — the one thing this file's own header says a report may never
+    // say, because it does not tell the Contributor which entry to fix. It also
+    // demands a key of a list entry that does not exist, which no repair can do.
+    expect(evaluate(named, null).map((entry) => [entry.violation, entry.field])).toEqual([
+      [VIOLATION.MISSING_REQUIRED_FIELD, 'type'],
+    ]);
+  });
+
+  it('answers an absent block exactly as it answers a block whose keys are absent', () => {
+    // The claim in one line: `generated` is missing either way, so the two
+    // states are the same state and one report covers both.
+    expect(evaluate(named, null)).toEqual(evaluate(named, {}));
+  });
+
+  it('resolves the index of an entry that exists but omits the key', () => {
+    // The presence gate reaching into a list, which is the arm config B leans
+    // on: the list stays optional, but an entry that exists says who. The
+    // address has to name WHICH entry.
+    const trust: FrontmatterRule = {
+      ruleId: 'provenance-exemplar',
+      path: ['docs/research/provenance.md'],
+      intent: 'An entry that exists says who verified it',
+      fields: { 'verified[].by': { presence: 'required', format: 'actor' } },
+    };
+
+    expect(
+      evaluate(trust, { verified: [{ at: '2026-08-25T11:30:00Z' }] }).map((entry) => [entry.violation, entry.field]),
+    ).toEqual([[VIOLATION.MISSING_REQUIRED_FIELD, 'verified[0].by']]);
+  });
 });
 
 describe('format: actor reserves human and process as producer names', () => {

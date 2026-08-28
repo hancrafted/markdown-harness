@@ -63,11 +63,15 @@ function isMapping(value: FrontmatterValue | undefined): value is FrontmatterMap
  * constraint should invent an opinion about.
  */
 export function instances(frontmatter: Frontmatter, address: FieldAddress): readonly Instance[] {
-  if (frontmatter === null) return [{ at: address, value: undefined }];
+  // A document with no frontmatter block is a document all of whose keys are
+  // absent, so it takes no arm of its own: `key in map` is false, top-level
+  // fields still report MISSING, and every nested address finds no container
+  // and goes quiet exactly as it does under `{}`.
+  const map = frontmatter ?? {};
   const { head: key, perEntry, tail } = parse(address);
-  const container = frontmatter[key];
+  const container = map[key];
 
-  if (tail === null) return [{ at: key, value: key in frontmatter ? container : undefined }];
+  if (tail === null) return [{ at: key, value: key in map ? container : undefined }];
 
   if (perEntry) {
     if (!Array.isArray(container)) return [];
