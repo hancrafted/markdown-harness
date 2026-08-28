@@ -45,3 +45,7 @@ Single-context: one `CONTEXT.md` at the repo root, design-ADRs in `docs/design-a
 ## Source layout
 
 Packages under `src/packages/` are deep modules, and every file carries exactly one classifier — by position at a Package root, by suffix below it. Read [`src/packages/README.md`](./src/packages/README.md) before adding, naming, or importing a file there.
+
+## Verification
+
+`npm run verify` is the gate. One trap inside it: **`archgate check` is changed-files-scoped.** It evaluates only ADRs whose `files:` glob matches a file changed against `baseBranch` (`.archgate/config.json`), and explicit path arguments are intersected with that same set. So `total: 0` means _nothing in scope changed_ — never _governance passed_. To exercise the rules deliberately, give it a base that reaches an ADR edit: `npx archgate check --base HEAD~3`.
