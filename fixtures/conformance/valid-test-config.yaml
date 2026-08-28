@@ -7,7 +7,7 @@
 # suite and governed by nothing here.
 #
 # This config does two jobs. COVERAGE: it reaches every key in the vocabulary,
-# including the ones no real file would exercise, and `src/config/fixtures.test.ts`
+# including the ones no real file would exercise, and `src/config/conformance.test.ts`
 # fails until it does. SPECIFICATION: together with `docs/` it fixes what the harness
 # must report, and each document states its own expected outcome in its body.
 # Changing an expected outcome is a contract change, not a test fix.
