@@ -247,6 +247,12 @@ export default tseslint.config(
   // - the empty `warning`/`info` sinks on the hand-built RuleContext double are
   //   the behaviour under test — the double collects violations and discards the
   //   rest, so an empty body is the honest spelling.
+  //
+  // Disabled here rather than with `eslint-disable-next-line` at each of the ~12
+  // sites, which would be narrower but wrong twice over: it edits test files to
+  // satisfy the linter, and it spends inline suppression — a mechanism this
+  // project deliberately keeps unspent — on constructs that are not exceptions
+  // at all. Both rules stay live everywhere else.
   {
     files: ['.archgate/**/*.rules.test.ts'],
     rules: {

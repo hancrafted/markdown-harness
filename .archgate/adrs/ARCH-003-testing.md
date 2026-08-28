@@ -27,7 +27,7 @@ Alternatives considered:
 - **Prose guidance only.** Rejected. It is what already existed, and it does not hold against an agent optimising for a green signal.
 - **`eslint-plugin-vitest`.** Rejected. Every ban below is expressible with core `no-restricted-syntax` and `no-restricted-properties`, so the plugin buys nothing and costs a dependency that would have to clear an admission bar.
 - **A coverage gate.** Rejected on the merits, not on effort — see §5 of the Decision.
-- **`.skip` left legal**, on the reasoning that a skipped test is visible in the reporter. Overturned: visibility in a reporter nobody reads is not a control.
+- **Leaving `.skip` legal**, on the argument that a skipped test stays visible in the reporter. Rejected: visibility in a report nobody reads is not a control, and a skip is exactly the move an author reaches for under pressure to go green.
 
 ## Decision
 
@@ -60,23 +60,23 @@ Coverage and mutation scores correlate with real defect detection only where the
 
 ### Do's
 
-1. **DO** pass every instant, seed and input a test depends on into the test explicitly.
-2. **DO** use `.todo` to record a test you intend to write.
-3. **DO** assert with `expect`, and let the matcher carry the message — `expect(seen).toContain(key)` names the missing key; comparing a precomputed boolean reports only that `false` is not `true`.
-4. **DO** write the expected value out by hand, so a reviewer can disagree with it.
-5. **DO** exercise the subject through the entry point its location implies, against real inputs.
-6. **DO** build a hand-written stand-in when a collaborator must be substituted, and keep it in the test file where a reader can see what it does.
-7. **DO** delete a test that no longer earns its runtime, rather than skipping it.
+1. **DO** pass every instant, seed and input a test depends on into the test explicitly. (Decision 3.1)
+2. **DO** use `.todo` to record a test you intend to write. (Decision 3.2)
+3. **DO** assert with `expect`, and let the matcher carry the diagnostic — `expect(seen).toContain(key)` names the key that was missing. (Decision 1)
+4. **DO** write the expected value out by hand, so a reviewer can disagree with it. (Decision 3.4)
+5. **DO** exercise the subject through the entry point its location implies, against real inputs. (Decision 3.6)
+6. **DO** build a hand-written stand-in when a collaborator must be substituted, and keep it in the test file where a reader can see what it does. (Decision 3.5)
+7. **DO** delete a test that no longer earns its runtime, rather than skipping it. (Decision 3.2)
 
 ### Don'ts
 
-1. **DON'T** call `Date.now()`, `Math.random()`, `performance.now()`, or `new Date()` with no argument.
-2. **DON'T** commit `.only` or `.skip` on `it`, `test` or `describe`.
-3. **DON'T** write a test body with no `expect` in it.
-4. **DON'T** use `toMatchSnapshot`, `toMatchInlineSnapshot`, or any matcher ending in `Snapshot`.
-5. **DON'T** call `vi.mock`, `vi.doMock`, `vi.spyOn`, `vi.mocked` or `vi.stubGlobal`, nor their `jest` equivalents.
-6. **DON'T** collapse an assertion into a boolean before asserting on it — the matcher's diagnostic is the value being thrown away.
-7. **DON'T** assert an expected value that the code under test computed.
+1. **DON'T** call `Date.now()`, `Math.random()`, `performance.now()`, or `new Date()` with no argument. (Decision 3.1)
+2. **DON'T** commit `.only` or `.skip` on `it`, `test` or `describe`. (Decision 3.2)
+3. **DON'T** write a test body with no `expect` in it. (Decision 3.3)
+4. **DON'T** use `toMatchSnapshot`, `toMatchInlineSnapshot`, or any matcher ending in `Snapshot`. (Decision 3.4)
+5. **DON'T** call `vi.mock`, `vi.doMock`, `vi.spyOn`, `vi.mocked` or `vi.stubGlobal`, nor their `jest` equivalents. (Decision 3.5)
+6. **DON'T** reach past the grain your location declares — a test under a package's `tests/` imports entry points, never internals. (Decision 3.6)
+7. **DON'T** assert an expected value that the code under test computed. (Decision 4)
 
 ## Consequences
 
@@ -108,7 +108,7 @@ Per Discipline, with its enforcer and that enforcer's location:
 1. **Don't 2, 3, 4, 5** — eslint `no-restricted-syntax`, in the `**/*.test.ts` block of `eslint.config.mjs`. One selector each for `.only`/`.skip`, an `expect`-free body, a `Snapshot`-suffixed matcher, and the `vi`/`jest` mocking entry points.
 2. **Don't 1, clock and randomness** — eslint `no-restricted-syntax` (the shared determinism selectors) plus `no-restricted-properties` (the shared nondeterministic-source list), same block, same file.
 3. **Don't 1, network** — **not mechanically enforced, review duty.** No selector separates a network call from any other call, so this clause states more than any check holds.
-4. **Don't 6** — dependency-cruiser rule `tests-through-entrypoints` in `.dependency-cruiser.cjs`, run by `npm run lint:boundaries`.
+4. **Don't 6** — dependency-cruiser rule `tests-through-entrypoints` in `.dependency-cruiser.cjs`, run by `npm run lint:boundaries`. **Its reach is narrower than this record's scope.** It matches importers under a package's `tests/` directory, and the cruise runs over `src/` alone, so for any test file outside that shape — the sibling tests of ADR rules files among them — Don't 6 is **not mechanically enforced, review duty.**
 5. **The tautology duty** — **not mechanically enforced, review duty.** `esquery` cannot compare two sibling values, so nothing can see that an expected value was recomputed by the subject.
 
 Three limits are recorded rather than papered over:
