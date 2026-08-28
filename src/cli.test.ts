@@ -1,9 +1,13 @@
-// Seam 5: the CLI, exit codes only.
+// Seam 5: the CLI — argv in, an exit code and one JSON stream out.
 //
 // The seam is the PROCESS boundary — argv in, an exit code and a stream out —
 // because that is a CLI's whole interface and the only place an exit code is
 // observable. Testing an exported `main()` instead would leave the one thing
 // this slice is about untested.
+//
+// Most of it is the exit-code table. Two tests reach into the artifact, and
+// only for facts no exit code can carry: that the report arrives intact on
+// stdout, and which files the walker put in it.
 //
 // Every assertion pairs the exit code with stderr — empty where the command
 // should be silent, matched where it should not be. A missing or throwing
@@ -11,6 +15,8 @@
 // for the wrong reason, and it did: the first red here was green on `status`.
 
 import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -137,5 +143,64 @@ describe('mh as `bin` invokes it', () => {
     const { status, stderr } = spawnSync(CLI, ['--check', ...FIXTURES], { cwd: REPO, encoding: 'utf8' });
 
     expect({ status, stderr }).toEqual({ status: 1, stderr: '' });
+  });
+});
+
+describe('mh --check over a root that holds node_modules and .git', () => {
+  // The enumeration glob is the CLI's own decision, so what it REFUSES to walk
+  // is part of the CLI's contract and this is the only seam where it shows.
+  //
+  // No other config fixture can see the walker. Each governs `docs/...`
+  // explicitly, so a file the walker should never have enumerated is also a
+  // file no rule selects — invisible either way, and the report is identical
+  // whether the walker read it or not. `governs-everything-config.yaml` selects
+  // every markdown file at any depth, so anything enumerated is GOVERNED and
+  // lands in the report.
+  //
+  // The corpus is planted here rather than committed for two reasons, both
+  // mechanical: `.gitignore` holds `node_modules/`, so a committed
+  // `fixtures/node_modules/` would not survive a clone; and git refuses to
+  // track any path with a `.git` component at all.
+  //
+  // The two legs are not equal, and saying so is the point:
+  //
+  //   - `node_modules/**` IS walked today. Measured at this repo's root, 262 of
+  //     the 298 files `**\/*.md` finds are inside it and every one is READ.
+  //     This leg is the DRIVER; it fails before the fix, twice over, because
+  //     the nested copy fails the anchored spelling too.
+  //   - `.git/**` is not walked, because `*` does not match a leading dot and
+  //     no dot directory is reachable by this glob. This leg is a GUARD: it
+  //     cannot fail today, and it is written because the exclusion has to hold
+  //     UNCONDITIONALLY — for the day the glob changes, and for a port whose
+  //     glob matches dotfiles.
+  it('walks neither, at any depth', () => {
+    const root = mkdtempSync(`${tmpdir()}/mh-walker-`);
+    for (const path of [
+      'kept.md',
+      'node_modules/pkg/README.md',
+      'packages/x/node_modules/dep.md',
+      '.git/hooks/notes.md',
+    ]) {
+      mkdirSync(`${root}/${path}`.slice(0, `${root}/${path}`.lastIndexOf('/')), { recursive: true });
+      writeFileSync(`${root}/${path}`, '# no frontmatter here\n', 'utf8');
+    }
+
+    const { status, stdout, stderr } = run(
+      '--check',
+      '--root',
+      root,
+      '--config',
+      'fixtures/governs-everything-config.yaml',
+    );
+
+    expect({ status, stderr }).toEqual({ status: 1, stderr: '' });
+    const report = JSON.parse(stdout);
+    expect({
+      files: report.files.map((file: { path: string }) => file.path),
+      governed: report.totals.governed,
+    }).toEqual({
+      files: ['kept.md'],
+      governed: 1,
+    });
   });
 });

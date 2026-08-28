@@ -12,8 +12,8 @@
  * It maps argv to a call, a report to a stream, and a report to `exitCode`. It
  * is not free of decisions, and pretending otherwise would hide the ones a port
  * has to match: the DEFAULT CONFIG FILENAME (which `architecture.md` lists as
- * still open), the corpus glob `**\/*.md` and its sort, which channel a report
- * leaves by, and which command wins when both are given.
+ * still open), the corpus glob `**\/*.md`, what it never walks, its sort, which
+ * channel a report leaves by, and which command wins when both are given.
  *
  * KNOWN GAP: a config file that cannot be READ still exits 1 with a Node stack
  * trace — the code reserved for "the corpus is wrong", for a fault that is
@@ -55,9 +55,31 @@ function argv() {
   }
 }
 
+/**
+ * Directories the walker refuses UNCONDITIONALLY, whatever the config says.
+ *
+ * Neither is a governance decision, which is why neither is configurable: one
+ * holds somebody else's code and the other is a database. A config cannot opt
+ * back in, because there is nothing here an adopter could want.
+ *
+ * Written `**\/x/**` rather than `x/**`, and that spelling is measured rather
+ * than stylistic. The anchored form matches `node_modules/a.md` and misses
+ * `packages/x/node_modules/a.md`, which is the shape every workspace repo has;
+ * the `**\/` form matches everywhere the anchored one does, plus the nested
+ * copy, and still leaves `node_modules_keep/a.md` alone. It strictly dominates.
+ *
+ * `.git/**` is currently redundant and is kept anyway. Measured: `*` does not
+ * match a leading dot, so no dot directory is reachable by `**\/*.md` at all
+ * and this repo's `.agents/` — 62 markdown files — is already invisible for the
+ * same reason. The exclusion is written because it has to hold when the
+ * enumeration glob changes, and because a port whose glob matches dotfiles must
+ * not have to rediscover it.
+ */
+const NEVER_WALKED = ['**/node_modules/**', '**/.git/**'] as const;
+
 /** `root` travels as the caller wrote it, never resolved, so a report compares equal on another machine. */
 function corpus(root: string): Corpus {
-  const paths = globSync('**/*.md', { cwd: root }).sort();
+  const paths = globSync('**/*.md', { cwd: root, exclude: [...NEVER_WALKED] }).sort();
   return { root, files: paths.map((path) => ({ path, text: readFileSync(`${root}/${path}`, 'utf8') })) };
 }
 
