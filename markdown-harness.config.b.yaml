@@ -1,0 +1,185 @@
+# markdown-harness.config.b.yaml — dogfood B, "full signal".
+#
+# The same paths as `markdown-harness.config.yaml`, asking for much more. Read
+# the two side by side: the DIFF is the experiment. A asks only what a reader
+# needs to route (OKF §4.1). B adds OKF §5 — provenance, trust and freshness —
+# to the two families where a stale or unsourced document actually costs
+# something, and leaves the other families exactly as A has them.
+#
+# Everything B adds is HOUSE POLICY and stricter than OKF. §5 opens with "All are
+# optional. Their absence carries meaning" and §11 says a concept carrying just
+# `type` is fully conformant. So none of the requirements below are conformance
+# requirements, and `docs/research/okf-conformance.md` exists to keep that line
+# visible. This is the config language doing the job it is for: an adopter
+# tightening a spec they did not write, without forking it.
+#
+# The invisibility rules are A's, unchanged and for the same reasons:
+# `docs/okf/**` has no rule, and `docs/workshop/**/raw.md` is excluded from the
+# one rule that would otherwise reach it. See A's header — it argues both, and
+# this file deliberately does not restate the argument, because two copies of a
+# reason drift.
+#
+# Shape reference: src/packages/contract/config.ts and
+# src/packages/contract/constraints.ts
+
+frontmatter:
+  rules:
+    # ── Index files ────────────────────────────────────────────────────────────
+    # Identical to A. See A's header for why this is a path glob and not
+    # `fileName: index.md`.
+    - ruleId: docs-index-files
+      path: ['docs/**/index.md']
+      intent: 'OKF §8 (Index files): an index enumerates a directory for progressive disclosure, and carries no frontmatter'
+      frontmatter: forbidden
+
+    # ── design-ADRs ────────────────────────────────────────────────────────────
+    # Identical to A. A design-ADR is a decision, not a finding: it derives from
+    # nothing external, it is never stale — a superseded one says so through
+    # `status` — and asking it for `sources` would be asking the wrong question.
+    - ruleId: design-adrs
+      path: ['docs/design-adr/**']
+      intent: A design-ADR records that a decision was made and why; docs/agents/domain.md fixes its shape
+      fields:
+        type:
+          presence: required
+          intent: 'CONTEXT.md: the type VALUE is the discriminator between the two decision-record systems, and the only signal that survives a file being moved or pasted out of context'
+          allowed:
+            - value: design-adr
+              intent: 'A design decision record owned by the Matt Pocock engineering skills. It records reasoning; it constrains nothing.'
+        status:
+          presence: optional
+          intent: Where this decision stands, in the design-ADR sense and not OKF's
+          allowed:
+            - value: proposed
+              intent: Written down and argued, not yet settled.
+            - value: accepted
+              intent: Settled, and the reasoning here is what later work derives from.
+            - value: superseded
+              intent: A later design-ADR replaced this one; kept for the history.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
+
+    # ── Research ───────────────────────────────────────────────────────────────
+    # The family B exists for. A research note is the one kind of document here
+    # whose value depends entirely on where it came from and when: an unsourced
+    # finding is an opinion, and a finding from last quarter may be wrong now.
+    - ruleId: research-notes
+      path: ['docs/research/**']
+      intent: A research note settles one question against sources, so where it came from and when are part of the finding rather than metadata about it
+      fields:
+        type:
+          presence: required
+          allowed:
+            - value: research
+              intent: Findings gathered to settle a question, with the sources they came from.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
+
+        # Trust — OKF §5.2. `generated.by` is the one key OKF itself calls
+        # REQUIRED within `generated`; `at` is ours to require.
+        generated.by:
+          presence: required
+          format: actor
+          intent: 'OKF §5.2 and §7: who or what produced this content, as <producer>/<version>, human:<id> or process:<id>'
+        generated.at:
+          presence: required
+          format: datetime
+          intent: 'OKF §5.2: when this content was last written, ISO 8601 with an explicit UTC offset'
+
+        # Provenance — OKF §5.1. The list, and every entry of it, are different
+        # addresses and so never share a shape.
+        sources:
+          minItems: 1
+          intent: 'OKF §5.1: a finding with no sources is an opinion, so this repo requires at least one where OKF requires none'
+        sources[].resource:
+          presence: required
+          format: uri
+          intent: 'OKF §5.1: REQUIRED within an entry — either an artifact a consumer can follow, or a scope descriptor it cannot'
+        # OKF calls this Optional and SHOULD-present when the body cites the
+        # source. Required here, because the body of every research note in this
+        # repo cites its sources by footnote and the label IS this id.
+        sources[].id:
+          presence: required
+          intent: 'OKF §5.1: the join key a footnote label resolves through, so a per-claim citation has something to point at'
+
+        # Trust events — OKF §5.2. The list stays optional: absence means
+        # unverified (§5.3), which is a legitimate state and not a fault. What is
+        # required is that an entry which exists says who.
+        verified[].by:
+          presence: required
+          format: actor
+          intent: 'OKF §5.2 and §5.3: a verification event with no actor cannot raise the trust tier, since the tier is derived from whether the actor is a human'
+
+        # Freshness — OKF §5.5. Optional: most findings have no expiry, and an
+        # invented one would be worse than none.
+        stale_after:
+          presence: optional
+          format: datetime
+          intent: 'OKF §5.5: the instant this content becomes stale, absolute rather than a relative TTL so it does not drift with the reader'
+
+    # ── Vision ─────────────────────────────────────────────────────────────────
+    # Identical to A. A vision document is this repo's own position, so it has no
+    # sources outside itself, and it is not stale until it is rewritten.
+    - ruleId: vision-documents
+      path: ['docs/vision/**']
+      intent: A vision document holds the reasoning decisions get derived from, and AGENTS.md requires reading the right one before proposing anything
+      fields:
+        type:
+          presence: required
+          allowed:
+            - value: vision
+              intent: The promise, the tenets and the boundaries. Reasoning decisions are derived from, never a decision record itself.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
+
+    # ── Agent guides ───────────────────────────────────────────────────────────
+    # A's rule plus `unknownKeys: forbidden`, and this is the one family where a
+    # closed shape earns its place. An agent guide is read by an agent that acts
+    # on it, so a key nobody defined is a key nobody honours — it reads as
+    # steering and is inert. Freshness matters here too: a convention that has
+    # moved is worse than one that is missing.
+    - ruleId: agent-guides
+      path: ['docs/agents/**']
+      intent: An agent guide is a convention an agent has to follow, so it carries a closed set of keys and says when it was last true
+      unknownKeys: forbidden
+      fields:
+        type:
+          presence: required
+          allowed:
+            - value: agent-guide
+              intent: A convention agents follow in this repo — where issues live, which labels mean what, where each kind of record goes.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
+        generated.at:
+          presence: required
+          format: datetime
+          intent: 'OKF §5.2: when this convention was last written, so an agent can tell a current convention from a remembered one'
+        stale_after:
+          presence: optional
+          format: datetime
+          intent: 'OKF §5.5: the instant this convention should be re-checked, absolute rather than a relative TTL'
+
+    # ── Workshop records ───────────────────────────────────────────────────────
+    # Identical to A, exclusion included.
+    - ruleId: workshop-records
+      path: ['docs/workshop/**']
+      excludeFiles: ['docs/workshop/**/raw.md']
+      intent: A workshop record says what a working session decided and what it withdrew, so it has to be findable without replaying the session
+      fields:
+        type:
+          presence: required
+          allowed:
+            - value: workshop-record
+              intent: What a working session decided and what it withdrew, written up after the fact.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'

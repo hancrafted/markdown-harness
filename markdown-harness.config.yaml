@@ -1,0 +1,170 @@
+# markdown-harness.config.yaml — this repo's own config. Dogfood A, "routing only".
+#
+# The first real config this project has ever been pointed at, and the point of
+# it is to be REAL: written against `docs/` as it stands, expecting red, so that
+# the messages are evidence about the config language rather than about a
+# fixture. Its sibling `markdown-harness.config.b.yaml` governs the same paths
+# and asks for much more; the diff between the two files IS the experiment.
+#
+# "Routing only" is a claim about what a rule may ask for here: what a reader —
+# human or agent — needs in order to decide whether to open the file, and
+# nothing else. OKF §4.1 makes the same split, and this config follows it: `type`
+# is REQUIRED and exists "for routing, filtering, and presentation";
+# `description` is RECOMMENDED and is "a single sentence summarizing the
+# concept". Provenance, trust and freshness are §5's families and they are B's
+# subject, not this file's.
+#
+# Governance is opt-in, so what is missing from this file matters as much as what
+# is in it. Every rule names a `docs/<family>/` prefix explicitly. Nothing
+# outside `docs/` is governed at all: not `README.md`, not `AGENTS.md`, not
+# `CONTEXT.md`, not `fixtures/` — those are checked by other means or are the
+# harness's own specification, and a config that reached them would be governing
+# its own test data.
+#
+# `docs/okf/**` HAS NO RULE, deliberately, and this comment is the only place
+# that fact is written down. `SPEC-v0.2.md` is vendored upstream text and is the
+# pin the OKF preset was derived from, so touching it moves the pin;
+# `.prettierignore` says the same thing about the same file in its own words.
+# `README.md` beside it is ours, but governing one file of a two-file vendor
+# directory buys nothing. FINDING: the config language cannot express
+# "deliberately ungoverned, and here is why" — the only channel is a YAML
+# comment, which no report can quote back.
+#
+# Rules are an ORDERED list, first match wins, nothing merges. Most specific
+# first.
+#
+# Shape reference: src/packages/contract/config.ts and
+# src/packages/contract/constraints.ts
+
+frontmatter:
+  rules:
+    # ── Index files ────────────────────────────────────────────────────────────
+    # Written as a path glob rather than `fileName: index.md`, and that is a
+    # finding rather than a style choice. `fileName` desugars to
+    # `path: ["**/<name>"]`, which is REPO-WIDE: it would reach an `index.md`
+    # anywhere in this tree, including one inside `fixtures/`, and there is no
+    # spelling of the sugar that scopes it to a family. The sugar is unusable in
+    # any config that means to govern one directory.
+    #
+    # No `docs/**/index.md` exists yet, so `coverage` will report this rule with
+    # `won: 0`. That is the alarm working, and it is also the alarm's limit: a
+    # rule waiting for a file it describes looks exactly like a rule that has
+    # been shadowed into silence.
+    - ruleId: docs-index-files
+      path: ['docs/**/index.md']
+      intent: 'OKF §8 (Index files): an index enumerates a directory for progressive disclosure, and carries no frontmatter'
+      frontmatter: forbidden
+
+    # ── design-ADRs ────────────────────────────────────────────────────────────
+    # The one family in this repo that already carries frontmatter, and the only
+    # one whose shape is documented elsewhere: `docs/agents/domain.md` fixes
+    # `type: design-adr` as the first key and calls everything else optional.
+    - ruleId: design-adrs
+      path: ['docs/design-adr/**']
+      intent: A design-ADR records that a decision was made and why; docs/agents/domain.md fixes its shape
+      fields:
+        type:
+          presence: required
+          intent: 'CONTEXT.md: the type VALUE is the discriminator between the two decision-record systems, and the only signal that survives a file being moved or pasted out of context'
+          allowed:
+            - value: design-adr
+              intent: 'A design decision record owned by the Matt Pocock engineering skills. It records reasoning; it constrains nothing.'
+        # `presence: optional` and `allowed` are separate opt-ins: `status` may be
+        # absent, and if it is written it must be one of these three.
+        #
+        # FINDING: this vocabulary COLLIDES with OKF §5.4, which defines the same
+        # key name as `draft | stable | deprecated` with "absent ⇒ stable". A
+        # design-ADR's status is a decision's status, not a document's lifecycle.
+        # First match wins, so the collision is resolvable by rule order — but
+        # nothing in the config records that one key name is carrying two
+        # vocabularies, and a reader of a report cannot tell which one applied.
+        status:
+          presence: optional
+          intent: Where this decision stands, in the design-ADR sense and not OKF's
+          allowed:
+            - value: proposed
+              intent: Written down and argued, not yet settled.
+            - value: accepted
+              intent: Settled, and the reasoning here is what later work derives from.
+            - value: superseded
+              intent: A later design-ADR replaced this one; kept for the history.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
+
+    # ── Research ───────────────────────────────────────────────────────────────
+    # `docs/research/parts/**` is research too and is governed by this rule
+    # rather than by one of its own: the parts are the same kind of document,
+    # split for length.
+    - ruleId: research-notes
+      path: ['docs/research/**']
+      intent: A research note settles one question against sources, so a reader has to be able to tell which question before opening it
+      fields:
+        type:
+          presence: required
+          allowed:
+            - value: research
+              intent: Findings gathered to settle a question, with the sources they came from.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
+
+    # ── Vision ─────────────────────────────────────────────────────────────────
+    # AGENTS.md: "Neither file below is a decision record. They hold the
+    # reasoning decisions get derived from." So `vision` is its own type value
+    # rather than a flavour of design-ADR.
+    - ruleId: vision-documents
+      path: ['docs/vision/**']
+      intent: A vision document holds the reasoning decisions get derived from, and AGENTS.md requires reading the right one before proposing anything
+      fields:
+        type:
+          presence: required
+          allowed:
+            - value: vision
+              intent: The promise, the tenets and the boundaries. Reasoning decisions are derived from, never a decision record itself.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
+
+    # ── Agent guides ───────────────────────────────────────────────────────────
+    - ruleId: agent-guides
+      path: ['docs/agents/**']
+      intent: An agent guide is a convention an agent has to follow in this repo, and an agent that cannot tell which one it is reading will follow the wrong one
+      fields:
+        type:
+          presence: required
+          allowed:
+            - value: agent-guide
+              intent: A convention agents follow in this repo — where issues live, which labels mean what, where each kind of record goes.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
+
+    # ── Workshop records ───────────────────────────────────────────────────────
+    # The one rule that needs `excludeFiles`, and it needs it for the reason the
+    # design predicted: a narrow family sitting INSIDE a governed one. A raw
+    # transcript is a record rather than a document — reformatting one alters
+    # what it exists to preserve — and `.prettierignore` excludes the same glob
+    # in its own words for the same reason.
+    #
+    # FINDING: two tools in this repo now need the same "leave this alone" list,
+    # written twice, in two languages, with no shared source of truth. Drift is
+    # a matter of time.
+    - ruleId: workshop-records
+      path: ['docs/workshop/**']
+      excludeFiles: ['docs/workshop/**/raw.md']
+      intent: A workshop record says what a working session decided and what it withdrew, so it has to be findable without replaying the session
+      fields:
+        type:
+          presence: required
+          allowed:
+            - value: workshop-record
+              intent: What a working session decided and what it withdrew, written up after the fact.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
