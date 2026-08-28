@@ -17,9 +17,9 @@
 # Governance is opt-in, so what is missing from this file matters as much as what
 # is in it. Every rule names a `docs/<family>/` prefix explicitly. Nothing
 # outside `docs/` is governed at all: not `README.md`, not `AGENTS.md`, not
-# `CONTEXT.md`, not `fixtures/` — those are checked by other means or are the
-# harness's own specification, and a config that reached them would be governing
-# its own test data.
+# `CONTEXT.md`, not `fixtures/` — those are checked by other means or are
+# `markdown-harness`'s own specification, and a config that reached them would be
+# governing its own test data.
 #
 # `docs/okf/**` HAS NO RULE, deliberately, and this comment is the only place
 # that fact is written down. `SPEC-v0.2.md` is vendored upstream text and is the

@@ -37,11 +37,13 @@ status: accepted
 {1-3 sentences: what's the context, what did we decide, and why.}
 ```
 
-`type` comes first, and `CONTEXT.md` says why: the VALUE is the discriminator between the two decision-record systems, and the only signal that survives a file being moved or pasted out of context. `description` is required — a slug is three words and a sentence carries the _why_, which is what a reader actually routes on. `status` is optional, and if written must be `proposed`, `accepted` or `superseded`; note that this is a decision's status and **not** OKF §5.4's `draft | stable | deprecated`, which is the same key name carrying a different vocabulary.
+`type` comes first, and `CONTEXT.md` says why: the VALUE is the discriminator between the two decision-record systems, and the only signal that survives a file being moved or pasted out of context. `description` is required — a slug is three words and a sentence carries the _why_, which is what a reader actually routes on. `status` is optional.
+
+The rule holds the vocabularies; this page deliberately does not repeat them, because a copy is what drifts. One warning that is not in the rule and belongs to whoever writes a design-ADR: `status` here is a DECISION's status, and **not** OKF §5.4's `draft | stable | deprecated`. Same key name, different vocabulary.
 
 A design-ADR can still be a single paragraph — the value is in recording _that_ a decision was made and _why_. Everything else in `domain-modeling/ADR-FORMAT.md` — when a decision qualifies, the optional sections — still applies.
 
-This section used to state the shape itself and end with "that's the whole requirement". It was rewritten when the harness was first pointed at this repo and found the shape specified in two places, which is the duplication `markdown-harness` exists to remove: the config is the specification, and prose about it can only drift.
+This section used to state the shape itself and end with "that's the whole requirement". It was rewritten when `markdown-harness` was first pointed at this repo and found the shape specified in two places, which is the duplication `markdown-harness` exists to remove: the config is the specification, and prose about it can only drift.
 
 Never hand-write into `.archgate/adrs/`. If a decision belongs to Archgate governance, delegate to `archgate:adr-author`.
 
