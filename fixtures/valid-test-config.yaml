@@ -42,8 +42,12 @@ frontmatter:
     # is what proves first-match ordering on real files rather than asserting it.
     # Reaches every named format and both nesting depths.
     - ruleId: provenance-exemplar
-      path: [docs/research/provenance.md]
-      intent: The one document that records its own provenance in full
+      # TWO exact paths, and the second is why: one rule proven to pass AND to
+      # fail beats a conforming exemplar, which an addresser that reached nothing
+      # would also produce. Still above the broad research rule below, so the
+      # pair is also what proves first-match ordering on real files.
+      path: [docs/research/provenance.md, docs/research/provenance-broken.md]
+      intent: A document that records its own provenance in full
       fields:
         type:
           presence: required

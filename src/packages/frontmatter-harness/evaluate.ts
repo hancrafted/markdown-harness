@@ -17,11 +17,13 @@
 import type { FrontmatterRule } from '../contract/config.ts';
 import type { FieldConstraints } from '../contract/constraints.ts';
 import type { Frontmatter } from '../contract/frontmatter.ts';
+import { FIELD_VIOLATION, RULE_VIOLATION } from '../contract/violation-code.ts';
 import type { Violation } from '../contract/violation.ts';
 import { instances, type Instance } from './lib/address.ts';
 import { CHECKS, CHECK_ORDER } from './lib/checks.ts';
 import { crossField } from './lib/crossfield.ts';
-import { isEmpty, observe } from './lib/presence.ts';
+import { evidence, isEmpty, summarise } from './lib/presence.ts';
+import { shapeGate } from './lib/shape.ts';
 import { unknownKeys } from './lib/unknown.ts';
 
 export function evaluate(rule: FrontmatterRule, frontmatter: Frontmatter): readonly Violation[] {
@@ -30,7 +32,12 @@ export function evaluate(rule: FrontmatterRule, frontmatter: Frontmatter): reado
   if (rule.frontmatter === 'forbidden') {
     if (frontmatter === null) return [];
     return [
-      { constraint: 'frontmatter', field: null, found: observe(frontmatter), expected: { frontmatter: 'forbidden' } },
+      {
+        field: null,
+        value: summarise(frontmatter),
+        violation: RULE_VIOLATION.FRONTMATTER_FORBIDDEN,
+        requirement: { frontmatter: 'forbidden' },
+      },
     ];
   }
 
@@ -49,23 +56,52 @@ export function evaluate(rule: FrontmatterRule, frontmatter: Frontmatter): reado
  * one hole. `expected` carries all three regardless, so nothing is hidden — it
  * is the COUNT of violations that stays honest.
  */
-function atAddress(expected: FieldConstraints, instance: Instance): readonly Violation[] {
-  const gate = presence(expected, instance);
+function atAddress(requirement: FieldConstraints, instance: Instance): readonly Violation[] {
+  const gate = presence(requirement, instance);
   if (gate !== null) return [gate];
 
-  return CHECK_ORDER.map((key) => CHECKS[key](expected, instance)).filter(
-    (violation): violation is Violation => violation !== null,
-  );
+  // An address that named nothing holds no value for a value constraint to read,
+  // and `presence` is the ONLY key that may make a field mandatory. Without this
+  // line `minItems: 1` on an absent list would fire, which quietly turns every
+  // size constraint into `required` and contradicts governance being opt-in.
+  const { value } = instance;
+  if (value === undefined) return [];
+
+  // The second gate. A constraint that does not name this value's shape is the
+  // Operator's misapplication, reported once for the address rather than once
+  // per collided constraint — see `lib/shape.ts`.
+  const shape = shapeGate(requirement, instance);
+  if (shape !== null) return [shape];
+
+  return CHECK_ORDER.flatMap((key) => CHECKS[key](requirement, value, instance));
 }
 
-function presence(expected: FieldConstraints, instance: Instance): Violation | null {
-  const found = observe(instance.value);
+/**
+ * The gate, and the one clause that fails three ways.
+ *
+ * Each way wants a different repair — write the field, fill the field, delete
+ * the field — so each gets its own code. They were one code until this change,
+ * which left the direction to be inferred by comparing `requirement` against
+ * `value`; see `violation-code.ts` for the measurement that ended that.
+ */
+function presence(requirement: FieldConstraints, instance: Instance): Violation | null {
+  const { value } = instance;
 
-  if (expected.presence === 'required' && isEmpty(instance.value)) {
-    return { constraint: 'presence', field: instance.at, found, expected };
+  if (requirement.presence === 'required' && isEmpty(value)) {
+    return {
+      field: instance.at,
+      ...evidence(value),
+      violation: value === undefined ? FIELD_VIOLATION.MISSING_REQUIRED_FIELD : FIELD_VIOLATION.EMPTY_REQUIRED_FIELD,
+      requirement,
+    };
   }
-  if (expected.presence === 'forbidden' && found.kind !== 'absent') {
-    return { constraint: 'presence', field: instance.at, found, expected };
+  if (requirement.presence === 'forbidden' && value !== undefined) {
+    return {
+      field: instance.at,
+      ...evidence(value),
+      violation: FIELD_VIOLATION.FORBIDDEN_FIELD_PRESENT,
+      requirement,
+    };
   }
   return null;
 }
@@ -88,9 +124,9 @@ function ordered(violations: readonly Violation[]): readonly Violation[] {
   return [...violations].sort((left, right) => sortKey(left).localeCompare(sortKey(right)));
 }
 
-function sortKey(violation: Violation): string {
+function sortKey(entry: Violation): string {
   // A rule-level constraint names no field and concerns the whole file, so it
-  // sorts before every field. `constraint` breaks a tie at one address.
-  const field = violation.field === null ? '' : violation.field.replace(/\d+/g, (run) => run.padStart(8, '0'));
-  return `${field} ${violation.constraint}`;
+  // sorts before every field. The code breaks a tie at one address.
+  const field = entry.field === null ? '' : entry.field.replace(/\d+/g, (run) => run.padStart(8, '0'));
+  return `${field} ${entry.violation}`;
 }

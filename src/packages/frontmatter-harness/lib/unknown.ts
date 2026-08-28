@@ -14,9 +14,10 @@
 
 import type { FrontmatterRule } from '../../contract/config.ts';
 import type { Frontmatter } from '../../contract/frontmatter.ts';
+import { RULE_VIOLATION } from '../../contract/violation-code.ts';
 import type { Violation } from '../../contract/violation.ts';
 import { head } from './address.ts';
-import { observe } from './presence.ts';
+import { evidence } from './presence.ts';
 
 /** The top-level names this rule names, deduped, in the order the config wrote them. */
 function known(rule: FrontmatterRule): readonly string[] {
@@ -30,12 +31,12 @@ export function unknownKeys(rule: FrontmatterRule, frontmatter: Frontmatter): re
   return Object.keys(frontmatter)
     .filter((key) => !allowedKeys.includes(key))
     .map((key) => ({
-      constraint: 'unknownKeys' as const,
       field: key,
-      found: observe(frontmatter[key]),
-      // The one `expected` that is not purely verbatim: `unknownKeys: forbidden`
+      ...evidence(frontmatter[key]),
+      violation: RULE_VIOLATION.UNKNOWN_KEY_FORBIDDEN,
+      // The one `requirement` that is not purely verbatim: `unknownKeys: forbidden`
       // alone would not say what the rule DOES name, and a Contributor fixing
       // this cannot be required to open the config.
-      expected: { unknownKeys: 'forbidden' as const, allowedKeys },
+      requirement: { unknownKeys: 'forbidden' as const, allowedKeys },
     }));
 }

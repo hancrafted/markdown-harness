@@ -5,7 +5,66 @@
 
 import { describe, expect, it } from 'vitest';
 import type { FrontmatterRule } from '../../contract/config.ts';
+import { VIOLATION } from '../../contract/violation-code.ts';
 import { evaluate } from '../evaluate.ts';
+
+describe('one presence clause, three outcomes', () => {
+  // THE DEFECT THIS SPLIT EXISTS FOR. Every one of these three used to report
+  // `constraint: 'presence'`, so a consumer could not tell whether to ADD the
+  // field or DELETE it without comparing the requirement against the value
+  // itself. The fix for the first two is the reverse of the fix for the third.
+  const required: FrontmatterRule = {
+    ruleId: 'plain',
+    path: ['docs/plain/**/*.md'],
+    intent: 'Everything under plain/ still has to say what it is',
+    fields: { type: { presence: 'required' } },
+  };
+
+  it('names an absent field MISSING, and carries no value at all', () => {
+    // No `value` key, rather than `value: null`: nothing was there, and a null
+    // would claim the key existed and held nothing.
+    expect(evaluate(required, {})).toEqual([
+      { field: 'type', violation: VIOLATION.MISSING_REQUIRED_FIELD, requirement: { presence: 'required' } },
+    ]);
+  });
+
+  it.each([
+    ['a bare key — the YAML trap', null, null],
+    ['an empty string', '', ''],
+    ['an empty list', [], { items: 0 }],
+    ['an empty mapping', {}, { keys: [] }],
+  ])('names a written-but-empty field EMPTY: %s', (_case, written, reported) => {
+    // A DIFFERENT MISTAKE with a different fix: the author believes they filled
+    // it in. Tenet 7 pays for keeping these four apart from "you never wrote
+    // the key" — collapsing them would send an agent to the wrong repair.
+    expect(evaluate(required, { type: written })).toEqual([
+      {
+        field: 'type',
+        value: reported,
+        violation: VIOLATION.EMPTY_REQUIRED_FIELD,
+        requirement: { presence: 'required' },
+      },
+    ]);
+  });
+
+  it('names a present-but-forbidden field FORBIDDEN, so the fix reads as deletion', () => {
+    const forbidden: FrontmatterRule = {
+      ruleId: 'reference',
+      path: ['docs/reference/**/*.md'],
+      intent: 'Reference material ships finished or not at all',
+      fields: { draft: { presence: 'forbidden' } },
+    };
+
+    expect(evaluate(forbidden, { draft: true })).toEqual([
+      {
+        field: 'draft',
+        value: true,
+        violation: VIOLATION.FORBIDDEN_FIELD_PRESENT,
+        requirement: { presence: 'forbidden' },
+      },
+    ]);
+  });
+});
 
 describe('a failed membership check renders whatever the config gave it', () => {
   it('carries an allowed record that omitted its intent, as null', () => {
@@ -21,13 +80,16 @@ describe('a failed membership check renders whatever the config gave it', () => 
 
     expect(evaluate(rule, { type: 'workflow' })).toEqual([
       {
-        constraint: 'allowed',
         field: 'type',
-        found: { kind: 'scalar', value: 'workflow' },
+        // Direct, not `{ kind: 'scalar', value: 'workflow' }`. The tag was
+        // charged on every violation to insure against a container the corpus
+        // does not contain.
+        value: 'workflow',
+        violation: VIOLATION.VALUE_NOT_ALLOWED,
         // Verbatim, so the record that omitted its `intent` arrives exactly as
         // the config wrote it — no invented sentence, and no normalising `intent`
         // to null either. The absence IS the config's own text.
-        expected: { presence: 'required', allowed: [{ value: 'skill' }] },
+        requirement: { presence: 'required', allowed: [{ value: 'skill' }] },
       },
     ]);
   });
@@ -59,9 +121,9 @@ describe('an address reaches one level into a nested shape', () => {
   it('reaches a key inside a mapping', () => {
     const violations = evaluate(rule, { ...conforming, generated: { by: 'not an actor', at: 'yesterday' } });
 
-    expect(violations.map((entry) => [entry.constraint, entry.field])).toEqual([
-      ['format', 'generated.at'],
-      ['format', 'generated.by'],
+    expect(violations.map((entry) => [entry.violation, entry.field])).toEqual([
+      [VIOLATION.FORMAT_MISMATCH, 'generated.at'],
+      [VIOLATION.FORMAT_MISMATCH, 'generated.by'],
     ]);
   });
 
@@ -72,8 +134,8 @@ describe('an address reaches one level into a nested shape', () => {
     // fault better than a number does.
     const broken = { ...conforming, sources: [{ resource: 'docs/ok.md' }, { resource: 'has a space' }] };
 
-    expect(evaluate(rule, broken).map((entry) => [entry.constraint, entry.field])).toEqual([
-      ['format', 'sources[1].resource'],
+    expect(evaluate(rule, broken).map((entry) => [entry.violation, entry.field])).toEqual([
+      [VIOLATION.FORMAT_MISMATCH, 'sources[1].resource'],
     ]);
   });
 
