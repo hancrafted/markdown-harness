@@ -7,7 +7,9 @@
 // resolution state.
 
 import { describe, expect, it } from 'vitest';
-import type { CheckReport, FileReport } from '../../contract/check-report.ts';
+import type { CheckResult, FileFaults } from '../../contract/check-result.ts';
+import { CONFIG_FAULT } from '../../contract/config-error.ts';
+import { isConfigError } from '../../contract/response.ts';
 import { VIOLATION, type ViolationCode } from '../../contract/violation-code.ts';
 import type { Violation } from '../../contract/violation.ts';
 import { check } from '../check.ts';
@@ -16,29 +18,29 @@ import { FIXTURE_CONFIG, fixtureCorpus } from './fixture-corpus.ts';
 const CORPUS = fixtureCorpus();
 
 /** Fails loudly rather than narrowing silently: a rejected config here is a broken slice, not a result. */
-function checked(): CheckReport {
-  const report = check(FIXTURE_CONFIG, CORPUS);
-  if (report.report !== 'check') throw new Error(`config rejected: ${JSON.stringify(report.faults)}`);
-  return report;
+function checked(): CheckResult {
+  const result = check(FIXTURE_CONFIG, CORPUS);
+  if (isConfigError(result)) throw new Error(`config rejected: ${JSON.stringify(result.faults)}`);
+  return result;
 }
 
-function reportFor(path: string): FileReport {
+function reportFor(path: string): FileFaults {
   const file = checked().files.find((entry) => entry.path === path);
   if (file === undefined) throw new Error(`${path} reported no fault`);
   return file;
 }
 
 function violationsOf(path: string): readonly Violation[] {
-  return reportFor(path).violations.frontmatter;
+  return reportFor(path).violations;
 }
 
-describe('a config fault is report content, not a throw', () => {
+describe('a config fault is result content, not a throw', () => {
   it('rejects an empty rule list', () => {
-    const report = check('frontmatter:\n  rules: []\n', { root: 'fixtures', files: [] });
+    const result = check('frontmatter:\n  rules: []\n', { root: 'fixtures', files: [] });
 
-    expect(report).toEqual({
-      report: 'config-rejected',
-      faults: [{ code: 'empty-rule-list', at: 'frontmatter.rules' }],
+    expect(result).toEqual({
+      error: 'CONFIG_REJECTED',
+      faults: [{ code: CONFIG_FAULT.EMPTY_RULE_LIST, location: 'frontmatter.rules' }],
     });
   });
 });
@@ -53,7 +55,7 @@ describe('governance is opt-in by path', () => {
     // `excludeFiles` and matched by nothing after it, so neither may ever
     // surface. That is what the file tests.
     expect(report.files.map((file) => file.path)).not.toContain('docs/research/vendor/upstream.md');
-    expect(report.totals.governed).toBe(24);
+    expect(report.summary.governedFiles).toBe(24);
   });
 
   it('counts the invisible file nowhere, so the arithmetic belongs to the test', () => {
@@ -61,7 +63,7 @@ describe('governance is opt-in by path', () => {
     // `invisible` total to assert — a field holding that number would be the
     // report noticing the file. 25 files in, 24 governed.
     expect(CORPUS.files).toHaveLength(25);
-    expect(CORPUS.files.length - checked().totals.governed).toBe(1);
+    expect(CORPUS.files.length - checked().summary.governedFiles).toBe(1);
   });
 });
 
@@ -74,19 +76,17 @@ describe('presence', () => {
 
     expect(file).toEqual({
       path: 'docs/plain/untyped.md',
-      rule: {
-        ruleId: 'plain',
-        selector: { path: ['docs/plain/**/*.md'] },
-        intent: 'Everything under plain/ still has to say what it is',
-      },
-      violations: {
-        frontmatter: [
-          // NO `value` key at all. The address named nothing, and `value: null`
-          // would claim the key was written and holds nothing — which is the
-          // neighbouring file, and the neighbouring code.
-          { field: 'type', violation: VIOLATION.MISSING_REQUIRED_FIELD, requirement: { presence: 'required' } },
-        ],
-      },
+      // Flat, and no `selector`. Which glob matched is the Operator's question
+      // while debugging a config, and `--coverage` answers it for every rule at
+      // once; an agent repairing this file can act on none of it.
+      ruleId: 'plain',
+      ruleIntent: 'Everything under plain/ still has to say what it is',
+      violations: [
+        // NO `value` key at all. The address named nothing, and `value: null`
+        // would claim the key was written and holds nothing — which is the
+        // neighbouring file, and the neighbouring code.
+        { field: 'type', violation: VIOLATION.MISSING_REQUIRED_FIELD, requirement: { presence: 'required' } },
+      ],
     });
   });
 
@@ -96,7 +96,7 @@ describe('presence', () => {
     // ONLY thing telling a consumer which repair to make is the code.
     const empty = checked().files.find((entry) => entry.path === 'docs/plain/empty-type.md');
 
-    expect(empty?.violations.frontmatter).toEqual([
+    expect(empty?.violations).toEqual([
       { field: 'type', value: null, violation: VIOLATION.EMPTY_REQUIRED_FIELD, requirement: { presence: 'required' } },
     ]);
   });
@@ -125,21 +125,16 @@ describe('first match wins, nothing merges, nothing is inherited', () => {
 
     expect(file).toEqual({
       path: 'docs/research/index.md',
-      rule: {
-        ruleId: 'index-files',
-        selector: { fileName: 'index.md' },
-        intent: 'OKF §8 (Index files): an index enumerates a directory, and carries no frontmatter',
-      },
-      violations: {
-        frontmatter: [
-          {
-            field: null,
-            value: { keys: ['type', 'description'] },
-            violation: VIOLATION.FRONTMATTER_FORBIDDEN,
-            requirement: { frontmatter: 'forbidden' },
-          },
-        ],
-      },
+      ruleId: 'index-files',
+      ruleIntent: 'OKF §8 (Index files): an index enumerates a directory, and carries no frontmatter',
+      violations: [
+        {
+          field: null,
+          value: { keys: ['type', 'description'] },
+          violation: VIOLATION.FRONTMATTER_FORBIDDEN,
+          requirement: { frontmatter: 'forbidden' },
+        },
+      ],
     });
   });
 });
@@ -196,7 +191,7 @@ describe('a pattern never arrives unexplained', () => {
     // language actually promises. Asserted over the whole corpus rather than one
     // file, because a single example would not be an invariant.
     const patterns = checked()
-      .files.flatMap((file) => file.violations.frontmatter)
+      .files.flatMap((file) => file.violations)
       .filter((violation) => 'pattern' in violation.requirement);
 
     expect(patterns.length).toBeGreaterThan(0);
@@ -293,7 +288,7 @@ describe('the frozen report over the whole corpus', () => {
   /** Every fault the corpus produces, flattened: one row per violation. */
   function rows(): readonly (readonly [string, string, string | null])[] {
     return checked().files.flatMap((file) =>
-      file.violations.frontmatter.map((entry) => [file.path, entry.violation, entry.field] as const),
+      file.violations.map((entry) => [file.path, entry.violation, entry.field] as const),
     );
   }
 
@@ -339,74 +334,17 @@ describe('the frozen report over the whole corpus', () => {
 
     expect(rows()).toHaveLength(22);
     expect(report.files).toHaveLength(15);
-    expect(report.totals.governed).toBe(24);
-    // Both derived, deliberately: only `governed` is not recoverable from the
-    // rest, so only `governed` is stored.
-    expect(report.totals.governed - report.files.length).toBe(9);
-    expect(CORPUS.files.length - report.totals.governed).toBe(1);
-  });
 
-  it('declares the format version and echoes the root as given', () => {
-    expect(checked().format).toBe('v1');
-    expect(checked().root).toBe('fixtures');
-  });
-});
-
-describe('coverage is the one diagnostic first-match cannot give you for free', () => {
-  it('names every rule with the files it won, so an inert rule is visible', () => {
-    // The stated cost of tenet 5 is that every LOSING rule is silent. A rule
-    // that wins nothing — almost always an ordering mistake, occasionally a
-    // typo in a glob — is otherwise invisible forever, and no violation it
-    // would have reported ever appears. This is the whole reason the full
-    // files x rules matrix is worth computing.
-    //
-    // Keyed by `ruleId`. Counts are read off the fixture tree by hand, not
-    // recomputed the way the resolver computes them.
-    expect(checked().coverage.map((entry) => [entry.rule.ruleId, entry.won])).toEqual([
-      ['index-files', 2],
-      ['log-files', 1],
-      ['provenance-exemplar', 2],
-      ['research', 6],
-      ['skills', 3],
-      ['reference', 3],
-      ['workflows', 4],
-      ['plain', 3],
-    ]);
-  });
-
-  it('says why a rule did not win the files it selected', () => {
-    // `won: 0` is the alarm; these three are the diagnosis, and each points at
-    // a different fix. `shadowedBy` is what naming rules bought: it says WHICH
-    // rule above took the file, where a position could only have said "one of
-    // the ones before you" about a number that moves.
-    //
-    // The research rule selects ten files under `docs/research/`. It wins six;
-    // `index.md` goes to the rule above it and `provenance.md` and
-    // `provenance-broken.md` go to the exemplar rule; `vendor/upstream.md` is
-    // removed by its own `excludeFiles` before it can win, which is the only
-    // use exclusion has under first match.
-    const research = checked().coverage.find((entry) => entry.rule.ruleId === 'research');
-
-    expect(research).toEqual({
-      rule: {
-        ruleId: 'research',
-        selector: { path: ['docs/research/**/*.md'] },
-        intent: 'Research is indexed, and an index entry copies the description',
-      },
-      won: 6,
-      shadowed: 3,
-      // Deduped, in CONFIG order — which is also the order they sit above this
-      // rule, so it reads as a list of what to look at first.
-      shadowedBy: ['index-files', 'provenance-exemplar'],
-      excluded: 1,
-    });
-  });
-
-  it('finds no inert rule in the fixture config', () => {
-    // Named separately from the table because it is a different claim: the
-    // table pins the numbers, this pins the property the diagnostic exists for.
-    // Filtered rather than asserted with `every`, so a failure says WHICH rule.
-    expect(checked().coverage.filter((entry) => entry.won === 0)).toEqual([]);
+    // The summary asserted against the list it was computed FROM, which is what
+    // makes storing two derivable counts safe: they are one measurement rendered
+    // twice rather than two measurements that could disagree. An agent asked to
+    // sum an array to find out whether anything is wrong is being asked the one
+    // thing it is least reliable at.
+    expect(report.summary).toEqual({ governedFiles: 24, faultyFiles: 15, totalViolations: 22 });
+    expect(report.summary.faultyFiles).toBe(report.files.length);
+    expect(report.summary.totalViolations).toBe(rows().length);
+    expect(report.summary.governedFiles - report.summary.faultyFiles).toBe(9);
+    expect(CORPUS.files.length - report.summary.governedFiles).toBe(1);
   });
 });
 
@@ -461,10 +399,7 @@ describe('the corpus is a specification, so it states what it does not yet cover
 
   function produced(): ReadonlySet<string> {
     const forms = checked().files.flatMap((file) =>
-      file.violations.frontmatter.flatMap((entry) => [
-        entry.violation,
-        ...(entry.field?.includes('[') ? ['per-entry'] : []),
-      ]),
+      file.violations.flatMap((entry) => [entry.violation, ...(entry.field?.includes('[') ? ['per-entry'] : [])]),
     );
     return new Set(forms);
   }

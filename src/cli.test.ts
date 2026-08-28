@@ -66,9 +66,9 @@ describe('a config that cannot describe anything', () => {
 });
 
 describe('mh --check writes the artifact', () => {
-  // The report is public API from v1, because it is how a reimplementation is
-  // verified against the corpus. There is one channel and no flag to pick it, so
-  // what this asserts is that the artifact arrives intact on stdout.
+  // The response is public API, because it is how a reimplementation is verified
+  // against the corpus. There is one channel and no flag to pick it, so what this
+  // asserts is that the artifact arrives intact on stdout.
   //
   // The expected counts are the build's acceptance criterion, not values
   // recomputed here the way the code computes them.
@@ -77,14 +77,50 @@ describe('mh --check writes the artifact', () => {
 
     expect({ status, stderr }).toEqual({ status: 1, stderr: '' });
     expect(stdout.startsWith('{')).toBe(true);
-    const report = JSON.parse(stdout);
-    expect({
-      report: report.report,
-      format: report.format,
-      root: report.root,
-      files: report.files.length,
-      governed: report.totals.governed,
-    }).toEqual({ report: 'check', format: 'v1', root: 'fixtures', files: 15, governed: 24 });
+    const response = JSON.parse(stdout);
+
+    // The envelope, and the whole of what it adds: WHAT WAS ASKED beside what
+    // was answered. The config path was previously invisible in the output, so
+    // two runs of one corpus under different configs were indistinguishable
+    // afterwards.
+    expect({ command: response.command, root: response.root, config: response.config }).toEqual({
+      command: 'check',
+      root: 'fixtures',
+      config: 'fixtures/valid-test-config.yaml',
+    });
+    expect(response.result.summary).toEqual({ governedFiles: 24, faultyFiles: 15, totalViolations: 22 });
+    expect(response.result.files).toHaveLength(15);
+  });
+});
+
+describe('mh --coverage is its own command', () => {
+  // It left the check report rather than being deleted: the Operator needs it
+  // and a Contributor's agent can act on none of it. Always exits 0, including
+  // over a config with an inert rule — whether that breaks a build is the
+  // Operator's policy, and a diagnostic that fails cannot be run for
+  // information.
+  it('names every rule, and exits 0 even though the corpus is faulty', () => {
+    const { status, stdout, stderr } = run('--coverage', ...FIXTURES);
+
+    expect({ status, stderr }).toEqual({ status: 0, stderr: '' });
+    const response = JSON.parse(stdout);
+    expect(response.command).toBe('coverage');
+    // Every rule in the fixture config gets a row, including any that won
+    // nothing — a row that appeared only when it had something to say could not
+    // report the absence that matters.
+    expect(response.result.rules.map((entry: { rule: { ruleId: string } }) => entry.rule.ruleId)).toEqual([
+      'index-files',
+      'log-files',
+      'provenance-exemplar',
+      'research',
+      'skills',
+      'reference',
+      'workflows',
+      'plain',
+    ]);
+    // `selector` travels HERE and nowhere else in the responses: this is the
+    // payload for somebody debugging why a glob did or did not match.
+    expect(response.result.rules[0].rule.selector).toEqual({ fileName: 'index.md' });
   });
 });
 
@@ -194,10 +230,10 @@ describe('mh --check over a root that holds node_modules and .git', () => {
     );
 
     expect({ status, stderr }).toEqual({ status: 1, stderr: '' });
-    const report = JSON.parse(stdout);
+    const { result } = JSON.parse(stdout);
     expect({
-      files: report.files.map((file: { path: string }) => file.path),
-      governed: report.totals.governed,
+      files: result.files.map((file: { path: string }) => file.path),
+      governed: result.summary.governedFiles,
     }).toEqual({
       files: ['kept.md'],
       governed: 1,

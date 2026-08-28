@@ -10,26 +10,60 @@
 // not much of it.
 
 import { describe, expect, it } from 'vitest';
-import type { SteeringAnswer } from '../../contract/steering-answer.ts';
+import { CONFIG_FAULT } from '../../contract/config-error.ts';
+import type { QueryResult } from '../../contract/query-result.ts';
+import { isConfigError } from '../../contract/response.ts';
 import { query } from '../query.ts';
 import { FIXTURE_CONFIG } from './fixture-corpus.ts';
 
 /** Fails loudly rather than narrowing silently: a rejected config here is a broken slice, not a result. */
-function asked(path: string): SteeringAnswer {
-  const answer = query(FIXTURE_CONFIG, path);
-  if (answer.report !== 'steering') throw new Error(`config rejected: ${JSON.stringify(answer.faults)}`);
-  return answer;
+function asked(path: string): QueryResult {
+  const result = query(FIXTURE_CONFIG, path);
+  if (isConfigError(result)) throw new Error(`config rejected: ${JSON.stringify(result.faults)}`);
+  return result;
 }
 
-describe('a config fault is report content here too', () => {
+describe('a config fault is result content here too', () => {
   it('rejects an empty rule list rather than answering “ungoverned”', () => {
     // The dangerous answer, and the reason this cannot be left to `check`:
-    // `governedBy: null` means INVISIBLE, and a broken config would produce it
-    // for every path. An agent would be told, truthfully-looking, that nothing
-    // is required of the file it is about to write.
+    // `governance: 'invisible'` is a claim about every rule in the config, and a
+    // broken config would make it for every path. An agent would be told,
+    // truthfully-looking, that nothing is required of the file it is about to
+    // write.
     expect(query('frontmatter:\n  rules: []\n', 'docs/research/survey.md')).toEqual({
-      report: 'config-rejected',
-      faults: [{ code: 'empty-rule-list', at: 'frontmatter.rules' }],
+      error: 'CONFIG_REJECTED',
+      faults: [{ code: CONFIG_FAULT.EMPTY_RULE_LIST, location: 'frontmatter.rules' }],
+    });
+  });
+
+  it('refuses a pattern with no sibling intent, which the config language has always called mandatory', () => {
+    // Enforced from here rather than promised. A violation carries the config
+    // fragment verbatim and therefore carries the regex, so the mandatory
+    // sibling is the whole of what keeps the Kubernetes failure
+    // (`"failed rule: {Rule}"`) away — which makes an unexplained pattern a
+    // CONFIG error, because there is no layer of ours left to paper over it.
+    const config = [
+      'frontmatter:',
+      '  rules:',
+      '    - ruleId: slugs',
+      '      path: [docs/**/*.md]',
+      '      intent: Slugs identify a page',
+      '      fields:',
+      '        slug: { pattern: "^[a-z]+$" }',
+      '',
+    ].join('\n');
+
+    expect(query(config, 'docs/anything.md')).toEqual({
+      error: 'CONFIG_REJECTED',
+      faults: [
+        {
+          code: CONFIG_FAULT.MISSING_PATTERN_INTENT,
+          // Positional, because this is a place in a file the Operator has open
+          // — not a reference to a rule that has to survive an insertion above
+          // it. That is what `ruleId` is for, everywhere else.
+          location: 'frontmatter.rules[0].fields.slug.pattern',
+        },
+      ],
     });
   });
 });
@@ -47,38 +81,38 @@ describe('a steering answer is about a path, never about a file', () => {
     // them, with no prose to fall back on, is the experiment this payload
     // exists to run.
     expect(asked('docs/research/new-thing.md')).toEqual({
-      report: 'steering',
-      format: 'v1',
+      governance: 'governed',
       path: 'docs/research/new-thing.md',
-      governedBy: {
-        rule: {
-          ruleId: 'research',
-          selector: { path: ['docs/research/**/*.md'] },
-          intent: 'Research is indexed, and an index entry copies the description',
-        },
-        requires: {
-          // A LIST sorted by address, not the config's mapping. design-ADR 0001
-          // records that mapping key order is a serialization detail YAML 1.2.2
-          // says not to depend on — the same reason a file's violations are
-          // sorted by address rather than by config order.
-          fields: [
-            { field: 'description', constraints: { presence: 'required', maxLength: 200 } },
-            { field: 'tags', constraints: { minItems: 1, maxItems: 5, itemMaxLength: 20 } },
-            {
-              field: 'type',
-              constraints: {
-                presence: 'required',
-                allowed: [{ value: 'research', intent: 'Findings gathered to settle a question, with sources.' }],
-              },
-            },
-          ],
-          // Present because this rule writes it. A rule that does not write it
-          // has no `unknownKeys` key here either: the answer states what the
-          // Operator stated, and `allowed` is the language's default rather than
-          // their word.
-          unknownKeys: 'allowed',
-          anyOf: ['sources', 'generated'],
-        },
+      // `ruleId` and `intent`, and no `selector`. Which glob matched is the
+      // Operator's question while debugging a config, and `--coverage` answers
+      // it for every rule at once.
+      rule: {
+        ruleId: 'research',
+        intent: 'Research is indexed, and an index entry copies the description',
+      },
+      requirements: {
+        // A LIST sorted by address, not the config's mapping. design-ADR 0001
+        // records that mapping key order is a serialization detail YAML 1.2.2
+        // says not to depend on — the same reason a file's violations are
+        // sorted by address rather than by config order.
+        //
+        // FLAT: the address sits beside the demands rather than above them,
+        // because the reader is an agent assembling one field at a time.
+        fields: [
+          { field: 'description', presence: 'required', maxLength: 200 },
+          { field: 'tags', minItems: 1, maxItems: 5, itemMaxLength: 20 },
+          {
+            field: 'type',
+            presence: 'required',
+            allowed: [{ value: 'research', intent: 'Findings gathered to settle a question, with sources.' }],
+          },
+        ],
+        // Present because this rule writes it. A rule that does not write it
+        // has no `unknownKeys` key here either: the answer states what the
+        // Operator stated, and `allowed` is the language's default rather than
+        // their word.
+        unknownKeys: 'allowed',
+        crossField: { anyOf: ['sources', 'generated'] },
       },
     });
   });
@@ -94,38 +128,32 @@ describe('a steering answer is about a path, never about a file', () => {
     // as well would put Operator content on a payload whose reader is the
     // Contributor's agent, which can act on none of it.
     expect(asked('docs/reference/index.md')).toEqual({
-      report: 'steering',
-      format: 'v1',
+      governance: 'governed',
       path: 'docs/reference/index.md',
-      governedBy: {
-        rule: {
-          ruleId: 'index-files',
-          // Sugar unexpanded: the Operator wrote `fileName`, so the answer says
-          // `fileName`, not the `**/index.md` it desugars to.
-          selector: { fileName: 'index.md' },
-          intent: 'OKF §8 (Index files): an index enumerates a directory, and carries no frontmatter',
-        },
-        // The whole of the rule. `frontmatter: forbidden` excludes every payload
-        // key, so there is nothing else this rule can be asking for.
-        requires: { frontmatter: 'forbidden' },
+      rule: {
+        ruleId: 'index-files',
+        intent: 'OKF §8 (Index files): an index enumerates a directory, and carries no frontmatter',
       },
+      // The whole of the rule. `frontmatter: forbidden` excludes every payload
+      // key, so there is nothing else this rule can be asking for.
+      requirements: { frontmatter: 'forbidden' },
     });
   });
 
-  it('answers null for a path an exclusion removed', () => {
-    // The most surprising thing `markdown-harness` can do. `governedBy: null` is
-    // not "no constraints" — it is INVISIBLE (tenet 6): nothing will ever be
-    // reported about a file here, by any rule, and a clean run looks exactly the
-    // same as a file that does not exist.
+  it('names invisibility for a path an exclusion removed, rather than leaving a null to interpret', () => {
+    // The most surprising thing `markdown-harness` can do, so the payload SAYS
+    // it. This is not "no constraints" — it is INVISIBLE (tenet 6): nothing will
+    // ever be reported about a file here, by any rule, and a clean run looks
+    // exactly the same as a file that does not exist. `governedBy: null` left
+    // every reader to work that out.
     //
     // `docs/research/vendor/**` is in the research rule's own `excludeFiles`,
     // and no rule after it matches. Which glob fired is not said here; it is a
-    // config question, and `coverage` counts it against the rule that declined.
+    // config question, and `--coverage` counts it against the rule that
+    // declined.
     expect(asked('docs/research/vendor/new.md')).toEqual({
-      report: 'steering',
-      format: 'v1',
+      governance: 'invisible',
       path: 'docs/research/vendor/new.md',
-      governedBy: null,
     });
   });
 

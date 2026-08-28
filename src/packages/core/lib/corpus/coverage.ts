@@ -7,8 +7,8 @@
  * coverage table at all.
  */
 
-import type { RuleCoverage } from '../../../contract/check-report.ts';
 import type { FrontmatterRule } from '../../../contract/config.ts';
+import type { RuleCoverage } from '../../../contract/coverage-result.ts';
 import { ruleRef, type Resolution } from './select.ts';
 
 /** What one rule accumulates across the corpus, before it becomes a row. */

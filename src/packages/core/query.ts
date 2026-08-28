@@ -2,7 +2,7 @@
  * `query` — what the config asks of one path.
  *
  * Takes config TEXT, not a parsed config, for the reason `check` does: parsing
- * and validation produce report content, so both live inside this seam.
+ * and validation produce result content, so both live inside this seam.
  *
  * IT NEVER TOUCHES THE CORPUS. The entire input is a path string and the
  * config, which is `git check-attr` semantics — a path that does not exist and
@@ -15,29 +15,32 @@
  * the config's own vocabulary — which is the thing being measured.
  */
 
-import type { ConfigRejected } from '../contract/config-rejected.ts';
-import type { SteeringAnswer } from '../contract/steering-answer.ts';
+import type { ConfigErrorResult } from '../contract/config-error.ts';
+import type { QueryResult } from '../contract/query-result.ts';
 import { requirements } from '../frontmatter-harness/requirements.ts';
-import { emptyRuleList, readRules } from './lib/config/parse.ts';
+import { configFaults, readRules, rejected } from './lib/config/parse.ts';
 import { normalize } from './lib/corpus/normalize.ts';
-import { resolve, ruleRef } from './lib/corpus/select.ts';
+import { resolve } from './lib/corpus/select.ts';
 
-export function query(configText: string, path: string): SteeringAnswer | ConfigRejected {
+export function query(configText: string, path: string): QueryResult | ConfigErrorResult {
   const rules = readRules(configText);
-  // Before resolution, because `governedBy: null` means INVISIBLE — a broken
-  // config must not be able to say that about every path.
-  if (rules.length === 0) return emptyRuleList();
+  // Before resolution, because `governance: 'invisible'` is a claim about every
+  // rule in the config — a broken config must not be able to make it.
+  const faults = configFaults(rules);
+  if (faults.length > 0) return rejected(faults);
 
   const repoPath = normalize(path);
   const { winner } = resolve(rules, repoPath);
 
+  // Invisible is not unconstrained. WHY nothing governs this path — a rule above
+  // won, or a rule's own `excludeFiles` fired — is the Operator's question, and
+  // `--coverage` is where it is answered.
+  if (winner === null) return { governance: 'invisible', path: repoPath };
+
   return {
-    report: 'steering',
-    format: 'v1',
+    governance: 'governed',
     path: repoPath,
-    // `null` means invisible, not unconstrained. WHY it is null — a rule above
-    // won, or a rule's own `excludeFiles` fired — is the Operator's question,
-    // and the check report's `coverage` is where it is answered.
-    governedBy: winner === null ? null : { rule: ruleRef(winner), requires: requirements(winner) },
+    rule: { ruleId: winner.ruleId, intent: winner.intent },
+    requirements: requirements(winner),
   };
 }

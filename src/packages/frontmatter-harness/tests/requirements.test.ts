@@ -54,9 +54,12 @@ describe('what the Operator wrote travels; what they did not is absent', () => {
     };
 
     expect(requirements(rule)).toEqual({
-      fields: [{ field: 'title', constraints: { minLength: 3, maxLength: 80 } }],
+      // FLAT: the address sits beside the demands rather than above them.
+      fields: [{ field: 'title', minLength: 3, maxLength: 80 }],
       unknownKeys: 'forbidden',
-      allOf: ['title', 'description'],
+      // Grouped, so the three set-constraints read as one concern rather than as
+      // three siblings of `fields`.
+      crossField: { allOf: ['title', 'description'] },
     });
   });
 
@@ -64,8 +67,8 @@ describe('what the Operator wrote travels; what they did not is absent', () => {
     // The one exception to the rule above, and it is a real distinction rather
     // than an inconsistency. `unknownKeys` and the cross-field keys are the
     // Operator's VALUES travelling through, so absence is meaningful. `fields`
-    // is a list WE build — sorted, restructured into `{ field, constraints }` —
-    // out of fragments that are theirs. One shape wins for what we compute.
+    // is a list WE build — sorted, and flattened with the address — out of
+    // fragments that are theirs. One shape wins for what we compute.
     const rule: FrontmatterRule = {
       ruleId: 'skills',
       path: ['docs/skills/**/SKILL.md'],
@@ -73,7 +76,7 @@ describe('what the Operator wrote travels; what they did not is absent', () => {
       exactlyOneOf: ['name', 'title'],
     };
 
-    expect(requirements(rule)).toEqual({ fields: [], exactlyOneOf: ['name', 'title'] });
+    expect(requirements(rule)).toEqual({ fields: [], crossField: { exactlyOneOf: ['name', 'title'] } });
   });
 });
 
@@ -111,7 +114,8 @@ describe('addresses arrive in a deterministic order, whatever the config did', (
     // shapes, which is what "verbatim" has to mean to be worth anything.
     expect(requirement.fields?.[2]).toEqual({
       field: 'sources[].resource',
-      constraints: { presence: 'required', format: 'uri' },
+      presence: 'required',
+      format: 'uri',
     });
   });
 });

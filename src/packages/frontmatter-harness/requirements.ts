@@ -15,13 +15,15 @@
  */
 
 import type { FrontmatterRule } from '../contract/config.ts';
-import type { FieldRequirement, Requirement } from '../contract/steering-answer.ts';
+import type { CrossFieldRequirements, FieldRequirement, Requirements } from '../contract/query-result.ts';
 
 /** What one rule asks of any path it governs. */
-export function requirements(rule: FrontmatterRule): Requirement {
+export function requirements(rule: FrontmatterRule): Requirements {
   // `frontmatter: forbidden` excludes every payload key, so this arm is the
   // whole of the rule and there is nothing else to hand back.
   if (rule.frontmatter === 'forbidden') return { frontmatter: 'forbidden' };
+
+  const crossField = crossFieldOf(rule);
 
   return {
     fields: fields(rule),
@@ -29,14 +31,28 @@ export function requirements(rule: FrontmatterRule): Requirement {
     // ABSENT rather than `undefined`. The distinction survives JSON, and it is
     // the whole of "verbatim" for optional keys.
     ...(rule.unknownKeys === undefined ? {} : { unknownKeys: rule.unknownKeys }),
-    ...(rule.exactlyOneOf === undefined ? {} : { exactlyOneOf: rule.exactlyOneOf }),
-    ...(rule.anyOf === undefined ? {} : { anyOf: rule.anyOf }),
-    ...(rule.allOf === undefined ? {} : { allOf: rule.allOf }),
+    ...(crossField === null ? {} : { crossField }),
   };
 }
 
 /**
- * Addresses in sorted order, each carrying its constraints untouched.
+ * The three set-constraints, grouped — or nothing at all when the rule names
+ * none.
+ *
+ * An empty `crossField: {}` would be a container the Operator did not ask for,
+ * which is the same mistake as writing `unknownKeys: 'allowed'` on their behalf.
+ */
+function crossFieldOf(rule: FrontmatterRule): CrossFieldRequirements | null {
+  const grouped: CrossFieldRequirements = {
+    ...(rule.exactlyOneOf === undefined ? {} : { exactlyOneOf: rule.exactlyOneOf }),
+    ...(rule.anyOf === undefined ? {} : { anyOf: rule.anyOf }),
+    ...(rule.allOf === undefined ? {} : { allOf: rule.allOf }),
+  };
+  return Object.keys(grouped).length === 0 ? null : grouped;
+}
+
+/**
+ * Addresses in sorted order, each FLATTENED together with its constraints.
  *
  * Config addresses never carry a list index — `sources[].resource`, never
  * `sources[1].resource` — so a plain comparison is enough here, where
@@ -44,6 +60,6 @@ export function requirements(rule: FrontmatterRule): Requirement {
  */
 function fields(rule: FrontmatterRule): readonly FieldRequirement[] {
   return Object.entries(rule.fields ?? {})
-    .map(([field, constraints]) => ({ field, constraints }))
+    .map(([field, constraints]) => ({ field, ...constraints }))
     .sort((left, right) => left.field.localeCompare(right.field));
 }
