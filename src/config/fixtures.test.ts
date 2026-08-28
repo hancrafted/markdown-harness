@@ -1,10 +1,10 @@
-// Fixture-integrity tests for `fixtures/`.
+// Fixture-integrity tests for `fixtures/conformance/`.
 //
 // These do not test the harness — no reader, resolver or check command exists
-// yet. They assert that the fixture is still a COMPLETE test surface: every key
-// in the config vocabulary is exercised somewhere, and the fixture obeys the
-// config-validity rules a real validator will later enforce. When the
-// vocabulary grows, this fails until the fixture grows with it.
+// yet. They assert that the Conformance suite is still a COMPLETE test surface:
+// every key in the config vocabulary is exercised somewhere, and the config
+// obeys the config-validity rules a real validator will later enforce. When the
+// vocabulary grows, this fails until the suite grows with it.
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -64,6 +64,12 @@ function everyConstraint(): FieldConstraints[] {
   return rules.flatMap((rule) => Object.values(rule.fields ?? {}));
 }
 
+function everyConstraintKey(): Set<string> {
+  const seen = new Set<string>();
+  for (const constraint of everyConstraint()) for (const key of Object.keys(constraint)) seen.add(key);
+  return seen;
+}
+
 function everyAllowedValue(): AllowedValue[] {
   return everyConstraint().flatMap((constraint) => constraint.allowed ?? []);
 }
@@ -73,83 +79,169 @@ function everyFieldAddress(): string[] {
 }
 
 describe('valid-test-config.yaml is a complete test surface', () => {
-  it('parses into exactly one module section', () => {
-    expect(Object.keys(config)).toEqual(['frontmatter']);
-    expect(rules.length).toBeGreaterThan(0);
+  describe('happy path', () => {
+    it('parses into exactly one module section', () => {
+      // ARRANGE
+      const expected = ['frontmatter'];
+      // ACT
+      const actual = Object.keys(config);
+      // ASSERT
+      expect(actual).toEqual(expected);
+      expect(rules.length).toBeGreaterThan(0);
+    });
+
+    it.each(RULE_KEYS)('exercises the rule key %s', (key) => {
+      // ARRANGE
+      const seen = everyRuleKey();
+      // ACT
+      const isExercised = seen.has(key);
+      // ASSERT
+      expect(isExercised).toBe(true);
+    });
+
+    it.each(CONSTRAINT_KEYS)('exercises the constraint %s', (key) => {
+      // ARRANGE
+      const constraints = everyConstraint();
+      // ACT
+      const isExercised = constraints.some((constraint) => key in constraint);
+      // ASSERT
+      expect(isExercised).toBe(true);
+    });
+
+    it.each(FORMATS)('exercises the named format %s', (format) => {
+      // ARRANGE
+      const constraints = everyConstraint();
+      // ACT
+      const isExercised = constraints.some((constraint) => constraint.format === format);
+      // ASSERT
+      expect(isExercised).toBe(true);
+    });
   });
 
-  it.each(RULE_KEYS)('exercises the rule key %s', (key) => {
-    expect(everyRuleKey()).toContain(key);
+  describe('sad path', () => {
+    it('carries no rule key outside the vocabulary', () => {
+      // ARRANGE
+      const known: readonly string[] = RULE_KEYS;
+      // ACT
+      const unknown = [...everyRuleKey()].filter((key) => !known.includes(key));
+      // ASSERT
+      expect(unknown).toEqual([]);
+    });
+
+    it('carries no constraint key outside the vocabulary', () => {
+      // ARRANGE
+      const known: readonly string[] = CONSTRAINT_KEYS;
+      // ACT
+      const unknown = [...everyConstraintKey()].filter((key) => !known.includes(key));
+      // ASSERT
+      expect(unknown).toEqual([]);
+    });
   });
 
-  it.each(CONSTRAINT_KEYS)('exercises the constraint %s', (key) => {
-    expect(everyConstraint().some((c) => key in c)).toBe(true);
-  });
+  describe('edge cases', () => {
+    it('reaches both nesting depths', () => {
+      // ARRANGE
+      const addresses = everyFieldAddress();
+      // ACT
+      const reachesListEntries = addresses.some((address) => address.includes('[].'));
+      const reachesMappingKeys = addresses.some((a) => a.includes('.') && !a.includes('[]'));
+      // ASSERT
+      expect(reachesListEntries).toBe(true);
+      expect(reachesMappingKeys).toBe(true);
+    });
 
-  it.each(FORMATS)('exercises the named format %s', (format) => {
-    expect(everyConstraint().some((c) => c.format === format)).toBe(true);
-  });
-
-  it('reaches both nesting depths', () => {
-    const addresses = everyFieldAddress();
-    expect(addresses.some((a) => a.includes('[].'))).toBe(true);
-    expect(addresses.some((a) => a.includes('.') && !a.includes('[]'))).toBe(true);
-  });
-
-  it('addresses a list and its entries separately', () => {
-    const addresses = new Set(everyFieldAddress());
-    expect(addresses).toContain('sources');
-    expect(addresses).toContain('sources[].resource');
+    it('addresses a list and its entries separately', () => {
+      // ARRANGE
+      const list = 'sources';
+      const entryField = 'sources[].resource';
+      // ACT
+      const addresses = new Set(everyFieldAddress());
+      // ASSERT
+      expect(addresses).toContain(list);
+      expect(addresses).toContain(entryField);
+    });
   });
 });
 
 describe('valid-test-config.yaml obeys the config-validity rules', () => {
-  it('gives every rule exactly one selector', () => {
-    for (const rule of rules) {
-      const selectors = ['path', 'fileName'].filter((k) => k in rule);
-      expect(selectors, JSON.stringify(rule.intent)).toHaveLength(1);
-    }
+  describe('happy path', () => {
+    it('gives every rule exactly one selector', () => {
+      // ARRANGE
+      const selectorKeys = ['path', 'fileName'];
+      // ACT
+      const counts = rules.map((rule) => selectorKeys.filter((key) => key in rule).length);
+      // ASSERT
+      for (const count of counts) expect(count).toBe(1);
+    });
+
+    it('gives every rule an intent', () => {
+      // ARRANGE
+      const intents = rules.map((rule) => rule.intent);
+      // ACT
+      const missing = intents.filter((intent) => !intent);
+      // ASSERT
+      expect(missing).toEqual([]);
+    });
+
+    it('gives every pattern a sibling intent', () => {
+      // ARRANGE
+      const patterned = everyConstraint().filter((constraint) => 'pattern' in constraint);
+      // ACT
+      const missing = patterned.filter((constraint) => !constraint.intent);
+      // ASSERT
+      expect(missing).toEqual([]);
+    });
   });
 
-  it('gives every rule an intent', () => {
-    for (const rule of rules) expect(rule.intent).toBeTruthy();
+  describe('sad path', () => {
+    it('leaves a frontmatter-forbidden rule with no payload', () => {
+      // ARRANGE
+      const forbidding = rules.filter((rule) => 'frontmatter' in rule);
+      const forbidden = 'forbidden';
+      // ACT
+      const withPayload = forbidding.flatMap((rule) => PAYLOAD_KEYS.filter((key) => key in rule));
+      // ASSERT
+      for (const rule of forbidding) expect(rule.frontmatter).toBe(forbidden);
+      expect(withPayload).toEqual([]);
+    });
+
+    it('spells every allowed entry as a record, never a bare string', () => {
+      // ARRANGE
+      const entries = everyAllowedValue();
+      const recordType = 'object';
+      const valueKey = 'value';
+      // ACT
+      const types = entries.map((entry) => typeof entry);
+      // ASSERT
+      for (const type of types) expect(type).toBe(recordType);
+      for (const entry of entries) expect(entry).toHaveProperty(valueKey);
+    });
+
+    it('rejects an intent that is present but empty', () => {
+      // ARRANGE
+      const carriers = [...everyConstraint(), ...everyAllowedValue()].filter((carrier) => 'intent' in carrier);
+      // ACT
+      const empty = carriers.filter((carrier) => !carrier.intent);
+      // ASSERT
+      expect(empty).toEqual([]);
+    });
   });
 
-  it('gives every pattern a sibling intent', () => {
-    for (const constraint of everyConstraint()) {
-      if ('pattern' in constraint) expect(constraint.intent).toBeTruthy();
-    }
-  });
-
-  it('leaves a frontmatter-forbidden rule with no payload', () => {
-    for (const rule of rules) {
-      if (!('frontmatter' in rule)) continue;
-      expect(rule.frontmatter).toBe('forbidden');
-      expect(PAYLOAD_KEYS.filter((k) => k in rule)).toEqual([]);
-    }
-  });
-
-  it('spells every allowed entry as a record, never a bare string', () => {
-    for (const entry of everyAllowedValue()) {
-      expect(typeof entry, JSON.stringify(entry)).toBe('object');
-      expect(entry).toHaveProperty('value');
-    }
-  });
-
-  it('derives the type vocabulary from the union of allowed values', () => {
-    // The Floor is gone: no top-level ceiling and no rule-level `types:`. `type`
-    // is an ordinary field, so the repo's vocabulary is implicit rather than
-    // declared — derivable for reporting, no longer stated in one place.
-    expect(rules.some((rule) => 'types' in rule)).toBe(false);
-    const vocabulary = new Set(
-      (rules.flatMap((rule) => rule.fields?.type?.allowed ?? []) as AllowedValue[]).map((entry) => entry.value),
-    );
-    expect(vocabulary.size).toBeGreaterThan(1);
-  });
-
-  it('rejects an intent that is present but empty', () => {
-    for (const carrier of [...everyConstraint(), ...everyAllowedValue()]) {
-      if ('intent' in carrier) expect(carrier.intent).toBeTruthy();
-    }
+  describe('edge cases', () => {
+    it('derives the type vocabulary from the union of allowed values', () => {
+      // The Floor is gone: no top-level ceiling and no rule-level `types:`. `type`
+      // is an ordinary field, so the repo's vocabulary is implicit rather than
+      // declared — derivable for reporting, no longer stated in one place.
+      // ARRANGE
+      const retiredKey = 'types';
+      // ACT
+      const declaresCeiling = rules.some((rule) => retiredKey in rule);
+      const vocabulary = new Set(
+        (rules.flatMap((rule) => rule.fields?.type?.allowed ?? []) as AllowedValue[]).map((entry) => entry.value),
+      );
+      // ASSERT
+      expect(declaresCeiling).toBe(false);
+      expect(vocabulary.size).toBeGreaterThan(1);
+    });
   });
 });
