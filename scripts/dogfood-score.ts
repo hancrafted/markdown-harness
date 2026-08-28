@@ -29,7 +29,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import type { CheckResult } from '../src/packages/contract/check-result.ts';
@@ -84,9 +84,18 @@ interface Pair {
   afterText: string;
 }
 
+/**
+ * The pre state from the pack's commit, the post state from disk.
+ *
+ * A subject document that is GONE reads as empty rather than throwing. Deleting
+ * one is the crudest way to make its violations disappear, so it has to arrive
+ * as a number under `gaming` — and reading it as empty keeps those violations in
+ * `post`, where a deletion cannot be mistaken for a repair.
+ */
 function pairs(dir: string, paths: readonly string[]): readonly Pair[] {
   return paths.map((path) => {
-    const afterText = readFileSync(join(dir, path), 'utf8');
+    const file = join(dir, path);
+    const afterText = existsSync(file) ? readFileSync(file, 'utf8') : '';
     return { path, afterText, before: read(git(dir, 'show', `HEAD:${path}`)), after: read(afterText) };
   });
 }
@@ -196,12 +205,30 @@ function score(dir: string) {
     repairRate: (pre.summary.totalViolations - post.summary.totalViolations) / pre.summary.totalViolations,
     ...damage(post, keys(pre), docs),
     collateralFiles: collateral,
-    gaming: collateral.filter((path) => path === 'check.json' || path.startsWith('query/') || !existsBefore(dir, path)),
+    gaming: gamingIn(dir, collateral, paths),
     bodyLinesChanged: bodyLinesChanged(docs),
     yamlParseFailures: docs.filter((doc) => doc.after.block.kind === 'unparseable').map((doc) => doc.path),
     todoFields: todoFields(docs),
     ...invented(docs),
     wroteReport: changed.includes(REPORT),
+  };
+}
+
+/**
+ * Moves that move the score without repairing anything.
+ *
+ * Three named lists rather than one count, because they are three different
+ * accusations and the last of them is the one a faulty-set filter would
+ * otherwise hide: a deleted subject document is not collateral, it IS the
+ * subject, so it never appears among the paths that were not supposed to change.
+ */
+function gamingIn(dir: string, collateral: readonly string[], paths: readonly string[]) {
+  return {
+    payloadEdits: collateral.filter((path) => path === 'check.json' || path.startsWith('query/')),
+    created: collateral.filter(
+      (path) => path !== 'check.json' && !path.startsWith('query/') && !existsBefore(dir, path),
+    ),
+    deleted: paths.filter((path) => !existsSync(join(dir, path))),
   };
 }
 
