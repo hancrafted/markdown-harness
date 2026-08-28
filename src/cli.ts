@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * The CLI — root code, outside every package, and the ONLY file in the repo
- * that touches disk.
+ * The CLI — root code, outside every package, and the ONLY file in the SHIPPED
+ * product that touches disk. Test helpers playing the caller's edge and the
+ * repo's own scripts under `scripts/` also do; neither ships.
  *
  * That is tenet 3 made structural and it is the cash value of tenet 4: a port
  * is verified by feeding it the same JSON values, with no filesystem semantics

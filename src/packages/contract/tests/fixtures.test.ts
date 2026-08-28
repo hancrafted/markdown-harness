@@ -1,7 +1,8 @@
 // Fixture-integrity tests for `fixtures/`.
 //
-// These do not test the harness — no reader, resolver or check command exists
-// yet. They assert that the fixture is still a COMPLETE test surface: every key
+// These do not test `markdown-harness` — `check`, `query` and `coverage` have
+// their own specification tests, against this same tree.
+// They assert that the fixture is still a COMPLETE test surface: every key
 // in the config vocabulary is exercised somewhere, and the fixture obeys the
 // config-validity rules a real validator will later enforce. When the
 // vocabulary grows, this fails until the fixture grows with it.

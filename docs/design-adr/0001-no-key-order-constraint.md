@@ -13,7 +13,7 @@ of mapping keys is a serialization detail that should not be relied on in the fi
 
 ## Considered options
 
-**Pin `type` to the first key, harness-wide.** Rejected on four grounds.
+**Pin `type` to the first key, repo-wide.** Rejected on four grounds.
 
 _It is not measurably faster._ Over 2000 realistic files (avg 5 KB, OKF-shaped frontmatter),
 21 interleaved iterations:
@@ -33,8 +33,8 @@ corpus: 13× the entire scan. The saving is 8% of the cheapest operation in the 
 _What position actually buys is boundedness, not speed_ — a fixed-size read is only correct if
 the key sits at a fixed offset, which is why the 64 B and 512 B rows classify nothing when
 `type` is last (the frontmatter block measured 615 bytes). But a 4 KB window buys the same
-guarantee for any realistic frontmatter at a cost of ~2 ms. Boundedness is a window size the
-harness picks once, internally, and can change; key order is a constraint every adopter
+guarantee for any realistic frontmatter at a cost of ~2 ms. Boundedness is a window size
+`markdown-harness` picks once, internally, and can change; key order is a constraint every adopter
 maintains forever.
 
 _The format says not to rely on it._ YAML 1.2.2 §3.2.2.1: mapping keys "do not have an order",

@@ -100,8 +100,10 @@ export interface FieldConstraints {
   /**
    * Why THIS constraint exists. Optional, except mandatory alongside `pattern`.
    *
-   * Wins over the rule's `intent` for violations of this field. Appended to the
-   * harness's own message, never substituted for it.
+   * Wins over the rule's `intent` for violations of this field, and travels
+   * inside the violation's verbatim `requirement` fragment. Nothing appends it
+   * to a message of ours, because there is no message: the report format holds
+   * no prose we wrote.
    */
   intent?: string;
 }

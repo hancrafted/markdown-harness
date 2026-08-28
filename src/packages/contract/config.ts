@@ -49,12 +49,12 @@ export interface FrontmatterConfig {
    * The ordered rule list. REQUIRED, and a list rather than a mapping: YAML
    * mappings have no guaranteed order, and first-match needs one.
    *
-   * For any file the harness walks top-down and the FIRST matching rule is the
+   * For any file `markdown-harness` walks top-down and the FIRST matching rule is the
    * complete set of constraints that applies. Nothing merges, nothing is
    * inherited. Write the most specific rules first and the broadest last;
    * reversed, a narrow rule silently wins for zero files.
    *
-   * An empty list is a config error, not an inert harness.
+   * An empty list is a config error, not a deliberate no-op.
    */
   rules: FrontmatterRule[];
 }

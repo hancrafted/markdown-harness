@@ -18,7 +18,8 @@
     "test:watch": "vitest watch",
     "knip": "knip",
     "prepare": "husky",
-    "verify": "archgate check && eslint . && prettier --check . && tsc --noEmit && depcruise src && vitest run && knip",
+    "check:naming": "node scripts/check-naming.ts",
+    "verify": "archgate check && eslint . && prettier --check . && tsc --noEmit && depcruise src && node scripts/check-naming.ts && vitest run && knip",
     "verify:commit": "lint-staged && archgate check && tsc --noEmit && depcruise src && vitest run"
   },
   "dependencies": {

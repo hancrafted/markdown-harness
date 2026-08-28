@@ -35,7 +35,10 @@ Read [src/packages/README.md](./src/packages/README.md) before adding a package,
 point, or importing one. In short: a package's public surface is its **root files**, anything in a
 subfolder is private, and that holds for its own tests too.
 
-`src/cli.ts` is root code, outside every package, and the only file in the repo that touches disk.
+`src/cli.ts` is root code, outside every package, and the only file in the SHIPPED product that
+touches disk — ESLint bans `node:fs` and the network builtins from `src/packages/**`. Two things
+outside the product also touch disk and are not exceptions to it: test helpers that play the
+caller's edge, and the repo's own scripts under `scripts/`.
 
 **There is no build step.** `bin` points straight at `./src/cli.ts` and every script is
 `node src/cli.ts`, so Node's strip-only TypeScript mode is the runtime and only ERASABLE syntax

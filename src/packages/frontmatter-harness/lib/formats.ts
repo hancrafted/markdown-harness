@@ -11,7 +11,7 @@
  * date is in the past: the check path is hermetic (tenet 3) and there is no
  * clock behind this seam — ESLint bans `Date.now()` and `new Date()` from
  * `src/packages/**` to keep it that way. Staleness is a Signal a document
- * publishes for a reader who may never run this tool; detecting it is not the
+ * publishes for a reader who may never run `markdown-harness`; detecting it is
  * same act as checking that `stale_after` is well formed, and only the second
  * happens here.
  *

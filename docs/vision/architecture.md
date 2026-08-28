@@ -20,7 +20,7 @@ Run all four. A "no" on 3 or 4 is a stop, not a trade-off.
 3. **Does it change the contract** — the config language, the report format, or what the fixture
    corpus asserts? Then it is a change to the portable surface (tenet 4), and the corpus must cover
    it in the same change.
-4. **Does it put the tool on the consumption path, or make the check path non-hermetic?** Both are
+4. **Does it put `markdown-harness` on the consumption path, or make the check path non-hermetic?** Both are
    stops. Tenets 2 and 3 are the two the product cannot survive losing.
 
 ## Tenets
@@ -33,8 +33,8 @@ steering to governance that already exists rather than replacing it.
 
 ### 2. The file carries the signal
 
-The tool is on the **authoring path** — steering before a write, checking after — and never required
-on the **consumption path**. A reader that has never heard of this tool still sees `stale_after` when
+`markdown-harness` is on the **authoring path** — steering before a write, checking after — and never
+required on the **consumption path**. A reader that has never heard of it still sees `stale_after` when
 it opens the document. A signal only visible by running our command is not a signal.
 
 ### 3. The check path is hermetic
@@ -71,7 +71,7 @@ A fresh install reports zero violations against a corpus it has never seen. A fi
 invisible — never reported, never counted. Anchored: `"default": false` is proven prior art,
 defaulted the wrong way — _"When no configuration object is passed or the optional `default` setting
 is not present, all rules are enabled"_ (`parts/markdownlint-obsidian.md:547-551`). Keep the key,
-flip the default. The reason is adoption: a tool that reports two hundred violations on install gets
+flip the default. The reason is adoption: a checker that reports two hundred violations on install gets
 uninstalled.
 
 ### 7. Dependencies are admitted by a stated procedure, not a count
@@ -141,7 +141,7 @@ depends on. Measured: the `yaml` document API preserves comments through a progr
 reformats flow collections (`[a]` becomes `[ a ]`). Comment-safe is not byte-exact, and diff noise
 attacks detection directly.
 
-Cheap now: pick the formatting the tool always emits, and normalise on every write, so a UI edit and
+Cheap now: pick the formatting `markdown-harness` always emits, and normalise on every write, so a UI edit and
 a hand edit produce identical bytes. Expensive later: re-normalising configs adopters already have.
 
 ### The fixture corpus is declared a specification, not a test suite

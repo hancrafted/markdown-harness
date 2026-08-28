@@ -1,5 +1,5 @@
 /**
- * What a caller hands the harness.
+ * What a caller hands `markdown-harness`.
  *
  * Part of the portable artifact (tenet 4) because it is half of what a
  * reimplementation is verified against: feed a port the same JSON values and

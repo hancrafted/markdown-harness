@@ -129,11 +129,11 @@ require YAML fluency forever. It configures; it never runs the corpus and never 
 
 ## Horizons
 
-| when             | what success looks like                                                                                                                 |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| **2026-09-15**   | A company presentation slot. `init`, `check`, `steer` demonstrable, and one document warning an agent that has never heard of this tool |
-| **Oct–Nov 2026** | Three to four workshops. Participants run it on their own files and produce feedback that changes the product                           |
-| **~2027-09**     | One knowledge base trusted continuously for a year without degrading                                                                    |
+| when             | what success looks like                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **2026-09-15**   | A company presentation slot. `init`, `check`, `steer` demonstrable, and one document warning an agent that has never heard of `markdown-harness` |
+| **Oct–Nov 2026** | Three to four workshops. Participants run it on their own files and produce feedback that changes the product                                    |
+| **~2027-09**     | One knowledge base trusted continuously for a year without degrading                                                                             |
 
 The twelve-month measure is deliberately not adoption. Adoption is a lagging indicator that can be
 true while the thesis is false; a corpus you have relied on for a year cannot. Credibility for the
