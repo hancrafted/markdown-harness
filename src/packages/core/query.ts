@@ -19,29 +19,25 @@ import type { ConfigRejected } from '../contract/config-rejected.ts';
 import type { SteeringAnswer } from '../contract/steering-answer.ts';
 import { requirements } from '../frontmatter-harness/requirements.ts';
 import { emptyRuleList, readRules } from './lib/config/parse.ts';
-import { forResolution, normalize, pathKind } from './lib/corpus/normalize.ts';
-import { exclusions, resolve, ruleRef, silentRule, type Outcome } from './lib/corpus/select.ts';
+import { normalize } from './lib/corpus/normalize.ts';
+import { resolve, ruleRef } from './lib/corpus/select.ts';
 
 export function query(configText: string, path: string): SteeringAnswer | ConfigRejected {
   const rules = readRules(configText);
-  // Before resolution, because `governs: null` means INVISIBLE — a broken
+  // Before resolution, because `governedBy: null` means INVISIBLE — a broken
   // config must not be able to say that about every path.
   if (rules.length === 0) return emptyRuleList();
 
-  const kind = pathKind(normalize(path));
-  const repoPath = forResolution(normalize(path), kind);
-  const { winner, outcomes } = resolve(rules, repoPath);
-  const fared = (want: Outcome) => outcomes.filter(({ outcome }) => outcome === want).map(({ rule }) => rule);
+  const repoPath = normalize(path);
+  const { winner } = resolve(rules, repoPath);
 
   return {
     report: 'steering',
     format: 1,
     path: repoPath,
-    pathKind: kind,
-    // `null` means invisible, not unconstrained — and `excluded` below is
-    // usually the reason.
-    governs: winner === null ? null : { rule: ruleRef(winner), requires: requirements(winner) },
-    shadowed: fared('shadowed').map(silentRule),
-    excluded: fared('excluded').map((rule) => ({ rule: silentRule(rule), excludedBy: exclusions(rule, repoPath) })),
+    // `null` means invisible, not unconstrained. WHY it is null — a rule above
+    // won, or a rule's own `excludeFiles` fired — is the Operator's question,
+    // and the check report's `coverage` is where it is answered.
+    governedBy: winner === null ? null : { rule: ruleRef(winner), requires: requirements(winner) },
   };
 }

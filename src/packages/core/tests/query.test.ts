@@ -6,7 +6,8 @@
 // am about to write?" before the file exists.
 //
 // Assertions are on the whole payload, because the whole payload is what an
-// agent gets handed.
+// agent gets handed — and the payload answers exactly one question, so there is
+// not much of it.
 
 import { describe, expect, it } from 'vitest';
 import type { SteeringAnswer } from '../../contract/steering-answer.ts';
@@ -20,73 +21,12 @@ function asked(path: string): SteeringAnswer {
   return answer;
 }
 
-describe('a path is a folder unless its last segment carries an extension', () => {
-  // Two rules, directory-shaped, the broad one first — the config shape that
-  // makes a folder query mean anything. `docs/**` governs files as well as
-  // folders, so nothing is traded away to get this.
-  const CONFIG = [
-    'frontmatter:',
-    '  rules:',
-    '    - ruleId: everything',
-    '      path: [docs/**]',
-    '      intent: Everything under docs/ says what it is',
-    '      fields:',
-    '        type: { presence: required }',
-    '    - ruleId: research',
-    '      path: [docs/research/**]',
-    '      intent: Research is indexed, and an index entry copies the description',
-    '      fields:',
-    '        description: { presence: required }',
-    '',
-  ].join('\n');
-
-  function asked(path: string) {
-    const answer = query(CONFIG, path);
-    if (answer.report !== 'steering') throw new Error('config rejected');
-    return answer;
-  }
-
-  it('resolves a folder by the same first match, and says it read a folder', () => {
-    // First match wins, exactly as for a file: `everything` sits above
-    // `research` and takes it. No second resolution semantics.
-    const answer = asked('docs/research');
-
-    expect(answer.pathKind).toBe('folder');
-    // Normalised to a trailing slash, and echoed that way. Not cosmetic:
-    // `docs/research` does not match `docs/research/**` while `docs/research/`
-    // does, so without this the MOST SPECIFIC rule for a folder is not even a
-    // candidate — and a config whose only rule is `docs/research/**` would
-    // answer `governs: null` about a folder whose files it plainly governs.
-    expect(answer.path).toBe('docs/research/');
-    expect(answer.governs?.rule.ruleId).toBe('everything');
-    expect(answer.shadowed.map((entry) => entry.ruleId)).toEqual(['research']);
-  });
-
-  it('reads both spellings of a folder as the same folder', () => {
-    expect(asked('docs/research/')).toEqual(asked('docs/research'));
-  });
-
-  it('reads a last segment with an extension as a file, and leaves it alone', () => {
-    const answer = asked('docs/research/new-thing.md');
-
-    expect(answer.pathKind).toBe('file');
-    expect(answer.path).toBe('docs/research/new-thing.md');
-  });
-
-  it('reads an extensionless last segment as a folder, because it cannot look', () => {
-    // `query` never touches disk — that is the `git check-attr` seam — so a
-    // folder and an extensionless file are indistinguishable and the last
-    // segment is all there is to go on. `README` is read as a folder.
-    expect(asked('docs/research/README').path).toBe('docs/research/README/');
-  });
-});
-
 describe('a config fault is report content here too', () => {
   it('rejects an empty rule list rather than answering “ungoverned”', () => {
     // The dangerous answer, and the reason this cannot be left to `check`:
-    // `governs: null` means INVISIBLE, and a broken config would produce it for
-    // every path. An agent would be told, truthfully-looking, that nothing is
-    // required of the file it is about to write.
+    // `governedBy: null` means INVISIBLE, and a broken config would produce it
+    // for every path. An agent would be told, truthfully-looking, that nothing
+    // is required of the file it is about to write.
     expect(query('frontmatter:\n  rules: []\n', 'docs/research/survey.md')).toEqual({
       report: 'config-rejected',
       faults: [{ code: 'empty-rule-list', at: 'frontmatter.rules' }],
@@ -110,8 +50,7 @@ describe('a steering answer is about a path, never about a file', () => {
       report: 'steering',
       format: 1,
       path: 'docs/research/new-thing.md',
-      pathKind: 'file',
-      governs: {
+      governedBy: {
         rule: {
           ruleId: 'research',
           selector: { path: ['docs/research/**/*.md'] },
@@ -141,26 +80,24 @@ describe('a steering answer is about a path, never about a file', () => {
           anyOf: ['sources', 'generated'],
         },
       },
-      shadowed: [],
-      excluded: [],
     });
   });
 
-  it('names the rules that also select the path and lost', () => {
-    // "Why isn't my rule applying?", asked from the other side. The reference
+  it('gives the path to the first matching rule, and says nothing about the losers', () => {
+    // First match wins (tenet 5) and every losing rule is SILENT. The reference
     // rule selects `docs/reference/index.md` and will never see it, because the
-    // reserved-filename rule sits above it — the stated cost of tenet 5, made
-    // visible for one path.
+    // reserved-filename rule sits above it — and this payload does not mention
+    // that, by design.
     //
-    // Named ONLY. Its constraints are deliberately absent: nothing merges, and
-    // listing what a silent rule would have wanted would read as though
-    // something did.
+    // "Why isn't my rule applying?" is the Operator's question, and the check
+    // report's `coverage` answers it for every rule at once. Answering it here
+    // as well would put Operator content on a payload whose reader is the
+    // Contributor's agent, which can act on none of it.
     expect(asked('docs/reference/index.md')).toEqual({
       report: 'steering',
       format: 1,
       path: 'docs/reference/index.md',
-      pathKind: 'file',
-      governs: {
+      governedBy: {
         rule: {
           ruleId: 'index-files',
           // Sugar unexpanded: the Operator wrote `fileName`, so the answer says
@@ -172,83 +109,24 @@ describe('a steering answer is about a path, never about a file', () => {
         // key, so there is nothing else this rule can be asking for.
         requires: { frontmatter: 'forbidden' },
       },
-      // Named and located, NOT explained. A rule's `intent` is carried in a
-      // report so the Contributor — who never opens the config — gets the
-      // reason. For a rule that does not govern here, the Contributor has no
-      // business with the reason, and carrying it is actively dangerous: a
-      // sentence in the config author's voice, describing constraints that do
-      // not apply, handed to an agent that may well satisfy them. That is the
-      // merge tenet 5 forbids, reintroduced at the steering surface. The
-      // Operator can read the intent in the config, being the one role that
-      // opens it.
-      shadowed: [{ ruleId: 'reference', selector: { path: ['docs/reference/**/*.md'] } }],
-      excluded: [],
     });
   });
 
-  it('says which glob excluded a path nothing governs', () => {
-    // The most surprising thing `markdown-harness` can do, and the answer to it.
-    // `governs: null` is not "no constraints" — it is INVISIBLE (tenet 6):
-    // nothing will ever be reported about a file here, by any rule, and a clean
-    // run looks exactly the same as a file that does not exist.
+  it('answers null for a path an exclusion removed', () => {
+    // The most surprising thing `markdown-harness` can do. `governedBy: null` is
+    // not "no constraints" — it is INVISIBLE (tenet 6): nothing will ever be
+    // reported about a file here, by any rule, and a clean run looks exactly the
+    // same as a file that does not exist.
     //
-    // `excludedBy` is what makes that actionable. It names the line to delete,
-    // in the config's own words, rather than saying that some exclusion
-    // somewhere fired.
+    // `docs/research/vendor/**` is in the research rule's own `excludeFiles`,
+    // and no rule after it matches. Which glob fired is not said here; it is a
+    // config question, and `coverage` counts it against the rule that declined.
     expect(asked('docs/research/vendor/new.md')).toEqual({
       report: 'steering',
       format: 1,
       path: 'docs/research/vendor/new.md',
-      pathKind: 'file',
-      governs: null,
-      // Exclusion is answered BEFORE a rule can win, so it is not shadowing:
-      // no rule took this path, the research rule declined it.
-      shadowed: [],
-      excluded: [
-        {
-          rule: { ruleId: 'research', selector: { path: ['docs/research/**/*.md'] } },
-          excludedBy: ['docs/research/vendor/**'],
-        },
-      ],
+      governedBy: null,
     });
-  });
-
-  it('reports an exclusion that fired even when deleting it would change nothing', () => {
-    // `excludedBy` says what FIRED. It is not a promise that removing it makes
-    // the rule apply, and this is the case that proves the difference:
-    // exclusion is answered before ordering, so `research` reports `excluded`
-    // although `everything` sits above it and would have taken the path anyway.
-    //
-    // The payload still tells the two apart, without the reader opening the
-    // config: `governs` names a rule that is not this one.
-    const CONFIG = [
-      'frontmatter:',
-      '  rules:',
-      '    - ruleId: everything',
-      '      path: [docs/**/*.md]',
-      '      intent: Everything under docs/ says what it is',
-      '      fields:',
-      '        type: { presence: required }',
-      '    - ruleId: research',
-      '      path: [docs/research/**/*.md]',
-      '      excludeFiles: [docs/research/vendor/**]',
-      '      intent: Research is indexed, and an index entry copies the description',
-      '      fields:',
-      '        description: { presence: required }',
-      '',
-    ].join('\n');
-
-    const answer = query(CONFIG, 'docs/research/vendor/new.md');
-    if (answer.report !== 'steering') throw new Error('config rejected');
-
-    expect(answer.governs?.rule.ruleId).toBe('everything');
-    expect(answer.shadowed).toEqual([]);
-    expect(answer.excluded).toEqual([
-      {
-        rule: { ruleId: 'research', selector: { path: ['docs/research/**/*.md'] } },
-        excludedBy: ['docs/research/vendor/**'],
-      },
-    ]);
   });
 
   it('answers identically for a path that does exist', () => {

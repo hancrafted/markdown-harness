@@ -44,26 +44,5 @@ export interface RuleRef {
   intent: string;
 }
 
-/**
- * A rule that selects a path and says NOTHING about it — shadowed by a rule
- * above, or removed by its own `excludeFiles`.
- *
- * `RuleRef` without the `intent`, and the omission is the point. A rule's
- * `intent` travels in a report so the Contributor, who never opens the config,
- * gets the reason. A rule that does not govern owes the Contributor no reason,
- * and carrying one is worse than useless: it is a sentence in the config
- * author's voice describing constraints that DO NOT APPLY, handed to an agent
- * that may well satisfy them. That is the merge tenet 5 forbids, reappearing at
- * the steering surface rather than in the checker.
- *
- * The Operator, who asks "why isn't my rule applying?", is by definition the one
- * role that opens the config — so `ruleId` and the selector are enough to find
- * it there.
- */
-export interface SilentRule {
-  ruleId: string;
-  selector: SelectorRef;
-}
-
 /** How the rule selected, as written — the `fileName` sugar is not expanded away. */
 export type SelectorRef = { path: readonly Glob[]; fileName?: never } | { fileName: string; path?: never };

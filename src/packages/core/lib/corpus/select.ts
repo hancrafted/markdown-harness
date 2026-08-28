@@ -5,7 +5,7 @@
 
 import type { FrontmatterRule, Glob } from '../../../contract/config.ts';
 import type { RepoPath } from '../../../contract/corpus.ts';
-import type { RuleRef, SilentRule } from '../../../contract/values.ts';
+import type { RuleRef } from '../../../contract/values.ts';
 import { matches } from '../../glob.ts';
 
 /**
@@ -73,15 +73,6 @@ export function ruleRef(rule: FrontmatterRule): RuleRef {
 }
 
 /**
- * The rule as a report names a rule that says nothing — `ruleId` and where it
- * looks, and deliberately not why it exists. `SilentRule` carries the argument.
- */
-export function silentRule(rule: FrontmatterRule): SilentRule {
-  const { ruleId, selector } = ruleRef(rule);
-  return { ruleId, selector };
-}
-
-/**
  * Exclusion wins within a rule and takes no part in ordering: it answers one
  * yes/no question BEFORE that rule can win, which is what lets an excluded file
  * fall through to a later, broader rule.
@@ -105,7 +96,7 @@ function fared(rule: FrontmatterRule, path: RepoPath, decided: boolean): Outcome
  * it costs the short-circuit and buys a report that cannot disagree with the
  * resolution it describes.
  */
-export function exclusions(rule: FrontmatterRule, path: RepoPath): readonly Glob[] {
+function exclusions(rule: FrontmatterRule, path: RepoPath): readonly Glob[] {
   return (rule.excludeFiles ?? []).filter((glob) => matches(path, glob));
 }
 

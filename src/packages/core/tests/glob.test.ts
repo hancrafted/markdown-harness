@@ -45,10 +45,13 @@ const TABLE: readonly [string, string, boolean, string][] = [
   ['docs/skills/legacy/SKILL.md', 'docs/skills/**/SKILL.md', true, 'a basename after `**/` matches at depth'],
   ['docs/skills/SKILL.md', 'docs/skills/**/SKILL.md', true, 'and matches with no intervening directory at all'],
 
-  // ── Folder paths: what a folder query has to live with ────────────────────
-  // A folder query matches a DIRECTORY path against globs that select FILES.
-  // These rows are why that needs a normalisation rule rather than good
-  // intentions, and they are the whole evidence for the one it got.
+  // ── Directory paths against file globs ───────────────────────────────────
+  // FOLDER QUERIES WERE REMOVED. `query` treats every path as given, so nothing
+  // below is reachable through an entry point today. The rows are kept because
+  // they are MEASUREMENTS rather than decisions, and they are the evidence base
+  // that would decide whether folder queries can come back: two of them are
+  // residuals no normalisation fixes, and the second is the one that would sink
+  // the feature. Re-deriving this later would cost the same afternoon twice.
   [
     'docs/research/survey.md',
     'docs/**',
@@ -62,9 +65,9 @@ const TABLE: readonly [string, string, boolean, string][] = [
     'docs/research/',
     'docs/research/**',
     true,
-    'but WITH a trailing slash it does. This single row is why a folder query normalises to a ' +
+    'but WITH a trailing slash it does. This is why a folder query would have to normalise to a ' +
       'trailing slash: without it, the MOST SPECIFIC rule for a folder is not even a candidate, ' +
-      'and a config whose only rule is `docs/research/**` answers `governs: null` for ' +
+      'and a config whose only rule is `docs/research/**` would answer `governedBy: null` for ' +
       '`docs/research` — "invisible", about a folder whose files it plainly governs.',
   ],
   [
@@ -84,15 +87,13 @@ const TABLE: readonly [string, string, boolean, string][] = [
     false,
     'RESIDUAL TWO, a false negative, and the worse direction: `*` needs a segment to consume, so ' +
       'a rule written `X/*` is never found by a query for `X` itself, in either spelling. It ' +
-      "fails towards `governs: null`, which is the payload's strongest claim.",
+      "fails towards `governedBy: null`, which is the payload's strongest claim.",
   ],
-  // Both residuals are one root cause: a folder query matches a DIRECTORY path
+  // Both residuals are one root cause: a directory path is being matched
   // against a glob that selects FILES, and only `**` survives that category
   // error intact. Getting both right needs glob INTERSECTION — "could this glob
-  // match anything under here" — which `matchesGlob` does not offer. The
-  // trailing slash is chosen because it strictly DOMINATES the unnormalised
-  // form on everything measured here: it matches everywhere the bare path does,
-  // plus `X/**`, and that extra match is a true positive.
+  // match anything under here" — which `matchesGlob` does not offer, and that
+  // cost is what folder queries could not carry.
 
   // ── Two rows an adopter will meet ─────────────────────────────────────────
   [

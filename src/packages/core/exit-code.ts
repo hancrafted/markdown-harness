@@ -29,7 +29,7 @@ export function exitCode(report: CheckReport | ConfigRejected | SteeringAnswer):
   if (report.report === 'config-rejected') return 2;
   // A steering answer is never a failure: the question was asked and answered.
   //
-  // `governs: null` is 0 too, and deliberately. Under tenet 6 invisibility is
+  // `governedBy: null` is 0 too, and deliberately. Under tenet 6 invisibility is
   // the CORRECT answer rather than an error, so a non-zero code would fail a CI
   // step with nothing wrong in it — and the Operator's diagnostic for "my rule
   // governs nothing" is `coverage` in a check report, not this exit code.
