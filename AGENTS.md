@@ -48,4 +48,10 @@ Packages under `src/packages/` are deep modules, and every file carries exactly 
 
 ## Verification
 
-`npm run verify` is the gate. One trap inside it: **`archgate check` is changed-files-scoped.** It evaluates only ADRs whose `files:` glob matches a file changed against `baseBranch` (`.archgate/config.json`), and explicit path arguments are intersected with that same set. So `total: 0` means _nothing in scope changed_ — never _governance passed_. To exercise the rules deliberately, give it a base that reaches an ADR edit: `npx archgate check --base HEAD~3`.
+`npm run verify` is the gate. Two traps inside it.
+
+**1. `archgate check` is changed-files-scoped.** It evaluates only ADRs whose `files:` glob matches a file changed against `baseBranch` (`.archgate/config.json`), and explicit path arguments are intersected with that same set. So `total: 0` means _nothing in scope changed_ — never _governance passed_. To exercise the rules deliberately, give it a base that reaches an ADR edit: `npx archgate check --base HEAD~3`.
+
+**2. `verify` is not trustworthy inside an agent worktree.** A Host harness that isolates an agent puts the worktree under `.claude/worktrees/` — inside this repo — and installs it incompletely: `node_modules/.bin` comes out empty. `knip` then reports every devDependency unused and every binary unlisted, and the same nesting makes typescript-eslint fail all files with _"multiple candidate TSConfigRootDirs"_ from the repo root. Both are artifacts of the location, not of the diff.
+
+So a worktree agent must not conclude "this failure is pre-existing" by stashing and re-running _in the worktree_ — the baseline is contaminated the same way. Re-run `verify` from the real root after merging, and treat a worktree's green or red on `knip` and `eslint` as unmeasured.

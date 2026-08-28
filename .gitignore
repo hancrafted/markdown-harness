@@ -2,3 +2,6 @@ node_modules/
 .env
 coverage/
 .worktrees
+# Agent worktrees (Claude Code isolation) — nested inside the repo,
+# so they must be invisible to git and to any root-level tool scan.
+.claude/worktrees/
