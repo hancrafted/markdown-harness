@@ -4,7 +4,7 @@ import { summariseSpan, type Span } from '../index';
 const DAY = 86_400_000;
 
 describe('summariseSpan', () => {
-  describe('happy path', () => {
+  describe('success cases', () => {
     it('collapses a span that stays inside one UTC day', () => {
       // ARRANGE
       const span: Span = { from: 0, to: DAY - 1 };
@@ -26,7 +26,7 @@ describe('summariseSpan', () => {
     });
   });
 
-  describe('sad path', () => {
+  describe('failure cases', () => {
     it('renders a reversed span in the order given rather than repairing it', () => {
       // ARRANGE
       const span: Span = { from: DAY, to: 0 };

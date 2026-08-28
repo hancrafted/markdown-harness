@@ -44,26 +44,35 @@ const rule = ruleSet.rules['dependency-range-form'];
 
 describe('dependency-range-form', () => {
   it('passes an exact pin and a tilde range in dependencies', async () => {
+    // ARRANGE
     const { ctx, violations } = makeCtx({
       'package.json': pkgWith({ 'pkg-a': '1.2.3', 'pkg-b': '~2.4.0' }),
     });
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations).toEqual([]);
   });
 
   it('passes an exact pin and a tilde range in devDependencies', async () => {
+    // ARRANGE
     const { ctx, violations } = makeCtx({
       'package.json': pkgWith({}, { 'pkg-a': '1.2.3', 'pkg-b': '~2.4.0' }),
     });
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations).toEqual([]);
   });
 
   it('passes a prerelease exact pin and tilde range', async () => {
+    // ARRANGE
     const { ctx, violations } = makeCtx({
       'package.json': pkgWith({ 'pkg-a': '1.2.3-beta.1', 'pkg-b': '~2.4.0-rc.2' }),
     });
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations).toEqual([]);
   });
 
@@ -80,49 +89,68 @@ describe('dependency-range-form', () => {
     ['x-range', '1.2.x'],
     ['range with space', '1.2.3 - 1.3.0'],
   ])('fails on %s (%s)', async (_label, range) => {
+    // ARRANGE
     const { ctx, violations } = makeCtx({
       'package.json': pkgWith({ 'pkg-a': range }),
     });
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations.some((v) => v.message.includes(`range '${range}'`))).toBe(true);
   });
 
   it('fails independently for each offending entry across both fields', async () => {
+    // ARRANGE
     const { ctx, violations } = makeCtx({
       'package.json': pkgWith({ 'dep-a': '^1.0.0' }, { 'dep-b': '*' }),
     });
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations).toHaveLength(2);
     expect(violations.some((v) => v.message.includes('dependencies.dep-a'))).toBe(true);
     expect(violations.some((v) => v.message.includes('devDependencies.dep-b'))).toBe(true);
   });
 
   it('does nothing when package.json is absent', async () => {
+    // ARRANGE
     const { ctx, violations } = makeCtx({});
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations).toEqual([]);
   });
 
   it('flags unparsable package.json without throwing', async () => {
+    // ARRANGE
     const { ctx, violations } = makeCtx({ 'package.json': '{ not json' });
-    await expect(rule.check(ctx)).resolves.toBeUndefined();
+    // ACT
+    const settled = rule.check(ctx);
+    // ASSERT
+    await expect(settled).resolves.toBeUndefined();
     expect(violations).toHaveLength(1);
     expect(violations[0]?.message).toMatch(/not valid JSON/);
   });
 
   it('flags a non-object dependencies field', async () => {
+    // ARRANGE
     const { ctx, violations } = makeCtx({
       'package.json': JSON.stringify({ name: 'x', dependencies: ['pkg-a'] }),
     });
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations.some((v) => /must be an object/.test(v.message))).toBe(true);
   });
 
   it('carries the ARCH-001 provenance tag in every message', async () => {
+    // ARRANGE
     const { ctx, violations } = makeCtx({
       'package.json': pkgWith({ 'pkg-a': '^1.0.0' }),
     });
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations.every((v) => v.message.includes('(ARCH-001 [dependency-range-form])'))).toBe(true);
   });
 });

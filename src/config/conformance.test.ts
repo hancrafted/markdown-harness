@@ -1,10 +1,10 @@
 // Coverage tests for the Conformance suite's config, under `fixtures/conformance/`.
 //
-// These do not test the harness — no reader, resolver or check command exists
-// yet. They assert that the Conformance suite is still a COMPLETE test surface:
-// every key in the config vocabulary is exercised somewhere, and the config
-// obeys the config-validity rules a real validator will later enforce. When the
-// vocabulary grows, this fails until the suite grows with it.
+// These do not test `markdown-harness` — no reader, resolver or check command
+// exists yet. They assert that the Conformance suite is still a COMPLETE test
+// surface: every key in the config vocabulary is exercised somewhere, and the
+// config obeys the config-validity rules a real validator will later enforce.
+// When the vocabulary grows, this fails until the suite grows with it.
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -79,7 +79,7 @@ function everyFieldAddress(): string[] {
 }
 
 describe('valid-test-config.yaml is a complete test surface', () => {
-  describe('happy path', () => {
+  describe('success cases', () => {
     it('parses into exactly one module section', () => {
       // ARRANGE
       const expected = ['frontmatter'];
@@ -92,33 +92,33 @@ describe('valid-test-config.yaml is a complete test surface', () => {
 
     it.each(RULE_KEYS)('exercises the rule key %s', (key) => {
       // ARRANGE
-      const seen = everyRuleKey();
+      const keysInConfig = everyRuleKey();
       // ACT
-      const isExercised = seen.has(key);
+      const seen = [...keysInConfig];
       // ASSERT
-      expect(isExercised).toBe(true);
+      expect(seen).toContain(key);
     });
 
     it.each(CONSTRAINT_KEYS)('exercises the constraint %s', (key) => {
       // ARRANGE
       const constraints = everyConstraint();
       // ACT
-      const isExercised = constraints.some((constraint) => key in constraint);
+      const seen = constraints.flatMap((constraint) => Object.keys(constraint));
       // ASSERT
-      expect(isExercised).toBe(true);
+      expect(seen).toContain(key);
     });
 
     it.each(FORMATS)('exercises the named format %s', (format) => {
       // ARRANGE
       const constraints = everyConstraint();
       // ACT
-      const isExercised = constraints.some((constraint) => constraint.format === format);
+      const seen = constraints.flatMap((constraint) => constraint.format ?? []);
       // ASSERT
-      expect(isExercised).toBe(true);
+      expect(seen).toContain(format);
     });
   });
 
-  describe('sad path', () => {
+  describe('failure cases', () => {
     it('carries no rule key outside the vocabulary', () => {
       // ARRANGE
       const known: readonly string[] = RULE_KEYS;
@@ -141,13 +141,17 @@ describe('valid-test-config.yaml is a complete test surface', () => {
   describe('edge cases', () => {
     it('reaches both nesting depths', () => {
       // ARRANGE
-      const addresses = everyFieldAddress();
+      const listEntry = 'list entry';
+      const mappingKey = 'mapping key';
+      const topLevel = 'top level';
       // ACT
-      const reachesListEntries = addresses.some((address) => address.includes('[].'));
-      const reachesMappingKeys = addresses.some((a) => a.includes('.') && !a.includes('[]'));
+      const depths = everyFieldAddress().map((address) => {
+        if (address.includes('[].')) return listEntry;
+        return address.includes('.') ? mappingKey : topLevel;
+      });
       // ASSERT
-      expect(reachesListEntries).toBe(true);
-      expect(reachesMappingKeys).toBe(true);
+      expect(depths).toContain(listEntry);
+      expect(depths).toContain(mappingKey);
     });
 
     it('addresses a list and its entries separately', () => {
@@ -164,7 +168,7 @@ describe('valid-test-config.yaml is a complete test surface', () => {
 });
 
 describe('valid-test-config.yaml obeys the config-validity rules', () => {
-  describe('happy path', () => {
+  describe('success cases', () => {
     it('gives every rule exactly one selector', () => {
       // ARRANGE
       const selectorKeys = ['path', 'fileName'];
@@ -193,7 +197,7 @@ describe('valid-test-config.yaml obeys the config-validity rules', () => {
     });
   });
 
-  describe('sad path', () => {
+  describe('failure cases', () => {
     it('leaves a frontmatter-forbidden rule with no payload', () => {
       // ARRANGE
       const forbidding = rules.filter((rule) => 'frontmatter' in rule);
@@ -235,12 +239,12 @@ describe('valid-test-config.yaml obeys the config-validity rules', () => {
       // ARRANGE
       const retiredKey = 'types';
       // ACT
-      const declaresCeiling = rules.some((rule) => retiredKey in rule);
+      const ceilingCarriers = rules.filter((rule) => retiredKey in rule).map((rule) => rule.intent);
       const vocabulary = new Set(
         (rules.flatMap((rule) => rule.fields?.type?.allowed ?? []) as AllowedValue[]).map((entry) => entry.value),
       );
       // ASSERT
-      expect(declaresCeiling).toBe(false);
+      expect(ceilingCarriers).toEqual([]);
       expect(vocabulary.size).toBeGreaterThan(1);
     });
   });

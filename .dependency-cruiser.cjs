@@ -57,6 +57,20 @@ module.exports = {
       },
     },
     {
+      name: 'colocated-test-lane',
+      comment:
+        "A test colocated below a package root tests ONE unit: it may import its same-directory sibling of the same base name with a .pure.ts suffix, and no other internal — not its own package's, not any other's. A unit may be as small as a single function, and extracting complex private logic into its own file is the standard way to make it testable, so a .pure.ts file is a legitimate subject. Any wider lane is a loophole: rename a file .pure.ts and every restriction lifts.",
+      severity: 'error',
+      // $1 package, $2 directory path below the package root, $3 base name. The
+      // directory group is mandatory rather than optional: a colocated test is
+      // always in a subfolder, because a package root file may carry no suffix.
+      from: { path: `^${R}/([^/]+)/(.+)/([^/]+)\\.test\\.ts$`, pathNot: `^${R}/[^/]+/tests/` },
+      to: {
+        path: PACKAGE_INTERNALS,
+        pathNot: `^${R}/$1/$2/$3\\.pure\\.ts$`, // the sibling under test → allowed
+      },
+    },
+    {
       name: 'tests-folder-is-private',
       comment: "A package's tests/ folder is reachable only from tests: nothing else may import fixtures.",
       severity: 'error',

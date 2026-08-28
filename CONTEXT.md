@@ -125,6 +125,26 @@ The TypeScript construct: an `interface`, a `type` alias, or an `enum`. Exported
 violation. Lowercase, because it names a language construct rather than a domain concept.
 _Avoid_: type (unqualified — collides with the frontmatter field), model, schema, DTO
 
+**success cases**:
+The block of a suite that exercises the subject as its Interface intends, on input a caller is
+supposed to send. One of exactly three blocks every suite under `src/` splits into.
+_Avoid_: happy path, golden path, main flow, positive test
+
+**failure cases**:
+The block that **asserts what must not happen**. Two readings compete — input the caller should
+not have sent, and a property that must be absent from an otherwise valid result — and this clause
+is deliberately wide enough for both, because an author handed an undefined term writes whichever
+is cheaper. A subject with no error case still has failure cases; finding them is usually finding a
+decision nobody made.
+_Avoid_: sad path and unhappy path (both name a mood, not what the block asserts), negative test,
+error case (both narrow it to throwing)
+
+**edge cases**:
+The block that pins a boundary of the subject's domain: the first or last admissible value, an
+empty or reversed input, a value either side of a threshold. Separate from failure cases, which
+assert what must not happen rather than where the domain ends.
+_Avoid_: corner cases, boundary tests, misc
+
 ### The pinned spec
 
 Moving the pin, and what it means for upstream to have moved on, are procedures rather than

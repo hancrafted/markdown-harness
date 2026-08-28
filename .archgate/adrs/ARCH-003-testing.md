@@ -6,126 +6,88 @@ domain: architecture
 rules: false
 files: ['**/*.test.ts']
 paths: ['**/*.test.ts']
-description: 'What a test file may do: green must mean the test could have gone red, six behavioural Don ts that each close one way of breaking that, one named review duty, and why coverage is deliberately not gated.'
+description: "What a test file may do and how it is shaped: six behavioural Don'ts that keep green meaningful everywhere, plus a three-block suite split, marked test bodies and two import homes under src/."
 ---
 
 # Testing
 
 ## Context
 
-This repository already holds that a check which cannot fail stops being evidence. A suite is the same instrument pointed at the code, and it fails the same way — quietly, while reporting success.
-
-Every known failure mode is one of two clauses breaking:
-
-1. **Green stops meaning anything.** A test with no assertion, a `.skip` left behind, a snapshot that re-blesses whatever the code now prints, a mock asserting against a stub of your own writing.
-2. **Red stops meaning the code changed.** A clock, a random number, or a network call reached from inside a test — the suite now fails on Tuesdays.
-
-The pressure is not hypothetical. Agents write most of the tests here, and an agent under pressure to reach a "done" signal will disable a test rather than fix the code. Measured on this project's tracker: coding-agent commits add mocks 36% of the time against 26% for non-agent commits, and the study behind that figure explicitly asks for mocking guidance in agent configuration files.
-
-Alternatives considered:
-
-- **Prose guidance only.** Rejected. It is what already existed, and it does not hold against an agent optimising for a green signal.
-- **`eslint-plugin-vitest`.** Rejected. Every ban below is expressible with core `no-restricted-syntax` and `no-restricted-properties`, so the plugin buys nothing and costs a dependency that would have to clear an admission bar.
-- **A coverage gate.** Rejected on the merits, not on effort — see §5 of the Decision.
-- **Leaving `.skip` legal**, on the argument that a skipped test stays visible in the reporter. Rejected: visibility in a report nobody reads is not a control, and a skip is exactly the move an author reaches for under pressure to go green.
+A test suite is only valuable as long as green means the code is correct and red means the code broke, but authors—especially agents optimizing for a green signal—routinely introduce mocks, skips, and ambient shortcuts that silently destroy that evidence. This ADR establishes universal behavioral boundaries and uniform suite structure so passing tests remain trustworthy proof and unwritten cases stay visible.
 
 ## Decision
 
-### 1. The Discipline
+### 1. Determinism and Real Execution
 
-A test result is evidence about the code. **Green MUST mean the test could have gone red; red MUST mean the code changed.** Every Don't below closes one way of breaking one of those clauses.
+1. **Tests MUST be fully deterministic**: all time, randomness, and inputs MUST be supplied explicitly with zero dependence on ambient state or network.
+2. **Tests MUST provide real assertion value**: tests MUST execute real code against explicit expected values—mock frameworks (`vi.mock`/`vi.spyOn`), snapshots, skipped tests (`.skip`), and assertion-free bodies are forbidden.
 
-### 2. Scope
+### 2. Suite structure
 
-This record governs every `**/*.test.ts` file in the repository, wherever it sits — including the sibling tests of ADR rules files. It governs _behaviour_ inside a test. Structural shape — how suites are laid out, how a test body is ordered — is a separate concern and is not decided here.
+1. Under `src/**/*.test.ts`, a top-level suite MUST split into exactly three `describe` blocks — `success cases`, `failure cases`, `edge cases` — each holding at least one test. There is no fourth name.
+2. `describe` MUST NOT nest past two levels; a test MUST NOT sit at file top level.
+3. `.archgate/adrs/*.rules.test.ts` is exempt from 2.1 — a rules test drives one rule function against a hand-built double, where a three-way split is ceremony over evidence. Decision 3 still binds it.
 
-### 3. The six behavioural Don'ts
+### 3. Test-body structure
 
-1. **No clock, no randomness, no network.** A test MUST NOT read ambient state its assertions depend on.
-2. **No `.only`, no `.skip`.** `.todo` remains legal: it declares intent and cannot turn a red build green.
-3. **No assertion-free test.** A body containing no `expect` could not have gone red.
-4. **No snapshot assertion.** State the expected value.
-5. **No `vi.mock`, no `vi.spyOn`.** Exercise the real thing.
-6. **No wrong-grain import.** A test reaches its subject at the grain its location declares.
+1. Every test body MUST carry `// ARRANGE`, `// ACT` and `// ASSERT`, uppercase, exactly once each, in that order.
+2. The `// ASSERT` block MUST NOT hold a magic string or number; name it in `// ARRANGE`, so a reviewer can disagree with it. Exempt as pure noise: `0`, `1`, `-1`, `true`, `false`, `null`, `undefined`, `''`, `[]`, `{}`. The ban stops at `// ASSERT` for now; extending it to `// ACT` is a one-line change.
+3. An assertion MUST NOT collapse into a boolean inside `// ACT`. Doing so throws away the matcher message: `expect(seen).toContain(key)` names the key that is missing, while `expect(isSeen).toBe(true)` reports only that false is not true, which is the same report for every possible cause. Put the observation in `// ACT` and keep the rich matcher in `// ASSERT`.
 
-### 4. One review duty, named as unenforceable
+### 4. Two homes for a test
 
-**No tautological assertion** — an expected value recomputed by the code under test. Such a test passes by construction. It is not mechanically checkable and MUST be caught in review.
-
-### 5. Coverage is deliberately not gated
-
-Coverage and mutation scores correlate with real defect detection only where the code under test is already correct, and a coverage target is satisfiable by exactly the assertion-free tests Don't 3 forbids. Coverage tooling remains available on demand and MUST NOT be wired into the verification gate.
+1. `<pkg>/tests/*.test.ts` is the Package's integration suite: entry points only, at the grain a caller sees. Reach for it by default — it asserts what a caller can actually observe. `*.impure.ts` is exercised here too — through the entry point, never imported directly.
+2. `<pkg>/<subfolder>/*.test.ts` is a unit suite. It MAY import `./*.pure.ts` — same directory, same base name — and no other internal, in any Package.
 
 ## Do's and Don'ts
 
 ### Do's
 
-1. **DO** pass every instant, seed and input a test depends on into the test explicitly. (Decision 3.1)
-2. **DO** use `.todo` to record a test you intend to write. (Decision 3.2)
-3. **DO** assert with `expect`, and let the matcher carry the diagnostic — `expect(seen).toContain(key)` names the key that was missing. (Decision 1)
-4. **DO** write the expected value out by hand, so a reviewer can disagree with it. (Decision 3.4)
-5. **DO** exercise the subject through the entry point its location implies, against real inputs. (Decision 3.6)
-6. **DO** build a hand-written stand-in when a collaborator must be substituted, and keep it in the test file where a reader can see what it does. (Decision 3.5)
-7. **DO** delete a test that no longer earns its runtime, rather than skipping it. (Decision 3.2)
+1. **DO** pass every instant, seed and input a test depends on into the test explicitly. (Decision 1.1)
+2. **DO** write the expected value out by hand, so a reviewer can disagree with it. (Decision 1.2)
+3. **DO** hand-write a stand-in when a collaborator must be substituted, and keep it in the test file where a reader can see what it does. (Decision 1.2)
+4. **DO** split every suite under `src/` into `success cases`, `failure cases` and `edge cases`, with at least one test in each. (Decision 2.1)
+5. **DO** treat a block you cannot fill as a question about the subject, not a rule to route around. (Decision 2.1)
+6. **DO** mark every body `// ARRANGE`, `// ACT`, `// ASSERT`, naming expected values before asserting them. (Decision 3.1)
+7. **DO** test a `*.pure.ts` file from its same-name sibling, and everything else through an entry point. (Decision 4.2)
 
 ### Don'ts
 
-1. **DON'T** call `Date.now()`, `Math.random()`, `performance.now()`, or `new Date()` with no argument. (Decision 3.1)
-2. **DON'T** commit `.only` or `.skip` on `it`, `test` or `describe`. (Decision 3.2)
-3. **DON'T** write a test body with no `expect` in it. (Decision 3.3)
-4. **DON'T** use `toMatchSnapshot`, `toMatchInlineSnapshot`, or any matcher ending in `Snapshot`. (Decision 3.4)
-5. **DON'T** call `vi.mock`, `vi.doMock`, `vi.spyOn`, `vi.mocked` or `vi.stubGlobal`, nor their `jest` equivalents. (Decision 3.5)
-6. **DON'T** reach past the grain your location declares — a test under a package's `tests/` imports entry points, never internals. (Decision 3.6)
-7. **DON'T** assert an expected value that the code under test computed. (Decision 4)
+1. **DON'T** call `Date.now()`, `Math.random()`, `performance.now()`, or `new Date()` with no argument. (Decision 1.1)
+2. **DON'T** commit `.only` or `.skip` on `it`, `test` or `describe`. (Decision 1.2)
+3. **DON'T** write a test body with no `expect` in it. (Decision 1.2)
+4. **DON'T** use `toMatchSnapshot`, `toMatchInlineSnapshot`, or any matcher ending in `Snapshot`. (Decision 1.2)
+5. **DON'T** call `vi.mock`, `vi.doMock`, `vi.spyOn`, `vi.mocked`, `vi.stubGlobal`, or a `jest` equivalent. (Decision 1.2)
+6. **DON'T** assert an expected value the code under test computed. (Decision 1.2)
+7. **DON'T** inline a magic string or number in the `// ASSERT` block. (Decision 3.2)
 
 ## Consequences
 
 ### Positive
 
-- **Green is evidence again.** The four ways a suite can report success without having tested anything are closed mechanically rather than by habit.
-- **A failure names a cause.** With ambient reads gone, a red run means the code changed — nobody re-runs the suite to see if it passes this time.
-- **Zero added dependencies.** Every ban is a core eslint rule already installed, so nothing here has to clear a dependency admission bar.
-- **Agent-proof by construction.** The disable-the-test escape is unavailable rather than discouraged, which is the difference that matters when the author is optimising for a green signal.
-- **Sibling ADR tests became visible.** Narrowing the linter's ignore brought four of this repo's six test files into scope for the first time; they had been ungoverned by every rule, not merely by this one.
+- **Tests are dependable evidence.** Mocks, skips, assertion-free bodies, and ambient state are mechanically blocked, ensuring green means correctness and red means real breakage.
+- **Missing cases surface immediately.** The mandatory three-block split (`success cases`, `failure cases`, `edge cases`) forces unhandled errors and edge cases to be confronted explicitly.
 
 ### Negative
 
-- **A genuine need for a mock arrives as a build failure.** That is intended — it forces a decision rather than a quiet commit — but the first person to hit it pays with an interruption.
-- **Hand-written stand-ins are more verbose** than `vi.spyOn`, and the repository accepts that verbosity as the price of asserting against real behaviour.
-- **The determinism bans over-reach slightly.** A test that legitimately wants a random input must name its seed, which is more ceremony than `Math.random()`.
-- **Network is not mechanically closed.** The clause exists in the Discipline but only two of its three ambient sources are checkable — see Compliance.
+- **Collaborator substitution requires hand-written stand-ins.** In-file test doubles are more verbose than `vi.spyOn`, trading brevity for transparency.
+- **Impure modules have no cheap unit tests.** Logic in `*.impure.ts` must be exercised through entry points against real files or refactored into pure units.
 
 ### Risks
 
-- **A ban is evaded through an alias or an import.** `import { now } from './clock'` defeats every single-file selector. **Mitigation:** the import graph is a separate enforcement layer with its own rule, and the tautology duty already puts a reviewer's eyes on test logic.
-- **A hand-written stand-in grows into a mock framework.** Nothing stops a stub accumulating behaviour until it is the thing under test. **Mitigation:** stand-ins are required to live in the test file, where growth is visible in the diff rather than hidden behind an import.
-- **The Don'ts are read as applying to structure too, and over-constrain.** **Mitigation:** the scope clause states plainly that structural shape is decided elsewhere.
+- **Bans bypassed via helper imports.** Non-deterministic calls or mocks could hide behind local imports. **Mitigation:** dependency-cruiser constrains import graphs and code review inspects test utilities.
+- **Stand-in complexity creep.** Hand-written doubles could accumulate hidden framework-like behavior. **Mitigation:** stand-ins must stay in the test file, keeping growth visible in diffs.
 
 ## Compliance and Enforcement
 
-Per Discipline, with its enforcer and that enforcer's location:
-
-1. **Don't 2, 3, 4, 5** — eslint `no-restricted-syntax`, in the `**/*.test.ts` block of `eslint.config.mjs`. One selector each for `.only`/`.skip`, an `expect`-free body, a `Snapshot`-suffixed matcher, and the `vi`/`jest` mocking entry points.
-2. **Don't 1, clock and randomness** — eslint `no-restricted-syntax` (the shared determinism selectors) plus `no-restricted-properties` (the shared nondeterministic-source list), same block, same file.
-3. **Don't 1, network** — **not mechanically enforced, review duty.** No selector separates a network call from any other call, so this clause states more than any check holds.
-4. **Don't 6** — dependency-cruiser rule `tests-through-entrypoints` in `.dependency-cruiser.cjs`, run by `npm run lint:boundaries`. **Its reach is narrower than this record's scope.** It matches importers under a package's `tests/` directory, and the cruise runs over `src/` alone, so for any test file outside that shape — the sibling tests of ADR rules files among them — Don't 6 is **not mechanically enforced, review duty.**
-5. **The tautology duty** — **not mechanically enforced, review duty.** `esquery` cannot compare two sibling values, so nothing can see that an expected value was recomputed by the subject.
-
-Three limits are recorded rather than papered over:
-
-1. **The mocking ban covers the API, not the idea.** It forbids the `vi` and `jest` mocking entry points. A hand-written stand-in — which this repository uses in its own ADR rules tests — is untouched, deliberately: it is visible in the file, and visibility is the property that made mocking objectionable.
-2. **No single-file selector closes the import hole.** A nondeterministic source reached through a local import is invisible to every rule above.
-3. **Coverage gates nothing, by decision.** `@vitest/coverage-v8` remains wired as the provider in `vitest.config.ts` so coverage can be produced on demand. It MUST NOT become a threshold in the verification gate.
-
-**Visibility precondition.** These checks are worthless against a file the linter cannot see. The linter's ignore list therefore names archgate rules files individually instead of ignoring that directory as a subtree, because a subtree ignore cannot be undone — a negated pattern inside an ignored directory silently keeps the files invisible, which is the failure this record exists to prevent.
+1. **Determinism & Real Execution (Decision 1)** — ESLint `no-restricted-syntax` and `no-restricted-properties` in `eslint.config.mjs` (`**/*.test.ts`). Ambient network calls are not mechanically checkable (review duty).
+2. **Suite Structure (Decision 2)** — ESLint `no-restricted-syntax` in `eslint.config.mjs` (`src/**/*.test.ts`).
+3. **Test-Body Structure (Decision 3)** — Inline ESLint rule `test-body-aaa` in `eslint.config.mjs`. Rich matcher usage is a review duty.
+4. **Test Homes & Boundaries (Decision 4)** — Dependency-cruiser rules `tests-through-entrypoints` and `colocated-test-lane` in `.dependency-cruiser.cjs` (`npm run lint:boundaries`).
+5. **Tautological Assertions** — Not mechanically checkable (review duty).
 
 **Exceptions** are granted by amending this record, never by an inline suppression comment.
 
 ## References
 
-- [ESLint `no-restricted-syntax`](https://eslint.org/docs/latest/rules/no-restricted-syntax) and [`no-restricted-properties`](https://eslint.org/docs/latest/rules/no-restricted-properties) — the two core rules every mechanical check above is built from.
-- [ESLint flat config `ignores`](https://eslint.org/docs/latest/use/configure/ignore) — the subtree-ignore behaviour behind the visibility precondition.
-- [esquery](https://github.com/estools/esquery) — the selector language, and the reason the tautology duty cannot be mechanised.
-- [Vitest test API](https://vitest.dev/api/) — `.only`, `.skip`, `.todo`, `.each`, and the snapshot matchers named above.
-- [dependency-cruiser](https://github.com/sverweij/dependency-cruiser) — the import-graph layer that owns Don't 6.
-- [Issue #12](https://github.com/hancrafted/markdown-harness/issues/12) — the verified selector shapes, the measured agent-mocking figures, and the reasoning that overturned leaving `.skip` legal.
+- [Vitest Test API](https://vitest.dev/api/) — assertions, runner controls, and test lifecycle.
