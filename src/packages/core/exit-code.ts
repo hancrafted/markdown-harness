@@ -9,12 +9,14 @@
  * reverse-engineered by the port; every fact that sits here is verified against
  * the same values the corpus tests use.
  *
- * So the CLI stays dumb: it maps argv to a call, a report to a stream, and a
- * report to this function. It decides nothing.
+ * So the CLI keeps as little as it can: it maps argv to a call, a report to a
+ * stream, and a report to this function. What it still decides is named in its
+ * own doc comment rather than claimed away.
  *
- * The three codes read as one rule rather than three cases. 0 says the harness
- * ran and found nothing wrong; 1 says it ran and the CORPUS is wrong; 2 says it
- * could not report on the corpus at all, because its own input is wrong.
+ * The three codes read as one rule rather than three cases. 0 says
+ * `markdown-harness` ran and found nothing wrong; 1 says it ran and the CORPUS
+ * is wrong; 2 says it could not report on the corpus at all, because its own
+ * input is wrong.
  *
  * A steering answer has no failing state, so it is always 0.
  */

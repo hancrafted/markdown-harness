@@ -5,9 +5,10 @@
 // observable. Testing an exported `main()` instead would leave the one thing
 // this slice is about untested.
 //
-// Every assertion pairs the code with an empty stderr. A missing or throwing
+// Every assertion pairs the exit code with stderr — empty where the command
+// should be silent, matched where it should not be. A missing or throwing
 // `cli.ts` exits 1 on Node's own account, so `status === 1` alone would pass
-// for the wrong reason.
+// for the wrong reason, and it did: the first red here was green on `status`.
 
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -47,8 +48,8 @@ describe('mh --query', () => {
 });
 
 describe('a config that cannot describe anything', () => {
-  // 2 is not "worse than 1". It says the harness could not report on the corpus
-  // AT ALL, because its own input is wrong — so a CI step can tell "your
+  // 2 is not "worse than 1". It says `markdown-harness` could not report on the
+  // corpus AT ALL, because its own input is wrong — so a CI step can tell "your
   // documents need work" from "your config is broken", which are different
   // people's problems.
   it('exits 2', () => {
@@ -86,7 +87,7 @@ describe('mh with no command', () => {
   // Without this, `--check` is decorative: bare `mh` would run a check anyway,
   // which makes the flag a comment rather than an instruction.
   //
-  // 2 is the same 2, read as one rule rather than three cases: the harness
+  // 2 is the same 2, read as one rule rather than three cases: `markdown-harness`
   // could not report on the corpus, because its own input was wrong. argv is
   // input. Nothing goes to stdout, because stdout carries the artifact and
   // there is no artifact.
@@ -111,5 +112,31 @@ describe('mh --check over a corpus no rule was written for', () => {
     const { status, stderr } = run('--check', '--root', 'fixtures/docs/plain', '--config', FIXTURE_CONFIG);
 
     expect({ status, stderr }).toEqual({ status: 0, stderr: '' });
+  });
+});
+
+describe('mh with argv it cannot parse', () => {
+  // A typo in a flag is the SAME class of problem as no command at all: the
+  // input is wrong, so nothing can be reported about the corpus. Exiting 1
+  // would tell a CI step the documents are at fault when the invocation was.
+  it('exits 2 rather than throwing', () => {
+    const { status, stdout, stderr } = run('--bogus');
+
+    expect({ status, stdout }).toEqual({ status: 2, stdout: '' });
+    expect(stderr).toContain('--bogus');
+    expect(stderr).not.toContain('node:internal');
+  });
+});
+
+describe('mh as `bin` invokes it', () => {
+  // `package.json` points `mh` and `markdown-harness` at this file, and a `bin`
+  // target is executed DIRECTLY rather than handed to `node`. Every other test
+  // here spawns `process.execPath` explicitly, so all of them passed while the
+  // published entry point was unrunnable — the shell read the doc comment as
+  // shell script. This is the only assertion that covers the seam `bin` sells.
+  it('runs itself, without node in front of it', () => {
+    const { status, stderr } = spawnSync(CLI, ['--check', ...FIXTURES], { cwd: REPO, encoding: 'utf8' });
+
+    expect({ status, stderr }).toEqual({ status: 1, stderr: '' });
   });
 });
