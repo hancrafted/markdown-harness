@@ -218,6 +218,32 @@ base, which is why each Constraint key has to declare which direction is looser;
 `pattern` is undecidable and always flags.
 _Avoid_: relaxation, weakening, regression, tamper
 
+### The Conformance suite
+
+**Conformance suite**:
+`fixtures/conformance/valid-test-config.yaml` plus its 14 Conformance case documents. Its
+coverage half — every config-vocabulary key exercised somewhere — is scaffolding a future
+config-schema validator will replace; its specification half, the config together with each
+document's stated expected outcome, is permanent: the contract for what `markdown-harness`
+must report against a real-shaped file.
+_Avoid_: fixture corpus (retired for this artifact), test suite
+
+**Conformance case**:
+One document under `fixtures/conformance/docs/`, carrying a machine-readable
+`<!-- expect: -->` marker that names the verdict — PASSES, FAILS, or UNGOVERNED — its prose
+already argues.
+_Avoid_: fixture, test file, example doc
+
+**fixture**:
+Ordinary test data anywhere in the repo that pins nothing — coverage, not contract. Every
+Conformance case is also test data, but not every fixture is a Conformance case.
+_Avoid_: sample data, mock, stub, dummy data
+
+**corpus**:
+An adopter's own tree of real documents, never this repo's own synthetic material.
+`fixtures/conformance/` and `fixtures/llm-wiki/` are synthetic repo roots, not corpora.
+_Avoid_: fixture corpus, test corpus
+
 ### Dependency governance
 
 **Admission bar**:

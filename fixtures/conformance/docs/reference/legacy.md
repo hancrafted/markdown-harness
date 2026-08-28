@@ -6,5 +6,7 @@ slug: Legacy_Reference
 reviewedBy: nobody
 ---
 
-FAILS three ways: `status` outside its `allowed` records, `slug` against
+<!-- expect: FAILS -->
+
+Three violations: `status` outside its `allowed` records, `slug` against
 `pattern`, and `reviewedBy` under `unknownKeys: forbidden`.

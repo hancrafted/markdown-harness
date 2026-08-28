@@ -5,4 +5,6 @@ status: stable
 slug: triage-labels
 ---
 
-PASSES. Closed key set, allowed status, well-formed slug.
+<!-- expect: PASSES -->
+
+Closed key set, allowed status, well-formed slug.

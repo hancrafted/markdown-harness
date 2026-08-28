@@ -26,6 +26,8 @@ usage_window:
 stale_after: 2027-01-01T00:00:00Z
 ---
 
-PASSES. Reaches every named format and both nesting depths. Matched by the narrow
+<!-- expect: PASSES -->
+
+Reaches every named format and both nesting depths. Matched by the narrow
 rule that sits above the broad research rule, which is what proves first-match
 ordering on a real file.

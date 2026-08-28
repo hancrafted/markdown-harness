@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-002-conformance-suite.md

@@ -4,4 +4,6 @@ name: writing
 description: Exactly one of name and title, so exactlyOneOf is satisfied.
 ---
 
-PASSES.
+<!-- expect: PASSES -->
+
+Exactly one of `name` and `title` is set, so `exactlyOneOf` is satisfied.

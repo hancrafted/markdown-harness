@@ -2,3 +2,5 @@
 - [Orient before grilling](feedback_orient_before_grilling.md) — in a phased effort, say where we are on the map before the first question
 - [Han: author and Operator of markdown-harness](user_role.md) — works by grilling; wants premises attacked and evidence cited
 - [ADR prose: compress in place, never relocate](feedback_adr_prose_compression.md) — fit the budget with terse imperative one-liners, not a reference file
+- [GEN-001 rule-mention count](feedback_gen001_rule_mention_count.md) — one Do's/Don'ts-side marker per rule, not one per relevant bullet
+- [archgate:reviewer without a subagent tool](feedback_reviewer_no_subagent_tool.md) — do the domain review in-context instead of blocking when dispatch is unavailable

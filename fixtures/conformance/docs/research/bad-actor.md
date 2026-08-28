@@ -7,10 +7,12 @@ generated:
   at: 2026-08-25T09:00:00Z
 ---
 
-PASSES, and that is the point. `human/hancrafted` is a malformed Actor, and the
-narrow `provenance.md` rule would report it — but that rule did not win here, and
-the broad research rule says nothing about `generated`. Nothing merges, so an
-unmatched constraint is not a weaker constraint; it does not exist.
+<!-- expect: PASSES -->
+
+`human/hancrafted` is a malformed Actor, and the narrow `provenance.md` rule
+would report it — but that rule did not win here, and the broad research rule
+says nothing about `generated`. Nothing merges, so an unmatched constraint is
+not a weaker constraint; it does not exist.
 
 Under the old Floor this file FAILED, because actor form was checked on every
 governed file regardless of its winning rule. That guarantee is what the Floor's

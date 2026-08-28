@@ -5,4 +5,6 @@ title: Legacy
 description: Carries both names.
 ---
 
-FAILS `exactlyOneOf: [name, title]` by satisfying both arms.
+<!-- expect: FAILS -->
+
+Violates `exactlyOneOf: [name, title]` by satisfying both arms.

@@ -7,4 +7,6 @@ sources:
     resource: https://example.invalid/survey
 ---
 
-PASSES. Minimal research document.
+<!-- expect: PASSES -->
+
+Minimal research document.
