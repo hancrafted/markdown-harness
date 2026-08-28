@@ -32,14 +32,7 @@ import type { Corpus } from '../src/packages/contract/corpus.ts';
 import { isConfigError, type CheckResponse, type QueryResponse } from '../src/packages/contract/response.ts';
 import { check } from '../src/packages/core/check.ts';
 import { query } from '../src/packages/core/query.ts';
-
-/** The two configs under test, by the name the grid calls each arm. */
-const CONFIGS = { A: 'markdown-harness.config.yaml', B: 'markdown-harness.config.b.yaml' } as const;
-type Arm = keyof typeof CONFIGS;
-const ARMS = Object.keys(CONFIGS) as readonly Arm[];
-
-/** One pack per Host harness, so every arm is replicated across all three. */
-const HOSTS = ['haiku', 'sonnet', 'gemini'] as const;
+import { ARMS, CONFIGS, HOSTS, packName, type Arm } from './dogfood/grid.ts';
 
 const PROMPT = 'scripts/dogfood/exam.md';
 
@@ -134,7 +127,7 @@ const out = values.out;
 // Refusing an occupied directory rather than clearing it: a pack that already
 // exists may hold a finished run, and rebuilding over one destroys the only copy
 // of what a Host harness actually wrote.
-const occupied = ARMS.flatMap((arm) => HOSTS.map((host) => join(out, `run-${arm}-${host}`))).filter((dir) =>
+const occupied = ARMS.flatMap((arm) => HOSTS.map((host) => join(out, packName(arm, host)))).filter((dir) =>
   existsSync(dir),
 );
 if (occupied.length > 0) {
@@ -153,7 +146,7 @@ if (occupied.length > 0) {
   for (const arm of ARMS) {
     const payloads = payloadsFor(arm, configs[arm], corpus);
     writeJson(join(out, 'baseline', arm, 'check.json'), payloads.check);
-    for (const host of HOSTS) writePack({ dir: join(out, `run-${arm}-${host}`), corpus, payloads });
+    for (const host of HOSTS) writePack({ dir: join(out, packName(arm, host)), corpus, payloads });
   }
 
   const total = ARMS.length * HOSTS.length;
