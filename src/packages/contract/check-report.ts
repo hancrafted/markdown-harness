@@ -10,10 +10,10 @@
  * a field's `intent` are the Operator's own words, quoted verbatim, and quoting
  * them is the point. What is absent is any sentence WE wrote.
  *
- * The renderer serialises this back to YAML and adds nothing, so there is no
- * wording layer left to keep in step with the data — which is what makes the
- * report the same artifact whether an agent reads it as JSON or a human reads it
- * as text.
+ * There is no wording layer anywhere to keep in step with the data, because
+ * there is no wording. The report leaves as JSON and nothing else, so a second
+ * serialisation could be added later without a sentence of ours having to be
+ * kept true in two places.
  */
 
 import type { RepoPath } from './corpus.ts';
@@ -76,7 +76,7 @@ export interface RuleCoverage {
  *
  * `conforming` is `governed - files.length` and the violation count is the sum
  * over `files`. Both are arithmetic, and arithmetic on a report is the
- * renderer's job — the same reason no `message` field exists. There is
+ * CONSUMER's job — the same reason no `message` field exists. There is
  * deliberately no `invisible` count either: tenet 6 says an ungoverned file is
  * never counted, and a field holding that number would be the report noticing
  * the file.

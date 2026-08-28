@@ -59,16 +59,15 @@ describe('a config that cannot describe anything', () => {
   });
 });
 
-describe('mh --check --json', () => {
-  // `--json` is public API from v1, because it is how a reimplementation is
-  // verified against the corpus. So what this asserts is that the channel is
-  // LOSSLESS: the artifact arrives intact, with nothing of the text channel
-  // mixed into it.
+describe('mh --check writes the artifact', () => {
+  // The report is public API from v1, because it is how a reimplementation is
+  // verified against the corpus. There is one channel and no flag to pick it, so
+  // what this asserts is that the artifact arrives intact on stdout.
   //
   // The expected counts are the build's acceptance criterion, not values
   // recomputed here the way the code computes them.
-  it('writes the report as the artifact, and nothing else', () => {
-    const { status, stdout, stderr } = run('--check', '--json', ...FIXTURES);
+  it('writes JSON, and nothing else', () => {
+    const { status, stdout, stderr } = run('--check', ...FIXTURES);
 
     expect({ status, stderr }).toEqual({ status: 1, stderr: '' });
     expect(stdout.startsWith('{')).toBe(true);

@@ -12,9 +12,9 @@
  *
  * It is also why nothing here holds prose of ours. `constraint` says which
  * clause failed, `found` says what was there, `expected` says what the config
- * asked for in the config's own words. The renderer serialises `expected` back
- * to YAML and adds no sentences, so a wording change is not a thing that can
- * exist in this layer at all.
+ * asked for in the config's own words. Nothing adds a sentence to that on the
+ * way out, so a wording change is not a thing that can exist in this layer at
+ * all.
  *
  * Two absences worth naming. No `severity`: severity tiers are CONTESTED rather
  * than merely open, and a field nothing varies pre-empts the decision. No
@@ -27,12 +27,12 @@
  * report UNREPRESENTABLE — the failure Kubernetes accepts
  * (`"failed rule: {Rule}"`) and VS Code bolted `patternErrorMessage` on to
  * avoid. A verbatim fragment necessarily carries `pattern`. The reasoning for
- * accepting that: there are two consumers on two channels. `--json` is read by
- * an agent, which is better served by the regex than by prose; the plain text is
- * read by the Operator, who wrote the regex. That prior art is about END USERS,
- * and per `CONTEXT.md` the Contributor never opens the config and is reached
- * through their agent — through the JSON. The guarantee is now a property of
- * what the renderer chooses to print, not of what the data is able to hold.
+ * accepting that: the consumer is an agent, which is better served by the regex
+ * than by prose, and the Operator on the other side wrote the regex in the first
+ * place. That prior art is about END USERS, and per `CONTEXT.md` the Contributor
+ * never opens the config and is reached through their agent. The guarantee is
+ * now a property of what a consumer chooses to show a human, not of what the
+ * data is able to hold.
  */
 
 import type { FieldAddress, FieldConstraints } from './constraints.ts';

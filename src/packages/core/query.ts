@@ -10,10 +10,9 @@
  * here could read a file even if it wanted to, and an agent can ask what will be
  * required of a file before writing a byte of it.
  *
- * There is deliberately no rendered `steering:` string in what comes back, and
- * `render()` does not accept a `SteeringAnswer` yet either. The first absence is
- * a decision and the second is an unbuilt half; `contract/steering-answer.ts`
- * keeps them apart.
+ * There is deliberately no rendered `steering:` string in what comes back. The
+ * answer is the structured payload and nothing else, so what steers an agent is
+ * the config's own vocabulary — which is the thing being measured.
  */
 
 import type { ConfigRejected } from '../contract/config-rejected.ts';

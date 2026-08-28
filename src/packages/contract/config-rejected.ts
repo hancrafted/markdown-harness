@@ -33,8 +33,6 @@ export interface ConfigFault {
   at: ConfigAddress;
 }
 
-export type ConfigFaultCode = ConfigFault['code'];
-
 export interface ConfigRejected {
   report: 'config-rejected';
   faults: readonly ConfigFault[];

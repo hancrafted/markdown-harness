@@ -30,7 +30,6 @@ import type { SteeringAnswer } from './packages/contract/steering-answer.ts';
 import { check } from './packages/core/check.ts';
 import { exitCode } from './packages/core/exit-code.ts';
 import { query } from './packages/core/query.ts';
-import { render } from './packages/core/render.ts';
 
 type Report = CheckReport | ConfigRejected | SteeringAnswer;
 
@@ -39,7 +38,6 @@ const OPTIONS = {
   query: { type: 'string' },
   root: { type: 'string', default: '.' },
   config: { type: 'string', default: 'markdown-harness.config.yaml' },
-  json: { type: 'boolean', default: false },
 } as const;
 
 /**
@@ -64,25 +62,19 @@ function corpus(root: string): Corpus {
 }
 
 /**
- * A STEERING ANSWER has a JSON channel and no text one, and that is a decision
- * rather than a gap. It is only the steering answer: a rejected config still
- * renders English here, on either command, because a config fault is the
- * Operator's to read.
+ * Every report leaves as JSON. There is one channel and no flag to choose it.
  *
- * `--check` speaks to the Operator, who has a terminal, so it renders. A
- * steering answer's reader is the Contributor's agent: `product.md` says the
- * Contributor is steered "through their own host harness, in their own words",
- * and the boundaries table refuses a TUI on the grounds that the Host harness
- * IS the interface. So the prose for that reader is the Host harness's job.
+ * `product.md` puts the Host harness at the interface and refuses a TUI, and
+ * `CONTEXT.md` says the Contributor never opens a terminal — so both readers of
+ * this output are reached through an agent, and an agent is better served by the
+ * artifact than by a paragraph about it. The prose for a human is whatever their
+ * Host harness writes from this.
  *
- * KNOWN CHANGE WITH AN EXPIRY: if the dogfood loop says a text channel is
- * wanted, bare `--query` starts printing prose and `--json` gains meaning for
- * it. Recorded here because nothing has adopted this surface yet, which is what
- * makes the change free today.
+ * A second serialisation — YAML, or a rendered summary — is an addition to this
+ * function and nothing else, because no wording is stored anywhere in the data.
  */
-function stream(report: Report, json: boolean): string {
-  if (json || report.report === 'steering') return `${JSON.stringify(report, null, 2)}\n`;
-  return render(report);
+function stream(report: Report): string {
+  return `${JSON.stringify(report, null, 2)}\n`;
 }
 
 /**
@@ -92,8 +84,10 @@ function stream(report: Report, json: boolean): string {
  * its own input was wrong. Nothing goes to stdout, because stdout carries the artifact.
  */
 const USAGE = [
-  'usage: mh --check [--root <dir>] [--config <file>] [--json]',
+  'usage: mh --check [--root <dir>] [--config <file>]',
   '       mh --query <path> [--config <file>]',
+  '',
+  'Every report is written to stdout as JSON.',
   '',
 ].join('\n');
 
@@ -106,6 +100,6 @@ if (values === null || (!values.check && values.query === undefined)) {
   const configText = readFileSync(values.config, 'utf8');
   const report = values.query === undefined ? check(configText, corpus(values.root)) : query(configText, values.query);
 
-  process.stdout.write(stream(report, values.json));
+  process.stdout.write(stream(report));
   process.exitCode = exitCode(report);
 }

@@ -15,17 +15,16 @@
  * a prose layer duplicating free text the Operator can rewrite at will, which is
  * exactly the layer the report format deleted, and it would also destroy the
  * experiment: with sentences available, nothing measures whether the config's
- * own key names carry an agent on their own.
+ * own key names carry an agent on their own. That is the experiment this payload
+ * exists to run.
  *
  * So `requires` re-exposes the config's own vocabulary VERBATIM, down to which
  * keys the Operator did and did not write.
  *
- * NOT BUILT YET, and named here so the gap is not mistaken for a decision:
- * `render()` still takes `CheckReport | ConfigRejected`, so nothing renders this
- * and the frontmatter skeleton the plan calls the highest-leverage part of the
- * product has no code at all. When it lands it derives from this object and
- * stores nothing back into it — two channels, one artifact, no wording to keep
- * in step. Until then `--query` has a JSON channel and no text one.
+ * There is one output channel and it is JSON. A frontmatter skeleton — the
+ * thing the plan calls the highest-leverage part of the product — would be
+ * DERIVED from this object by whoever wants one, and stored back into it never,
+ * so that no wording of ours has to be kept in step with the data.
  */
 
 import type { Glob, UnknownKeys } from './config.ts';
