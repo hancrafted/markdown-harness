@@ -13,6 +13,18 @@ This repo runs both Archgate and the Matt Pocock engineering skills, and each ke
 
 Say "ADR" only for an Archgate record and "design-ADR" only for a `docs/design-adr/` record. When either could be meant, name it in full.
 
+### Which one — the altitude test
+
+The table says where each record lives. It does not say which one a given decision belongs in. Altitude decides that:
+
+> **If the next feature could make the record wrong, it was written at the wrong altitude.**
+
+An ADR records an **ADR Discipline**: one universal constraint on how the code is written. "Exported type declarations live in one file" survives any feature, so it is an ADR. "Every constraint key declares a loosening direction" does not — a second Module may have no constraint keys at all — so it is a design-ADR.
+
+Product contracts are never ADRs, however architectural they feel. The config language, resolution semantics, the command surface, exit codes and the report format are contract decisions, and their home is `src/config/contract.ts`, the fixture corpus, and design-ADRs. Adopters never receive `.archgate/`, so the portable contract is the one thing an ADR must not hold. The predecessor repo is the cautionary case: it put feature governance into Archgate and ended with a 32 KB rule engine reachable from nothing.
+
+The derivation is `docs/design-adr/0002-archgate-records-disciplines-scoped-by-glob.md`; the test above is its operative summary.
+
 **This overrides the skill files.** `domain-modeling/SKILL.md` and `domain-modeling/ADR-FORMAT.md` say ADRs live in `docs/adr/` with no frontmatter. In this repo they don't: they are design-ADRs, they live in `docs/design-adr/`, and they carry the frontmatter below. Ignore the vendored default; those files are lock-managed copies that get overwritten on skill update, so don't edit them to match.
 
 ### design-ADR format

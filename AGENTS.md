@@ -41,3 +41,7 @@ The five canonical triage roles use their default label strings: `needs-triage`,
 ### Domain docs
 
 Single-context: one `CONTEXT.md` at the repo root, design-ADRs in `docs/design-adr/`. See `docs/agents/domain.md`.
+
+## Source layout
+
+Packages under `src/packages/` are deep modules, and every file carries exactly one classifier — by position at a Package root, by suffix below it. Read [`src/packages/README.md`](./src/packages/README.md) before adding, naming, or importing a file there.

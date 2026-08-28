@@ -22,6 +22,13 @@ A governance decision record owned by Archgate, opening `type: adr`. It constrai
 `markdown-harness` is built, never what an adopter's files must look like.
 _Avoid_: architecture decision record; bare "decision record" when either kind could be meant
 
+**ADR Discipline**:
+One universal constraint on how `markdown-harness` is written, at an altitude no future
+feature can invalidate. An ADR carries one or more, grouped **by the glob they need** rather
+than by topic. The altitude test decides membership: if the next feature could make the
+record wrong, it was written at the wrong altitude and belongs in a design-ADR.
+_Avoid_: rule, policy, standard, guideline, best practice
+
 **design-ADR**:
 A design decision record owned by the Matt Pocock engineering skills, opening
 `type: design-adr`. It records reasoning; it constrains nothing.
@@ -96,6 +103,28 @@ Asking what governs a path **before** the file is written, rather than checking 
 reason this is a CLI and an MCP server rather than a set of lint rules.
 _Avoid_: lookup, dry run, preflight
 
+### How the code is written
+
+**Package**:
+One folder under `src/packages/`, flat — a Package may not contain another. Its **root files**
+are its entry points and are public; everything in a subfolder is private. A Package is a deep
+module in the `codebase-design` sense. It is **not** a Module: a Module is a checking domain
+and a Package is a unit of code, and neither implies the other.
+_Avoid_: module (collides in both directions), library, workspace, folder
+
+**Interface**:
+Kept from `codebase-design`: everything a caller must know to use a Package correctly — the
+type signature, and also invariants, ordering constraints, error modes, required configuration
+and performance characteristics.
+_Avoid_: **API** — banned outright — and signature. Both are too narrow: they name only the
+type-level surface, which is the part an Interface is precisely not reducible to
+
+**type declaration**:
+The TypeScript construct: an `interface`, a `type` alias, or an `enum`. Exported ones live in a
+`*.types.ts` file; a private local one beside its only consumer is better **Locality**, not a
+violation. Lowercase, because it names a language construct rather than a domain concept.
+_Avoid_: type (unqualified — collides with the frontmatter field), model, schema, DTO
+
 ### The pinned spec
 
 Moving the pin, and what it means for upstream to have moved on, are procedures rather than
@@ -136,8 +165,10 @@ _Avoid_: tracked file, included file, covered file
 **Type vocabulary**:
 The set of document kinds a repo recognises, spelled as `allowed` records on the `type` field
 of the Rules that care. It is implicit: the union of those records across the config,
-derivable for reporting but declared in no single place.
-_Avoid_: the types list, enum, taxonomy
+derivable for reporting but declared in no single place. Collides softly with the `*.types.ts`
+suffix, which holds TypeScript **type declarations** and has nothing to do with this. Both are
+kept — every alternative measured worse — so qualify whenever either could be meant.
+_Avoid_: the types list, enum, taxonomy; `*.types.ts` or "types file" as a synonym
 
 **Floor** — _retired, defined only so the term resolves_:
 The requirements an earlier design enforced on **every** Governed file, unconditionally, with
