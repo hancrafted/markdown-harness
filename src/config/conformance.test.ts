@@ -1,4 +1,4 @@
-// Fixture-integrity tests for `fixtures/conformance/`.
+// Coverage tests for the Conformance suite's config, under `fixtures/conformance/`.
 //
 // These do not test the harness — no reader, resolver or check command exists
 // yet. They assert that the Conformance suite is still a COMPLETE test surface:
