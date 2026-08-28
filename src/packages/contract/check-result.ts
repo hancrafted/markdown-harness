@@ -2,8 +2,9 @@
  * `--check`: every governed file with a fault, and the headline counts.
  *
  * THE DATA CARRIES NO PROSE OF OURS. A violation code, the value found, and the
- * config fragment that failed are a complete basis for every sentence the tool
- * could say, so a stored `message` would hold one fact twice and two
+ * config fragment that failed are a complete basis for every sentence
+ * `markdown-harness` could say, so a stored `message` would hold one fact twice
+ * and two
  * representations of one fact drift.
  *
  * Author prose does appear, and that is a different thing: a rule's `intent` and

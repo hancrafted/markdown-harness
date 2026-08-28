@@ -1,7 +1,7 @@
 /**
  * The result returned when the config cannot be trusted to describe anything.
  *
- * A config fault is RESULT CONTENT, not a throw. A tool whose config errors
+ * A config fault is RESULT CONTENT, not a throw. A program whose config errors
  * arrive as stack traces has two output formats, and only one of them is a
  * contract.
  *
@@ -35,7 +35,7 @@ export type ConfigAddress = string;
 export const CONFIG_FAULT = {
   /**
    * An empty rule list. A config naming a module and then governing nothing is
-   * a mistake rather than an inert harness, so it is a fault rather than a
+   * a mistake rather than a deliberate no-op, so it is a fault rather than a
    * clean report over zero files.
    */
   EMPTY_RULE_LIST: 'EMPTY_RULE_LIST',

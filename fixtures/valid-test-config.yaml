@@ -6,12 +6,12 @@
 # reaches every key in the vocabulary, including the ones no real file in this repo
 # would exercise.
 #
-# Rules are an ORDERED list. For any file the harness walks top-down and the FIRST
+# Rules are an ORDERED list. For any file `markdown-harness` walks top-down and the
 # matching rule is the complete set of constraints that applies. Nothing merges and
 # nothing is inherited, so the most specific rules come first and the broadest last
 # — reversed, a narrow rule silently wins for zero files.
 #
-# Governance is opt-in: a file no rule matches is invisible to the harness. There is
+# Governance is opt-in: a file no rule matches is invisible. There is
 # no Floor, so a rule that asserts nothing about a field leaves that field unchecked
 # even when another rule elsewhere constrains it.
 #
@@ -90,7 +90,7 @@ frontmatter:
         tags: { minItems: 1, maxItems: 5, itemMaxLength: 20 }
 
     # ── Skills ─────────────────────────────────────────────────────────────────
-    # The cross-field case. The harness has never heard of "skill": this is a path
+    # The cross-field case. `markdown-harness` has never heard of "skill": this is a path
     # glob plus a generic constraint.
     - ruleId: skills
       path: [docs/skills/**/SKILL.md]
