@@ -290,6 +290,11 @@ const testBodyAaa = {
   },
 };
 
+// One plugin object, two consumers. Flat config throws on a plugin namespace
+// redefined with a DIFFERENT object, so the two blocks that enable this rule
+// must SHARE this reference rather than each spelling the literal out.
+const localPlugin = { local: { rules: { 'test-body-aaa': testBodyAaa } } };
+
 export default tseslint.config(
   // `.archgate/` is ignored file-by-file rather than as a subtree. An ADR's
   // `.rules.ts` runs inside archgate's own sandbox against its own ambient types,
@@ -396,7 +401,7 @@ export default tseslint.config(
   // it, and an unset rule keeps the value the earlier block gave it.
   {
     files: [SRC_TESTS],
-    plugins: { local: { rules: { 'test-body-aaa': testBodyAaa } } },
+    plugins: localPlugin,
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -424,11 +429,22 @@ export default tseslint.config(
   // satisfy the linter, and it spends inline suppression — a mechanism this
   // project deliberately keeps unspent — on constructs that are not exceptions
   // at all. Both rules stay live everywhere else.
+  //
+  // The body regime is enabled here too, and DELIBERATELY WITHOUT
+  // SUITE_STRUCTURE. ARCH-003 §2.3 exempts these files from the three-way split
+  // — a rules test drives one rule function against a hand-built double — while
+  // stating that Decision 3 still binds them. Held behind `files: [SRC_TESTS]`,
+  // that sentence promised a reach no enforcer had. `no-restricted-syntax` is
+  // deliberately NOT restated: an unset rule keeps the value the `**/*.test.ts`
+  // block gave it, so the behavioural bans stay live and the structural ones
+  // never arrive.
   {
     files: ['.archgate/**/*.rules.test.ts'],
+    plugins: localPlugin,
     rules: {
       '@typescript-eslint/triple-slash-reference': 'off',
       '@typescript-eslint/no-empty-function': 'off',
+      'local/test-body-aaa': 'error',
     },
   },
 

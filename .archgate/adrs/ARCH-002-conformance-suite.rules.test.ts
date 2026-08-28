@@ -104,14 +104,16 @@ describe('expect-marker', () => {
 
   it('carries the ARCH-002 provenance tag in its messages', async () => {
     // ARRANGE
+    const provenance = '(ARCH-002 [expect-marker])';
     const files = {
       [CASE_PATH]: `---\ntype: reference\n---\n\nClosed key set.\n`,
     };
     const { ctx, violations } = makeCtx(files);
     // ACT
     await rule.check(ctx);
+    const untagged = violations.filter((v) => !v.message.includes(provenance));
     // ASSERT
-    expect(violations.every((v) => v.message.includes('(ARCH-002 [expect-marker])'))).toBe(true);
+    expect(untagged).toEqual([]);
   });
 
   it('ignores files outside fixtures/conformance/docs/', async () => {

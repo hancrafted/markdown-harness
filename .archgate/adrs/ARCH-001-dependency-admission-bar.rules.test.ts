@@ -101,15 +101,19 @@ describe('dependency-range-form', () => {
 
   it('fails independently for each offending entry across both fields', async () => {
     // ARRANGE
+    const offendingEntries = 2;
+    const caretEntry = 'dependencies.dep-a';
+    const wildcardEntry = 'devDependencies.dep-b';
     const { ctx, violations } = makeCtx({
       'package.json': pkgWith({ 'dep-a': '^1.0.0' }, { 'dep-b': '*' }),
     });
     // ACT
     await rule.check(ctx);
+    const messages = violations.map((v) => v.message).join('\n');
     // ASSERT
-    expect(violations).toHaveLength(2);
-    expect(violations.some((v) => v.message.includes('dependencies.dep-a'))).toBe(true);
-    expect(violations.some((v) => v.message.includes('devDependencies.dep-b'))).toBe(true);
+    expect(violations).toHaveLength(offendingEntries);
+    expect(messages).toContain(caretEntry);
+    expect(messages).toContain(wildcardEntry);
   });
 
   it('does nothing when package.json is absent', async () => {
@@ -145,12 +149,14 @@ describe('dependency-range-form', () => {
 
   it('carries the ARCH-001 provenance tag in every message', async () => {
     // ARRANGE
+    const provenance = '(ARCH-001 [dependency-range-form])';
     const { ctx, violations } = makeCtx({
       'package.json': pkgWith({ 'pkg-a': '^1.0.0' }),
     });
     // ACT
     await rule.check(ctx);
+    const untagged = violations.filter((v) => !v.message.includes(provenance));
     // ASSERT
-    expect(violations.every((v) => v.message.includes('(ARCH-001 [dependency-range-form])'))).toBe(true);
+    expect(untagged).toEqual([]);
   });
 });

@@ -87,8 +87,11 @@ const rule = ruleSet.rules['no-eslint-disable'];
 
 describe('no-eslint-disable', () => {
   it('passes on a src file carrying no directive', async () => {
+    // ARRANGE
     const { ctx, violations } = makeCtx({ [SRC_FILE]: 'export const answer = 42;\n' });
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations).toEqual([]);
   });
 
@@ -103,38 +106,55 @@ describe('no-eslint-disable', () => {
 
   for (const [label, source] of forms) {
     it(`fails on the ${label} form`, async () => {
+      // ARRANGE
       const { ctx, violations } = makeCtx({ [SRC_FILE]: source });
+      // ACT
       await rule.check(ctx);
+      // ASSERT
       expect(violations).toHaveLength(1);
       expect(violations[0].file).toBe(SRC_FILE);
     });
   }
 
   it('reports the line the directive sits on', async () => {
+    // ARRANGE
     const source = `export const a = 1;\nexport const b = 2;\n// ${DISABLE}-next-line no-console\nconsole.log(1);\n`;
+    const expectedLine = 3;
     const { ctx, violations } = makeCtx({ [SRC_FILE]: source });
+    // ACT
     await rule.check(ctx);
-    expect(violations[0].line).toBe(3);
+    // ASSERT
+    expect(violations[0].line).toBe(expectedLine);
   });
 
   it('passes on prose naming a directive away from the comment opener', async () => {
+    // ARRANGE
     const source = `// Suppression stays unspent, so never write ${DISABLE} here.\nexport const a = 1;\n`;
     const { ctx, violations } = makeCtx({ [SRC_FILE]: source });
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations).toEqual([]);
   });
 
   it('leaves a directive outside src/ alone', async () => {
+    // ARRANGE
     const source = `/* ${DISABLE} */\nexport default [];\n`;
     const { ctx, violations } = makeCtx({ 'eslint.config.mjs': source });
+    // ACT
     await rule.check(ctx);
+    // ASSERT
     expect(violations).toEqual([]);
   });
 
   it('carries the GEN-003 provenance tag in its messages', async () => {
+    // ARRANGE
+    const provenance = '(GEN-003 [no-eslint-disable])';
     const source = `/* ${DISABLE} */\nexport const a = 1;\n`;
     const { ctx, violations } = makeCtx({ [SRC_FILE]: source });
+    // ACT
     await rule.check(ctx);
-    expect(violations.every((v) => v.message.includes('(GEN-003 [no-eslint-disable])'))).toBe(true);
+    // ASSERT
+    expect(violations[0].message).toContain(provenance);
   });
 });
