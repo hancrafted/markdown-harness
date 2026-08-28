@@ -12,7 +12,7 @@ import { parse } from 'yaml';
 import type { AllowedValue, FieldConstraints, Format } from './constraints';
 import type { MarkdownHarnessConfig } from './contract';
 
-const CONFIG_URL = new URL('../../fixtures/valid-test-config.yaml', import.meta.url);
+const CONFIG_URL = new URL('../../fixtures/conformance/valid-test-config.yaml', import.meta.url);
 const config = parse(readFileSync(CONFIG_URL, 'utf8')) as MarkdownHarnessConfig;
 const rules = config.frontmatter?.rules ?? [];
 

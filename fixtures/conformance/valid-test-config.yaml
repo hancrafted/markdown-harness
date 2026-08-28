@@ -1,10 +1,16 @@
-# valid-test-config.yaml — the fixture the config reader is implemented against.
+# valid-test-config.yaml — the config half of the Conformance suite.
 #
-# A SYNTHETIC config, not this repo's. This `fixtures/` directory IS the synthetic
-# repo root, so every path below is written relative to it and nothing here can be
-# confused with a real `markdown-harness.config.yaml`. Its job is coverage: it
-# reaches every key in the vocabulary, including the ones no real file in this repo
-# would exercise.
+# A SYNTHETIC config, not this repo's. This `fixtures/conformance/` directory IS the
+# synthetic repo root, so every path below is written relative to it and nothing here
+# can be confused with a real config. Its sibling `fixtures/llm-wiki/` is a SEPARATE
+# synthetic repo root with a config of its own — the seeded demo, not part of this
+# suite and governed by nothing here.
+#
+# This config does two jobs. COVERAGE: it reaches every key in the vocabulary,
+# including the ones no real file would exercise, and `src/config/fixtures.test.ts`
+# fails until it does. SPECIFICATION: together with `docs/` it fixes what the harness
+# must report, and each document states its own expected outcome in its body.
+# Changing an expected outcome is a contract change, not a test fix.
 #
 # Rules are an ORDERED list. For any file the harness walks top-down and the FIRST
 # matching rule is the complete set of constraints that applies. Nothing merges and
@@ -15,8 +21,8 @@
 # no Floor, so a rule that asserts nothing about a field leaves that field unchecked
 # even when another rule elsewhere constrains it.
 #
-# Shape reference: ../src/config/contract.ts and ../src/config/constraints.ts
-# Constraints derive from the OKF text vendored at ../docs/okf/SPEC-v0.2.md.
+# Shape reference: ../../src/config/contract.ts and ../../src/config/constraints.ts
+# Constraints derive from the OKF text vendored at ../../docs/okf/SPEC-v0.2.md.
 
 frontmatter:
   rules:
