@@ -22,8 +22,10 @@ Sequential numbering, `docs/design-adr/0001-slug.md`, created lazily — only wh
 **The frontmatter is governed by `markdown-harness.config.yaml`, rule `design-adrs`. That file is authoritative and this paragraph is not.** To get the requirement without opening the config:
 
 ```sh
-node src/cli.ts --query docs/design-adr/0002-slug.md
+node src/cli.ts --query docs/design-adr/0003-slug.md
 ```
+
+The path deliberately does not exist yet. `--query` resolves rules against the path alone, so it answers the same for a file you are about to write as for one already there — which is the only order that helps.
 
 ```md
 ---
