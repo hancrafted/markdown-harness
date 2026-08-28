@@ -14,6 +14,8 @@
     "mh": "node src/cli.ts",
     "dogfood": "node src/cli.ts --check",
     "dogfood:b": "node src/cli.ts --check --config markdown-harness.config.b.yaml",
+    "dogfood:pack": "node scripts/dogfood-pack.ts",
+    "dogfood:score": "node scripts/dogfood-score.ts",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "knip": "knip",

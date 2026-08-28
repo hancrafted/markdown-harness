@@ -38,17 +38,37 @@ const OWN_PROSE = [
   'docs/design-adr/**/*.md',
   'docs/vision/**/*.md',
   'docs/agents/**/*.md',
+  'docs/workshop/**/*.md',
+  'scripts/**/*.{ts,md}',
   'markdown-harness.config*.yaml',
 ];
 
 /**
  * The files that define the rule, and therefore have to quote it.
  *
- * Deliberately three names rather than a marker comment: an inline suppression
- * would be available everywhere and would end up used everywhere, and the whole
- * value of this check is that it cannot be waved through in the place it matters.
+ * Deliberately a list of names rather than a marker comment: an inline
+ * suppression would be available everywhere and would end up used everywhere,
+ * and the whole value of this check is that it cannot be waved through in the
+ * place it matters. This file joins them the moment `scripts/**` is in scope —
+ * it cannot name what it bans without writing it 15 times.
  */
-const DEFINES_THE_RULE = ['CONTEXT.md', 'AGENTS.md', 'CLAUDE.md', 'README.md'];
+const DEFINES_THE_RULE = ['CONTEXT.md', 'AGENTS.md', 'CLAUDE.md', 'README.md', 'scripts/check-naming.ts'];
+
+/**
+ * Text this repo owns the words of and must not change.
+ *
+ * A session transcript is extracted mechanically from the log, and two other
+ * places already refuse to touch one for a single reason: `.prettierignore` and
+ * the `workshop-records` rule's `excludeFiles` both say that reformatting it
+ * would silently alter the record it exists to preserve. Rewording somebody's
+ * speech to satisfy a glossary is the same act with a better excuse. Measured
+ * when `docs/workshop/**` came into scope: 131 of 146 faults sat in that one
+ * file, every one of them quoted speech.
+ *
+ * This is now the THIRD statement of the same exclusion. A fourth should read it
+ * from one of the other two rather than adding itself.
+ */
+const VERBATIM = ['**/node_modules/**', 'docs/workshop/**/raw.md'];
 
 /**
  * The glossary entry whose synonyms get gated: the PRODUCT's.
@@ -142,7 +162,7 @@ function faultsIn(file: string, text: string, synonyms: readonly string[]): read
 const context = readFileSync('CONTEXT.md', 'utf8');
 const synonyms = bannedSynonyms(context);
 
-const files = OWN_PROSE.flatMap((pattern) => globSync(pattern, { exclude: ['**/node_modules/**'] }))
+const files = OWN_PROSE.flatMap((pattern) => globSync(pattern, { exclude: VERBATIM }))
   .filter((file) => !DEFINES_THE_RULE.includes(file))
   .sort();
 
