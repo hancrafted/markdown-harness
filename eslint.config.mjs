@@ -76,6 +76,17 @@ const LOCAL_TIME_ACCESSORS = [
 // These ban the EVASION rather than the call, because the call through an alias
 // is not reachable by a single-file selector. The one hole no core rule closes
 // is an import: `import { now } from './clock'` defeats every selector.
+// The three ambient reads that are nondeterministic wherever they appear. Shared
+// by *.pure.ts and **/*.test.ts so the two can never disagree about what a
+// nondeterministic source is. The LOCAL_TIME_ACCESSORS above are NOT shared:
+// they are a time-zone concern, and a test reading getFullYear off a Date built
+// from a fixed instant is perfectly deterministic.
+const NONDETERMINISTIC_SOURCES = [
+  { object: 'Math', property: 'random', message: 'stop: nondeterministic — pass the value in.' },
+  { object: 'Date', property: 'now', message: 'stop: reads the clock — pass the instant in.' },
+  { object: 'performance', property: 'now', message: 'stop: reads a clock.' },
+];
+
 const DETERMINISM = [
   {
     selector: "NewExpression[callee.name='Date'][arguments.length=0]",
@@ -95,8 +106,67 @@ const DETERMINISM = [
   },
 ];
 
+// A test result is evidence about the code: green must mean the test COULD have
+// gone red, and red must mean the code changed. Each selector below kills one way
+// of breaking that.
+//
+// TEST_CALL must match every call form or the bans leak. The naive
+// `[callee.name=/^(it|test)$/]` misses BOTH `it.only(...)` (callee is a
+// MemberExpression) and `it.each([...])(...)` (callee is itself a CallExpression),
+// and `it.each` is in active use in this repo.
+const TEST_CALL =
+  'CallExpression:matches([callee.name=/^(it|test)$/],[callee.object.name=/^(it|test)$/],' +
+  '[callee.callee.name=/^(it|test)$/],[callee.callee.object.name=/^(it|test)$/])';
+
+const TEST_BEHAVIOUR = [
+  {
+    // `expect(x).toBe(y)` nests a CallExpression whose callee IS `expect`; the
+    // `callee.object.name` arm catches `expect.soft(...)` and friends.
+    selector:
+      `${TEST_CALL} > :matches(ArrowFunctionExpression,FunctionExpression)` +
+      ":not(:has(CallExpression[callee.name='expect'],CallExpression[callee.object.name='expect']))",
+    message: 'stop: a test with no expect could not have gone red.',
+  },
+  {
+    // `.todo` stays legal: it declares intent and cannot turn a red build green.
+    selector: 'MemberExpression[object.name=/^(it|test|describe)$/][property.name=/^(only|skip)$/]',
+    message: 'stop: .only hides the rest of the suite and .skip turns red green — use .todo to declare intent.',
+  },
+  {
+    selector: 'CallExpression[callee.property.name=/Snapshot$/]',
+    message: 'stop: a snapshot freezes whatever the code currently prints — state the expected value.',
+  },
+  {
+    selector:
+      'CallExpression[callee.object.name=/^(vi|jest)$/][callee.property.name=/^(mock|doMock|spyOn|mocked|stubGlobal)$/]',
+    message: 'stop: a mock asserts against your own stub — exercise the real thing through its entry point.',
+  },
+];
+
 export default tseslint.config(
-  { ignores: ['node_modules/**', 'dist/**', 'coverage/**', '.archgate/**'] },
+  // `.archgate/` is ignored file-by-file rather than as a subtree. An ADR's
+  // `.rules.ts` runs inside archgate's own sandbox against its own ambient types,
+  // not this project's build, so linting it means importing rules it was never
+  // written against. Its TESTS are ordinary vitest files and must be reachable:
+  // four of this repo's six test files live here, and an ADR naming an enforcer
+  // that cannot see the file it governs is exactly the silent non-governance
+  // `src/packages/README.md` exists to close.
+  //
+  // Written as two precise patterns because a subtree ignore cannot be undone —
+  // ESLint refuses to unignore a file inside an ignored directory, so the
+  // `!.archgate/**/*.rules.test.ts` spelling silently keeps the tests invisible.
+  // `*.rules.ts` does not match `*.rules.test.ts`, which is what splits them.
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'coverage/**',
+      '.claude/worktrees/**',
+      '.worktrees/**',
+      '.archgate/**/*.rules.ts',
+      '.archgate/rules.d.ts',
+    ],
+  },
   {
     files: ['**/*.ts'],
     extends: [js.configs.recommended, tseslint.configs.recommended, tseslint.configs.stylistic],
@@ -143,14 +213,45 @@ export default tseslint.config(
       'no-restricted-syntax': ['error', ...EXPORTED_TYPE_DECLARATION, ...DETERMINISM],
       'no-restricted-properties': [
         'error',
-        { object: 'Math', property: 'random', message: 'stop: nondeterministic — pass the value in.' },
-        { object: 'Date', property: 'now', message: 'stop: reads the clock — pass the instant in.' },
-        { object: 'performance', property: 'now', message: 'stop: reads a clock.' },
+        ...NONDETERMINISTIC_SOURCES,
         ...LOCAL_TIME_ACCESSORS.map((property) => ({
           property,
           message: 'stop: reads the host time zone — use the getUTC* accessor.',
         })),
       ],
+    },
+  },
+
+  // Every test file in the repo, wherever it sits. This block RESTATES
+  // EXPORTED_TYPE_DECLARATION because flat config overrides rather than merges:
+  // omitting it would silently disarm the type-declaration ban on package tests.
+  //
+  // Its position is load-bearing in both directions. It must come AFTER the
+  // GOVERNED and *.pure.ts blocks so it wins for test files, and BEFORE the
+  // exhaustiveness net so it does not win for a stray `src/packages/x.test.ts`
+  // that matches no classifier — that file must still hit the net.
+  {
+    files: ['**/*.test.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...EXPORTED_TYPE_DECLARATION, ...DETERMINISM, ...TEST_BEHAVIOUR],
+      'no-restricted-properties': ['error', ...NONDETERMINISTIC_SOURCES],
+    },
+  },
+
+  // Two base rules that are wrong for an ADR's sibling test, disabled narrowly
+  // rather than by re-hiding the files. Both were surfaced the moment these tests
+  // became visible, and both describe correct code:
+  //
+  // - the triple-slash reference is how archgate supplies its ambient RuleContext
+  //   types; `import` is not an alternative, because there is nothing to import.
+  // - the empty `warning`/`info` sinks on the hand-built RuleContext double are
+  //   the behaviour under test — the double collects violations and discards the
+  //   rest, so an empty body is the honest spelling.
+  {
+    files: ['.archgate/**/*.rules.test.ts'],
+    rules: {
+      '@typescript-eslint/triple-slash-reference': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
     },
   },
 
