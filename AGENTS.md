@@ -37,6 +37,15 @@ subfolder is private, and that holds for its own tests too.
 
 `src/cli.ts` is root code, outside every package, and the only file in the repo that touches disk.
 
+**There is no build step.** `bin` points straight at `./src/cli.ts` and every script is
+`node src/cli.ts`, so Node's strip-only TypeScript mode is the runtime and only ERASABLE syntax
+runs. `enum`, `namespace` and parameter properties fail with
+`ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` — measured, and `tsc` accepted them happily until
+`erasableSyntaxOnly` was set in `tsconfig.json`. Do not remove that flag: without it the failure
+moves from `npm run verify` back to whoever next runs the CLI. For a closed set of named
+constants use a `const` object with `as const` plus a `(typeof X)[keyof typeof X]` union, which
+gives everything `enum` would and erases.
+
 ## Agent skills
 
 ### Issue tracker

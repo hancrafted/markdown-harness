@@ -1,2 +1,3 @@
 - [No invented prose](feedback-no-invented-prose.md) — paste the config fragment verbatim instead of hand-writing a sentence about it
 - [Fixture config is not an exemplar](feedback-fixture-config-is-not-an-exemplar.md) — never generalise `fixtures/`' conventions into claims about real configs
+- [Sweep naming on joined text](feedback-sweep-naming-on-joined-text.md) — a line-based grep cannot see a wrapped `the`/`harness`; six commits proved it
