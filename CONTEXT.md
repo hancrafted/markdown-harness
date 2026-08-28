@@ -217,3 +217,13 @@ A config change that widens what passes. Made visible by diffing a config agains
 base, which is why each Constraint key has to declare which direction is looser; a changed
 `pattern` is undecidable and always flags.
 _Avoid_: relaxation, weakening, regression, tamper
+
+### Dependency governance
+
+**Admission bar**:
+The four network signals — GitHub stars, contributor breadth, npm weekly downloads, and a
+recent release or maintainer reply — a candidate dependency is screened against before a
+human may approve adding it. It screens candidates _out_; it never admits one, and clearing
+every signal is not a substitute for the human decision. Every signal is a live network fact,
+so applying the bar is a review duty, never a mechanical check.
+_Avoid_: dependency policy, vetting checklist, approval gate

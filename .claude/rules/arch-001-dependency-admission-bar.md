@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-001-dependency-admission-bar.md
