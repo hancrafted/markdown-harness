@@ -93,10 +93,39 @@ frontmatter:
           maxLength: 200
           intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
 
+    # ── Research appendices ────────────────────────────────────────────────────
+    # Above the broad research rule, and this pair is the one place in either
+    # config where first-match ordering does real work on real files.
+    #
+    # These four files are the ~1,734 lines of quoted primary sources that
+    # `frontmatter-linter-config.md` cites, and each opens with "Slice of
+    # research ticket #3". They ARE the evidence, not a finding about it.
+    #
+    # FINDING, measured: adding `research-part` to the broad rule's `allowed`
+    # set does not do this. A value vocabulary says what a field may HOLD, never
+    # which constraints APPLY, so the appendices went on being asked for the same
+    # seven things — 70 violations before and after, 28 of them on these four
+    # files either way. Only a rule of their own changes what is asked.
+    #
+    # And under first match that rule is SHORT, which is the opposite of what I
+    # first argued. An appendix needs LESS than a note, so it restates nothing.
+    # The expensive direction is a sub-family needing the same constraints plus
+    # one — that one has to repeat all of them, because nothing merges.
+    - ruleId: research-parts
+      path: ['docs/research/parts/**']
+      intent: An appendix is the evidence a research note cites, so asking it for sources asks it to cite itself
+      fields:
+        type:
+          presence: required
+          allowed:
+            - value: research-part
+              intent: Quoted primary sources backing one research note. It is the evidence, so it cites nothing.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
+
     # ── Research ───────────────────────────────────────────────────────────────
-    # `docs/research/parts/**` is research too and is governed by this rule
-    # rather than by one of its own: the parts are the same kind of document,
-    # split for length.
     - ruleId: research-notes
       path: ['docs/research/**']
       intent: A research note settles one question against sources, so a reader has to be able to tell which question before opening it
@@ -154,16 +183,26 @@ frontmatter:
     # FINDING: two tools in this repo now need the same "leave this alone" list,
     # written twice, in two languages, with no shared source of truth. Drift is
     # a matter of time.
+    #
+    # Two allowed values on ONE rule here, where the research appendices got a
+    # rule of their own. The difference is what each kind NEEDS, not what it is
+    # called: a session write-up and a prototype write-up need the same two
+    # fields, so one rule with a two-value vocabulary is the whole of it.
+    # `docs/workshop/prototype/cli-findings.md` does not exist yet and is the
+    # next file this project writes, which is why `prototype-findings` is here
+    # before the file is.
     - ruleId: workshop-records
       path: ['docs/workshop/**']
       excludeFiles: ['docs/workshop/**/raw.md']
-      intent: A workshop record says what a working session decided and what it withdrew, so it has to be findable without replaying the session
+      intent: A workshop record says what a session decided or what a prototype measured, so it has to be findable without replaying either
       fields:
         type:
           presence: required
           allowed:
-            - value: workshop-record
+            - value: session-record
               intent: What a working session decided and what it withdrew, written up after the fact.
+            - value: prototype-findings
+              intent: What a throwaway build measured, and which questions it answered.
         description:
           presence: required
           maxLength: 200

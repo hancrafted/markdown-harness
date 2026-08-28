@@ -61,6 +61,30 @@ frontmatter:
           maxLength: 200
           intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
 
+    # ── Research appendices ────────────────────────────────────────────────────
+    # The rule that made B honest. See A's copy for the argument and the
+    # measurement; B is where it pays, because B is what was asking these four
+    # files to cite sources when they are the sources.
+    #
+    # Nothing about provenance appears below, and that is the point: an appendix
+    # of quoted primary sources has no upstream to name, no author but the ones
+    # it quotes, and no expiry that is not its parent note's. Under first match
+    # this rule REPLACES the one beneath it rather than narrowing it, so the
+    # seven §5 requirements simply do not reach here.
+    - ruleId: research-parts
+      path: ['docs/research/parts/**']
+      intent: An appendix is the evidence a research note cites, so asking it for sources asks it to cite itself
+      fields:
+        type:
+          presence: required
+          allowed:
+            - value: research-part
+              intent: Quoted primary sources backing one research note. It is the evidence, so it cites nothing.
+        description:
+          presence: required
+          maxLength: 200
+          intent: 'OKF §4.1: a single sentence summarizing the concept, used by index generators, search snippets and previews'
+
     # ── Research ───────────────────────────────────────────────────────────────
     # The family B exists for. A research note is the one kind of document here
     # whose value depends entirely on where it came from and when: an unsourced
@@ -92,7 +116,15 @@ frontmatter:
 
         # Provenance — OKF §5.1. The list, and every entry of it, are different
         # addresses and so never share a shape.
+        # `presence` and `minItems` are both here, and the first one is what makes
+        # this speak. FINDING, measured: `minItems: 1` alone is SILENT on an
+        # absent list — the presence gate owns absence, correctly, so a rule that
+        # only counts entries says nothing about a list that does not exist. With
+        # `minItems` alone the report demanded `sources[].id` and
+        # `sources[].resource` of a list that was not there and never asked for
+        # the list itself. The actionable message was the one that stayed quiet.
         sources:
+          presence: required
           minItems: 1
           intent: 'OKF §5.1: a finding with no sources is an opinion, so this repo requires at least one where OKF requires none'
         sources[].resource:
@@ -172,13 +204,15 @@ frontmatter:
     - ruleId: workshop-records
       path: ['docs/workshop/**']
       excludeFiles: ['docs/workshop/**/raw.md']
-      intent: A workshop record says what a working session decided and what it withdrew, so it has to be findable without replaying the session
+      intent: A workshop record says what a session decided or what a prototype measured, so it has to be findable without replaying either
       fields:
         type:
           presence: required
           allowed:
-            - value: workshop-record
+            - value: session-record
               intent: What a working session decided and what it withdrew, written up after the fact.
+            - value: prototype-findings
+              intent: What a throwaway build measured, and which questions it answered.
         description:
           presence: required
           maxLength: 200

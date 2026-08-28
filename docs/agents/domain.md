@@ -17,11 +17,19 @@ Say "ADR" only for an Archgate record and "design-ADR" only for a `docs/design-a
 
 ### design-ADR format
 
-Sequential numbering, `docs/design-adr/0001-slug.md`, created lazily — only when the first one is needed. Scan `docs/design-adr/` for the highest number and increment. Every design-ADR starts with `type: design-adr` as the **first frontmatter field**:
+Sequential numbering, `docs/design-adr/0001-slug.md`, created lazily — only when the first one is needed. Scan `docs/design-adr/` for the highest number and increment.
+
+**The frontmatter is governed by `markdown-harness.config.yaml`, rule `design-adrs`. That file is authoritative and this paragraph is not.** To get the requirement without opening the config:
+
+```sh
+node src/cli.ts --query docs/design-adr/0002-slug.md
+```
 
 ```md
 ---
 type: design-adr
+description: One sentence — what was decided, and why.
+status: accepted
 ---
 
 # {Short title of the decision}
@@ -29,7 +37,11 @@ type: design-adr
 {1-3 sentences: what's the context, what did we decide, and why.}
 ```
 
-That's the whole requirement. A design-ADR can be a single paragraph — the value is in recording _that_ a decision was made and _why_. Any other frontmatter (`status`, etc.) is optional and goes after `type`. Everything else in `domain-modeling/ADR-FORMAT.md` — when a decision qualifies, the optional sections — still applies.
+`type` comes first, and `CONTEXT.md` says why: the VALUE is the discriminator between the two decision-record systems, and the only signal that survives a file being moved or pasted out of context. `description` is required — a slug is three words and a sentence carries the _why_, which is what a reader actually routes on. `status` is optional, and if written must be `proposed`, `accepted` or `superseded`; note that this is a decision's status and **not** OKF §5.4's `draft | stable | deprecated`, which is the same key name carrying a different vocabulary.
+
+A design-ADR can still be a single paragraph — the value is in recording _that_ a decision was made and _why_. Everything else in `domain-modeling/ADR-FORMAT.md` — when a decision qualifies, the optional sections — still applies.
+
+This section used to state the shape itself and end with "that's the whole requirement". It was rewritten when the harness was first pointed at this repo and found the shape specified in two places, which is the duplication `markdown-harness` exists to remove: the config is the specification, and prose about it can only drift.
 
 Never hand-write into `.archgate/adrs/`. If a decision belongs to Archgate governance, delegate to `archgate:adr-author`.
 
