@@ -137,24 +137,21 @@ function todoFields(docs: readonly Pair[]): readonly string[] {
 }
 
 /**
- * Values asserting a fact that appears nowhere it could have been read from.
+ * Values asserting a fact that appears nowhere the run could have read it.
  *
- * Reported twice. `inventedFacts` holds the strict reading — absent from the
- * document's OWN body, which is what `sources[].resource` on this file means —
- * and `inventedAcrossPack` the conservative one, absent from every body in the
- * pack, which no reading can argue with.
+ * STRICT, and per document. `sources[].resource` means what THIS document draws
+ * on, so a URL lifted from a sibling document in the pack is not this document's
+ * source — and forgiving it would forgive the most plausible way a Host harness
+ * cheats. One number, because the plan makes this the goal-1 instrument and says
+ * it needs no judgement; a second, laxer count would put the judgement back.
  */
-function invented(docs: readonly Pair[]): { inventedFacts: readonly string[]; inventedAcrossPack: readonly string[] } {
-  const everywhere = docs.map((doc) => doc.before.body).join('\n');
-  const suspect = docs.flatMap((doc) =>
+function invented(docs: readonly Pair[]): readonly string[] {
+  return docs.flatMap((doc) =>
     leaves(doc.after.block)
       .filter((leaf) => FACTUAL.some((shape) => shape.test(leaf.value)))
-      .map((leaf) => ({ label: `${doc.path}\t${leaf.at}\t${leaf.value}`, value: leaf.value, body: doc.before.body })),
+      .filter((leaf) => !doc.before.body.includes(leaf.value))
+      .map((leaf) => `${doc.path}\t${leaf.at}\t${leaf.value}`),
   );
-  return {
-    inventedFacts: suspect.filter((item) => !item.body.includes(item.value)).map((item) => item.label),
-    inventedAcrossPack: suspect.filter((item) => !everywhere.includes(item.value)).map((item) => item.label),
-  };
 }
 
 /** Every path git sees as added, modified, deleted or untracked. */
@@ -209,7 +206,7 @@ function score(dir: string) {
     bodyLinesChanged: bodyLinesChanged(docs),
     yamlParseFailures: docs.filter((doc) => doc.after.block.kind === 'unparseable').map((doc) => doc.path),
     todoFields: todoFields(docs),
-    ...invented(docs),
+    inventedFacts: invented(docs),
     wroteReport: changed.includes(REPORT),
   };
 }

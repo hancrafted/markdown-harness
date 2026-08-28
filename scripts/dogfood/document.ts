@@ -1,12 +1,26 @@
 /**
  * The scorer's OWN reading of a markdown file, and deliberately not the product's.
  *
- * Two reasons it re-derives rather than imports. `check()` folds an unparseable
- * block into "absent" — the gap `core/tests/check.test.ts` lists as UNCOVERED —
- * so a scorer that asked it for `yamlParseFailures` would answer zero forever.
- * And more generally, an instrument built from the code under test cannot
- * disagree with it: the fence grammar and the addressing rule are exactly what
- * the exam is measuring, so the measurement states them independently.
+ * The product's reader is `core/lib/frontmatter/extract.ts`, and it is PRIVATE.
+ * Importing it means promoting it to a root file, which widens the product's
+ * permanent public interface to serve a prototype that gets deleted. Measured
+ * before choosing: `extract()` has exactly one importer, nothing outside `core`
+ * reaches into `core/lib` at all, and `unparseable` — the branch that matters
+ * most here — is the last entry on the UNCOVERED list. So the promotion would
+ * consolidate no scattered access and would put an untested branch on the public
+ * surface. Roughly 25 lines are duplicated to avoid that; the other 90 in this
+ * file have no counterpart in the product at all.
+ *
+ * The second reason is what the exam asks. A Host harness is told to WRITE a
+ * `---` block, and this file grades the answer. A grader that shares its grammar
+ * with the thing it grades cannot see a fault in the grammar. Recorded as a
+ * reason rather than a guarantee: while this stays a near-copy it delivers less
+ * of that than it claims.
+ *
+ * NOT a reason, and the trap worth naming: `check()` folds an unparseable block
+ * into "absent", so `yamlParseFailures` cannot come from `check()`. That rules
+ * out `check()` and says nothing about `extract()`, which reports `unparseable`
+ * correctly. Confusing the two is what makes this file look forced.
  */
 
 import { parse } from 'yaml';
