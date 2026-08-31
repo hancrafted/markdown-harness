@@ -8,3 +8,4 @@
 - [Vocabulary beats migration cost](feedback_vocabulary_over_migration_cost.md) — pick the better term; quote site counts as scope, never as the argument
 - [Prove the enforcer can read the SSOT](feedback_enforcer_can_read_the_source.md) — probe before proposing a check; archgate erases TS types
 - [Audit the tree, not the ticket](feedback_audit_tree_not_ticket.md) — "is #N done?" is answered against the working tree, never issue state
+- [Reproduce the measurement before calling drift](feedback_reproduce_measurement_before_calling_drift.md) — a tool mismatch looks exactly like a stale record; check `wc -c` vs chars, and never quote a count without its base
