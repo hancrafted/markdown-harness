@@ -431,10 +431,12 @@ export default tseslint.config(
   // at all. Both rules stay live everywhere else.
   //
   // The body regime is enabled here too, and DELIBERATELY WITHOUT
-  // SUITE_STRUCTURE. ARCH-003 §2.3 exempts these files from the three-way split
-  // — a rules test drives one rule function against a hand-built double — while
-  // stating that Decision 3 still binds them. Held behind `files: [SRC_TESTS]`,
-  // that sentence promised a reach no enforcer had. `no-restricted-syntax` is
+  // SUITE_STRUCTURE. `ARCH-003` exempts these files from the three-way split — a
+  // rules test drives one rule function against a hand-built double — while
+  // still requiring the marked body. Held behind `files: [SRC_TESTS]`, that
+  // second half promised a reach no enforcer had. The record is named by id and
+  // never by section number: its numbering moves whenever it is rewritten, and a
+  // coordinate that has gone stale reads as authority. `no-restricted-syntax` is
   // deliberately NOT restated: an unset rule keeps the value the `**/*.test.ts`
   // block gave it, so the behavioural bans stay live and the structural ones
   // never arrive.
