@@ -6,3 +6,5 @@
 - [GEN-001 rule-mention count](feedback_gen001_rule_mention_count.md) — one marker per rule, on the bullet the enforcer's glob backs; intersection test
 - [archgate:reviewer fan-out depends on where you run](feedback_reviewer_no_subagent_tool.md) — a subagent can't spawn subagents, so review inline; a top-level agent still fans out
 - [Vocabulary beats migration cost](feedback_vocabulary_over_migration_cost.md) — pick the better term; quote site counts as scope, never as the argument
+- [Prove the enforcer can read the SSOT](feedback_enforcer_can_read_the_source.md) — probe before proposing a check; archgate erases TS types
+- [Audit the tree, not the ticket](feedback_audit_tree_not_ticket.md) — "is #N done?" is answered against the working tree, never issue state
