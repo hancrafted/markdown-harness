@@ -9,3 +9,5 @@
 - [Prove the enforcer can read the SSOT](feedback_enforcer_can_read_the_source.md) — probe before proposing a check; archgate erases TS types
 - [Audit the tree, not the ticket](feedback_audit_tree_not_ticket.md) — "is #N done?" is answered against the working tree, never issue state
 - [Reproduce the measurement before calling drift](feedback_reproduce_measurement_before_calling_drift.md) — a tool mismatch looks exactly like a stale record; check `wc -c` vs chars, and never quote a count without its base
+- [Trace a term's provenance before renaming](feedback_trace_term_provenance_before_renaming.md) — "where does this name come from?" is a fact question, yours to answer
+- [Evaluate arrays, never grep them](feedback_evaluate_arrays_never_grep_them.md) — a .map() in a config makes source-line counts lie; evaluate before quoting a count

@@ -48,7 +48,7 @@ Packages under `src/packages/` are deep modules, and every file carries exactly 
 
 ## Verification
 
-`npm run verify` is the gate. Three traps inside it.
+`npm run verify` is the gate. Four traps inside it.
 
 **1. `archgate check` is changed-files-scoped.** It evaluates only ADRs whose `files:` glob matches a file changed against `baseBranch` (`.archgate/config.json`), and explicit path arguments are intersected with that same set. So `total: 0` means _nothing in scope changed_ — never _governance passed_. To exercise the rules deliberately, give it a base that reaches an ADR edit: `npx archgate check --base HEAD~3`.
 
@@ -57,3 +57,5 @@ Packages under `src/packages/` are deep modules, and every file carries exactly 
 So a worktree agent must not conclude "this failure is pre-existing" by stashing and re-running _in the worktree_ — the baseline is contaminated the same way. Re-run `verify` from the real root after merging, and treat a worktree's green or red on `knip` and `eslint` as unmeasured.
 
 **3. The ADR size budget counts characters, not bytes.** `wc -c` overstates by two per em dash, and this repo's ADR prose is full of them — enough to misreport a record by a hundred characters and to disagree with the figure `archgate check` prints. Measure with something character-aware, and when planning a cut, trust `archgate check`'s number over the shell's.
+
+**4. An enforcer's rule count comes from evaluating its array, never from grepping it.** A `## Compliance and Enforcement` section that states how many checks hold a Discipline makes a claim a reader will trust and nothing will verify. The configs here build those arrays from a list — `['TSInterfaceDeclaration', ...].map(...).concat([...])` — so the `selector:` key appears once inside the map callback and generates one entry per node type. Grepping counts that callback as a single selector and undercounts the group: this is how six selectors shipped as four. Extract the expression, run it, and print `.length` before writing the number down.
