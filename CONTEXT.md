@@ -110,7 +110,17 @@ One folder under `src/packages/`, flat — a Package may not contain another. It
 are its entry points and are public; everything in a subfolder is private. A Package is a deep
 module in the `codebase-design` sense. It is **not** a Module: a Module is a checking domain
 and a Package is a unit of code, and neither implies the other.
+It is also **not** an npm package: no `package.json` sits below the repo root and the root
+one declares no workspaces, so nothing here is installable or versioned on its own.
 _Avoid_: module (collides in both directions), library, workspace, folder
+
+**classifier**:
+The single token a file carries to declare its discipline — by **position** at a Package root
+(kebab-case, no suffix, no dot) or by **suffix** below one (`.pure`, `.impure`, `.types`,
+`.test`). Exactly one per file. A file that carries none and holds no entry-point position is
+ungoverned, which is the failure the vocabulary exists to close.
+_Avoid_: tag, marker, kind, category, and **type** (collides with both the frontmatter field
+and the TypeScript construct)
 
 **Interface**:
 Kept from `codebase-design`: everything a caller must know to use a Package correctly — the

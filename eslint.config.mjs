@@ -302,7 +302,7 @@ export default tseslint.config(
   // written against. Its TESTS are ordinary vitest files and must be reachable:
   // four of this repo's six test files live here, and an ADR naming an enforcer
   // that cannot see the file it governs is exactly the silent non-governance
-  // `src/packages/README.md` exists to close.
+  // `src/packages/AGENTS.md` exists to close.
   //
   // Written as two precise patterns because a subtree ignore cannot be undone —
   // ESLint refuses to unignore a file inside an ignored directory, so the

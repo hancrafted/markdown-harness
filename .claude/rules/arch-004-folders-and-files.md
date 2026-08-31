@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-004-folders-and-files.md

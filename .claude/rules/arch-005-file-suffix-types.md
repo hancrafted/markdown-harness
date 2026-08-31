@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-005-file-suffix-types.md

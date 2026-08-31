@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-006-file-suffix-pure.md

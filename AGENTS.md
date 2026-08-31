@@ -44,7 +44,7 @@ Single-context: one `CONTEXT.md` at the repo root, design-ADRs in `docs/design-a
 
 ## Source layout
 
-Packages under `src/packages/` are deep modules, and every file carries exactly one classifier — by position at a Package root, by suffix below it. Read [`src/packages/README.md`](./src/packages/README.md) before adding, naming, or importing a file there.
+Packages under `src/packages/` are deep modules, and every file carries exactly one classifier — by position at a Package root, by suffix below it. Read [`src/packages/AGENTS.md`](./src/packages/AGENTS.md) before adding, naming, or importing a file there — `src/packages/CLAUDE.md` is a symlink to it, so it also loads on its own.
 
 ## Verification
 
