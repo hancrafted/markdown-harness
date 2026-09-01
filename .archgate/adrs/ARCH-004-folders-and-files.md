@@ -21,38 +21,44 @@ This ADR serves to orient an agent on how to architect, structure, and write fil
 
 1. Every source file under `src/` MUST sit in a **Package**: one folder under `src/packages/`, flat. A Package MUST NOT contain another Package.
 2. A Package's **root files** are its entry points and are public. Everything in a subfolder is private. A Package's internals MAY nest as deep as needed.
-3. Each packages MAT hold its own agent instructions — `AGENTS.md` and the `CLAUDE.md` symlink pointing at it.
+3. The packages root MUST hold only Package folders plus its own agent instructions — `AGENTS.md` and the `CLAUDE.md` symlink pointing at it — and no source file. Each Package MAY hold that same pair.
 4. A Package MAY expose several small entry points. A barrel that re-exports a whole subtree is banned; re-exporting a type declaration from an entry point is the intended idiom.
 
-**Example 1**:
+**Example**:
 
 ```text
 src/packages/
+    AGENTS.md                 ← agent instructions for the packages root
+    CLAUDE.md                 ← symlink to AGENTS.md
     <pkg>/
-    AGENTS.md         ← agent instructions
-    CLAUDE.md         ← symlink to AGENTS.md
-    index.ts          ← public entry point
-    lib/              ← private internals (nested as needed)
-        impl.pure.ts
-        impl.test.ts
-        feat.impure.ts
-        span.types.ts
-        <feature-name>/ ← interal feature (nested as needed)
-            feat-name.impure.ts
-            feat-name.pure.ts
-            feat-name.test.ts
-            feat-name.type.ts
-    tests/            ← private integration suite
-        example.test.ts
+        AGENTS.md             ← optional, per Package
+        CLAUDE.md             ← symlink to AGENTS.md
+        index.ts              ← public entry point
+        lib/                  ← private internals (nested as needed)
+            impl.pure.ts
+            impl.test.ts
+            feat.impure.ts
+            span.types.ts
+            <feature-name>/   ← internal feature (nested as needed)
+                feat-name.impure.ts
+                feat-name.pure.ts
+                feat-name.test.ts
+                feat-name.types.ts
+        tests/                ← private integration suite
+            example.test.ts
 ```
 
 ### 2. Private source files must have exactly one suffix as classifier
 
 1. **Position decides the public surface; the suffix decides the discipline inside.**
-2. A Package root file MUST be kebab-case with no suffix and no dot.
-3. Every file below a Package root MUST carry exactly one of `.pure`, `.impure`, `.types`, `.test`.
+2. A Package root file MUST be kebab-case with no suffix and no dot. The agent instruction pair named in Decision 1 is exempt.
+3. Every file below a Package root MUST carry exactly one of
+   - `.pure` (result is a function of its arguments alone)
+   - `.impure` (everything else: procedures, adapters, compositions)
+   - `.types` (exported type declarations, nothing else)
+   - `.test` (testing only)
 4. No stacking and no escape: a doubled suffix fails, an unclassified subfolder file fails, and a classified file at a Package root fails.
-5. A file under the packages root that is neither an entry point nor a classified subfolder file MUST fail outright.
+5. A file under the packages root that is neither an entry point, a classified subfolder file, nor the agent instruction pair MUST fail outright.
 
 ### 3. Import boundaries
 
@@ -118,3 +124,6 @@ src/packages/
 **Exceptions:** raise a separate ADR; human approval required.
 
 ## References
+
+- [eslint-plugin-check-file](https://github.com/dukeluo/eslint-plugin-check-file) — `filename-naming-convention` matches the basename with the final extension stripped, which is what lets a suffix read as a classifier at all.
+- [Go — package names](https://go.dev/blog/package-names) — the "Bad package names" section: `util`, `common` and `misc` "provide clients no sense of what the package contains".
