@@ -76,8 +76,10 @@ own tenet 2 — act on the authoring path, never the consumption path.
 4. **The per-Read total is measured, never capped.** A file may legitimately be governed by several
    Disciplines, so a ceiling would forbid a load that is justified. Instead the total is reported, and
    growth is visible in review — `docs/vision/architecture.md` tenet 10 applied to our own
-   governance. Claude Code's `InstructionsLoaded` hook with matcher `path_glob_match` makes this
-   observable rather than inferred.
+   governance. The instrument turned out not to be the `InstructionsLoaded` hook: Claude Code already
+   writes every instruction load into the session transcript as a `nested_memory` attachment carrying
+   both the injected `content` and the on-disk `rawContent`, so the measurement needs no
+   instrumentation, is `jq`-able, and works retroactively on sessions that have already happened.
 5. **A closed filename-suffix vocabulary is what makes the glob split possible, and it is a probe.**
    Precision is bounded by what filenames let a glob select, so `src/**/*.ts` carries exactly one
    suffix from `index.ts` · `*.types.ts` · `*.pure.ts` · `*.impure.ts` · `*.test.ts` — mandatory, no
@@ -85,9 +87,25 @@ own tenet 2 — act on the authoring path, never the consumption path.
    assumed. Both `docs/research/file-naming-for-glob-routing.md` and
    `docs/research/code-role-naming.md` find **no industry precedent** for naming files so globs can
    route governance, and no established name for the orchestration role — it has been renamed at
-   least six times in thirty years. So this is unbroken ground, entered deliberately: the scheme is
-   evaluated against measured `InstructionsLoaded` output after the first migration, and **the
+   least six times in thirty years. So this is unbroken ground, entered deliberately, and **the
    documented fallback if it fails is no suffix at all.**
+
+   **Measured after the first migration** — 2026-09-02, `docs/workshop/probe/adr-routing/measurement.md`.
+   The routing half is confirmed: every position received exactly its predicted record set with no
+   over-delivery — two ADRs at a Package root, three below it — costing 12,958–19,533 injected chars
+   (~3,240–4,880 tokens) against a 63,691-char corpus, a 71–81% reduction. That is roughly half the
+   ~9K tokens per Read that was predicted, and it is the honest figure rather than the flattering one:
+   a total computed from `paths:` frontmatter alone omits the 3,234 chars `src/packages/CLAUDE.md`
+   delivers by nested traversal, with no glob involved.
+
+   **The delivery half had never once fired.** Before that session no `src/`-scoped record had ever
+   loaded — `ARCH-003`, `ARCH-004`, `ARCH-005`, `ARCH-006` and `GEN-003` all at zero across every
+   transcript in the project — because injection triggers on Read-tool access, and there had been
+   **0** Read-tool calls targeting `src/` against **129** Bash `cat`/`sed`/`grep` reads of the same
+   files. So the vocabulary is not yet earning the load it was designed to route. Whether it survives
+   is therefore not a question about suffixes: the documented fallback and a delivery route
+   independent of the Read tool are different answers to it, and the choice is not settled here.
+
 6. **Adopting a suffix requires a design merit first.** Glob addressability is a stated tiebreaker,
    never the reason — otherwise the codebase ends up carrying conventions whose only justification is
    our filing system, which is the error the predecessor repo made in the opposite direction.
