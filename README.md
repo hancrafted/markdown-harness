@@ -13,12 +13,12 @@ and enough:
 **Pre-release. Nothing to install yet.** The config contract, the fixture corpus and its tests exist;
 the CLI does not. Names and shapes in this README are derived and may still change.
 
-| exists today                                     | not yet                              |
-| ------------------------------------------------ | ------------------------------------ |
-| The config contract (`src/config/`)              | The CLI — `init`, `check`, `steer`   |
-| A 15-file fixture corpus and its tests           | The OKF Preset                       |
-| The pinned OKF revision (`docs/okf/`)            | Index generation, scheduling, any UI |
-| Product and architecture vision (`docs/vision/`) | A published package                  |
+| exists today                                          | not yet                              |
+| ----------------------------------------------------- | ------------------------------------ |
+| The config contract (`src/packages/config-contract/`) | The CLI — `init`, `check`, `steer`   |
+| A 15-file fixture corpus and its tests                | The OKF Preset                       |
+| The pinned OKF revision (`docs/okf/`)                 | Index generation, scheduling, any UI |
+| Product and architecture vision (`docs/vision/`)      | A published package                  |
 
 ## The problem
 

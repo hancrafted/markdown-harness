@@ -80,6 +80,14 @@ the plain-language rendering: the model reads the precise version and the human 
 translation.
 _Avoid_: LRM-wiki, wiki (unqualified), vault
 
+**config contract**:
+The shape of the config file, as type declarations only: the config language, and the Rules and
+Constraints it admits. It lives in the `config-contract` Package and exports no runtime value.
+It is the **portable** half of the product — adopters and any reimplementation receive it and never
+receive `.archgate/`, which is why an ADR must not hold it. **Core** reads a config against it.
+_Avoid_: schema, config types, the config API, the contract (unqualified — this repo also has
+Interface-level contracts, and design-ADR 0002 turns on the distinction)
+
 **Core**:
 The parts that know nothing about markdown frontmatter: config reading, path resolution, the
 command surface, and reporting. It owns the config file and hands each Module its section.

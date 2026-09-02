@@ -9,10 +9,10 @@
  *
  * There is no Floor. `type` is an ordinary field, so a repo's vocabulary is the
  * union of `allowed` values across its rules — derivable, no longer declared.
- * What a rule asserts about one field lives in `./constraints`.
+ * What a rule asserts about one field lives in `./constraints.types`.
  */
 
-import type { FieldAddress, FieldConstraints } from './constraints';
+import type { FieldAddress, FieldConstraints } from './constraints.types';
 
 // ---------------------------------------------------------------------------
 // The config file

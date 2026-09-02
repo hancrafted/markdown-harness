@@ -7,7 +7,8 @@
 # suite and governed by nothing here.
 #
 # This config does two jobs. COVERAGE: it reaches every key in the vocabulary,
-# including the ones no real file would exercise, and `src/config/conformance.test.ts`
+# including the ones no real file would exercise, and
+# `src/packages/config-contract/tests/conformance.test.ts`
 # fails until it does. SPECIFICATION: together with `docs/` it fixes what the harness
 # must report, and each document states its own expected outcome in its body.
 # Changing an expected outcome is a contract change, not a test fix.
@@ -21,7 +22,8 @@
 # no Floor, so a rule that asserts nothing about a field leaves that field unchecked
 # even when another rule elsewhere constrains it.
 #
-# Shape reference: ../../src/config/contract.ts and ../../src/config/constraints.ts
+# Shape reference: ../../src/packages/config-contract/ — its lib/config.types.ts
+# and lib/constraints.types.ts.
 # Constraints derive from the OKF text vendored at ../../docs/okf/SPEC-v0.2.md.
 
 frontmatter:

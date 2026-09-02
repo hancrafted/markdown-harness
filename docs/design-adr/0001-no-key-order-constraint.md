@@ -88,5 +88,5 @@ This records reasoning only, and it stays reasoning. An earlier draft assigned p
 `ARCH-002-config-language` ADR; under
 [`0002-archgate-records-disciplines-scoped-by-glob.md`](./0002-archgate-records-disciplines-scoped-by-glob.md)
 that ADR will not exist, because the config language is a product contract rather than an ADR
-Discipline. The contract lives in `src/config/contract.ts` and the fixture corpus. Points 1–3 bind
+Discipline. The contract lives in `src/packages/config-contract/` and the fixture corpus. Points 1–3 bind
 whoever implements the fast-classify path, from here.

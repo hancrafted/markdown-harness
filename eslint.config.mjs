@@ -10,14 +10,26 @@ import tseslint from 'typescript-eslint';
 // Every file below a package root carries EXACTLY ONE of .pure .impure .types
 // .test — no stacking, no escape.
 //
-// These four constants are the single source of the vocabulary. The naming
-// convention and the exhaustiveness net below consume the SAME strings, so the
-// two checks cannot drift apart. Phase 5 of #2 repoints PACKAGES_ROOT-derived
-// globs at `src/` once `src/config/` has moved into the tree.
+// These constants are the single source of the vocabulary. The naming convention
+// and the exhaustiveness net below consume the SAME strings, so the two checks
+// cannot drift apart.
+//
+// TWO anchors, and the difference is load-bearing. Governance starts at SRC_ROOT,
+// so any file under `src/` that matches no classifier is caught. The classifier
+// globs stay at PACKAGES_ROOT because that is where the Package tier physically
+// is: ENTRY_POINTS and INTERNALS encode exactly one directory tier, so moving
+// them up to `src/` shifts every tier and breaks the check in BOTH directions:
+// a stray `src/<folder>/<name>.ts` outside the packages root would read as an
+// entry point — a false PASS, hiding it from the net — while a real entry point
+// like `src/packages/config-contract/index.ts` would read as an internal and be
+// failed for carrying no classifier.
+const SRC_ROOT = 'src';
 const PACKAGES_ROOT = 'src/packages';
 const ENTRY_POINTS = `${PACKAGES_ROOT}/*/*.ts`;
 const INTERNALS = `${PACKAGES_ROOT}/*/*/**/*.ts`;
-const GOVERNED = `${PACKAGES_ROOT}/**/*.ts`;
+const GOVERNED = `${SRC_ROOT}/**/*.ts`;
+const TYPES_FILES = `${SRC_ROOT}/**/*.types.ts`;
+const PURE_FILES = `${SRC_ROOT}/**/*.pure.ts`;
 const CLASSIFIED = [ENTRY_POINTS, INTERNALS];
 
 // `check-file` matches the value pattern against the basename with the FINAL
@@ -356,11 +368,11 @@ export default tseslint.config(
   // it matches. Order is load-bearing: later blocks win.
   {
     files: [GOVERNED],
-    ignores: [`${PACKAGES_ROOT}/**/*.types.ts`],
+    ignores: [TYPES_FILES],
     rules: { 'no-restricted-syntax': ['error', ...EXPORTED_TYPE_DECLARATION] },
   },
   {
-    files: [`${PACKAGES_ROOT}/**/*.pure.ts`],
+    files: [PURE_FILES],
     rules: {
       'no-restricted-syntax': ['error', ...EXPORTED_TYPE_DECLARATION, ...DETERMINISM],
       'no-restricted-properties': [

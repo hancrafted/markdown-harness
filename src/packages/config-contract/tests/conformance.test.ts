@@ -9,10 +9,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import type { AllowedValue, FieldConstraints, Format } from './constraints';
-import type { MarkdownHarnessConfig } from './contract';
+import type { AllowedValue, FieldConstraints, Format, MarkdownHarnessConfig } from '../index';
 
-const CONFIG_URL = new URL('../../fixtures/conformance/valid-test-config.yaml', import.meta.url);
+const CONFIG_URL = new URL('../../../../fixtures/conformance/valid-test-config.yaml', import.meta.url);
 const config = parse(readFileSync(CONFIG_URL, 'utf8')) as MarkdownHarnessConfig;
 const rules = config.frontmatter?.rules ?? [];
 

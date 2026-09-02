@@ -22,7 +22,7 @@ Rejected on two settled premises that combine. #32 itself decides archgate is **
 shipped**; `docs/vision/architecture.md` tenet 4 decides that "the config language, the report format
 and the fixture corpus **are** the specification; the TypeScript is one implementation of it."
 Together they mean the portable contract is the one thing an archgate ADR must not hold, because
-adopters and any reimplementation never receive `.archgate/`. `src/config/contract.ts` already
+adopters and any reimplementation never receive `.archgate/`. `src/packages/config-contract/` already
 carries every item on that list, with the two exclusivity rules modelled as unrepresentable states —
 which the compiler enforces and prose cannot.
 
@@ -102,7 +102,7 @@ own tenet 2 — act on the authoring path, never the consumption path.
    nothing.
 8. **This decides nothing about the product's own behaviour.** The config language, resolution
    semantics, the command surface, exit codes and the report format are unaffected — they are
-   contract decisions and their home is `src/config/contract.ts`, the fixture corpus, and further
+   contract decisions and their home is `src/packages/config-contract/`, the fixture corpus, and further
    design-ADRs. Several remain genuinely open in issue #1 and are not settled here by implication.
 
 The governing records derived from this live in `.archgate/adrs/`, written by `archgate:adr-author`.

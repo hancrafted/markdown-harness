@@ -4,7 +4,7 @@ id: ARCH-002
 title: 'Conformance Suite'
 domain: architecture
 rules: true
-files: ['fixtures/conformance/**', 'src/config/conformance.test.ts']
+files: ['fixtures/conformance/**', 'src/packages/config-contract/tests/conformance.test.ts']
 paths: ['fixtures/conformance/**']
 description: 'The Conformance suite under fixtures/conformance/: its coverage half versus its permanent specification half, the machine-readable expect marker each Conformance case carries, and the three review duties that keep the suite honest.'
 ---
@@ -73,7 +73,7 @@ The documents under `fixtures/conformance/docs/` serve two roles: exercising the
 
 ## Compliance and Enforcement
 
-**Enforcer per Discipline:** `ARCH-002-conformance-suite.rules.ts` holds the expect-marker Discipline (§2) at the `error` tier — one archgate rule scoped to `fixtures/conformance/docs/**/*.md`, checking marker presence, singularity and verdict membership. Duty 1 (§3.1) is held by the coverage loops (`it.each` over every rule key, constraint key and named format) in `src/config/conformance.test.ts` — a vitest suite, not an archgate rule, that fails the moment the config stops exercising the full vocabulary. Duties 2 and 3 (§3.2, §3.3) are not mechanically enforced — review duties: no rule can tell a corrected verdict from an uncorrected one, or a legitimately retired case from an accidentally deleted one.
+**Enforcer per Discipline:** `ARCH-002-conformance-suite.rules.ts` holds the expect-marker Discipline (§2) at the `error` tier — one archgate rule scoped to `fixtures/conformance/docs/**/*.md`, checking marker presence, singularity and verdict membership. Duty 1 (§3.1) is held by the coverage loops (`it.each` over every rule key, constraint key and named format) in `src/packages/config-contract/tests/conformance.test.ts` — a vitest suite, not an archgate rule, that fails the moment the config stops exercising the full vocabulary. Duties 2 and 3 (§3.2, §3.3) are not mechanically enforced — review duties: no rule can tell a corrected verdict from an uncorrected one, or a legitimately retired case from an accidentally deleted one.
 
 **Manual review duties** (never linted): a changed marker's verdict actually matches its reasoning paragraph (§2.1 pairs presence, never meaning); an expected-outcome change carries review sign-off, not just a green `expect-marker` run (§3.2); a removed Conformance case's removal is itself reviewed as a contract change (§3.3); `fixtures/conformance/**` is never asked to also cover `fixtures/llm-wiki/` (§1.4).
 

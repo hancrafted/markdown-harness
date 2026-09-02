@@ -21,7 +21,7 @@ The table says where each record lives. It does not say which one a given decisi
 
 An ADR records an **ADR Discipline**: one universal constraint on how the code is written. "Exported type declarations live in one file" survives any feature, so it is an ADR. "Every constraint key declares a loosening direction" does not — a second Module may have no constraint keys at all — so it is a design-ADR.
 
-Product contracts are never ADRs, however architectural they feel. The config language, resolution semantics, the command surface, exit codes and the report format are contract decisions, and their home is `src/config/contract.ts`, the fixture corpus, and design-ADRs. Adopters never receive `.archgate/`, so the portable contract is the one thing an ADR must not hold. The predecessor repo is the cautionary case: it put feature governance into Archgate and ended with a 32 KB rule engine reachable from nothing.
+Product contracts are never ADRs, however architectural they feel. The config language, resolution semantics, the command surface, exit codes and the report format are contract decisions, and their home is `src/packages/config-contract/`, the fixture corpus, and design-ADRs. Adopters never receive `.archgate/`, so the portable contract is the one thing an ADR must not hold. The predecessor repo is the cautionary case: it put feature governance into Archgate and ended with a 32 KB rule engine reachable from nothing.
 
 The derivation is `docs/design-adr/0002-archgate-records-disciplines-scoped-by-glob.md`; the test above is its operative summary.
 

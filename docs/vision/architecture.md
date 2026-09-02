@@ -25,7 +25,7 @@ Run all five. A "no" on 3 or 4 is a stop, not a trade-off.
 5. **Which record does the outcome belong in, and is it at an altitude the next feature cannot
    invalidate?** An ADR holds only what stays true whatever ships next; anything a future feature
    could falsify is a design-ADR, and the portable contract is neither — it lives in
-   `src/config/contract.ts` and the corpus. The test and its worked cases are in
+   `src/packages/config-contract/` and the corpus. The test and its worked cases are in
    `docs/agents/domain.md`.
 
 ## Tenets
