@@ -48,7 +48,7 @@ Packages under `src/packages/` are deep modules, and every file carries exactly 
 
 ## Verification
 
-`npm run verify` is the gate. Four traps inside it.
+`npm run verify` is the gate. Five traps inside it.
 
 **1. `archgate check` is changed-files-scoped.** It evaluates only ADRs whose `files:` glob matches a file changed against `baseBranch` (`.archgate/config.json`), and explicit path arguments are intersected with that same set. So `total: 0` means _nothing in scope changed_ — never _governance passed_. To exercise the rules deliberately, give it a base that reaches an ADR edit: `npx archgate check --base HEAD~3`.
 
@@ -59,3 +59,5 @@ So a worktree agent must not conclude "this failure is pre-existing" by stashing
 **3. The ADR size budget counts characters, not bytes.** `wc -c` overstates by two per em dash, and this repo's ADR prose is full of them — enough to misreport a record by a hundred characters and to disagree with the figure `archgate check` prints. Measure with something character-aware, and when planning a cut, trust `archgate check`'s number over the shell's.
 
 **4. An enforcer's rule count comes from evaluating its array, never from grepping it.** A `## Compliance and Enforcement` section that states how many checks hold a Discipline makes a claim a reader will trust and nothing will verify. The configs here build those arrays from a list — `['TSInterfaceDeclaration', ...].map(...).concat([...])` — so the `selector:` key appears once inside the map callback and generates one entry per node type. Grepping counts that callback as a single selector and undercounts the group: this is how six selectors shipped as four. Extract the expression, run it, and print `.length` before writing the number down.
+
+**5. A boundary check reports green while cruising nothing.** `dependency-cruiser` sees only post-compilation edges unless `tsPreCompilationDeps: true` is set, so every `import type` and `export type … from` is erased before the rules run. A Package whose edges are all type-only — `config-contract` holds nothing but type declarations — therefore satisfies all six of `ARCH-004`'s boundary rules by presenting no visible edges at all, and `npm run lint:boundaries` still prints `✔ no dependency violations found`. The counts in that same line are the only signal that distinguishes the two cases: `7 modules, 3 dependencies` with the flag off and `7 modules, 7 dependencies` with it on describe the identical tree. Read the dependency count, not the checkmark — and expect it to fall to near zero exactly when the last file holding a runtime import leaves `src/`.

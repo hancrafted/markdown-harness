@@ -100,6 +100,12 @@ module.exports = {
   options: {
     doNotFollow: { path: 'node_modules' },
     tsConfig: { fileName: 'tsconfig.json' },
+    // Without this, dependency-cruiser sees only POST-compilation edges, so every
+    // type-only import and re-export is erased before the six boundary rules run.
+    // `config-contract` is a types-only Package: every edge in it is type-only, so
+    // at `false` all six rules cruise it and check nothing while still reporting
+    // "no dependency violations found".
+    tsPreCompilationDeps: true,
     enhancedResolveOptions: {
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     },
