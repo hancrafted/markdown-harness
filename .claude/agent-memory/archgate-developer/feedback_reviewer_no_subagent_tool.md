@@ -23,6 +23,18 @@ Do's/Don'ts pass inline, emit the skill's usual `## Reviewer: APPROVED | BLOCKED
 and say in the report that dispatch was unavailable so the gap stays visible. As a top-level
 agent, dispatch normally.
 
+**Second defect, same skill (CLI 0.13.2):** the skill's sub-agent prompt template fills
+`{ADRS_CONTENT}` from `decision` and `dosAndDonts` fields on each ADR in `review-context`'s
+output. **Those fields do not exist** — the ADR objects carry only `id`, `title`, `domain`,
+`files`, `rules`. Populating the template as written yields ~350 characters of headings and no
+Discipline text, so the sub-agents review against nothing and confidently return PASS.
+
+**How to apply:** never build a sub-agent briefing from `review-context` alone. Verify the field
+names first (`python3 -c` over the JSON, print the ADR object's keys). Then either paste briefings
+fetched via `archgate adr show <id>`, or — cheaper and self-verifying — give the sub-agent the ADR
+file paths and tell it to open them with the **Read** tool, which also fires the `paths:` glob
+injection so the record arrives whether or not the agent reads carefully.
+
 Same root error as the `verify` trap now recorded under `## Verification` in `AGENTS.md`:
 a conclusion drawn about the environment from inside an isolated worktree does not
 generalise to the real root.

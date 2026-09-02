@@ -11,3 +11,4 @@
 - [Reproduce the measurement before calling drift](feedback_reproduce_measurement_before_calling_drift.md) — a tool mismatch looks exactly like a stale record; check `wc -c` vs chars, and never quote a count without its base
 - [Trace a term's provenance before renaming](feedback_trace_term_provenance_before_renaming.md) — "where does this name come from?" is a fact question, yours to answer
 - [Evaluate arrays, never grep them](feedback_evaluate_arrays_never_grep_them.md) — a .map() in a config makes source-line counts lie; evaluate before quoting a count
+- [Sweep every file type, not just docs](feedback_sweep_every_file_type.md) — an `--include` filter reports CLEAN while stale paths hide in YAML and configs
