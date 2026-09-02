@@ -13,20 +13,16 @@ description: 'What the types classifier claims: every exported type declaration 
 
 ## Context
 
-A **type declaration** is the TypeScript construct — an `interface`, a `type` alias, or an `enum`. Exported ones are the shape a caller codes against, so where they live decides how much of a Package's Interface a reader must hunt for. Scattered across implementation files, the shape is discoverable only by reading everything that exports.
+A **type declaration** is the TypeScript construct — an `interface`, a `type` alias, or an `enum`.
 
-The `types` classifier gives that shape one address per Package subtree. The Discipline is stated as a ban rather than a requirement, because the violation happens in the _other_ file: an exported declaration is misplaced by the author of the implementation file, not by the author of the `types` file.
-
-Rejected alternative — an ambient `.d.ts`. The compiler loads it without an import, so it governs the whole program invisibly and no import graph can show what depends on it. The extension is also toolchain-reserved, which means a build step may generate over it.
-
-Rejected alternative — no classifier, types beside their consumers. That is correct for a private local type and wrong for an exported one: the exported set is the Interface, and an Interface assembled by grep is one nobody can review as a whole.
+The Discipline is stated as a ban rather than a requirement, because the violation happens in the _other_ file: an exported declaration is misplaced by the author of the implementation file, not by the author of the `types` file. That is why this record checks broadly and steers narrowly.
 
 ## Decision
 
 ### 1. Where an exported type declaration lives
 
 1. Every exported type declaration MUST live in a file carrying the `types` classifier.
-2. A **private local type** beside its only consumer is better locality and MUST NOT be moved. The Discipline binds what is exported, never what is declared.
+2. A **private local type** beside its only consumer is better locality and MUST NOT be moved.
 3. Re-exporting a type declaration from an entry point through a source — the `export type { Span } from './span.types'` form — is the intended idiom and is admitted.
 
 ### 2. What a types file may hold
@@ -64,21 +60,17 @@ Rejected alternative — no classifier, types beside their consumers. That is co
 **Positive:**
 
 1. **One address for the shape:** a reader finds a Package's exported types by listing files, not by grepping exports.
-2. **Reviewable as a whole:** the Interface's type-level surface arrives in one file, so a breaking change to it is visible in one diff.
-3. **Locality preserved:** the ban is on export, not on declaration, so a private type stays where it is used.
-4. **No ambient reach:** every type dependency is an explicit import, so the graph tools already in place can see it.
+2. **No ambient reach:** every type dependency is an explicit import, keeping the dependency graph visible to tooling.
 
 **Negative:**
 
-1. **Two files for one idea:** a type and its only consumer sit apart the moment that type is exported, even when nothing else imports it.
-2. **Enums emit runtime code:** an `enum` counts as a type declaration in this vocabulary, so a `types` file carrying one is not erased at build time. The classifier's name over-promises for that one construct.
-3. **A soft name collision:** `type declaration` names the TypeScript construct, while `type` alone names a frontmatter field in this project's own governed documents. The collision is carried with an Avoid note rather than resolved by renaming, because every alternative name measured worse.
-4. **The file's contents are unchecked:** the ban keeps declarations out of other files, but nothing stops a `types` file from growing logic.
+1. **The file's contents are unchecked:** the ban keeps declarations out of other files, but nothing stops a `types` file from growing logic.
+2. **Enums emit runtime code:** an `enum` counts as a type declaration here, so a `types` file carrying one is not erased at build time. The classifier's name over-promises for that one construct.
 
 **Risks:**
 
-1. **One measured hole in the check.** A type re-exported _through a source_ is not inspected. This is deliberate — that form is the entry-point idiom of Decision 1, item 3 — but it also means a `types` file's contents are trusted at that boundary. **Mitigation:** the specifier form without a source _is_ caught, which is the case an implementation file would actually reach for.
-2. **A `types` file becomes a dumping ground.** One address for the shape is also one address for anything an author cannot place. **Mitigation:** Decision 2 bans runtime values and executable statements, and that reading is a named review duty below.
+1. **Re-export inspection hole:** a type re-exported through a source is uninspected, trusting the `types` file. **Mitigation:** specifier exports without a source are caught.
+2. **A `types` file becomes a dumping ground:** one shape address invites misplaced logic. **Mitigation:** Decision 2 bans runtime values, enforced as a review duty.
 
 ## Compliance and Enforcement
 
@@ -95,4 +87,3 @@ Rejected alternative — no classifier, types beside their consumers. That is co
 - [TypeScript — declaration files](https://www.typescriptlang.org/docs/handbook/declaration-files/introduction.html) — what an ambient `.d.ts` does and why the compiler loads it without an import.
 - [TypeScript — type-only imports and exports](https://www.typescriptlang.org/docs/handbook/modules/reference.html#type-only-imports-and-exports) — the `import type` and `export type` forms, and what each erases.
 - [ESLint — `no-restricted-syntax`](https://eslint.org/docs/latest/rules/no-restricted-syntax) — the selector mechanism the four bans are written in.
-- [esquery](https://github.com/estools/esquery) — the selector dialect, including the attribute form the re-export exemption relies on.
