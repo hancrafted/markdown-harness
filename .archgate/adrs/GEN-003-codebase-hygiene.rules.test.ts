@@ -76,7 +76,7 @@ function makeCtx(files: Record<string, string>) {
   return { ctx, violations };
 }
 
-const SRC_FILE = 'src/packages/example/lib/impl.pure.ts';
+const SRC_FILE = 'src/packages/config-contract/lib/config.types.ts';
 
 // Assembled rather than written literally, so this file never carries a live
 // directive of its own.

@@ -33,19 +33,20 @@ src/packages/
 | touch any file under `src/`        | `GEN-003` — repo-wide hygiene                                                                     |
 
 Each record lives in `.archgate/adrs/` and is symlinked into `.claude/rules/`, so opening a
-file it governs loads it. `npx archgate adr show <id>` prints one on demand.
+file it governs loads it — but measurably only when you open it with the Read tool. Reading
+through `cat` or `grep` loads nothing. When you have not opened the file directly, run
+`npx archgate review-context`, or `npx archgate adr show <id>` to print one on demand.
+The measurement is in `docs/workshop/probe/adr-routing/measurement.md`.
 
 ## The worked example
 
-`example/` is committed as a copy-me template and demonstrates one of each shape:
+There is no copy-me template Package. The canonical shape is the `Example` block in `ARCH-004`,
+which loads itself when you open any file under `src/`.
 
-- `index.ts` — an entry point that delegates to an internal, so the Package is visibly deep
-  rather than a pass-through.
-- `lib/impl.pure.ts` — the admissible-member boundary in practice.
-- `lib/span.types.ts` — an exported type declaration in its own home, re-exported from the
-  entry point.
-- `lib/impl.test.ts` — the colocated unit home, paired to its same-name `.pure.ts` sibling.
-- `tests/example.test.ts` — the integration home, reaching the Package through its entry point.
+`config-contract/` is the only Package here, and it exercises two classifiers: `.types` under
+`lib/`, and `.test` under `tests/`. So `.pure` and `.impure` currently have **no on-disk
+instance** — read `ARCH-006` for the purity boundary rather than looking for an example of it.
+The first real `.impure.ts` file is expected to arrive with the record that governs it.
 
 ## Running the checks
 
