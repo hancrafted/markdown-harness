@@ -62,3 +62,21 @@ target tree tolerates it. Test it, don't reason about it.
 **Type-level assertions:** `const _x: Missing[] = []` compiles **green** under a non-`never` type —
 `[]` satisfies any element type. Use `type Reaches<T extends never> = T;` instead. Verified red
 and green; see issue #16.
+
+**Two enforcers can demand opposite spellings of the same path — probe both, not one.** Node runs a
+`.ts` entry directly, but resolves a relative import only when it carries its extension; `tsc`
+refuses that same extension unless a flag is set. Measured 2026-09-03:
+
+```
+$ node noext.ts     # import { two } from "./dep"
+code: 'ERR_MODULE_NOT_FOUND'
+$ npx tsc -p .      # import { two } from "./dep.ts", flag off
+error TS5097: An import path can only end with a '.ts' extension when
+              'allowImportingTsExtensions' is enabled.
+```
+
+Either probe alone reads as "fine, use the other spelling". Run together they show a pincer: without
+`allowImportingTsExtensions: true` no multi-file TypeScript program can satisfy both, so a `verify`
+chaining them is unreachable. Caught while building the ablation kit, where it would have blocked all
+nine runs rather than six. Generalise: when two gates read the same file, probe the **conjunction**,
+and prefer a probe that fails to one that passes.

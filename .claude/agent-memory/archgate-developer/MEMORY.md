@@ -16,3 +16,4 @@
 - [ADR first, then ablation](feedback_adr_first_then_ablation.md) — a record governing zero files is a subject absence, not an indictment; argue substance, not enforcement counts
 - [docs/workshop is workshop material only](feedback_docs_workshop_not_for_instruments.md) — evals/instruments go to docs/evals/; map fog item 6's home is stale
 - [Spec holds behaviour, not setup](feedback_spec_holds_behaviour_not_setup.md) — the spec is copied into every arm, so run-environment decisions go to the scaffold ticket
+- [A fixture never models the treatment](feedback_fixture_never_models_the_treatment.md) — strip what the records ask an agent to produce; when spec and fixture disagree, the fixture moves
