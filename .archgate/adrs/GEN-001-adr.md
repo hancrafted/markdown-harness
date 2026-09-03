@@ -15,70 +15,48 @@ description: 'The shape contract every ADR under .archgate/adrs/ obeys: frontmat
 
 An ADR records an **ADR Discipline**: one universal constraint on how code is written, at an altitude no future feature can invalidate. An **ADR rule** is the mechanical check a Discipline earns in a companion `.rules.ts`; a Discipline may have none. Feature- and contract-shaped reasoning belongs in a design-ADR — if the next feature could make the record wrong, the altitude is wrong.
 
-This ADR pins the shape every other ADR relies on. `archgate check` gates it at commit and push.
-
-Rejected alternative: convention plus review. A shape held by habit forks on the first ADR written by an agent that never read a prior one.
+This ADR pins the shape every other ADR relies on. `archgate check --strict` gates it at commit and push.
 
 ## Decision
 
-### 1. Scope and self-hosting
+### 1. Scope and directory layout
 
-1. This contract governs every `<PREFIX>-<NNN>-<slug>.{md,ts}` file under `.archgate/adrs/`.
-2. GEN-001 is self-hosting — its own bundle satisfies every rule below, the size budget included. Exempting the ADR that governs all ADRs voids the contract.
-3. Universal frontmatter semantics and cross-harness INDEX routing are out of scope.
-4. `.archgate/adrs/` MUST stay flat: every non-hidden file a top-level `<PREFIX>-<NNN>-<slug>` `.md`, `.rules.ts`, or `.rules.test.ts`, each rules or test file backed by its `.md`. archgate discovers ADRs by frontmatter, not filename, so a nested or misnamed file governs unseen and an ADR-less `.rules.ts` is inert. (📜 Rule: `adr-governed-files`)
+1. `.archgate/adrs/` MUST stay flat: top-level `<PREFIX>-<NNN>-<slug>` `.md`, `.rules.ts`, or `.rules.test.ts`, with rules files backed by an `.md`. (📜 Rule: `adr-governed-files`)
 
 ### 2. Frontmatter contract (📜 Rule: `adr-frontmatter`)
 
-1. Keys `type`, `id`, `title`, `domain`, `rules`, `files` MUST be present and non-empty; `paths` is optional and additional keys MAY follow it.
-2. Field order MUST be exactly `type → id → title → domain → rules → files → paths`; `type` leads for recognisability, not for parsing.
-3. `type` MUST be `adr`; `id` MUST match the filename prefix; `domain` MUST be a registered archgate domain, built-in or declared in `.archgate/config.json`.
-4. `rules: true` MUST have a sibling `<basename>.rules.ts`, and an existing sibling MUST declare `rules: true`.
-5. `files:` scopes `archgate check` and populates `ctx.scopedFiles`. Omitted, it defaults to every project file — an ADR's rules then run on changes they have no business judging.
-6. `paths:` is not an archgate key but used in Claude Code, if this ADR is symlinked as rule. It can differ from files.
-7. **Check broad, steer narrow.** The two globs MAY differ on purpose: `files:` covers everything a rule must inspect, `paths:` only the author who can act. Exploit the asymmetry; never mirror it by habit.
-8. Both globs MUST be inline YAML flow lists — `['glob']`. A block-style, bare, or null value parses as empty and silently drops that channel's scope. (📜 Rule: `adr-glob-inline`)
+1. Frontmatter MUST lead with `type: adr`, declaring non-empty `id` (matching filename prefix), `title`, registered `domain`, `rules` (true iff sibling `.rules.ts` exists), `files`, and optional `paths`.
+2. `paths:` MAY differ from `files:`: `files:` inspects, `paths:` steers the author.
+3. Both globs MUST be inline YAML flow lists — `['glob']`. (📜 Rule: `adr-glob-inline`)
 
 ### 3. Required sections (📜 Rule: `adr-required-sections`)
 
-1. Every ADR MUST carry all six canonical H2 headings — exact text, presence-only, fenced blocks excluded: `## Context`, `## Decision`, `## Do's and Don'ts`, `## Consequences`, `## Compliance and Enforcement`, `## References`. Additional sections are permitted.
-2. `## Compliance and Enforcement` MUST name, per Discipline, its enforcer and that enforcer's config location — eslint `no-restricted-syntax` in `eslint.config.mjs`, a named dependency-cruiser rule, an archgate rule, or "not mechanically enforced — review duty". Presence is linted; naming is a review duty.
+1. Every ADR MUST carry all six canonical H2 headings: `## Context`, `## Decision`, `## Do's and Don'ts`, `## Consequences`, `## Compliance and Enforcement`, `## References`.
 
 ### 4. Size budget (📜 Rule: `adr-size-budget`)
 
-1. An ADR markdown file MUST stay under 12,000 characters — Windsurf's cap, the only hard published limit among five vendors disagreeing fivefold.
-2. `paths:` makes an ADR a context router, so length is paid on every matching Read. Split Disciplines by glob before trimming one below usefulness.
-3. Per-Read total across matching ADRs is measured and reported, never capped — a file may legitimately carry several Disciplines.
+1. An ADR markdown file MUST stay under 12,000 characters.
 
 ### 5. Authoring discipline
 
-Items 1–4 are machine-checked shape; 5–10 the prose standard, applied by `archgate:adr-author` and upheld in review.
-
-1. Number Decision anchors `### N.` from 1; keep each anchor's first-level items a sequential ordered list, never loose bullets. (📜 Rule: `adr-numbered-decision`)
-2. Head the blocks `### Do's` then `### Don'ts`, each an ordered list restarting at 1, every item keeping its bold `**DO**` / `**DON'T**` prefix; without the heading break the restart never renders. (📜 Rule: `adr-numbered-dos-donts`)
-3. Anchor every companion rule to prose twice: a Decision-side marker on the anchor that decides it, and a Do's/Don'ts marker naming that anchor. Pairing matches names, never rule bodies. (📜 Rule: `adr-rule-mentions`)
-4. Never write the retired `[review]` tag outside a code span; record the obligation under Manual review duties. (📜 Rule: `adr-no-review-tag`)
-5. **Root** — cut any sentence that does not steer authoring of a governed file.
-6. **Altitude** — state the rule and its architectural why; cite the companion `.rules.ts` rather than transcribing its constants.
-7. **History** — none. No chronology, no "previously"; state a rejected alternative as a live tradeoff.
-8. **Density** — one idea per item, point first; let inline code name a thing rather than carry the sentence.
-9. **Machinery** — keep Consequences and Compliance lean: the live tradeoff and the enforcement surface, mechanism left to the rules file.
-10. **Audience** — pitch at the authors of the files this ADR's `paths:` governs, and drop mechanics that never reach them.
+1. Number Decision anchors `### N.` sequentially from 1, each holding a sequential ordered list. (📜 Rule: `adr-numbered-decision`)
+2. Head blocks `### Do's` then `### Don'ts`, each restarting at 1 with bold `**DO**` / `**DON'T**` prefixes. (📜 Rule: `adr-numbered-dos-donts`)
+3. Anchor every companion rule twice: in Decision (`📜 Rule: <id>`) and in Do's/Don'ts (`Decision <N>, 📜 Rule: <id>`). (📜 Rule: `adr-rule-mentions`)
 
 ### 6. Companion rules-file discipline
 
-1. Every `<ID>-<slug>.rules.ts` MUST have a sibling `.rules.test.ts` covering each rule's pass and fail path. (📜 Rule: `adr-rules-test-sibling`)
-2. Every rule MUST embed the provenance tag `(<ID> [<rule-key>])` in each report message, so a failure names its ADR and rule. (📜 Rule: `adr-message-provenance`)
+1. Every `.rules.ts` MUST have a sibling `.rules.test.ts` covering pass and fail paths. (📜 Rule: `adr-rules-test-sibling`)
+2. Every rule report message MUST embed `(<ID> [<rule-key>])`. (📜 Rule: `adr-message-provenance`)
 
 ### 7. Enforcement tier
 
-1. Every rule MUST run at `error`; a companion rules file MUST NOT declare a warning- or info-tier severity. (📜 Rule: `adr-error-tier`)
+1. Every rule MUST run at `error` tier. (📜 Rule: `adr-error-tier`)
 
 ## Do's and Don'ts
 
 ### Do's
 
-1. **DO** open every ADR with frontmatter in the order `type → id → title → domain → rules → files → paths`, `type: adr`, `id` matching the filename. (Decision 2, 📜 Rule: `adr-frontmatter`)
+1. **DO** open every ADR frontmatter with `type: adr`, declaring required keys with `id` matching the filename. (Decision 2, 📜 Rule: `adr-frontmatter`)
 2. **DO** write `files:` and `paths:` as inline flow lists, each scoped for its own channel. (Decision 2, 📜 Rule: `adr-glob-inline`)
 3. **DO** emit all six canonical H2 sections; empty bodies pass the linter but not review. (Decision 3, 📜 Rule: `adr-required-sections`)
 4. **DO** keep every ADR markdown file under the character budget, this one included. (Decision 4, 📜 Rule: `adr-size-budget`)
@@ -93,9 +71,8 @@ Items 1–4 are machine-checked shape; 5–10 the prose standard, applied by `ar
 
 1. **DON'T** omit `files:` — archgate then widens the check to every project file. (Decision 2)
 2. **DON'T** park stray files, subdirectories, or ADR-less rules files under `.archgate/adrs/`. (Decision 1, 📜 Rule: `adr-governed-files`)
-3. **DON'T** let the retired `[review]` tag resurface. (Decision 5, 📜 Rule: `adr-no-review-tag`)
-4. **DON'T** exempt an ADR from the size budget or widen this contract beyond `.archgate/adrs/`. (Decision 4)
-5. **DON'T** flip the enforcement tier or add rules outside an explicit ADR amendment. (Decision 7)
+3. **DON'T** exempt an ADR from the size budget or widen this contract beyond `.archgate/adrs/`. (Decision 4)
+4. **DON'T** flip the enforcement tier or add rules outside an explicit ADR amendment. (Decision 7)
 
 ## Consequences
 
@@ -125,7 +102,7 @@ Items 1–4 are machine-checked shape; 5–10 the prose standard, applied by `ar
 
 **Second budget channel:** `archgate check` reports a per-section briefing budget over `Decision` and `Do's and Don'ts`, stricter than §4's whole-file cap and independent of it. `archgate check --strict` promotes those warnings to failures — not adopted here, since `--strict` also promotes suppression and unparsed-ADR warnings, a `verify`-pipeline decision of its own.
 
-**Manual review duties** (never linted): each glob describes its channel's real scope; each rule's prose describes what that rule does (§5.3 pairs names, not meanings); section bodies are substantive, not presence-only placeholders; `## Compliance and Enforcement` names a real enforcer and config location (§3.2); the sibling test covers each rule's pass and fail path (§6.1); the prose obeys §5.5–§5.10.
+**Manual review duties** (never linted): each glob describes its channel's real scope; each rule's prose describes what that rule does (§5.3 pairs names, not meanings); section bodies are substantive, not presence-only placeholders; `## Compliance and Enforcement` names a real enforcer and config location; the sibling test covers each rule's pass and fail path (§6.1).
 
 **Exceptions:** raise a separate ADR; human approval required.
 

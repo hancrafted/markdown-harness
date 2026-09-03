@@ -125,7 +125,7 @@ describe('adr-frontmatter', () => {
     expect(violations.some((v) => /type.*must be 'adr'/.test(v.message))).toBe(true);
   });
 
-  it('fails when the field order is wrong', async () => {
+  it('fails when type is not the first key', async () => {
     // ARRANGE
     const files = passingFiles();
     files[ADR_PATH] = VALID_ADR.replace('type: adr\nid: GEN-001', 'id: GEN-001\ntype: adr');
@@ -133,7 +133,7 @@ describe('adr-frontmatter', () => {
     // ACT
     await rules['adr-frontmatter'].check(ctx);
     // ASSERT
-    expect(violations.some((v) => /field order must be/.test(v.message))).toBe(true);
+    expect(violations.some((v) => /must lead with 'type'/.test(v.message))).toBe(true);
   });
 
   it('fails when files: is absent', async () => {
@@ -158,7 +158,7 @@ describe('adr-frontmatter', () => {
     expect(violations.some((v) => /empty required key 'files'/.test(v.message))).toBe(true);
   });
 
-  it('fails when files: is ordered after paths:', async () => {
+  it('passes when keys after type are in arbitrary order', async () => {
     // ARRANGE
     const files = passingFiles();
     files[ADR_PATH] = VALID_ADR.replace(
@@ -169,7 +169,7 @@ describe('adr-frontmatter', () => {
     // ACT
     await rules['adr-frontmatter'].check(ctx);
     // ASSERT
-    expect(violations.some((v) => /field order must be/.test(v.message))).toBe(true);
+    expect(violations).toEqual([]);
   });
 
   it('fails when rules: true has no sibling .rules.ts', async () => {
@@ -378,26 +378,6 @@ describe('adr-rule-mentions', () => {
     await rules['adr-rule-mentions'].check(ctx);
     // ASSERT
     expect(violations.some((v) => /needs its marker \(Decision <N>/.test(v.message))).toBe(true);
-  });
-});
-
-describe('adr-no-review-tag', () => {
-  it('passes an ADR with no review tag, and ignores one inside a code span', async () => {
-    // ARRANGE
-    const { ctx, violations } = makeCtx({ [ADR_PATH]: VALID_ADR.replace('Why.', 'Why. `[review]` is exempt.') });
-    // ACT
-    await rules['adr-no-review-tag'].check(ctx);
-    // ASSERT
-    expect(violations).toEqual([]);
-  });
-
-  it('fails when a bare [review] tag appears in prose', async () => {
-    // ARRANGE
-    const { ctx, violations } = makeCtx({ [ADR_PATH]: VALID_ADR.replace('Why.', 'Why. [review] this.') });
-    // ACT
-    await rules['adr-no-review-tag'].check(ctx);
-    // ASSERT
-    expect(violations.some((v) => /retired \[review\] tag/.test(v.message))).toBe(true);
   });
 });
 

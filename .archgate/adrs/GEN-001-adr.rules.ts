@@ -15,7 +15,6 @@ const RULES_BASENAME_RE = /^[A-Z]+-\d{3}-.+\.rules\.ts$/;
 const RULES_TEST_BASENAME_RE = /^[A-Z]+-\d{3}-.+\.rules\.test\.ts$/;
 const BUILTIN_DOMAINS = ['architecture', 'backend', 'data', 'frontend', 'general'];
 const REQUIRED_KEYS = ['type', 'id', 'title', 'domain', 'rules', 'files'];
-const FIELD_ORDER = ['type', 'id', 'title', 'domain', 'rules', 'files', 'paths'];
 // The two glob-valued keys adr-glob-inline governs; both must be flow lists.
 const GLOB_KEYS = ['files', 'paths'];
 // GEN-001 §4.1 — Windsurf's published cap, the strictest hard limit among the
@@ -78,10 +77,6 @@ function stripFences(content: string): string {
       return inFence ? '' : line;
     })
     .join('\n');
-}
-
-function stripCodeSpans(text: string): string {
-  return text.replace(/`[^`\n]*`/g, '``');
 }
 
 // Section body from `## <name>` to the next `## ` heading (fences stripped).
@@ -204,7 +199,7 @@ export default {
   rules: {
     'adr-frontmatter': {
       description:
-        "ADR frontmatter: type/id/title/domain/rules present non-empty, exact field order type→id→title→domain→rules→paths, type is 'adr', id matches filename prefix, domain registered, rules:true ⇔ sibling .rules.ts.",
+        'ADR frontmatter: type/id/title/domain/rules present non-empty, type: adr leads, id matches filename prefix, domain registered, rules:true ⇔ sibling .rules.ts.',
       severity: 'error',
       async check(ctx) {
         let registered = BUILTIN_DOMAINS;
@@ -232,14 +227,13 @@ export default {
               });
             }
           }
-          const present = FIELD_ORDER.filter((k) => new RegExp(`^${k}[ \\t]*:`, 'm').test(fm));
-          const actual = fm
+          const firstKey = fm
             .split(/\r?\n/)
             .map((l) => l.match(/^([a-z]+)[ \t]*:/)?.[1])
-            .filter((k): k is string => k !== undefined && FIELD_ORDER.includes(k));
-          if (actual.join(',') !== present.join(',')) {
+            .find((k): k is string => k !== undefined);
+          if (firstKey !== 'type') {
             ctx.report.violation({
-              message: `ADR frontmatter field order must be ${FIELD_ORDER.join(' → ')}, found ${actual.join(' → ')} (GEN-001 [adr-frontmatter]).`,
+              message: `ADR frontmatter must lead with 'type', found '${firstKey ?? 'none'}' (GEN-001 [adr-frontmatter]).`,
               file,
             });
           }
@@ -471,25 +465,6 @@ export default {
           if (!checkSequential(dontNums)) {
             ctx.report.violation({
               message: `DON'T block numbering must restart at 1 and be sequential, found ${dontNums.join(',')} (GEN-001 [adr-numbered-dos-donts]).`,
-              file,
-            });
-          }
-        }
-      },
-    },
-
-    'adr-no-review-tag': {
-      description:
-        'The retired [review] tag must not appear in an ADR outside code spans and fenced blocks — route the duty into Manual review duties instead.',
-      severity: 'error',
-      async check(ctx) {
-        const files = adrFiles(await ctx.glob(ADR_MD_GLOB));
-        for (const file of files) {
-          const content = stripCodeSpans(stripFences(await ctx.readFile(file)));
-          const count = (content.match(/\[review\]/g) ?? []).length;
-          if (count > 0) {
-            ctx.report.violation({
-              message: `ADR contains ${count} retired [review] tag(s) outside code spans — route the duty into Manual review duties instead (GEN-001 [adr-no-review-tag]).`,
               file,
             });
           }
