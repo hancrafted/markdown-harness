@@ -1,6 +1,6 @@
 ---
 name: reproduce-measurement-before-calling-drift
-description: Before reporting a recorded number as stale, reproduce the measurement method that produced it — a tool mismatch looks exactly like drift, and a probe of a mangled path looks exactly like an absent file
+description: Before reporting a recorded number as stale, reproduce the measurement method that produced it — a tool mismatch, a flip that never landed, a probe of a mangled path, and a relative git ref that moved under you all look exactly like drift
 metadata:
   type: feedback
 ---
@@ -56,3 +56,40 @@ clean, and the phantom name appears in no file in the repo. A probe of a wrong n
 `git show HEAD:<path>` proves only that _that string_ is absent, never that the artifact is. And
 after any write you justified as safe, run `git diff --stat -- <path>` to confirm you changed what
 you meant to and nothing else.
+
+**Fourth failure mode: the relative ref that moved under me.** On 2026-09-03, working #8, I ran
+`npx archgate check --base HEAD~2` and got `total: 13`. Minutes later the same command in the same
+session returned `total: 0`. I began writing it up as a `--strict` interaction, because I had added
+`--strict` in between. It was neither: **a concurrent session had landed two commits**, so `HEAD~2`
+now labelled a different commit (`ff5bc66` → `0becfab`) and the changed set no longer contained a
+single ADR. `git log --oneline -4` showed the two new commits immediately.
+
+**How to apply:** `HEAD~N`, `@{u}`, branch names and `origin/main` are _labels_, not measurements. In
+a repo where other sessions commit — the wayfinder skill says to expect exactly that — resolve the
+label to a sha (`git rev-parse HEAD~2`) and quote the sha, or the number you report is unreproducible
+by the next reader. When two runs of one command disagree within a session, suspect the inputs moved
+before you suspect the flag you just added; the same session's `git log` is the cheapest way to tell.
+Same day, the working tree also went from "3 modified ADRs + untracked `ARCH-007`" to clean for the
+same reason, which would have read as someone reverting the work.
+
+**Fifth failure mode: the stash that mimics a file never written.** On 2026-09-03, resuming the
+`prepare-ablation-run` build, I checked whether `docs/evals/ablation/scaffold-design.DRAFT.md`
+still existed. `ls` did not show it and `git status --porcelain` was empty, so I reported — in
+writing, as a correction to a _true_ earlier statement — that the file "was never written,
+contrary to what I reported earlier." Han replied that he had stashed it. `git stash list` had one
+entry carrying the record **and four memory files I had authored that session**. A clean tree plus
+an absent `ls` entry does not mean unwritten; it means unwritten _or stashed_ — and a stash is
+invisible to every check I ran. Worse, the file had been `git add`ed before stashing, so it lived
+in the stash's own tree, not a third parent: `stash@{0}^3` was `fatal: Not a valid object name`,
+and my first read of it was `2>/dev/null | shasum`, which quietly hashed the empty string to
+`e3b0c442…b855` and would have read as "the stashed copy is empty" if I had not recognised that
+constant.
+
+**How to apply:** before concluding a file does not exist, run `git stash list` — and if it is
+non-empty, `git stash show --include-untracked --name-status stash@{N}`. Treat `e3b0c442…b855`
+(SHA-256 of nothing) and `d41d8cd9…e427` (MD5 of nothing) as sentinels meaning _my command produced
+no output_, never _the artifact is empty_; never pipe a `git show` into a hasher with stderr
+suppressed. And the deeper rule: **correcting yourself is a claim like any other and earns the same
+evidence bar.** Retracting a true statement is a worse outcome than the original uncertainty,
+because it spends the credibility that self-correction is supposed to buy. Related:
+[[audit-the-tree-not-the-ticket]].

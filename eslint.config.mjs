@@ -329,6 +329,11 @@ export default tseslint.config(
       '.worktrees/**',
       '.archgate/**/*.rules.ts',
       '.archgate/rules.d.ts',
+      // Vendored material for repositories that do not exist yet. These files are
+      // copied into a fresh repo by the stamp script and linted there, against that
+      // repo's config. Linting them here would judge them by this repo's regime,
+      // which is the very thing they are built to vary.
+      '.agents/skills/prepare-ablation-run/assets/**',
     ],
   },
   {

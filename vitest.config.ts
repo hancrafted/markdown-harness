@@ -11,7 +11,15 @@ export default defineConfig({
     // Two locations, because they are created by different hands: `.worktrees/`
     // by a human, `.claude/worktrees/` by a Host harness isolating an agent.
     // Only the first was listed, so an agent worktree was silently in scope.
-    exclude: [...configDefaults.exclude, '.worktrees/**', '.claude/worktrees/**'],
+    exclude: [
+      ...configDefaults.exclude,
+      '.worktrees/**',
+      '.claude/worktrees/**',
+      // Vendored suites for repositories that do not exist yet. The include glob is
+      // deliberately greedy, so it reaches them; they are meant to run only once the
+      // stamp script has copied them into a run repo.
+      '.agents/skills/prepare-ablation-run/assets/**',
+    ],
     coverage: {
       provider: 'v8',
     },

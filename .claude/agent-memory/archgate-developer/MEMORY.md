@@ -9,7 +9,7 @@
 - [Vocabulary beats migration cost](feedback_vocabulary_over_migration_cost.md) — pick the better term; quote site counts as scope, never as the argument
 - [Prove the enforcer can read the SSOT](feedback_enforcer_can_read_the_source.md) — probe before proposing a check; archgate erases TS types
 - [Audit the tree, not the ticket](feedback_audit_tree_not_ticket.md) — "is #N done?" is answered against the working tree, never issue state
-- [Reproduce the measurement before calling drift](feedback_reproduce_measurement_before_calling_drift.md) — tool mismatch mimics staleness, a phantom path mimics an absent file; list the parent, quote the base
+- [Reproduce the measurement before calling drift](feedback_reproduce_measurement_before_calling_drift.md) — tool mismatch, failed flip, phantom path and a moved `HEAD~N` all mimic drift; quote the sha
 - [Trace a term's provenance before renaming](feedback_trace_term_provenance_before_renaming.md) — "where does this name come from?" is a fact question, yours to answer
 - [Evaluate arrays, never grep them](feedback_evaluate_arrays_never_grep_them.md) — a .map() in a config makes source-line counts lie; evaluate before quoting a count
 - [Sweep every file type, not just docs](feedback_sweep_every_file_type.md) — `--include` filters and un-followed symlinks both report a false CLEAN
@@ -17,3 +17,5 @@
 - [docs/workshop is workshop material only](feedback_docs_workshop_not_for_instruments.md) — evals/instruments go to docs/evals/; map fog item 6's home is stale
 - [Spec holds behaviour, not setup](feedback_spec_holds_behaviour_not_setup.md) — the spec is copied into every arm, so run-environment decisions go to the scaffold ticket
 - [A fixture never models the treatment](feedback_fixture_never_models_the_treatment.md) — strip what the records ask an agent to produce; when spec and fixture disagree, the fixture moves
+- [RTK-filtered output lies](feedback_rtk_filtered_output_lies.md) — its `diff` calls differing files identical and its `ls` size suffixes break grep anchors; hash instead
+- [Self-describing names beat inherited jargon](feedback_self_describing_over_inherited_jargon.md) — trace the provenance, offer it, expect to lose; then record the translation

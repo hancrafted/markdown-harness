@@ -1,0 +1,17 @@
+{
+  "name": "markdown-harness",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "verify": "prettier --check . && tsc --noEmit && vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "26.3.0",
+    "prettier": "3.9.6",
+    "prettier-plugin-organize-imports": "4.3.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  }
+}

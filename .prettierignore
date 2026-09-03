@@ -11,3 +11,7 @@ docs/okf/SPEC-v0.2.md
 # Verbatim session transcripts, extracted mechanically from the session log.
 # Reformatting one would silently alter the record it exists to preserve.
 docs/workshop/**/raw.md
+
+# Vendored material for repositories that do not exist yet. Formatting it here would
+# apply this repo's style to files whose style is part of what a run is measured on.
+.agents/skills/prepare-ablation-run/assets/**
