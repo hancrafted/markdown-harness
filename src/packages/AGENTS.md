@@ -8,19 +8,7 @@ disagree, the record wins.
 
 ## The shape
 
-```
-src/packages/
-  AGENTS.md             ← this file. CLAUDE.md is a symlink to it.
-  <name>/
-    index.ts            ← an entry point (public). Import this from outside.
-    client.ts           ← another entry point. A Package may expose SEVERAL.
-    lib/                ← implementation: private, free to import each other.
-      impl.pure.ts
-      impl.test.ts      ← the UNIT home: tests impl.pure.ts, its same-name sibling.
-      span.types.ts
-    tests/              ← the INTEGRATION home, plus fixtures (a subfolder, so private).
-      example.test.ts
-```
+Read ARCH-004 for the detailed shape
 
 ## Which record governs what
 
@@ -60,6 +48,4 @@ the register for the import graph. Each governing record names its own enforcer.
 
 ## When nothing fits
 
-`ARCH-004` carries a stop protocol for the case where no classifier suits your file. It is
-already in your context — its `paths:` selects every file under `src/` — so read it there
-rather than acting on a summary of it here.
+If no classifier suits your file, open a `needs-triage` issue naming the file and the discipline it needs rather than guessing, inventing a new suffix, or parking the file at a Package root.

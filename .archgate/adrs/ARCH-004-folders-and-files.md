@@ -6,7 +6,7 @@ domain: architecture
 rules: false
 files: ['src/**/*']
 paths: ['src/**/*']
-description: 'Where a source file may sit and what it may be called: the Package tree, exactly one classifier per file by position then suffix, the import boundaries, subject naming, and the stop protocol when the vocabulary has no slot.'
+description: 'Where a source file may sit and what it may be called: the Package tree, exactly one classifier per file by position then suffix, the import boundaries, and subject naming.'
 ---
 
 # Folders and Files
@@ -15,29 +15,20 @@ description: 'Where a source file may sit and what it may be called: the Package
 
 This ADR serves to orient an agent on how to architect, structure, and write files within the `src/` source folder.
 
-## Decision
-
-### 1. The source tree
-
-1. Every source file under `src/` MUST sit in a **Package**: one folder under `src/packages/`, flat. A Package MUST NOT contain another Package.
-2. A Package's **root files** are its entry points and are public. Everything in a subfolder is private. A Package's internals MAY nest as deep as needed.
-3. The packages root MUST hold only Package folders plus its own agent instructions — `AGENTS.md` and the `CLAUDE.md` symlink pointing at it — and no source file. Each Package MAY hold that same pair.
-4. A Package MAY expose several small entry points. A barrel that re-exports a whole subtree is banned; re-exporting a type declaration from an entry point is the intended idiom.
-
-**Example**:
+**Example Shape**:
 
 ```text
 src/packages/
     AGENTS.md                 ← agent instructions for the packages root
     CLAUDE.md                 ← symlink to AGENTS.md
-    <pkg>/
+    <package-name>/
         AGENTS.md             ← optional, per Package
         CLAUDE.md             ← symlink to AGENTS.md
         index.ts              ← public entry point
         lib/                  ← private internals (nested as needed)
-            impl.pure.ts
-            impl.test.ts
-            feat.impure.ts
+            impl.pure.ts.     ← deterministic functions
+            impl.test.ts.     ← test for deterministic functions, TDD
+            feat.impure.ts.
             span.types.ts
             <feature-name>/   ← internal feature (nested as needed)
                 feat-name.impure.ts
@@ -47,6 +38,15 @@ src/packages/
         tests/                ← private integration suite
             example.test.ts
 ```
+
+## Decision
+
+### 1. The source tree
+
+1. Every source file under `src/` MUST sit in a flat, non-nested **Package** directly under `src/packages/`.
+2. A Package's root files are its public entry points; all files in subfolders are private internals (which MAY nest as needed).
+3. `src/packages/` MUST hold only Package folders and agent instructions (`AGENTS.md`/`CLAUDE.md`), never source files; Packages MAY hold that same pair.
+4. A Package MAY expose multiple narrow entry points; barrel files re-exporting entire subtrees are forbidden.
 
 ### 2. Private source files must have exactly one suffix as classifier
 
@@ -62,21 +62,14 @@ src/packages/
 
 ### 3. Import boundaries
 
-1. Code outside a Package MUST import only through its entry points, while a Package's internal files import each other freely.
-2. A Package's `tests/` folder is fully private (unimportable from outside) and MUST reach any Package (its own included) only through entry points and local fixtures.
-3. A `*.test` file below a Package root MAY import exactly one internal: its same-directory sibling of the same base name carrying `.pure`. Anything wider is a loophole, because renaming a file lifts every restriction.
-4. No dependency cycles.
+1. Packages expose only entry points to outside code; `tests/` is private and reaches Packages only via entry points and local fixtures.
+2. Subfolder `*.test` files MAY import only their same-directory, same-name `.pure` sibling. Dependency cycles are forbidden.
 
 ### 4. Naming
 
 1. Every file name MUST be kebab-case.
-2. Group functions by **subject**, never by mechanism. `utils`, `common`, `helpers` and `misc` are banned as names: they tell a caller nothing, so they accumulate whatever nobody could place.
-3. `.adapter` and `.orchestrator` are NOT classifiers and MUST NOT appear as suffixes. **Adapter** survives as a `codebase-design` glossary term for the role a file plays, not for how it is named.
-
-### 5. When the vocabulary has no slot
-
-1. **Stop.** Do not guess, do not add a second suffix, and do not park the file at a Package root to dodge the choice.
-2. Open a `needs-triage` issue naming the file and the discipline it needs. The count of those issues is the evidence that this vocabulary is wrong, and it is the only evidence that ever arrives.
+2. Group functions by **subject**, never by mechanism; `utils`, `common`, `helpers` and `misc` are banned.
+3. `.adapter` and `.orchestrator` are not classifiers and MUST NOT appear as suffixes.
 
 ## Do's and Don'ts
 
@@ -88,7 +81,6 @@ src/packages/
 4. **DO** import another Package only through its entry points. (Decision 3)
 5. **DO** keep a colocated test to its same-directory, same-name `.pure` sibling and integration tests under `tests/`. (Decision 3)
 6. **DO** name a file after the subject it serves. (Decision 4)
-7. **DO** stop and open a `needs-triage` issue when no classifier fits. (Decision 5)
 
 ### Don'ts
 
@@ -97,7 +89,6 @@ src/packages/
 3. **DON'T** stack classifiers, leave a subfolder file unclassified, or classify a Package root file. (Decision 2)
 4. **DON'T** import another Package's internals, reach into any `tests/` folder from outside, or introduce dependency cycles. (Decision 3)
 5. **DON'T** name a file `utils`, `common`, `helpers` or `misc`, and don't use `.adapter` or `.orchestrator` as a suffix. (Decision 4)
-6. **DON'T** invent a suffix or park an unplaceable file at a Package root. (Decision 5)
 
 ## Consequences
 
@@ -113,13 +104,13 @@ src/packages/
 
 **Risks:**
 
-1. **The suffix set is closed on no measured evidence.** Four classifiers may not partition real code, and the pressure appears as authors reaching for the nearest fit. **Mitigation:** the stop protocol in Decision 5 routes every misfit to a `needs-triage` issue, and that count is the amendment trigger.
+1. **The suffix set is closed on no measured evidence.** Four classifiers may not partition real code, and the pressure appears as authors reaching for the nearest fit. **Mitigation:** unmatched file roles trigger issues that surface whether the vocabulary requires amendment.
 
 ## Compliance and Enforcement
 
 **Enforcer per Discipline.** The tree shape and the import boundaries (Decisions 1 and 3) are held by the six named rules in `.dependency-cruiser.cjs` — `entrypoint-boundary-from-app`, `entrypoint-boundary-across-packages`, `tests-through-entrypoints`, `colocated-test-lane`, `tests-folder-is-private` and `no-circular` — all at `error`, run by `npm run lint:boundaries` inside `npm run verify`. The classifier vocabulary (Decision 2) is held in `eslint.config.mjs` by `check-file/filename-naming-convention` over two keys — `ENTRY_POINTS` and `INTERNALS`, both anchored at `src/packages/` — plus a core `no-restricted-syntax` `Program` selector scoped to `GOVERNED`, anchored one level higher at `src/`. The anchors differ deliberately: governance starts at `src/` so a source file outside every Package is still caught, while the classifier keys stay at the tier where Packages physically sit. What keeps the two from disagreeing is that the net's `ignores` **is** the classifier key set, so the net fires on exactly the files the keys do not classify. Anchoring the keys at `src/` instead shifts every tier and fails in both directions — a stray `src/<folder>/<name>.ts` reads as an entry point, a false pass that hides it from the net, while a real entry point reads as an unclassified internal. Measured, not reasoned: 16 errors with one false, against 3 true errors the correct way. Kebab-case (Decision 4, item 1) is held by the same `check-file` key.
 
-**Not mechanically enforced — review duty:** that a name states its subject rather than a mechanism (Decision 4, item 2); that a barrel has not been reintroduced under a legal file name (Decision 1, item 4); that an author stopped rather than guessed when no classifier fit (Decision 5).
+**Not mechanically enforced — review duty:** that a name states its subject rather than a mechanism (Decision 4, item 2); that a barrel has not been reintroduced under a legal file name (Decision 1, item 4).
 
 **Known reach gap.** The six rules named above hold Decisions 1 and 3 only while `.dependency-cruiser.cjs` sets `tsPreCompilationDeps: true`. Without it dependency-cruiser sees post-compilation edges only, so every `import type` and `export type … from` is erased before the rules run — and `config-contract` is types-only, so all six would cruise it and check nothing while `npm run lint:boundaries` still reported success. Measured 2026-09-02: the flag took the tree from 3 to 7 dependencies cruised. The diagnostic is the dependency count on that line, never the checkmark.
 
