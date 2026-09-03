@@ -26,6 +26,18 @@ unsatisfied criteria plainly instead of ticking them in spirit — a box ticked 
 the thing this audit exists to catch. Related: [[orient-before-grilling]] for how to frame the
 answer, and [[feedback-enforcer-can-read-the-source]] for probing rather than reasoning from docs.
 
-**The record lags the tree here.** A phase is not done when `verify` goes green; it is done when the
-ticket is closed and the map is amended. If you land the commit, close the ticket in the same
-session.
+**The record lags the tree here — three times now.** A phase is not done when `verify` goes green; it
+is done when the ticket is closed and the map is amended. If you land the commit, close the ticket in
+the same session. Recurrence on 2026-09-02 (#7, phase 5): the build work was green and correct, but
+the red state was unrecorded on the ticket, the probe result was missing from the design-ADR it was
+commissioned to settle, and the required count went unreported. **The gaps cluster in the criteria
+that ask you to _write something down_, never in the ones that ask you to make code work** — so audit
+those first and expect them to be the open ones.
+
+**Read the ticket body before attacking its premises.** Auditing _state_ against the tree is right;
+critiquing _reasoning_ from a summary is not. On 2026-09-03 I grilled #17 from the map's one-line
+frontier entry and presented as a finding something the ticket body already said outright — the trap
+that the harness's own instructions tell agents to prefer `cat`/`sed`/`grep` over Read, which is what
+starved the briefing channel. Two of my other three corrections did hold against the ticket's text,
+so the round was not wasted, but crediting yourself with the author's own point costs standing you
+need for the corrections that are real. Fetch the body first; then the tree.

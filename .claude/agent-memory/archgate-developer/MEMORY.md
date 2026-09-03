@@ -1,4 +1,5 @@
-- [Grilling format: prose, not the picker](feedback_grilling_format.md) — format grill rounds as ❓/➡️ prose with a stated recommendation
+- [Grilling format: prose, not the picker](feedback_grilling_format.md) — ❓/➡️ prose, max 3 questions, numbered options, recommendation last
+- [Name ADRs by id plus slug](feedback_name_adrs_id_plus_slug.md) — write ARCH-004-folders-and-files, never a bare ARCH-004
 - [Orient before grilling](feedback_orient_before_grilling.md) — in a phased effort, say where we are on the map before the first question
 - [Han: author and Operator of markdown-harness](user_role.md) — works by grilling; wants premises attacked and evidence cited
 - [ADR prose: compress in place, never relocate](feedback_adr_prose_compression.md) — fit the budget with terse imperative one-liners, not a reference file
@@ -8,7 +9,10 @@
 - [Vocabulary beats migration cost](feedback_vocabulary_over_migration_cost.md) — pick the better term; quote site counts as scope, never as the argument
 - [Prove the enforcer can read the SSOT](feedback_enforcer_can_read_the_source.md) — probe before proposing a check; archgate erases TS types
 - [Audit the tree, not the ticket](feedback_audit_tree_not_ticket.md) — "is #N done?" is answered against the working tree, never issue state
-- [Reproduce the measurement before calling drift](feedback_reproduce_measurement_before_calling_drift.md) — a tool mismatch looks exactly like a stale record; check `wc -c` vs chars, and never quote a count without its base
+- [Reproduce the measurement before calling drift](feedback_reproduce_measurement_before_calling_drift.md) — tool mismatch mimics staleness, a phantom path mimics an absent file; list the parent, quote the base
 - [Trace a term's provenance before renaming](feedback_trace_term_provenance_before_renaming.md) — "where does this name come from?" is a fact question, yours to answer
 - [Evaluate arrays, never grep them](feedback_evaluate_arrays_never_grep_them.md) — a .map() in a config makes source-line counts lie; evaluate before quoting a count
-- [Sweep every file type, not just docs](feedback_sweep_every_file_type.md) — an `--include` filter reports CLEAN while stale paths hide in YAML and configs
+- [Sweep every file type, not just docs](feedback_sweep_every_file_type.md) — `--include` filters and un-followed symlinks both report a false CLEAN
+- [ADR first, then ablation](feedback_adr_first_then_ablation.md) — a record governing zero files is a subject absence, not an indictment; argue substance, not enforcement counts
+- [docs/workshop is workshop material only](feedback_docs_workshop_not_for_instruments.md) — evals/instruments go to docs/evals/; map fog item 6's home is stale
+- [Spec holds behaviour, not setup](feedback_spec_holds_behaviour_not_setup.md) — the spec is copied into every arm, so run-environment decisions go to the scaffold ticket

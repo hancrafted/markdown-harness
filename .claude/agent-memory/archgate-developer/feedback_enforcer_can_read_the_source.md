@@ -1,6 +1,6 @@
 ---
 name: feedback-enforcer-can-read-the-source
-description: Before proposing any mechanical check, prove the enforcer can read the source of truth and that a planned component will not retire the check
+description: Before proposing any mechanical check, prove the enforcer can read the source of truth and that a planned component will not retire the check — and before pinning any path in a spec or fixture, prove the enforcers accept it
 metadata:
   type: feedback
 ---
@@ -43,6 +43,21 @@ boundary rules cruised it and checked **nothing**, while `lint:boundaries` still
 Generalise the probe: for any TS-reading enforcer, ask whether it parses TS or transpiles first,
 and prove it on a file that is _only_ types. Two tools in this repo failed that test for the same
 reason. Now recorded as trap 5 under `## Verification` in `AGENTS.md`.
+
+**Run the probe in the other direction too: before pinning a path or a name in a spec, prove the
+enforcers accept it.** A spec that names `src/cli.ts` looks harmless; one throwaway file settles it:
+
+```
+$ printf 'export const x = 1;\n' > src/cli.ts && npx eslint src/cli.ts
+  1:1  error  stop: this file sits outside src/packages/<package>/ and no ADR governs it
+```
+
+`GOVERNED = src/**/*.ts` matches it, `CLASSIFIED = [src/packages/*/*.ts, …]` does not, so the
+`Program` net fires. Caught 2026-09-03 while freezing the ablation spec — the pin came in from
+`feature/prototype`, which predates ARCH-004-folders-and-files, and it would have made the spec's
+own "done when `npm run verify` is green" unreachable in 6 of 9 runs while reading as a record the
+agent ignored. Corollary for any fixture: a pinned path is a claim that every enforcer in the
+target tree tolerates it. Test it, don't reason about it.
 
 **Type-level assertions:** `const _x: Missing[] = []` compiles **green** under a non-`never` type —
 `[]` satisfies any element type. Use `type Reaches<T extends never> = T;` instead. Verified red

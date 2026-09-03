@@ -1,6 +1,6 @@
 ---
 name: feedback-sweep-every-file-type
-description: A rename or delete sweep must grep every file type — an --include filter reports CLEAN while stale paths survive in YAML, config and test files
+description: A rename or delete sweep must grep every file type and follow symlinks — an --include filter or an un-followed .claude/skills symlink reports a false CLEAN while stale paths survive
 metadata:
   type: feedback
 ---
@@ -35,5 +35,14 @@ purpose — those are the only legitimate survivors. Also verify that any **rela
 rewrite actually resolves (`[ -e "$dir/../../$rel" ]`), since a moved file changes the depth and a
 broken `../../` looks identical to a working one in a diff.
 
+**`-r` does not cross a symlink, and this repo is full of them.** Skills live in `.agents/skills/`
+and every `.claude/skills/<name>` is a **symlink** into it (`code-review -> ../../.agents/skills/code-review`).
+So `grep -rn <term> .claude/skills/…` and `find .claude/skills/… -type f` both return **nothing at
+all** — not a partial answer, an empty one. On 2026-09-03 that printed `CLEAN` for a sweep I had
+already seen a hit in ten minutes earlier, which is the only reason I caught it. Use `grep -R`
+(capital) or `find -L`, and when a sweep of a directory you know has files comes back empty, run
+`ls -l` before believing it.
+
 Sibling failure, one level down: [[feedback_evaluate_arrays_never_grep_them]] — grep undercounting
-a `.map()`-built array. Both are the same mistake, that grep's answer is only as wide as its scope.
+a `.map()`-built array. All three are the same mistake: grep's answer is only as wide as its scope,
+and it reports a narrow scope and an empty subject identically.
