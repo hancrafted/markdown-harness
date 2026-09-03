@@ -29,7 +29,14 @@ case "$VARIANT" in
 esac
 [ -n "$MODEL" ] || { echo "prepare-run: --model is required; it is the last field of the run id" >&2; exit 2; }
 
-eval "$(bash "$SKILL_DIR/scripts/preflight.sh" --spec "$SPEC_REL")"
+# Check the status explicitly. `eval "$(preflight)"` hides it: the substitution
+# captures stdout, the refusal goes to stderr, and eval on an empty string
+# succeeds -- so a refusal printed REFUSED and then minted anyway.
+if ! PREFLIGHT=$(bash "$SKILL_DIR/scripts/preflight.sh" --spec "$SPEC_REL"); then
+  echo "prepare-run: refused by preflight; nothing was written." >&2
+  exit 1
+fi
+eval "$PREFLIGHT"
 
 # Run ids are dated and numbered, never named for the variant: the directory name
 # reaches the agent, and the variant is exactly what it must not know.
@@ -38,6 +45,16 @@ n=1
 while [ -e "$RUNS_ROOT/$DATE-$SLUG-$n-$MODEL" ]; do n=$((n + 1)); done
 RUN_ID="$DATE-$SLUG-$n-$MODEL"
 RUN_DIR="$RUNS_ROOT/$RUN_ID"
+
+# A run that dies half-built must not be left looking like a run.
+cleanup() {
+  rc=$?
+  if [ "$rc" -ne 0 ] && [ -n "${RUN_DIR:-}" ] && [ -d "$RUN_DIR" ]; then
+    rm -rf "$RUN_DIR"
+    echo "prepare-run: failed; removed the partial run at $RUN_DIR" >&2
+  fi
+}
+trap cleanup EXIT
 
 mkdir -p "$RUN_DIR"
 stack_layers "$RUN_DIR" "$VARIANT" "$SKILL_DIR" "$SRC_REPO"

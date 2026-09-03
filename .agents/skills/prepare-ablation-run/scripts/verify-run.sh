@@ -20,9 +20,15 @@ if [ "$VARIANT" = "governed" ]; then
   r=$(find .claude/rules -type f 2>/dev/null | wc -l | tr -d ' ')
   [ "$n" -gt 0 ] && [ "$r" -eq 0 ] && ok "$n record links, none flattened to copies" \
     || bad "record links: $n symlinks, $r copies (copies mean rsync -aL flattened them)"
+  # The siblings must exist, or GEN-001 opens the gate on violations the run did
+  # not cause; and they must not be collected, or this variant starts on a green
+  # baseline the others lack. Both halves, or the gate stops being comparable.
   find . -name '*.rules.test.ts' -not -path './node_modules/*' | grep -q . \
-    && bad "a .rules.test.ts shipped; this variant would boot on a green baseline" \
-    || ok "no .rules.test.ts present"
+    && ok "rules tests ship, so the sibling record is satisfiable" \
+    || bad "no .rules.test.ts; GEN-001 will fire on violations the run cannot fix"
+  c=$(npx vitest list --filesOnly 2>/dev/null | grep -c '\.archgate' || true)
+  [ "${c:-0}" -eq 0 ] && ok "no rules test is collected by the suite" \
+    || bad "$c rules test(s) collected; this variant would boot on a green baseline"
 fi
 
 n=$(find .claude/skills -type l 2>/dev/null | wc -l | tr -d ' ')

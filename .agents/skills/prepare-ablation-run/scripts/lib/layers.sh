@@ -19,10 +19,14 @@ stack_layers() {
 
   rsync -aL "$skill_dir/assets/layers/governed/" "$run_dir/"
   mkdir -p "$run_dir/.archgate"
-  # The .rules.test.ts siblings stay behind: vitest's include glob would collect
-  # them, booting this variant on a green baseline where bare starts at zero and
-  # making the functional gate differ by variant rather than by treatment.
-  rsync -aL --exclude '*.rules.test.ts' "$src_repo/.archgate/" "$run_dir/.archgate/"
+  # The .rules.test.ts siblings ship. Withholding them looked right -- vitest's
+  # include glob would collect them and boot this variant on a green baseline
+  # where bare starts at zero -- but GEN-001 requires every .rules.ts to have one,
+  # so withholding them opened the gate on five violations the run did not cause
+  # and cannot fix. A forced violation is a fixture defect, not a record binding.
+  # They ship, and the governed vitest config excludes them from collection, so
+  # the record is satisfied and every variant still counts the same suites.
+  rsync -aL "$src_repo/.archgate/" "$run_dir/.archgate/"
 }
 
 copy_kit() {
