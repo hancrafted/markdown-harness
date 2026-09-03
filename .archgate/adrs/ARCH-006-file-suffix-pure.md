@@ -73,7 +73,7 @@ The `pure` classifier steers agents to write testable, deterministic functions w
 
 **Risks:**
 
-1. **The import hole:** a banned read reached through a local module import defeats single-file selectors. **Mitigation:** governed separately through import graph rules.
+1. **The import hole:** a banned read reached through a local module import defeats single-file selectors. **Mitigation:** narrowed, not closed, by two named rules in `.dependency-cruiser.cjs` that forbid an edge from this classifier to a file carrying the residual classifier, or to a platform builtin. What stays open: a Package entry point carries no suffix, so the determinism selectors never run on it, and an edge to another Package's entry point still reaches whatever that file holds.
 2. **Unchecked mutation:** static checks verify determinism but cannot prevent argument mutation or module state. **Mitigation:** codified as an explicit human review duty.
 3. **The boundary is a specification reading, not a measurement:** whether every admitted `Math` member is genuinely argument-determined rests on the language specification being read correctly. **Mitigation:** the references below are primary sources, cited so the reading can be checked rather than trusted.
 

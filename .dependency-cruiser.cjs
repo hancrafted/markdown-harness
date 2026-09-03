@@ -77,6 +77,31 @@ module.exports = {
       from: { pathNot: `^${R}/[^/]+/tests/` }, // importer is not itself a test
       to: { path: `^${R}/[^/]+/tests/` },
     },
+    // --- Purity boundary ------------------------------------------------------
+    // A file carrying the deterministic classifier must produce a result that is
+    // a function of its arguments alone. Neither rule below is visible inside a
+    // single file, so eslint cannot hold them: the violating import sits in the
+    // .pure.ts file while the effect it reaches lives somewhere else entirely.
+    //
+    // `tsPreCompilationDeps: true` (in options) is load-bearing here. Without it
+    // a type-only import of an .impure.ts file is erased before these rules run,
+    // and both report success over an edge that exists in the source.
+    {
+      name: 'pure-imports-no-impure',
+      comment:
+        'A .pure.ts file may not import an .impure.ts file. Extracting deterministic logic out of an impure file and then importing that file back is not an extraction: the dependency survives and only the line count moved.',
+      severity: 'error',
+      from: { path: `^${R}/[^/]+/.*\\.pure\\.ts$` },
+      to: { path: `\\.impure\\.ts$` },
+    },
+    {
+      name: 'pure-imports-no-builtin',
+      comment:
+        'A .pure.ts file may not import a platform builtin. A builtin reads the host, and a value read from the host arrives through no argument. This covers node:path deliberately: path.sep and path.join change with the host platform, so they are ambient reads like any other.',
+      severity: 'error',
+      from: { path: `^${R}/[^/]+/.*\\.pure\\.ts$` },
+      to: { dependencyTypes: ['core'] },
+    },
     {
       name: 'no-circular',
       comment: 'No dependency cycles. Scope to `^${R}/` if you want to allow cycles outside packages.',

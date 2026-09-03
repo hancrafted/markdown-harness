@@ -54,7 +54,7 @@ src/packages/
 2. A Package root file MUST be kebab-case with no suffix and no dot. The agent instruction pair named in Decision 1 is exempt.
 3. Every file below a Package root MUST carry exactly one of
    - `.pure` (result is a function of its arguments alone)
-   - `.impure` (everything else: procedures, adapters, compositions)
+   - `.impure` (everything else: procedures, adapters, and the code that wires them)
    - `.types` (exported type declarations, nothing else)
    - `.test` (testing only)
 4. No stacking and no escape: a doubled suffix fails, an unclassified subfolder file fails, and a classified file at a Package root fails.
@@ -121,7 +121,7 @@ src/packages/
 
 **Not mechanically enforced — review duty:** that a name states its subject rather than a mechanism (Decision 4, item 2); that a barrel has not been reintroduced under a legal file name (Decision 1, item 4); that an author stopped rather than guessed when no classifier fit (Decision 5).
 
-**Known reach gap.** The six dependency-cruiser rules hold Decisions 1 and 3 only while `.dependency-cruiser.cjs` sets `tsPreCompilationDeps: true`. Without it dependency-cruiser sees post-compilation edges only, so every `import type` and `export type … from` is erased before the rules run — and `config-contract` is types-only, so all six would cruise it and check nothing while `npm run lint:boundaries` still reported success. Measured 2026-09-02: the flag took the tree from 3 to 7 dependencies cruised. The diagnostic is the dependency count on that line, never the checkmark.
+**Known reach gap.** The six rules named above hold Decisions 1 and 3 only while `.dependency-cruiser.cjs` sets `tsPreCompilationDeps: true`. Without it dependency-cruiser sees post-compilation edges only, so every `import type` and `export type … from` is erased before the rules run — and `config-contract` is types-only, so all six would cruise it and check nothing while `npm run lint:boundaries` still reported success. Measured 2026-09-02: the flag took the tree from 3 to 7 dependencies cruised. The diagnostic is the dependency count on that line, never the checkmark.
 
 **Exceptions:** raise a separate ADR; human approval required.
 

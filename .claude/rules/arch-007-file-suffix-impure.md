@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-007-file-suffix-impure.md
