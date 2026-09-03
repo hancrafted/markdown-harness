@@ -11,6 +11,5 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true
-  },
-  "include": ["src", "tests", "*.ts"]
+  }
 }
