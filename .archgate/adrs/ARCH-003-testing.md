@@ -5,7 +5,7 @@ title: 'Testing'
 domain: architecture
 rules: false
 files: ['**/*.test.ts']
-paths: ['**/*.test.ts']
+paths: ['**/*.test.ts', '**/*.pure.ts']
 description: "What a test file may do and how it is shaped: six behavioural Don'ts that keep green meaningful everywhere, plus a three-block suite split, marked test bodies and two import homes under src/."
 ---
 
@@ -13,7 +13,7 @@ description: "What a test file may do and how it is shaped: six behavioural Don'
 
 ## Context
 
-A test suite is only valuable as long as green means the code is correct and red means the code broke, but authors—especially agents optimizing for a green signal—routinely introduce mocks, skips, and ambient shortcuts that silently destroy that evidence. This ADR establishes universal behavioral boundaries and uniform suite structure so passing tests remain trustworthy proof and unwritten cases stay visible.
+Test-driven development (TDD) and the red-green-refactor cycle are the primary agentic coding practices. Because agents optimizing for a green signal routinely introduce mocks, skips, and ambient shortcuts that destroy test validity, this ADR establishes behavioral boundaries and uniform suite structures to keep passing tests trustworthy proof and missing cases visible.
 
 ## Decision
 
@@ -26,7 +26,6 @@ A test suite is only valuable as long as green means the code is correct and red
 
 1. Under `src/**/*.test.ts`, a top-level suite MUST split into exactly three `describe` blocks — `success cases`, `failure cases`, `edge cases` — each holding at least one test. There is no fourth name.
 2. `describe` MUST NOT nest past two levels; a test MUST NOT sit at file top level.
-3. `.archgate/adrs/*.rules.test.ts` is exempt from 2.1 — a rules test drives one rule function against a hand-built double, where a three-way split is ceremony over evidence. Decision 3 still binds it.
 
 ### 3. Test-body structure
 
