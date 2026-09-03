@@ -31,10 +31,18 @@ n=$(find .claude/skills -type l 2>/dev/null | wc -l | tr -d ' ')
 # A link out of the run directory would reach back into the source repo, which is
 # what makes a run a snapshot rather than a view.
 escapes=0
+# Canonicalise the root too. On macOS /tmp is itself a symlink to /private/tmp, so
+# comparing a resolved target against an unresolved $PWD calls every link an escape.
+ROOT=$(realpath "$PWD")
 while IFS= read -r l; do
-  case "$(cd "$(dirname "$l")" && realpath "$(readlink "$l")" 2>/dev/null)" in
-    "$PWD"/*) ;;
-    *) echo "     escapes: $l"; escapes=$((escapes + 1)) ;;
+  # Read the link before changing directory. $l is relative to the run root, so
+  # once cd has moved, it names nothing and readlink returns empty -- which then
+  # resolves to empty and reads as an escape.
+  target=$(readlink "$l")
+  resolved=$(cd "$(dirname "$l")" && realpath "$target" 2>/dev/null)
+  case "$resolved" in
+    "$ROOT"/*) ;;
+    *) echo "     escapes: $l -> ${resolved:-<unresolvable>}"; escapes=$((escapes + 1)) ;;
   esac
 done < <(find . -type l -not -path './node_modules/*')
 [ "$escapes" -eq 0 ] && ok "no symlink resolves outside the run" || bad "$escapes symlinks escape"
