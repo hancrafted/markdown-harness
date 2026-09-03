@@ -462,6 +462,45 @@ export default tseslint.config(
     },
   },
 
+  // The ablation kit's acceptance template. A vitest suite by shape, and
+  // deliberately NOT named `*.test.ts`: it is vendored material for a repo that
+  // does not exist yet, it never executes here, and the stamp script renames it
+  // on copy the way it already renames the spec.
+  //
+  // The name is what keeps it out of `ARCH-003`'s reach, and that is the point
+  // rather than a dodge. Three of that record's four Disciplines — the
+  // three-block split, the marked body, the two homes — are conventions the
+  // ablation exists to observe an agent adopting or not. A template every arm
+  // reads and none may edit would demonstrate all three, so the governed arm's
+  // record would be scored against an artifact the fixture supplied.
+  //
+  // The BEHAVIOURAL bans are restated here on purpose, because flat config
+  // overrides rather than merges and the `**/*.test.ts` block above never
+  // matches this name. Those are not conventions under test: a mocked or
+  // skipped acceptance suite is broken wherever it runs.
+  //
+  // Scoped to every `.ts` under the kit's test tree, not just the suite files:
+  // the spawn helper beside them is where a clock or a mock would actually be
+  // reached for, and it carries no `describe` to give it away.
+  {
+    files: ['docs/evals/ablation/kit/tests/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...EXPORTED_TYPE_DECLARATION, ...DETERMINISM, ...TEST_BEHAVIOUR],
+      'no-restricted-properties': ['error', ...NONDETERMINISTIC_SOURCES],
+    },
+  },
+
+  // The two size limits, off only for the suite files. The `**/*.test.ts` block
+  // that normally turns them off never matches this name, and a `describe`
+  // holding six cases is one function. The helper keeps the 30-line limit.
+  {
+    files: ['docs/evals/ablation/kit/tests/**/*.acceptance.ts'],
+    rules: {
+      'max-lines-per-function': 'off',
+      'max-lines': 'off',
+    },
+  },
+
   // The exhaustiveness net. `check-file` checks only the files its keys select
   // and reports nothing for a file matching no key, so a file that matches no
   // glob would load no ADR and be silently ungoverned. This block reuses

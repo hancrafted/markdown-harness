@@ -1,0 +1,11 @@
+# A config that must be REJECTED, and the whole corpus of that decision.
+#
+# Like every file under `fixtures/`, this one states its own verdict: naming a
+# module and then governing nothing is a mistake rather than a deliberate no-op,
+# so it comes back as `{ error: 'CONFIG_REJECTED', faults: [...] }` and never
+# as a throw. A program whose config errors arrive as stack traces has two output
+# formats and only one of them is a contract.
+#
+# Expected: one fault, `CONFIG_EMPTY_RULE_LIST` at `frontmatter.rules`, and exit 2.
+frontmatter:
+  rules: []

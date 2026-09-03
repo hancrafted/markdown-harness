@@ -1,0 +1,28 @@
+# governs-everything-config.yaml — the config that makes the WALKER observable.
+#
+# Not an exemplar. No real config would be written this way, and
+# `valid-test-config.yaml` next to it is not one either — see its own header.
+#
+# Every other config fixture governs `docs/...` explicitly, which is what a real
+# config does and is exactly why none of them can see the walker: a file the
+# walker should never have enumerated is also a file no rule selects, so it is
+# invisible either way and the report reads the same whether the walker read it
+# or not. This one selects every markdown file at any depth, so anything the
+# walker enumerates is GOVERNED and lands in the report.
+#
+# One rule, one field, `unknownKeys` left at its default: one violation per file
+# is all that has to be visible.
+#
+# Its verdict, against the corpus the acceptance suite plants for it: exactly ONE
+# governed file, `kept.md`, with one violation on `type`. Everything under
+# `node_modules/` and `.git/`, at any depth, is refused by the walker before a
+# rule is ever consulted.
+
+frontmatter:
+  rules:
+    - ruleId: every-markdown-file
+      path: ['**/*.md']
+      intent: Governs every markdown file the walker enumerates, so that what the walker refuses to enumerate is observable in the report
+      fields:
+        type:
+          presence: required
