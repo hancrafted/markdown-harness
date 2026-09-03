@@ -19,4 +19,5 @@
 - [A fixture never models the treatment](feedback_fixture_never_models_the_treatment.md) — strip what the records ask an agent to produce; when spec and fixture disagree, the fixture moves
 - [RTK-filtered output lies](feedback_rtk_filtered_output_lies.md) — its `diff` calls differing files identical and its `ls` size suffixes break grep anchors; hash instead
 - [Self-describing names beat inherited jargon](feedback_self_describing_over_inherited_jargon.md) — trace the provenance, offer it, expect to lose; then record the translation
+- [Vendored material carries its origin](feedback_vendored_material_carries_its_origin.md) — audit frontmatter too; `disable-model-invocation` made a named skill unreachable
 - [Vacuous green](feedback_vacuous_green.md) — prove a check can fail before trusting it passing; `eval $(guard)` and `| tail && echo ok` both swallow the status

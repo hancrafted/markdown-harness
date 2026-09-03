@@ -26,6 +26,14 @@ appeared in one session:
    commit. Both would have been vacuous by construction.
 5. The two already written into `AGENTS.md`: `archgate check` `total: 0` means nothing
    was in scope, and `dependency-cruiser` prints its checkmark over an empty graph.
+6. `verify-run.sh` printed **"all checks passed"** on a mint whose own `npm run verify`
+   was red on two files. It checked symlinks, sweeps and config flags — everything
+   except the gate the artifact is actually graded by. A verifier that does not run the
+   subject's own gate certifies its own opinion, not the subject.
+7. Same session, the inverse shape: a leak sweep scoped to `AGENTS.md` alone reported
+   CLEAN while `PROVENANCE` failed the identical pattern on three lines. Widening it to
+   the tree immediately found a real leak in `governed/vitest.config.ts` — a comment
+   explaining the experiment to its subject. A sweep's scope is part of its claim.
 
 **How to apply:** after writing any check, break the thing it guards and watch it fail.
 The preflight bug cost nothing only because a dirty tree happened to arrive while I was

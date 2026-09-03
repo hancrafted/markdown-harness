@@ -23,7 +23,16 @@ sometimes partially. On 2026-09-03 (wayfinder #8) he added the rest: a 4-questio
 options was too much surface, and options described rather than shown cost him a mental
 reconstruction he should not have to do.
 
-**How to apply:** Any `/grill`, `/grill-with-docs`, `/grill-me`, or wayfinder round in this repo.
+**The format is not just for grilling rounds.** On 2026-09-03, mid-session on
+`prepare-ablation-run` feedback, Han cut a long prose answer with "too much text and too hard to
+read. List questions with options and recommendation one by one." The answer had the right content
+and the wrong shape: findings and questions braided together across many paragraphs, so the
+decisions he actually had to make were buried in evidence he had not asked to re-read. Any reply
+that asks him for more than one decision takes the numbered shape — question, options, arrow,
+recommendation — with the evidence either above it in its own section or cut entirely.
+
+**How to apply:** Any `/grill`, `/grill-with-docs`, `/grill-me`, or wayfinder round in this repo,
+and any reply carrying multiple open decisions.
 State a real recommendation for every question — a question without one is unfinished work.
 `AskUserQuestion` stays fine for a genuine either/or outside a grilling round.
 See [[orient-before-grilling]], [[name-adrs-by-id-plus-slug]] and [[han-operator-author]].

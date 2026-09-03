@@ -43,6 +43,14 @@ already seen a hit in ten minutes earlier, which is the only reason I caught it.
 (capital) or `find -L`, and when a sweep of a directory you know has files comes back empty, run
 `ls -l` before believing it.
 
+**A sweep over mixed provenance needs one pattern per surface.** On 2026-09-03 the run-repo leak
+sweep used a single pattern across the whole tree and hit a false positive immediately: a GEN-003
+rule message saying "its `-line` and `-next-line` variants" — ordinary English in a file copied
+verbatim from this repo. The fix was not to weaken the pattern but to split by provenance: material
+this tooling **authors** gets the strict pattern, material **copied** from elsewhere gets only the
+one word that could not appear innocently. A single pattern over mixed provenance is forced to
+choose between false positives on the copied half and catching nothing on the authored half.
+
 Sibling failure, one level down: [[feedback_evaluate_arrays_never_grep_them]] — grep undercounting
 a `.map()`-built array. All three are the same mistake: grep's answer is only as wide as its scope,
 and it reports a narrow scope and an empty subject identically.
