@@ -87,8 +87,23 @@ def drop_block(text: str, glob: str) -> str:
     return text[:start] + text[end:]
 
 
+# The governance layer is stamped scaffold, not run output, so a governed run
+# excludes it from its own lint gate exactly as this repository does. Dropping the
+# entries below without adding this one leaves a governed run opening on 38 errors
+# in files it never authored -- a forced violation, which is a fixture defect.
+GOVERNED_IGNORE = "      '.archgate/**',\n"
+GOVERNED_ANCHOR = "      '.worktrees/**',\n"
+
+
+def add_governed_ignore(text: str) -> str:
+    if GOVERNED_ANCHOR not in text:
+        raise SystemExit("strip-governance: no ignores anchor for the governed overlay")
+    return text.replace(GOVERNED_ANCHOR, GOVERNED_ANCHOR + GOVERNED_IGNORE, 1)
+
+
 def main() -> None:
     src, dst, kind = sys.argv[1], sys.argv[2], sys.argv[3]
+    variant = sys.argv[4] if len(sys.argv) > 4 else ""
     text = open(src, encoding="utf-8").read()
 
     if kind == "eslint":
@@ -102,6 +117,8 @@ def main() -> None:
             if old not in text:
                 raise SystemExit(f"strip-governance: message anchor missed:\n  {old}")
             text = text.replace(old, new)
+        if variant == "governed":
+            text = add_governed_ignore(text)
 
     text = strip_comments(text)
     open(dst, "w", encoding="utf-8").write(text)

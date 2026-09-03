@@ -12,9 +12,9 @@ stack_layers() {
   # Derived at mint time from the live configs rather than stored, so there is no
   # copy here to fall out of step with the originals.
   python3 "$skill_dir/scripts/lib/strip-governance.py" \
-    "$src_repo/eslint.config.mjs" "$run_dir/eslint.config.mjs" eslint >/dev/null
+    "$src_repo/eslint.config.mjs" "$run_dir/eslint.config.mjs" eslint "$variant" >/dev/null
   python3 "$skill_dir/scripts/lib/strip-governance.py" \
-    "$src_repo/.dependency-cruiser.cjs" "$run_dir/.dependency-cruiser.cjs" depcruise >/dev/null
+    "$src_repo/.dependency-cruiser.cjs" "$run_dir/.dependency-cruiser.cjs" depcruise "$variant" >/dev/null
   [ "$variant" = "governed" ] || return 0
 
   rsync -aL "$skill_dir/assets/layers/governed/" "$run_dir/"

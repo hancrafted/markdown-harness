@@ -24,13 +24,13 @@ Then **state, rather than ask**, the spec path you will stamp:
 `docs/evals/ablation/implementation-spec.md`. It has one canonical answer, so confirm it and move
 on; take an override if the operator offers one.
 
-Everything else is derived: the date, the `adr-ablation` slug, and the next free run number for that
+Everything else is derived: the date, the `mh` slug, and the next free run number for that
 date.
 
 ## 2. Refuse a drifted kit
 
 ```sh
-sh scripts/preflight.sh --spec <path>
+bash scripts/preflight.sh --spec <path>
 ```
 
 This checks two things: that this repository is clean at the declared source commit, and that the
@@ -44,7 +44,7 @@ what drifted, and mint nothing.
 ## 3. Mint
 
 ```sh
-sh scripts/prepare-run.sh --variant <variant> --model <model> --spec <path>
+bash scripts/prepare-run.sh --variant <variant> --model <model> --spec <path>
 ```
 
 This is the only script that writes. It prints the run directory and the launch line.
@@ -52,17 +52,35 @@ This is the only script that writes. It prints the run directory and the launch 
 ## 4. Check the mint
 
 ```sh
-sh scripts/verify-run.sh <run-directory>
+bash scripts/verify-run.sh <run-directory>
 ```
 
 Report its output verbatim, including anything it flags. The checks that matter most are the ones
 whose failure is silent: that `.claude/rules/` entries are real symlinks rather than the copies
-`rsync -aL` would leave, that no symlink resolves outside the run directory, and — for
-`checks-only` and `governed` — that the boundary check reports a **non-zero dependency count**, since
-zero means it cruised nothing and proved nothing.
+`rsync -aL` would leave, that no symlink resolves outside the run directory, that the leak sweep
+covers the whole tree rather than one file, and that every gate except the acceptance suite opens
+green — the suite is red by design until the run builds the thing.
+
+Do **not** expect a non-zero dependency count here. `src/` is empty at mint, so cruising zero is
+correct and proves nothing either way; what is checkable now is that `tsPreCompilationDeps: true`
+is set, without which the tool erases every `import type` and prints a green checkmark over an
+empty graph. The non-zero assertion belongs to scoring, over an output tree.
 
 ## 5. Hand over
 
 Tell the operator the directory and this, and nothing about what is being measured:
 
 > Open a harness session in `<directory>` and type `start`.
+
+The variant is **not** in the run directory's name, because the harness stamps the working directory
+into the agent's context every turn. It is in the sidecar beside the run and in `by-variant/`, both
+outside any run tree. Report those two paths to the operator, never into the run.
+
+## 6. After the session
+
+```sh
+bash scripts/collect-metrics.sh <run-directory>
+```
+
+Claude Code's figures are recoverable from its transcript at any later time. Antigravity's are not
+recoverable at all, so an interactive Antigravity run reports the floor by design, not by failure.

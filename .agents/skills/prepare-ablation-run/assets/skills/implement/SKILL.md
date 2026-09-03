@@ -1,7 +1,6 @@
 ---
 name: implement
-description: 'Implement a piece of work based on a spec or set of tickets.'
-disable-model-invocation: true
+description: 'Build the work a spec or set of tickets describes, test-first, reviewing before finishing. Use when starting a build from a specification, working through tickets, or asked to implement or add a feature.'
 ---
 
 Implement the work described by the user in the spec or tickets.
