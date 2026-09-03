@@ -22,6 +22,5 @@ spec_sha: $7
 source_sha: $8
 kit_sha: $9
 started: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-scaffold_commit:
 EOF
 }

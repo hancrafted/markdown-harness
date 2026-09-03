@@ -12,7 +12,7 @@ now_iso=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 kv() { sed -n "s/^$1: //p" PROVENANCE 2>/dev/null | head -1; }
 
 started=$(kv started)
-base=$(kv scaffold_commit)
+base=$(git rev-parse scaffold 2>/dev/null || git rev-list --max-parents=0 HEAD 2>/dev/null || echo "")
 
 echo "## Telemetry"
 echo
@@ -24,7 +24,7 @@ echo "### Identity"
 echo
 echo "| key | value |"
 echo "| --- | --- |"
-for k in run_id model harness spec_sha source_sha scaffold_commit started; do
+for k in run_id model harness spec_sha source_sha started; do
   echo "| $k | $(kv "$k") |"
 done
 
@@ -55,7 +55,7 @@ if [ -n "${base:-}" ] && git rev-parse --verify "$base" >/dev/null 2>&1; then
   echo
   git --no-pager diff --numstat "$base" HEAD
 else
-  echo "no scaffold commit recorded in PROVENANCE; churn unavailable"
+  echo "no scaffold ref and no root commit; churn unavailable"
 fi
 echo '```'
 

@@ -53,25 +53,23 @@ write_provenance "$RUN_DIR" "$RUN_ID" "$VARIANT" "$MODEL" "$HARNESS" \
 
 cd "$RUN_DIR"
 git init -q
-git add -A
-git -c user.name=scaffold -c user.email=scaffold@local commit -qm "scaffold: $RUN_ID"
-SCAFFOLD=$(git rev-parse HEAD)
 
-# Without this the base is origin/main, which no fresh run has, so archgate scopes
-# to zero changed files and reports total: 0 -- which reads as a pass and is not one.
+# archgate ships baseBranch: origin/main, which no fresh run has. Left alone it
+# scopes to zero changed files and reports total: 0 -- which reads as a pass and
+# is not one. A ref name rather than a sha, so it survives any later rewrite.
 if [ -f .archgate/config.json ]; then
-  python3 - "$SCAFFOLD" <<'PY'
-import json, sys, pathlib
+  python3 - <<'CFG'
+import json, pathlib
 p = pathlib.Path(".archgate/config.json")
 d = json.loads(p.read_text())
-d["baseBranch"] = sys.argv[1]
+d["baseBranch"] = "scaffold"
 p.write_text(json.dumps(d, indent=2) + "\n")
-PY
+CFG
 fi
-sed -i '' "s/^scaffold_commit:.*/scaffold_commit: $SCAFFOLD/" PROVENANCE
+
 git add -A
-git -c user.name=scaffold -c user.email=scaffold@local commit -q --amend --no-edit
+git -c user.name=scaffold -c user.email=scaffold@local commit -qm "scaffold: $RUN_ID"
+git branch scaffold
 SCAFFOLD=$(git rev-parse HEAD)
-sed -i '' "s/^scaffold_commit:.*/scaffold_commit: $SCAFFOLD/" PROVENANCE
 
 report_run "$RUN_DIR" "$VARIANT" "$MODEL" "$spec_sha" "$SCAFFOLD"
