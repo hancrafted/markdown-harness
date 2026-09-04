@@ -31,6 +31,13 @@ decisions he actually had to make were buried in evidence he had not asked to re
 that asks him for more than one decision takes the numbered shape — question, options, arrow,
 recommendation — with the evidence either above it in its own section or cut entirely.
 
+**Recurred 2026-09-04** (ablation-runs feedback grill). Rounds 1 and 2 were dense: 40-word
+sentences, findings braided into the question bodies, evidence quoted at length before the ask.
+Han invoked `/wait-what` — "simpler and shorter phrases, provide examples, keep the /grilling
+format". Rule 4 and rule 5 are the ones that slip when the evidence is rich. When a round carries
+a lot of proof, put the proof in its own section above the questions, then write the questions
+short.
+
 **How to apply:** Any `/grill`, `/grill-with-docs`, `/grill-me`, or wayfinder round in this repo,
 and any reply carrying multiple open decisions.
 State a real recommendation for every question — a question without one is unfinished work.
