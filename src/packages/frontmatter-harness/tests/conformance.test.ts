@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import type { AllowedValue, FieldConstraints, Format, MarkdownHarnessConfig } from '../index';
+import type { AllowedValue, FieldConstraints, Format, MarkdownHarnessConfig } from '../../config-contract/index.ts';
 
 const CONFIG_URL = new URL('../../../../fixtures/conformance/valid-test-config.yaml', import.meta.url);
 const config = parse(readFileSync(CONFIG_URL, 'utf8')) as MarkdownHarnessConfig;
@@ -51,6 +51,9 @@ const CONSTRAINT_KEYS = [
  */
 const NON_PAYLOAD_KEYS: readonly string[] = ['ruleId', 'path', 'fileName', 'excludeFiles', 'intent', 'frontmatter'];
 const PAYLOAD_KEYS = RULE_KEYS.filter((key) => !NON_PAYLOAD_KEYS.includes(key));
+
+/** Every key one `allowed` entry may carry. */
+const ALLOWED_ENTRY_KEYS: readonly string[] = ['value', 'intent'];
 
 const FORMATS: Format[] = ['datetime', 'uri', 'actor'];
 
@@ -124,6 +127,20 @@ describe('valid-test-config.yaml is a complete test surface', () => {
       const known: readonly string[] = RULE_KEYS;
       // ACT
       const unknown = [...everyRuleKey()].filter((key) => !known.includes(key));
+      // ASSERT
+      expect(unknown).toEqual([]);
+    });
+
+    it('carries no allowed-entry key outside the vocabulary', () => {
+      // The assertion that was missing while five intents sat truncated. An
+      // unquoted YAML flow scalar splits on its own commas, so
+      // `{ value: log, intent: A history, newest first. }` yields a halved
+      // `intent` and a null key named after the tail. Every presence check
+      // still passes, which is exactly why presence checks were not enough.
+      // ARRANGE
+      const known = ALLOWED_ENTRY_KEYS;
+      // ACT
+      const unknown = everyAllowedValue().flatMap((entry) => Object.keys(entry).filter((key) => !known.includes(key)));
       // ASSERT
       expect(unknown).toEqual([]);
     });

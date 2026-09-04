@@ -2,6 +2,9 @@
   "name": "markdown-harness",
   "version": "0.0.0",
   "private": true,
+  "bin": {
+    "mh": "src/packages/cli/cli.ts"
+  },
   "type": "module",
   "scripts": {
     "format": "prettier --write .",
