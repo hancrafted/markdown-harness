@@ -291,3 +291,11 @@ human may approve adding it. It screens candidates _out_; it never admits one, a
 every signal is not a substitute for the human decision. Every signal is a live network fact,
 so applying the bar is a review duty, never a mechanical check.
 _Avoid_: dependency policy, vetting checklist, approval gate
+
+### Evals
+
+**Ablation**:
+The controlled study that measures whether the ADRs change what an agent builds. Otherwise
+identical repositories receive different amounts of governance, and their output is compared
+against one frozen spec. The subject under measurement is the ADRs, never `markdown-harness`.
+_Avoid_: experiment, A/B test, benchmark, trial
