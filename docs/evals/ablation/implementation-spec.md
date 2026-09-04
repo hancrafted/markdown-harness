@@ -56,9 +56,20 @@ Rules of the surface:
    An unknown flag is the same usage error. Conflicting input is refused rather than resolved by
    precedence; a _missing_ command is not conflicting input, which is why it has a default and
    they do not.
+
+   The same refusal covers three shapes of malformed argv, all of them conflicting input: a flag
+   **given twice** (`--root a --root b`), a flag written with **no value**, and a value that
+   **begins `--`**. Last-one-wins on a repeated flag would silently discard what the caller asked
+   for, and this tool answers about directories — discarding a `--root` quietly is how a check
+   reports on the wrong corpus.
+
 2. **One output channel.** The response is written to stdout as JSON (2-space indentation, trailing
    newline). stderr carries usage text only. No other rendering, no verbosity flags.
-3. **Exit codes are a contract.**
+3. **Exit codes are a contract.** Code 2 has two flavours and they are told apart by the output
+   channel, never by the number: a **usage error** puts usage text on stderr and nothing on
+   stdout, while a **rejected config** puts a `CONFIG_REJECTED` response on stdout (§4.5) and
+   nothing on stderr. A caller that reads only the exit code cannot distinguish them, and does
+   not need to; a caller that reads stdout always can.
 
    | code | meaning                                                                                          |
    | ---- | ------------------------------------------------------------------------------------------------ |
@@ -75,6 +86,15 @@ Rules of the surface:
    Dot-directories are not enumerated (`*` does not match a leading dot). `root` and `config`
    travel in the response **exactly as the caller wrote them**, never resolved, so a stored
    response compares equal on another machine.
+
+   A `--root` that does not exist, or that cannot be read as a directory, is a **usage error**
+   (exit 2) — not an empty corpus, and never an uncaught exception. `--check` over a mistyped
+   root must not answer `invalidFiles: 0`: a tool that reports "nothing wrong" about a directory
+   it never found has produced exactly the false negative §4.7 forbids elsewhere. Symlinked
+   directories inside the corpus are **not** followed.
+
+   Nothing here is a statement about the config: `--root` is part of the invocation, so a bad one
+   fails as usage, while a bad `--config` fails through §3.5's catalog.
 
 ## 3. The config language
 
@@ -158,8 +178,28 @@ trap this vocabulary exists to avoid.
 | `allowed`                 | any              | a closed set of records `{ value, intent? }`. Replaces wholesale, never appends. This is where a repo's `type` vocabulary lives — there is no other spelling                                |
 | `intent`                  | —                | why _this_ constraint exists. Optional (mandatory beside `pattern`); wins over the rule's `intent`; present-but-empty is a config error                                                     |
 
+The three `format` grammars in full, because "form only" is not a grammar and four independent
+readings of the line above produced four different validators:
+
+- **`datetime`** — a date, `T`, a time to full seconds, an optional fractional part, then an
+  explicit offset of `Z` or `±hh:mm`. Lowercase `t`/`z` are accepted, the leniency RFC 3339
+  grants. **Form only, and that means no calendar arithmetic**: `2026-02-30T00:00:00Z` passes,
+  and `2026-13-45` fails for want of a time and an offset rather than for naming month 13. A
+  validator that reaches for `Date` is checking something this constraint does not claim.
+- **`uri`** — one non-empty token with no whitespace in it. "A path or URI" is the whole of it:
+  no scheme list, no host rules, no percent-encoding check.
+- **`actor`** — exactly one of `human:<id>`, `process:<id>`, or `<producer>/<version>` with
+  exactly one slash. `human` and `process` are **reserved producers**: `human/hancrafted` is a
+  mismatch, because the slash form is for tools and those two names belong to the colon form.
+  That rule was previously discoverable only by reading a fixture, which is not where a rule
+  belongs.
+
 Cross-field constraints sit on the rule, naming a **set** of addresses: `exactlyOneOf`, `anyOf`,
-`allOf`. `unknownKeys: allowed | forbidden` (default `allowed`) says whether top-level frontmatter
+`allOf`. An address in such a set counts as **satisfied when it is present and non-empty** — the
+same emptiness `presence: required` uses and `EMPTY_REQUIRED_FIELD` reports, so `title: ''` cannot
+satisfy `allOf: [title, description]`. One definition of "empty" in this document, not two.
+
+`unknownKeys: allowed | forbidden` (default `allowed`) says whether top-level frontmatter
 keys the rule does not name are permitted.
 
 ### 3.4 `intent`: the steering channel
@@ -219,6 +259,29 @@ serve it", "malformed", and "well-formed but wrong".
 `frontmatter.rules`, `frontmatter.rules[3].intent`, `frontmatter.rules[3].fields.slug.pattern`.
 Positional on purpose: identity is `ruleId`'s job in reports; a location in a file the Operator
 has open is found by index.
+
+The catalog is closed, so the structural mistakes it does not name individually still resolve to
+one of the fourteen. These four are named because every independent reading of this section
+reached for `CONFIG_INVALID_VALUE` and then recorded the guess as a spec gap:
+
+| mistake                                                         | code                   | `location`                    |
+| --------------------------------------------------------------- | ---------------------- | ----------------------------- |
+| `ruleId` missing, or present and not a string                   | `CONFIG_INVALID_VALUE` | `frontmatter.rules[i].ruleId` |
+| `rules` present but not a list (`rules: "oops"`)                | `CONFIG_INVALID_VALUE` | `frontmatter.rules`           |
+| `path`/`fileName`/`excludeFiles`/a cross-field set, wrong shape | `CONFIG_INVALID_VALUE` | the key as written            |
+| `pattern` holding a string that will not compile as a regex     | `CONFIG_INVALID_VALUE` | `…fields.<addr>.pattern`      |
+
+`CONFIG_EMPTY_RULE_LIST` keeps its literal scope — no `frontmatter:` section, or `rules: []` —
+and does not stretch to cover a `rules` that is present and the wrong type.
+
+Two locations that a single position cannot make obvious, fixed here rather than left to taste:
+
+- **`CONFIG_DUPLICATE_RULE_ID` points at the later occurrence** (`frontmatter.rules[j].ruleId`,
+  the higher index). One position is available and the first occurrence is not the mistake.
+- **`CONFIG_MISSING_RULE_INTENT` points at the rule object** (`frontmatter.rules[i]`), not at
+  `frontmatter.rules[i].intent`. A key that was never written has no position of its own; this is
+  the difference from `CONFIG_EMPTY_INTENT`, which points at the `.intent` the Operator did
+  write.
 
 ## 4. Output contracts
 
@@ -461,7 +524,12 @@ code plus location is a complete basis for the sentence.
 ### 4.6 Violations
 
 ```ts
-export type Violation = FieldViolation | UnknownKeyViolation | FrontmatterForbiddenViolation | CrossFieldViolation;
+export type Violation =
+  | FieldViolation
+  | UnknownKeyViolation
+  | FrontmatterForbiddenViolation
+  | FrontmatterUnparseableViolation
+  | CrossFieldViolation;
 
 /** A constraint on one field failed. */
 export interface FieldViolation {
@@ -496,6 +564,16 @@ export interface FrontmatterForbiddenViolation {
   value?: FieldValue;
   violation: 'FRONTMATTER_FORBIDDEN';
   requirement: { frontmatter: 'forbidden' };
+}
+
+/**
+ * The block exists and does not parse (§4.7). File-level, and outside the eighteen: no field
+ * address is at fault and no config fragment failed, so neither `value` nor `requirement` is
+ * present — the keys are unknowable and nothing in the config was disobeyed.
+ */
+export interface FrontmatterUnparseableViolation {
+  field: null;
+  violation: 'FRONTMATTER_UNPARSEABLE';
 }
 
 /** A set constraint failed. `satisfied` is the set, not a count. */
@@ -537,6 +615,26 @@ export type FieldValue =
 `value` key at all, so `value: null` keeps its literal meaning. Containers contribute their size,
 never their contents — `sources` is unbounded and violations repeat per file across a corpus.
 
+**Order within one file's `violations` array**, since `--check` orders files by the walker and
+`--query` orders fields by address, but neither says anything about what happens inside a single
+file:
+
+1. **field violations**, in the config's own `fields:` declaration order; per address, presence
+   before shape before `allowed`;
+2. **cross-field violations**, in the order `exactlyOneOf`, `anyOf`, `allOf`;
+3. **unknown-key violations**, in the frontmatter's own key order.
+
+Declared-field findings group together and the not-declared finding goes last. The choice is
+arbitrary; being written down is not. Four independent implementations produced three different
+orders and every one of them recorded the ordering as unspecified.
+
+**An entry address over a value that is not a list** — `sources[].id` where the file says
+`sources: "text"` — reports one `CONSTRAINT_SHAPE_MISMATCH` at the address as written, and no
+per-entry violations. Not silence: the config asked a question the data cannot answer, and a
+constraint that reports nothing when it meets the wrong shape is a false negative. Where the
+named field is **absent** rather than wrongly shaped, per-entry constraints are vacuous and any
+container-level constraint on `sources` itself is what reports.
+
 ### 4.7 Violation codes
 
 Discriminated on the **outcome**, never the constraint alone: `presence` fails three
@@ -560,17 +658,46 @@ fails in opposite directions.
 | `FRONTMATTER_FORBIDDEN`                                           | `frontmatter: forbidden` — and the file has frontmatter                                                                                                                                                                                              |
 | `EXACTLY_ONE_OF_NONE_PRESENT` / `EXACTLY_ONE_OF_MULTIPLE_PRESENT` | `exactlyOneOf`, failing in its two opposite directions                                                                                                                                                                                               |
 | `ANY_OF_UNSATISFIED`                                              | `anyOf`, none satisfied                                                                                                                                                                                                                              |
-| `ALL_OF_UNSATISFIED`                                              | `allOf`, at least one missing                                                                                                                                                                                                                        |
+| `ALL_OF_UNSATISFIED`                                              | `allOf`, at least one missing or empty (§3.3)                                                                                                                                                                                                        |
 
 Eighteen codes. Ship them as a `const` object with a derived union type, not a TypeScript `enum` —
 Node's type-stripping runtime rejects `enum` outright. These carry no `CONFIG_` prefix by design:
 the audience is the Contributor's agent, and every one of them is fixable by editing markdown.
 
-Two parsing edges the codes do not cover, and their required behavior: a file whose frontmatter
-block exists but does not parse as YAML is a **fault of its own kind** and must never read as
-"absent" — a broken block that read as absent would make a `frontmatter: forbidden` rule _pass_ on
-it, and a silent false negative is the one bug a trust tool cannot have. Report it per file (shape:
-your choice, recorded in `RESULTS.md`); never silently skip.
+Two parsing edges the eighteen do not cover. Both are **`FRONTMATTER_UNPARSEABLE`** (§4.6), a
+file-level fault of its own kind, and the count above stays at eighteen because this one is not
+addressed to a field:
+
+1. the block exists but the bytes between the fences are **not valid YAML** — including a fence
+   that never closes;
+2. the block parses to **something other than a mapping** — a bare scalar, or a YAML list.
+
+They share one code because they share one fix and one danger: there is no top-level key to read
+from either. A broken block that read as "absent" would make a `frontmatter: forbidden` rule
+_pass_ on it, and a silent false negative is the one bug a trust tool cannot have.
+
+Precedence, and the details a shape has to settle:
+
+- Under a **constraining** rule, `FRONTMATTER_UNPARSEABLE` is reported **alone**: every field,
+  `unknownKeys` and cross-field check is skipped, because none of them are answerable against
+  data that never parsed.
+- Under **`frontmatter: forbidden`**, the rule's complaint — that there is a block at all — is
+  true whether or not the block is well-formed, so `FRONTMATTER_FORBIDDEN` is what fires, with
+  its `value` key **omitted** (the block's keys cannot be extracted from bytes that did not
+  parse). `FRONTMATTER_UNPARSEABLE` is not additionally reported: deletion is the fix either way.
+- An **immediately-closed fence** (`---` then `---`) is not this case. It parses, to `{}`: the
+  file has frontmatter for a `forbidden` rule, and an empty mapping for a constraining one — so
+  `presence: required` reports `MISSING_REQUIRED_FIELD` rather than being skipped.
+- A file with **no fence at all** is likewise not this case. It reads as `{}` under a
+  constraining rule, which is what lets `presence: required` fire on a file that never opened a
+  block. Only "exists and will not parse" is unparseable.
+
+This was previously delegated ("shape: your choice"). It is settled here because a delegated
+shape cannot be compared: four implementations produced `FRONTMATTER_MALFORMED`,
+`FRONTMATTER_NOT_YAML` twice and `FRONTMATTER_UNPARSEABLE`, two of them disagreeing about the
+`forbidden` precedence above, and the acceptance corpus exercises none of it — every fixture with
+frontmatter parses. Nothing about §6's frozen verdict changes: the code is outside the eighteen
+and no corpus file reaches it.
 
 ## 5. Example transcripts
 
@@ -673,7 +800,9 @@ The kit ships in the repo and is **not yours to edit**:
   `--root` with `--query`, an unknown flag), a config path that does not exist
   (`CONFIG_NOT_FOUND`, exit 2), and the invisible-query answer.
 
-`npm run verify` runs format check, typecheck, the acceptance suite, and your tests. Green means
+`npm run verify` is this repository's gate. It runs the acceptance suite and your tests among
+other checks — **read the script rather than assuming its contents**, because what else it runs
+differs from repository to repository and the list is not this document's to state. Green means
 done.
 
 ## 7. Testing
@@ -688,9 +817,15 @@ keep the tests that describe behaviour a caller depends on, not the ones that de
 code happens to be arranged.
 
 Work in vertical slices. Take one command end to end — read a config, resolve one path, emit one
-response, exit with one code — before broadening to the next constraint kind. Each slice ends with
-`npm run verify` green, not with the next slice started. Run it often; the alternative is
-discovering the contract and the corpus disagree after everything is written.
+response, exit with one code — before broadening to the next constraint kind.
+
+Each slice ends green, but not on the whole gate from the first slice. The acceptance suite spawns
+the CLI and asserts all three commands, so it stays red until the last of them exists: that is the
+suite working, not your slice failing. So the per-slice bar is **your own tests, the typecheck, and
+every part of `npm run verify` except the acceptance suite**; run the full gate from the first
+slice that carries one command end to end, and keep it green from there. Run it often either way —
+the alternative is discovering that the contract and the corpus disagree after everything is
+written.
 
 Where tests live, how they are named, how they split, and which runner assertions you reach for are
 yours.
