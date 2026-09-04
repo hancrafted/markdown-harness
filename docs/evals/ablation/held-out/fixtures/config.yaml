@@ -1,0 +1,42 @@
+# Held-out config. Reaches only the behaviours the spec pins and the frozen corpus
+# never exercises. Most specific rule first, catch-all last.
+frontmatter:
+  rules:
+    - ruleId: prose-only
+      intent: 'These files are prose; a frontmatter block here is a mistake.'
+      path: ['forbidden/**']
+      frontmatter: forbidden
+
+    - ruleId: entries
+      intent: 'Sources are machine-read per entry, so every entry carries an id.'
+      path: ['entries/**']
+      fields:
+        sources[].id:
+          presence: required
+
+    - ruleId: crossfield
+      intent: 'A document claims a title and a description, and both must say something.'
+      path: ['crossfield/**']
+      fields:
+        title:
+          maxLength: 20
+        description:
+          maxLength: 200
+      allOf: [title, description]
+      unknownKeys: forbidden
+
+    - ruleId: formats
+      intent: 'Provenance is machine-read, so its formats are exact.'
+      path: ['formats/**']
+      fields:
+        generated.by:
+          format: actor
+        generated.at:
+          format: datetime
+
+    - ruleId: everything
+      intent: 'Every remaining document states its type.'
+      path: ['**/*.md']
+      fields:
+        type:
+          presence: required

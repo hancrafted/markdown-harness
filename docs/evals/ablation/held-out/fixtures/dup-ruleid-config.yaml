@@ -1,0 +1,8 @@
+frontmatter:
+  rules:
+    - ruleId: same
+      intent: 'First holder of the id.'
+      path: ['**/*.md']
+    - ruleId: same
+      intent: 'Second holder of the id, and the one at fault.'
+      path: ['other/**']

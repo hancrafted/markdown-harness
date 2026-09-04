@@ -1,0 +1,4 @@
+frontmatter:
+  rules:
+    - intent: 'A rule with no ruleId at all.'
+      path: ['**/*.md']
