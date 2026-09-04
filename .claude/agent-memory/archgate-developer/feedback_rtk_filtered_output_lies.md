@@ -1,6 +1,6 @@
 ---
 name: rtk-filtered-output-lies
-description: RTK's diff filter reports "Files are identical" for files whose hashes differ, its ls appends size suffixes that break grep anchors, and its ls can report an existing directory as "No such file or directory" — hash, byte-count, or `rtk proxy` instead
+description: Filtered output lies in every direction — `diff` says "identical" for differing hashes, `ls` breaks grep anchors and omits whole entries, an existing directory reads "No such file", and file reads come back with keywords dropped or a block replaced by a `[↑4L same as msg N]` placeholder; hash, byte-count or `rtk proxy` instead, and tell subagents to `cat`
 metadata:
   type: feedback
 ---
@@ -37,12 +37,24 @@ dropped and prose mangled, and had to re-fetch byte-exact with `cat -n` before i
 trust line numbers. So the corruption reaches the content of files, not only the shape of
 directory output, and a line number quoted from a filtered read may point at nothing.
 
+It has a second, worse form: a whole block replaced by a back-reference placeholder like
+`[↑4L same as msg N]`. On 2026-09-04 a review subagent hit this on `check.mjs` and
+`prepare-run.sh`. Dropped keywords at least look damaged; a placeholder looks like a
+successful read of a file that repeats itself, so the reader fills in the block from
+memory of an earlier message that may not be the same code.
+
 **How to apply:** for content identity use `shasum -a 256` and `wc -c`, never `diff`. For
 counts, list the files explicitly and count what is printed rather than grepping an anchored
 pattern against filtered `ls`. For **existence or directory listings**, use `rtk proxy ls`
 (or `test -e` / `find`) — a bare `ls` saying "No such file" needs a raw second opinion before
 you report it or conclude drift. If a number or an absence is going into a ticket, a record,
 or a claim to Han, reproduce it with a tool whose output you have inspected raw.
+
+**When delegating, say this in the prompt.** Two subagents have now rediscovered the
+corruption on their own and spent turns re-reading before they could quote a line number —
+one of them spent part of its report telling me about the tooling instead of the review.
+A review or audit prompt should instruct the subagent to read with `cat`/`sed -n` from the
+start, so the finding arrives on first read rather than after a detour.
 
 Same family as [[reproduce-measurement-before-calling-drift]] and
 [[evaluate-arrays-never-grep-them]] — the cause differs each time, but the lesson is that
