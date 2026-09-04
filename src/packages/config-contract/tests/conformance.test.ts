@@ -17,6 +17,7 @@ const rules = config.frontmatter?.rules ?? [];
 
 /** Every key a rule may carry. Grows only by deliberate amendment. */
 const RULE_KEYS = [
+  'ruleId',
   'path',
   'fileName',
   'excludeFiles',
@@ -48,7 +49,7 @@ const CONSTRAINT_KEYS = [
  * in `RULE_KEYS` is payload, derived rather than listed again — so a payload key
  * added above is covered here without a second edit.
  */
-const NON_PAYLOAD_KEYS: readonly string[] = ['path', 'fileName', 'excludeFiles', 'intent', 'frontmatter'];
+const NON_PAYLOAD_KEYS: readonly string[] = ['ruleId', 'path', 'fileName', 'excludeFiles', 'intent', 'frontmatter'];
 const PAYLOAD_KEYS = RULE_KEYS.filter((key) => !NON_PAYLOAD_KEYS.includes(key));
 
 const FORMATS: Format[] = ['datetime', 'uri', 'actor'];
@@ -177,6 +178,15 @@ describe('valid-test-config.yaml obeys the config-validity rules', () => {
       for (const count of counts) expect(count).toBe(1);
     });
 
+    it('gives every rule a ruleId', () => {
+      // ARRANGE
+      const ids = rules.map((rule) => rule.ruleId);
+      // ACT
+      const missing = ids.filter((id) => !id);
+      // ASSERT
+      expect(missing).toEqual([]);
+    });
+
     it('gives every rule an intent', () => {
       // ARRANGE
       const intents = rules.map((rule) => rule.intent);
@@ -197,6 +207,15 @@ describe('valid-test-config.yaml obeys the config-validity rules', () => {
   });
 
   describe('failure cases', () => {
+    it('gives no two rules the same ruleId', () => {
+      // ARRANGE
+      const ids = rules.map((rule) => rule.ruleId);
+      // ACT
+      const repeated = ids.filter((id, index) => ids.indexOf(id) !== index);
+      // ASSERT
+      expect(repeated).toEqual([]);
+    });
+
     it('leaves a frontmatter-forbidden rule with no payload', () => {
       // ARRANGE
       const forbidding = rules.filter((rule) => 'frontmatter' in rule);
