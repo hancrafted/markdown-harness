@@ -207,9 +207,13 @@ echo
 ( cd "$RUN_DIR" 2>/dev/null && {
   pure=$(git ls-files 'src/**/*.pure.ts' 2>/dev/null | wc -l | tr -d ' ')
   orphan=0
-  for f in $(git ls-files 'src/**/*.pure.ts' 2>/dev/null); do
+  # Read rather than iterate an unquoted substitution: a tracked path holding a
+  # space would word-split into two names, neither of which exists, and the
+  # orphan count would climb for a file that has its sibling.
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
     [ -f "${f%.pure.ts}.test.ts" ] || orphan=$((orphan + 1))
-  done
+  done < <(git ls-files 'src/**/*.pure.ts' 2>/dev/null)
   pkg=$(git ls-files 'src/**/tests/*.test.ts' 2>/dev/null | wc -l | tr -d ' ')
   sib=$(git ls-files 'src/**/*.test.ts' 2>/dev/null | grep -vc '/tests/')
   echo "| metric | value |"
@@ -220,7 +224,90 @@ echo
   echo "| tests as same-name siblings | $sib |"
 } ) || echo "Run tree unreadable; skipped."
 
+# The floor. This used to live in a metrics.sh stamped into the run and appended to
+# RESULTS.md by the agent as its last act. That path is closed: it told the run it
+# was being measured, and it reported a knowingly partial reading -- taken from
+# inside the session, it excluded the commits and the report text that came after
+# it, so every churn figure it ever printed undercounted its own run. Recomputed
+# here instead, from the run tree, after the fact, with nothing to exclude.
 echo
-echo "### Floor (recomputed from the run tree)"
+echo "### Floor (recomputed from the run tree, after the session)"
 echo
-( cd "$RUN_DIR" && sh metrics.sh ) | sed -n '/^### Churn/,$p'
+cd "$RUN_DIR" || { echo "Run tree unreadable; no floor."; exit 0; }
+
+sidecar_kv() { sed -n "s/^$1: //p" "$SIDECAR" 2>/dev/null | head -1; }
+epoch() {
+  # BSD date on macOS, GNU date elsewhere. An unparseable stamp yields empty
+  # rather than a wrong number.
+  date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$1" +%s 2>/dev/null \
+    || date -u -d "$1" +%s 2>/dev/null || true
+}
+
+BASE=$(git rev-parse --verify scaffold 2>/dev/null \
+  || git rev-list --max-parents=0 HEAD 2>/dev/null || true)
+HEAD_SHA=$(git rev-parse --verify HEAD 2>/dev/null || true)
+
+echo "#### Duration"
+echo
+echo "| metric | value |"
+echo "| --- | --- |"
+started=$(sidecar_kv started)
+# The session end is the last commit, not the clock now: this script runs whenever
+# the operator gets to it, and "now" would bill every idle hour to the run. The
+# run is told to commit its report as its last act precisely so this stamp exists.
+ended=$(git --no-pager log -1 --format=%cI 2>/dev/null || true)
+start_epoch=$([ -n "$started" ] && epoch "$started" || true)
+# %ct rather than parsing %cI: git hands over the epoch already, and BSD date's
+# %z wants +0200 where ISO-8601 writes +02:00 -- so every commit made outside UTC
+# read as unparseable and the duration printed "unreadable" next to two timestamps
+# that were plainly right there.
+end_epoch=$(git --no-pager log -1 --format=%ct 2>/dev/null || true)
+echo "| started | ${started:-unrecorded} |"
+echo "| last commit | ${ended:-none} |"
+if [ -n "${start_epoch:-}" ] && [ -n "${end_epoch:-}" ]; then
+  elapsed=$((end_epoch - start_epoch))
+  printf '| wall-clock seconds | %s |\n' "$elapsed"
+  printf '| wall-clock (h:mm:ss) | %d:%02d:%02d |\n' \
+    $((elapsed / 3600)) $(((elapsed % 3600) / 60)) $((elapsed % 60))
+else
+  echo "| wall-clock | unreadable: no start stamp or no commit |"
+fi
+if [ -n "$BASE" ] && [ "$BASE" = "${HEAD_SHA:-}" ]; then
+  echo
+  echo "**HEAD is still the scaffold commit: this run produced nothing.** The duration"
+  echo "above measures the gap to the mint, not a session."
+fi
+
+echo
+echo "#### Churn"
+echo
+echo '```'
+if [ -n "$BASE" ] && [ -n "${HEAD_SHA:-}" ]; then
+  git --no-pager diff --shortstat "$BASE" HEAD
+  echo
+  git --no-pager log --oneline "$BASE"..HEAD | wc -l | tr -d ' ' | sed 's/^/commits: /'
+  echo
+  git --no-pager diff --numstat "$BASE" HEAD
+else
+  echo "no scaffold ref and no root commit; churn unavailable"
+fi
+echo '```'
+
+echo
+echo "#### Inventory"
+echo
+echo "Every tracked file the run authored, with its line count."
+echo
+echo '```'
+git ls-files -- src bin lib 2>/dev/null | while IFS= read -r f; do
+  [ -f "$f" ] && printf '%6s  %s\n' "$(wc -l < "$f" | tr -d ' ')" "$f"
+done
+echo '```'
+
+echo
+echo "#### Entry point"
+echo
+echo '```'
+node -e 'const p=require("./package.json");console.log(JSON.stringify(p.bin ?? null))' 2>/dev/null \
+  || echo "package.json unreadable"
+echo '```'

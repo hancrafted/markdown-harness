@@ -24,12 +24,9 @@ as one final dump.
 Write `RESULTS.md` at this directory's root, in the four parts `SPEC.md` §8 describes. Write it as
 you go — a report assembled at the end reconstructs decisions from the diff.
 
-## Telemetry
+## Finish
 
-Your last action, once `npm run verify` is green and `RESULTS.md` is written:
+Your last action, once `npm run verify` is green: commit everything still uncommitted, `RESULTS.md`
+included. Then stop.
 
-```sh
-sh metrics.sh >> RESULTS.md
-```
-
-Then stop. The script measures the session; it does not ask you to estimate anything.
+The final commit is what marks the build finished, so nothing may sit uncommitted behind it.

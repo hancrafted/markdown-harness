@@ -3,7 +3,8 @@
 # copy-pastable, before any of the provenance they will not act on.
 
 report_run() {
-  local run_dir=$1 variant=$2 model=$3 spec_sha=$4 scaffold=$5 runs_root=$6 skill_dir=$7
+  local run_dir=$1 variant=$2 model=$3 harness=$4 spec_sha=$5 scaffold_sha=$6
+  local scaffold=$7 runs_root=$8 skill_dir=$9
   local run_id
   run_id=$(basename "$run_dir")
   cat <<EOF
@@ -27,8 +28,13 @@ report_run() {
   ---
   variant   $variant
   model     $model
+  harness   $harness
   spec      $spec_sha
   scaffold  $scaffold
+  cohort    $scaffold_sha
   record    $runs_root/$run_id.provenance
+
+  Runs are comparable only within one cohort. Check that hash against the
+  siblings you intend to compare this run with before you launch it.
 EOF
 }

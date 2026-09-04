@@ -15,3 +15,13 @@ docs/workshop/**/raw.md
 # Vendored material for repositories that do not exist yet. Formatting it here would
 # apply this repo's style to files whose style is part of what a run is measured on.
 .agents/skills/prepare-ablation-run/assets/**
+
+# The acceptance kit is pinned by assets/kit.sha256, and the mint refuses to run
+# when the pin and the tree disagree. A reformat here is indistinguishable from
+# tampering: it would refuse every future mint over a change nobody made on purpose.
+docs/evals/ablation/kit/**
+
+# Held-out fixtures are deliberately malformed -- an unclosed fence, YAML that will
+# not parse, a block that is a list. Formatting them would repair the exact defects
+# they exist to present.
+docs/evals/ablation/held-out/fixtures/**

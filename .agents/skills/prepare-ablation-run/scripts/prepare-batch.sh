@@ -9,7 +9,7 @@ set -uo pipefail
 SKILL_DIR=$(cd "$(dirname "$0")/.." && pwd)
 
 SLUG="" MODELS="" VARIANTS="bare,checks-only,governed" REPEAT=1
-SPEC_REL="docs/evals/ablation/implementation-spec.md" HARNESS="unknown"
+SPEC_REL="docs/evals/ablation/implementation-spec.md" HARNESS=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --slug)     SLUG="$2";     shift 2 ;;
@@ -23,6 +23,10 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$SLUG" ]     || { echo "prepare-batch: --slug is required" >&2; exit 2; }
+# Checked here as well as in prepare-run.sh. Left to the delegate, a missing
+# harness fails every cell in turn and prints the same refusal N times, which
+# reads as N problems rather than one missing flag.
+[ -n "$HARNESS" ]  || { echo "prepare-batch: --harness is required, e.g. claude-code" >&2; exit 2; }
 [ -n "$MODELS" ]   || { echo "prepare-batch: --models is required, comma separated" >&2; exit 2; }
 # An empty list yields an empty array, and on bash 3.2 -- the only bash on macOS --
 # expanding one under `set -u` is an unbound-variable error that kills the batch
@@ -82,6 +86,39 @@ echo
 echo "prepare-batch: ${#minted[@]} minted, ${#failed[@]} failed"
 for m in ${minted+"${minted[@]}"}; do echo "  ok   $m"; done
 for f in ${failed+"${failed[@]}"}; do echo "  FAIL $f"; done
+
+# Every cell of one variant must land in one cohort. preflight runs per cell, so a
+# source-repo commit made *between* two cells passes every check and still splits
+# the batch across two treatments -- which is exactly how the 2026-09-03 runs ended
+# up with two different governed arms that both reported a clean mint. Read as a
+# batch-level post-condition, because no single cell can see it.
+RUNS_ROOT="${RUNS_ROOT:-$HOME/Developer/ablation-runs}"
+if [ "${#minted[@]}" -gt 0 ]; then
+  echo
+  echo "Cohorts (scaffold_sha, first 12):"
+  split=0
+  for v in "${variants[@]}"; do
+    shas=""
+    for m in ${minted+"${minted[@]}"}; do
+      # "variant/model  run-id" -- the id is the last field.
+      [ "${m%%/*}" = "$v" ] || continue
+      id=${m##* }
+      s=$(sed -n 's/^scaffold_sha: //p' "$RUNS_ROOT/$id.provenance" 2>/dev/null)
+      shas="$shas$s
+"
+    done
+    shas=$(printf '%s' "$shas" | grep . | LC_ALL=C sort -u)
+    n=$(printf '%s' "$shas" | grep -c . || true)
+    if [ "${n:-0}" -eq 1 ]; then
+      echo "  ok   $v  $(printf '%.12s' "$shas")"
+    elif [ "${n:-0}" -gt 1 ]; then
+      echo "  FAIL $v  $n distinct scaffolds -- this variant is not one treatment"
+      printf '%s\n' "$shas" | sed 's/^/         /'
+      split=1
+    fi
+  done
+  [ "$split" -eq 0 ] || echo "  Do not compare across a split. Re-mint the variant from one source commit."
+fi
 
 # Verifying every mint here would double the batch's runtime on checks the
 # operator may want to read one at a time, so it is named rather than run.

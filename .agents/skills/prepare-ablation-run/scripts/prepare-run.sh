@@ -12,7 +12,7 @@ RUNS_ROOT="${RUNS_ROOT:-$HOME/Developer/ablation-runs}"
 . "$SKILL_DIR/scripts/lib/report.sh"
 
 VARIANT="" MODEL="" SLUG=""
-SPEC_REL="docs/evals/ablation/implementation-spec.md" HARNESS="unknown"
+SPEC_REL="docs/evals/ablation/implementation-spec.md" HARNESS=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --variant) VARIANT="$2"; shift 2 ;;
@@ -29,6 +29,20 @@ case "$VARIANT" in
   *) echo "prepare-run: --variant must be bare, checks-only or governed" >&2; exit 2 ;;
 esac
 [ -n "$MODEL" ] || { echo "prepare-run: --model is required; it is the last field of the run id" >&2; exit 2; }
+
+# The harness is required, not defaulted. It used to default to "unknown", and all
+# eleven runs minted before this change recorded exactly that -- while the entire
+# metrics path forks on it: Claude Code's figures come from a transcript, Antigravity
+# persists no token count anywhere on disk. An unrecorded harness leaves the operator
+# guessing which of those two a missing token table means.
+[ -n "$HARNESS" ] || {
+  echo "prepare-run: --harness is required; the metrics path forks on it" >&2
+  echo "prepare-run: e.g. --harness claude-code, --harness antigravity" >&2
+  exit 2; }
+case "$HARNESS" in
+  *[!a-z0-9-]*|-*|*-|*--*)
+    echo "prepare-run: --harness must be lowercase kebab-case: $HARNESS" >&2; exit 2 ;;
+esac
 
 # The model is a run-id field, not prose, so it is held to the identifier charset.
 # This is not cosmetic. The run id is interpolated into verify-run.sh's sed
@@ -87,6 +101,10 @@ cleanup() {
   rc=$?
   if [ "$rc" -ne 0 ] && [ -n "${RUN_DIR:-}" ] && [ -d "$RUN_DIR" ]; then
     rm -rf "$RUN_DIR"
+    # The sidecar goes with it. Left behind it names a run that is not there, and
+    # verify-run.sh keys off the sidecar -- so the next mint of the same id would
+    # be verified against its predecessor's record.
+    rm -f "$RUNS_ROOT/$RUN_ID.provenance"
     echo "prepare-run: failed; removed the partial run at $RUN_DIR" >&2
   fi
 }
@@ -102,8 +120,6 @@ copy_kit "$RUN_DIR" "$SRC_REPO"
 link_skills "$RUN_DIR" "$SKILL_DIR"
 stamp_run "$RUN_DIR" "$SKILL_DIR" "$SRC_REPO" "$spec_path"
 [ "$VARIANT" = "governed" ] && link_rules "$RUN_DIR"
-write_provenance "$RUN_DIR" "$RUN_ID" "$VARIANT" "$MODEL" "$HARNESS" \
-  "$spec_path" "$spec_sha" "$source_sha" "$kit_sha" "$RUNS_ROOT"
 
 ( cd "$RUN_DIR" && npm install --silent --no-audit --no-fund >/dev/null 2>&1 ) \
   || echo "prepare-run: npm install reported a problem; check $RUN_DIR" >&2
@@ -133,9 +149,19 @@ p.write_text(json.dumps(d, indent=2) + "\n")
 CFG
 fi
 
+# Hashed here and nowhere earlier: this is the last point at which anything edits
+# the tree, and the hash has to describe the tree the scaffold commit will hold.
+# Computed one step sooner it missed the baseBranch rewrite above, and every
+# governed mint then failed its own reproduction check in verify-run.sh -- which is
+# how that ordering was found.
+SCAFFOLD_SHA=$(scaffold_hash "$RUN_DIR")
+write_provenance "$RUN_DIR" "$RUN_ID" "$VARIANT" "$MODEL" "$HARNESS" \
+  "$spec_path" "$spec_sha" "$source_sha" "$kit_sha" "$SCAFFOLD_SHA" "$RUNS_ROOT"
+
 git add -A
 git -c user.name=scaffold -c user.email=scaffold@local commit -qm "scaffold: $RUN_ID"
 git branch scaffold
 SCAFFOLD=$(git rev-parse HEAD)
 
-report_run "$RUN_DIR" "$VARIANT" "$MODEL" "$spec_sha" "$SCAFFOLD" "$RUNS_ROOT" "$SKILL_DIR"
+report_run "$RUN_DIR" "$VARIANT" "$MODEL" "$HARNESS" "$spec_sha" "$SCAFFOLD_SHA" \
+  "$SCAFFOLD" "$RUNS_ROOT" "$SKILL_DIR"

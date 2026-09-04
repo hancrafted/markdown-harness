@@ -2,6 +2,9 @@
 # Post-conditions on a minted run. Every check here is one whose failure is silent.
 set -uo pipefail
 
+SKILL_DIR=$(cd "$(dirname "$0")/.." && pwd)
+. "$SKILL_DIR/scripts/lib/stamp.sh"
+
 RUN_DIR=$(cd "${1:?usage: verify-run.sh <run-directory>}" && pwd)
 RUN_ID=$(basename "$RUN_DIR")
 SIDECAR="$(dirname "$RUN_DIR")/$RUN_ID.provenance"
@@ -18,6 +21,63 @@ VARIANT=$(sed -n 's/^variant: //p' "$SIDECAR")
 grep -qE '^(variant|spec_path):' PROVENANCE \
   && { echo "  FAIL in-run PROVENANCE names an operator-only field"; exit 1; } || true
 echo "verify-run: $RUN_DIR (variant: $VARIANT)"
+
+# The metrics path forks on the harness: Claude Code's figures are recoverable from
+# a transcript, Antigravity persists no token count anywhere. All eleven runs minted
+# before --harness became required recorded "unknown", which leaves a missing token
+# table unreadable -- an unmetered harness and an unparsed transcript look the same.
+HARNESS=$(sed -n 's/^harness: //p' "$SIDECAR")
+case "${HARNESS:-}" in
+  ''|unknown) bad "harness is '${HARNESS:-empty}'; the metrics path cannot be chosen" ;;
+  *)          ok "harness recorded as $HARNESS" ;;
+esac
+
+# The cohort key, recomputed. Two things at once: it proves the hash is reproducible
+# from the tree rather than a number written once and never checked again, and it
+# catches any edit made to the scaffold between the mint and the launch. Runs are
+# comparable only within one scaffold_sha, and source_sha cannot carry that -- one
+# run on record has a source_sha that resolves to `fatal: bad object`.
+WANT_SCAFFOLD=$(sed -n 's/^scaffold_sha: //p' "$SIDECAR")
+if [ -z "$WANT_SCAFFOLD" ]; then
+  bad "the sidecar records no scaffold_sha, so this run has no cohort"
+else
+  GOT_SCAFFOLD=$(scaffold_hash "$RUN_DIR")
+  [ "$WANT_SCAFFOLD" = "$GOT_SCAFFOLD" ] \
+    && ok "scaffold reproduces its cohort hash ($(printf '%.12s' "$WANT_SCAFFOLD"))" \
+    || bad "scaffold hash differs: recorded $(printf '%.12s' "$WANT_SCAFFOLD"), tree gives $(printf '%.12s' "$GOT_SCAFFOLD")"
+  grep -q "^scaffold_sha: $WANT_SCAFFOLD$" PROVENANCE \
+    && ok "in-run PROVENANCE carries the same cohort hash" \
+    || bad "in-run PROVENANCE and sidecar disagree on scaffold_sha"
+fi
+
+# `diff -rq` cannot check this: it follows .claude/skills into .agents/skills,
+# reports "Directory loop detected", skips the comparison and still exits clean --
+# so the obvious tool prints a green tree it never read. Hashed instead. The three
+# vendored skills are the shared floor every arm stands on; an arm that received a
+# different copy is not the same experiment, and the edit register's cuts live in
+# exactly these files.
+# Both sides are cd'd into, so shasum's own path column is relative and comparable.
+# -print0/-0 and the count guard because a bare `xargs shasum` over an empty
+# directory reads stdin and hangs instead of reporting anything.
+skills_hash() {
+  ( cd "$1" || return 1
+    [ "$(find . -type f | wc -l | tr -d ' ')" -gt 0 ] || { echo "empty"; return 0; }
+    find . -type f -print0 | LC_ALL=C sort -z | xargs -0 shasum -a 256 \
+      | shasum -a 256 | cut -d' ' -f1 )
+}
+if [ -d .agents/skills ] && [ -d "$SKILL_DIR/assets/skills" ]; then
+  a=$(skills_hash .agents/skills)
+  b=$(skills_hash "$SKILL_DIR/assets/skills")
+  if [ "$a" = "empty" ] || [ "$b" = "empty" ]; then
+    bad "a skills directory is empty, so the arms have no shared floor"
+  elif [ "$a" = "$b" ]; then
+    ok "vendored skills match the stamped assets byte for byte"
+  else
+    bad "vendored skills differ from assets/skills ($(printf '%.12s' "$a") vs $(printf '%.12s' "$b"))"
+  fi
+else
+  bad "no .agents/skills in the run, or no assets/skills to compare against"
+fi
 
 [ -L CLAUDE.md ] && ok "CLAUDE.md is a symlink to AGENTS.md" || bad "CLAUDE.md is not a symlink"
 
