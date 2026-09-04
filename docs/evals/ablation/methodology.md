@@ -52,10 +52,44 @@ repository. Each arm has a manifest — a list of files the stamp script copies 
 top of the bare layer. The governed arm's manifest is a superset of the checks-only arm's, and the
 bare arm's manifest is empty. This means:
 
-- The scaffold (bare layer) is identical across all arms and models.
 - No arm receives something and has it taken away; the treatment _is_ what was added.
 - A file that appears in a run was either stamped by the script or authored by the agent. The
   manifest is the partition.
+
+The bare layer is shared, and it is **almost** byte-identical across arms. Two files differ, and
+they are enumerated here because an earlier version of this document claimed no file did — which
+is how a `vitest.config.ts` that differed between arms once changed the functional gate with
+nobody deciding it:
+
+| file               | governed adds                  | why it is not a divergence                                                                          |
+| ------------------ | ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `vitest.config.ts` | `exclude: […, '.archgate/**']` | the shipped enforcer tests would otherwise boot this arm on a green baseline the others cannot have |
+| `.prettierignore`  | `.archgate/rules.d.ts`         | a generated file the format check would otherwise fail this arm on, for something no arm authored   |
+
+Both lines exist to make the gate **equivalent**, not to change it, and neither can be hoisted
+into the shared layer: `.archgate` is record vocabulary, and the per-run leak sweep refuses it in
+a bare or checks-only tree for good reason. `assets/assets.sha256` pins all three layer sets, so
+any further divergence is a deliberate re-pin rather than a drift.
+
+### `verify` is a different gate in each arm
+
+This follows from the treatment being the checks, but it has a consequence worth stating outright:
+
+| arm         | `npm run verify`                                                        |
+| ----------- | ----------------------------------------------------------------------- |
+| bare        | `prettier --check` → `tsc --noEmit` → `vitest run`                      |
+| checks-only | `eslint` → `prettier` → `tsc` → `depcruise src` → `vitest run` → `knip` |
+| governed    | `archgate check` → the checks-only chain                                |
+
+So **"verify green" is not a comparable outcome**. A bare run that reached green cleared three
+checks; a governed run cleared seven. Two further asymmetries the arm table above understates:
+the bare arm ships **no `eslint.config.mjs` at all**, so the step from bare to checks-only adds
+baseline lint hygiene as well as the governance blocks; and `knip` (dead-code detection, not
+governance) enters at the same step. The checks-only arm's marginal effect is therefore not
+attributable to governance enforcement alone, and the scoring layer must not read it that way.
+
+The only gate common to all three arms is the frozen acceptance suite plus `tsc` and `prettier`.
+That is the comparable functional axis; everything else is treatment.
 
 ### Authoring skills
 
@@ -68,6 +102,33 @@ behaviour that arm exists to measure the absence of.
 
 Antigravity has no known skills mechanism. The three Gemini cells take their methodology from
 `SPEC.md` §7 prose only.
+
+## Cohorts
+
+**Runs are comparable only within one `scaffold_sha`.** That field is a content hash of the whole
+minted tree — layers, derived check configs, records, vendored skills, the stamped spec — computed
+before the scaffold commit, excluding only `node_modules`, `package-lock.json`, `.git` and
+`PROVENANCE` itself. It is recorded in the run's `PROVENANCE` and in the operator sidecar, and
+`verify-run.sh` recomputes it from the tree.
+
+`source_sha` cannot do this job, for two reasons that both showed up in practice:
+
+- **A commit can be amended out of existence.** One run on record carries a `source_sha` that
+  resolves to `fatal: bad object`. Its treatment is unidentifiable.
+- **The checks and governed layers are derived at mint time, not stored.** `lib/layers.sh` reads
+  `eslint.config.mjs` and `.dependency-cruiser.cjs` out of the source repository and strips them
+  per variant, and copies `.archgate/` live. The commit was the only record of what they held.
+
+Recorded so it is not rediscovered: the runs minted on **2026-09-03 fall into two cohorts**. The
+governed arm at `2745cf4` and the governed arm at `40e43a2` differ by 74 insertions and 188
+deletions across `ARCH-001`, `ARCH-003`, `ARCH-004`, `GEN-001` and GEN-001's enforcer, because
+record edits landed between the two mints. The vendored `implement` skill's description differs
+across the same boundary. Both mints reported clean. Nothing in either tree distinguished them,
+which is the whole argument for a cohort key.
+
+`prepare-batch.sh` reports the cohort of every cell it mints and fails the batch if one variant
+lands in more than one — the failure mode being a source-repo commit made _between_ two cells,
+which passes the per-cell preflight every time.
 
 ## Isolation
 
@@ -125,7 +186,33 @@ just exit code — a `WAITING` end exits 0 and is not a completed run.
 ## Metrics
 
 Metrics are captured per run and compared **within model only** — Sonnet-to-Sonnet, Gemini-to-Gemini.
-Cross-model comparison is out of scope.
+Cross-model comparison is out of scope. And within cohort: see above.
+
+### Collected after the session, never during it
+
+`collect-metrics.sh` runs once the session is closed, operator-side, and nothing it produces is
+written back into the run. Both halves matter:
+
+- **Never written back.** Telling a run that its record reads are being counted is the one
+  measurement that would change what it measures.
+- **Never during.** The first four runs stamped a `metrics.sh` into the tree and had the agent
+  append its output to `RESULTS.md` as a final act. Every figure it produced was partial by
+  construction — taken from inside the session, it excluded the commits and the report text
+  written after it. Worse, it did not fail the same way twice: the governed fable run appended
+  its telemetry and never committed it, so `RESULTS.md` sits at 138 lines in its history against
+  278 on disk and its own report is outside its scored git artifact; the bare sonnet run
+  committed afterwards, so its 227 lines are all in the numstat. **Churn is therefore not
+  comparable across those four runs at all** — the report text is inside some numstats and
+  outside others. Duration is not repairable for any of them.
+
+**Duration is `started` to the last commit**, not to the clock when the operator gets around to
+it. The in-run `AGENTS.md` instructs the run to commit its report as its final act so that stamp
+exists. A run whose HEAD is still the scaffold commit produced nothing, and the collector says so
+rather than reporting the gap to the mint as a session length.
+
+**`--harness` is required at mint.** Everything below forks on it, and the eleven runs minted
+before it was enforced all recorded `unknown` — which makes a missing token table unreadable,
+since an unmetered harness and an unparsed transcript look identical in the output.
 
 ### Claude Code (Sonnet 5)
 
@@ -196,6 +283,33 @@ gate uses three configs:
 
 All 18 violation codes must be reached.
 
+**This layer saturates.** All four runs completed before 2026-09-04 reached `24/15/22` on the
+first config, so as a discriminator between arms it reported nothing. That is not a defect in the
+suite — it is a frozen gate doing its job — but it means the study cannot rest on it, and the
+layers below it are either arm-favouring by construction (layer 2 scores bare output against
+records it never saw) or subjective (layer 3).
+
+### Layer 1b: held-out edges
+
+`docs/evals/ablation/held-out/` is a second suite, applied at scoring time over a run's output
+tree. **No run ever receives it**: `copy_kit` stamps `kit/fixtures` and `kit/tests` only, and the
+held-out directory is neither.
+
+It exists because the four completed runs diverged on ten behaviours that the frozen corpus never
+exercises, and every one of them was volunteered in a `RESULTS.md` under "where the spec ran out".
+Two runs let an unparseable frontmatter block report under different code names; two disagreed on
+whether an empty string satisfies `allOf`; two disagreed on whether a repeated `--root` is a usage
+error; one let a non-existent `--root` throw an uncaught `ENOENT` while another answered exit 0.
+None of it was scoreable, because the spec delegated it and the corpus never reached it.
+
+Both halves of the fix are needed. The spec now **defines** those behaviours (§2, §3.3, §3.5,
+§4.6, §4.7) so they are determinate and gradeable; the suite stays **held out** so no run can
+teach to it. A delegated behaviour cannot be scored, and a published test can be satisfied without
+being understood.
+
+The held-out suite is **not** part of any arm's `verify` and is not a functional gate: a run that
+fails it is not non-functional. It is a graded axis, reported per run as a pass count.
+
 ### Layer 2: per-record mechanical differential
 
 For each checks-only and bare run that passed the functional gate:
@@ -259,6 +373,10 @@ green, ~$<estimated cost>, <duration>. <One sentence: the single thing a reader 
 | thinking tokens    |       |     | files changed |       |
 | cache read tokens  |       |     | insertions    |       |
 | cache write tokens |       |     | deletions     |       |
+| harness            |       |     | cohort        |       |
+
+`cohort` is the run's `scaffold_sha` (first 12 is enough). A record without it cannot be compared
+to anything, so it is a required field rather than a nicety.
 
 Cost is **computed, not read** — token counts times published pricing at run time. Never present
 it as measured.
@@ -278,6 +396,11 @@ it as measured.
 | record | violations | binds? |
 | ------ | ---------- | ------ |
 
+### Held-out edges (layer 1b)
+
+| edge | spec | expected | observed | pass |
+| ---- | ---- | -------- | -------- | ---- |
+
 ### Rubric (layer 3)
 
 | axis | score | reviewer note |
@@ -294,6 +417,7 @@ npm ci && npm run verify                  # the gate as the run left it
 node "$(node -p "require('./package.json').bin.mh")" --check --root fixtures/corpus
                                           # expect the frozen verdict, exit 1
 bash <skill>/scripts/collect-metrics.sh .  # regenerates every number above
+bash <repo>/docs/evals/ablation/held-out/run.sh .  # layer 1b, one row per edge
 ```
 
 ## Record channel
