@@ -7,7 +7,7 @@ SKILL_DIR=$(cd "$(dirname "$0")/.." && pwd)
 
 RUN_DIR=$(cd "${1:?usage: verify-run.sh <run-directory>}" && pwd)
 RUN_ID=$(basename "$RUN_DIR")
-SIDECAR="$(dirname "$RUN_DIR")/$RUN_ID.provenance"
+SIDECAR=$(sidecar_path "$(dirname "$RUN_DIR")" "$RUN_ID")
 cd "$RUN_DIR"
 fails=0
 ok()   { echo "  ok   $*"; }
@@ -32,22 +32,45 @@ case "${HARNESS:-}" in
   *)          ok "harness recorded as $HARNESS" ;;
 esac
 
-# The cohort key, recomputed. Two things at once: it proves the hash is reproducible
-# from the tree rather than a number written once and never checked again, and it
-# catches any edit made to the scaffold between the mint and the launch. Runs are
-# comparable only within one scaffold_sha, and source_sha cannot carry that -- one
-# run on record has a source_sha that resolves to `fatal: bad object`.
+# Two hashes, two jobs, and the difference decides which comparisons are legal.
+#
+# scaffold_sha is the ARM FINGERPRINT. It hashes the minted tree, so it differs
+# between arms by construction -- one batch measured bare 9b612d78, checks-only
+# 1dcf21f4 and governed 73ae7451. It answers "did these two runs get the same
+# treatment?", a within-arm question. Recomputed here, so it also catches an edit
+# made to the scaffold between the mint and the launch.
+#
+# cohort_sha is the COHORT. It hashes what every arm is derived from -- kit,
+# stamped assets, record layer, the two live enforcer configs, and the spec by
+# content -- and names no variant, so all three arms of one batch share it. It
+# answers "may these two runs be compared at all?", the cross-arm question this
+# study exists to ask. Reading scaffold_sha as the cohort forbids that comparison
+# outright, because no two arms can ever share one.
+#
+# It is deliberately not recomputed. Its inputs live in the source repository and
+# the run holds only their derived output, so presence and agreement are all a run
+# tree can prove. preflight.sh is where it is computed and where drift refuses.
 WANT_SCAFFOLD=$(sed -n 's/^scaffold_sha: //p' "$SIDECAR")
 if [ -z "$WANT_SCAFFOLD" ]; then
-  bad "the sidecar records no scaffold_sha, so this run has no cohort"
+  bad "the sidecar records no scaffold_sha, so this run has no arm fingerprint"
 else
   GOT_SCAFFOLD=$(scaffold_hash "$RUN_DIR")
   [ "$WANT_SCAFFOLD" = "$GOT_SCAFFOLD" ] \
-    && ok "scaffold reproduces its cohort hash ($(printf '%.12s' "$WANT_SCAFFOLD"))" \
-    || bad "scaffold hash differs: recorded $(printf '%.12s' "$WANT_SCAFFOLD"), tree gives $(printf '%.12s' "$GOT_SCAFFOLD")"
+    && ok "scaffold reproduces its arm fingerprint ($(printf '%.12s' "$WANT_SCAFFOLD"))" \
+    || bad "arm fingerprint differs: recorded $(printf '%.12s' "$WANT_SCAFFOLD"), tree gives $(printf '%.12s' "$GOT_SCAFFOLD")"
   grep -q "^scaffold_sha: $WANT_SCAFFOLD$" PROVENANCE \
-    && ok "in-run PROVENANCE carries the same cohort hash" \
+    && ok "in-run PROVENANCE carries the same arm fingerprint" \
     || bad "in-run PROVENANCE and sidecar disagree on scaffold_sha"
+fi
+
+WANT_COHORT=$(sed -n 's/^cohort_sha: //p' "$SIDECAR")
+if [ -z "$WANT_COHORT" ]; then
+  bad "the sidecar records no cohort_sha, so this run may be compared to nothing"
+else
+  ok "cohort recorded ($(printf '%.12s' "$WANT_COHORT"))"
+  grep -q "^cohort_sha: $WANT_COHORT$" PROVENANCE \
+    && ok "in-run PROVENANCE carries the same cohort" \
+    || bad "in-run PROVENANCE and sidecar disagree on cohort_sha"
 fi
 
 # `diff -rq` cannot check this: it follows .claude/skills into .agents/skills,

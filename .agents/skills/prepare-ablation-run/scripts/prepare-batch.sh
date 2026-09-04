@@ -7,6 +7,7 @@
 set -uo pipefail
 
 SKILL_DIR=$(cd "$(dirname "$0")/.." && pwd)
+. "$SKILL_DIR/scripts/lib/stamp.sh"
 
 SLUG="" MODELS="" VARIANTS="bare,checks-only,governed" REPEAT=1
 SPEC_REL="docs/evals/ablation/implementation-spec.md" HARNESS=""
@@ -103,7 +104,7 @@ if [ "${#minted[@]}" -gt 0 ]; then
       # "variant/model  run-id" -- the id is the last field.
       [ "${m%%/*}" = "$v" ] || continue
       id=${m##* }
-      s=$(sed -n 's/^scaffold_sha: //p' "$RUNS_ROOT/$id.provenance" 2>/dev/null)
+      s=$(sed -n 's/^scaffold_sha: //p' "$(sidecar_path "$RUNS_ROOT" "$id")" 2>/dev/null)
       shas="$shas$s
 "
     done

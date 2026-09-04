@@ -19,7 +19,8 @@ set -uo pipefail
 
 RUN_DIR=$(cd "${1:?usage: collect-metrics.sh <run-directory>}" && pwd)
 RUN_ID=$(basename "$RUN_DIR")
-SIDECAR="$(dirname "$RUN_DIR")/$RUN_ID.provenance"
+. "$(cd "$(dirname "$0")" && pwd)/lib/stamp.sh"
+SIDECAR=$(sidecar_path "$(dirname "$RUN_DIR")" "$RUN_ID")
 [ -f "$SIDECAR" ] || { echo "collect-metrics: no sidecar at $SIDECAR" >&2; exit 2; }
 
 echo "## Telemetry (collected after the session)"
@@ -45,6 +46,8 @@ stamps = []
 tools = {}
 skills = {}
 record_reads = []      # (timestamp, record, tool)
+injected = []          # (timestamp, record, globs) -- the channel with no tool call
+seen_requests = set()
 
 def stamp(o):
     """Timestamps arrive as strings, as null, and occasionally as numbers. Anything
@@ -64,6 +67,21 @@ for f in sorted(pathlib.Path(sys.argv[1]).glob("*.jsonl")):
         ts = stamp(o)
         if ts:
             stamps.append(ts)
+        # The injected channel. A record reaches an agent two ways and only one of
+        # them leaves a tool call. Claude Code loads a `.claude/rules` entry when a
+        # Read touches a file the record's `paths:` glob matches, and that arrives
+        # as an attachment keyed to the *triggering* file, never to the record's own
+        # path -- so no substring match on `.archgate/adrs` can ever see it.
+        # Measured on 20260903-mh-1-fable-5: counting tool calls alone reported 4 of
+        # 10 records opened where 9 had in fact arrived, and dated first access 37
+        # seconds after governance was already in context.
+        att = o.get("attachment")
+        if isinstance(att, dict) and att.get("type") == "nested_memory":
+            body = att.get("content")
+            g = body.get("globs") if isinstance(body, dict) else None
+            injected.append((ts, str(att.get("path", "")).rsplit("/", 1)[-1],
+                             ",".join(g) if isinstance(g, list) else "-"))
+
         m = o.get("message")
         if not isinstance(m, dict):
             continue
@@ -95,6 +113,16 @@ for f in sorted(pathlib.Path(sys.argv[1]).glob("*.jsonl")):
         u = m.get("usage")
         if not isinstance(u, dict):
             continue
+        # One usage block per request, not per row. The same `usage` object is
+        # written on more than one line under different message ids, so summing
+        # every row inflates the total: 20260903-mh-1-sonnet-5 carries 271
+        # usage-bearing rows against 118 distinct requests, a 2.3x overcount, and
+        # cost is computed from these numbers.
+        rid = o.get("requestId")
+        if rid is not None:
+            if rid in seen_requests:
+                continue
+            seen_requests.add(rid)
         msgs += 1
         for k in list(tot)[:4]:
             v = u.get(k, 0)
@@ -122,6 +150,19 @@ say(f"| assistant messages | {msgs:,} |")
 start = min(stamps) if stamps else ""
 if stamps:
     say(f"\nFirst message {start}, last {max(stamps)}.")
+say(f"\nDeduplicated by requestId: {len(seen_requests):,} distinct requests.")
+
+# Flags are protocol. One run on record reached a live MCP server that three
+# siblings never saw, because the hand-over printed `--mcp-config '{}'`, which the
+# CLI rejects outright -- so each operator repaired it differently. A run with any
+# mcp__ call was not launched under the protocol and is not comparable.
+mcp = {k: v for k, v in tools.items() if k.startswith("mcp__")}
+if mcp:
+    say("\n**PROTOCOL VIOLATION** -- MCP tool calls in a run launched with "
+        "`--strict-mcp-config --mcp-config '{\"mcpServers\":{}}'`:")
+    for k in sorted(mcp):
+        say(f"- `{k}` x{mcp[k]}")
+    say("\nThis run is not comparable to siblings launched without MCP.")
 
 # The record channel. A governed run that never opens a record is the strongest
 # possible result and the easiest one to miss, so it is reported as a number
@@ -133,18 +174,31 @@ if not present:
     say("No records in this run tree; nothing to reach.")
 else:
     opened = {r for _, r, t in record_reads if t == "Read" and r.endswith(".md")}
+    pushed = {r for _, r, _ in injected if r.endswith(".md")}
+    reached = opened | pushed
     say("| metric | value |")
     say("| --- | --- |")
     say(f"| records in the tree | {len(present)} |")
-    say(f"| records ever opened | {len(opened)} |")
-    say(f"| record accesses total | {len(record_reads)} |")
+    say(f"| records the run reached | {len(reached)} |")
+    say(f"| -- opened by the agent | {len(opened)} |")
+    say(f"| -- injected, no tool call | {len(pushed)} |")
+    say(f"| record accesses total | {len(record_reads) + len(injected)} |")
     say(f"| via Read | {sum(1 for _, _, t in record_reads if t == 'Read')} |")
     say(f"| via Bash | {sum(1 for _, _, t in record_reads if t == 'Bash')} |")
-    never = [p for p in present if p not in opened]
+    say(f"| via injection | {len(injected)} |")
+    never = [p for p in present if p not in reached]
     if never:
-        say(f"\nNever opened: {', '.join(never)}")
-    if record_reads:
-        timed = [t for t, _, _ in record_reads if t]
+        # Never reached at all -- neither opened nor pushed. This is the true
+        # negative the study is looking for, and it only means that now that the
+        # injected channel is counted.
+        say(f"\nNever reached: {', '.join(never)}")
+    if injected:
+        say("\n| injected record | triggered by globs | when |")
+        say("| --- | --- | --- |")
+        for ts_i, rec, globs in sorted(injected, key=lambda r: (r[0] or "", r[1])):
+            say(f"| `{rec}` | `{globs}` | {ts_i or '(no timestamp)'} |")
+    if record_reads or injected:
+        timed = [t for t, _, _ in record_reads if t] + [t for t, _, _ in injected if t]
         first = min(timed) if timed else ""
         if first and start:
             # How far into the session the run first reached for a record. A batch of

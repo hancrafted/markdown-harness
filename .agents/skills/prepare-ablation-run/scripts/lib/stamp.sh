@@ -41,9 +41,44 @@ scaffold_hash() {
       done | shasum -a 256 | cut -d' ' -f1 )
 }
 
+# Everything the operator holds, and no run may see, lives in one directory beside
+# the runs -- never inside a run, and no longer loose at the runs root. The
+# sidecars used to sit as siblings of the run directories, which buried the runs
+# among their own metadata and put a file named after the study next to every one.
+sidecar_path() { printf '%s/_operator/provenance/%s.provenance' "$1" "$2"; }
+observe_dir()  { printf '%s/_operator' "$1"; }
+
+# The measurement channel, regenerated on every mint into the operator directory.
+# Deliberately not an asset and not pinned: an instrument that splits cohorts when
+# it changes would make measuring the study a treatment applied to it. Absolute
+# paths, so it is a per-machine artifact and never committed.
+write_observe_settings() {
+  local runs_root=$1 skill_dir=$2 dir
+  dir=$(observe_dir "$runs_root")
+  mkdir -p "$dir"
+  cat > "$dir/observe.settings.json" <<EOF
+{
+  "hooks": {
+    "InstructionsLoaded": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$skill_dir/scripts/lib/observe-hook.sh '$dir'"
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+}
+
 write_provenance() {
   local run_dir=$1 run_id=$2 variant=$3 model=$4 harness=$5
-  local spec_path=$6 spec_sha=$7 source_sha=$8 kit_sha=$9 scaffold_sha=${10} runs_root=${11}
+  local spec_path=$6 spec_sha=$7 source_sha=$8 kit_sha=$9 scaffold_sha=${10}
+  local cohort_sha=${11} runs_root=${12}
   local started
   started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
@@ -61,11 +96,15 @@ spec_sha: $spec_sha
 source_sha: $source_sha
 kit_sha: $kit_sha
 scaffold_sha: $scaffold_sha
+cohort_sha: $cohort_sha
 started: $started
 EOF
 
   # Sidecar: the operator's full record, outside the run tree entirely.
-  cat > "$runs_root/$run_id.provenance" <<EOF
+  local sidecar
+  sidecar=$(sidecar_path "$runs_root" "$run_id")
+  mkdir -p "$(dirname "$sidecar")"
+  cat > "$sidecar" <<EOF
 run_id: $run_id
 variant: $variant
 model: $model
@@ -75,6 +114,7 @@ spec_sha: $spec_sha
 source_sha: $source_sha
 kit_sha: $kit_sha
 scaffold_sha: $scaffold_sha
+cohort_sha: $cohort_sha
 started: $started
 EOF
 }

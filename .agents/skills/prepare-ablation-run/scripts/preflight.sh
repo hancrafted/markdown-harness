@@ -85,9 +85,41 @@ arm. See docs/evals/ablation/scaffold-design.md; restore the cut before minting.
   fi
 done
 
+# The cohort key. `scaffold_sha` (stamp.sh) hashes the minted tree, so it differs
+# between arms by construction: the three arms of one batch measured 9b612d78,
+# 1dcf21f4 and 73ae7451. Read as "comparable only within one scaffold_sha", that
+# forbids the only comparison this study exists to make. So that field is an arm
+# fingerprint, and this one is the cohort.
+#
+# It is variant-independent by construction: it covers every input any arm's
+# treatment is derived from, so it moves when any arm would change and holds
+# still when none would. The kit and assets pins above are reused rather than
+# recomputed -- between them they already cover the shared corpus, the three
+# layers, the in-run AGENTS.md and the vendored skills. Added here: the record
+# layer, and the two live configs a run's enforcers are derived from at mint
+# time. No pin reaches either, and both decide what a governed arm is held to.
+[ -d .archgate ] || fail "no record layer at .archgate/"
+archgate_hash=$(find .archgate -type f -print0 \
+  | LC_ALL=C sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+
+for cfg in eslint.config.mjs .dependency-cruiser.cjs; do
+  [ -f "$cfg" ] || fail "no $cfg; a run's enforcers are derived from it at mint time."
+done
+config_hash=$(shasum -a 256 eslint.config.mjs .dependency-cruiser.cjs \
+  | shasum -a 256 | cut -d' ' -f1)
+
+# The spec by content, never by the commit that last touched it. A commit sha
+# moves when an unrelated file changes in the same commit, and would split a
+# cohort over an edit no arm can see.
+spec_content=$(shasum -a 256 "$SPEC_REL" | cut -d' ' -f1)
+
+COHORT_SHA=$(printf '%s\n' "$got" "$got_assets" "$archgate_hash" "$config_hash" \
+  "$spec_content" | shasum -a 256 | cut -d' ' -f1)
+
 SPEC_SHA=$(git log -1 --format=%H -- "$SPEC_REL")
 SOURCE_SHA=$(git rev-parse HEAD)
 echo "spec_path=$SPEC_REL"
 echo "spec_sha=$SPEC_SHA"
 echo "source_sha=$SOURCE_SHA"
 echo "kit_sha=$got"
+echo "cohort_sha=$COHORT_SHA"

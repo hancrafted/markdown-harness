@@ -104,7 +104,7 @@ cleanup() {
     # The sidecar goes with it. Left behind it names a run that is not there, and
     # verify-run.sh keys off the sidecar -- so the next mint of the same id would
     # be verified against its predecessor's record.
-    rm -f "$RUNS_ROOT/$RUN_ID.provenance"
+    rm -f "$(sidecar_path "$RUNS_ROOT" "$RUN_ID")"
     echo "prepare-run: failed; removed the partial run at $RUN_DIR" >&2
   fi
 }
@@ -156,12 +156,15 @@ fi
 # how that ordering was found.
 SCAFFOLD_SHA=$(scaffold_hash "$RUN_DIR")
 write_provenance "$RUN_DIR" "$RUN_ID" "$VARIANT" "$MODEL" "$HARNESS" \
-  "$spec_path" "$spec_sha" "$source_sha" "$kit_sha" "$SCAFFOLD_SHA" "$RUNS_ROOT"
+  "$spec_path" "$spec_sha" "$source_sha" "$kit_sha" "$SCAFFOLD_SHA" \
+  "$cohort_sha" "$RUNS_ROOT"
 
 git add -A
 git -c user.name=scaffold -c user.email=scaffold@local commit -qm "scaffold: $RUN_ID"
 git branch scaffold
 SCAFFOLD=$(git rev-parse HEAD)
 
+write_observe_settings "$RUNS_ROOT" "$SKILL_DIR"
+
 report_run "$RUN_DIR" "$VARIANT" "$MODEL" "$HARNESS" "$spec_sha" "$SCAFFOLD_SHA" \
-  "$SCAFFOLD" "$RUNS_ROOT" "$SKILL_DIR"
+  "$SCAFFOLD" "$RUNS_ROOT" "$SKILL_DIR" "$cohort_sha"
