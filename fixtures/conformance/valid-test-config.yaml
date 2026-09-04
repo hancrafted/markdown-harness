@@ -140,6 +140,22 @@ frontmatter:
             - { value: workflow, intent: How to carry out a task in this repo. }
         title: { minLength: 3, maxLength: 80 }
 
+    # ── Datasets ───────────────────────────────────────────────────────────────
+    # The second rule to carry named formats, and the reason a format can fail at
+    # all: `provenance.md` above is a single exact path, so the only file that rule
+    # will ever govern is the one written to satisfy every format it names. A
+    # format nothing can disobey is a format nothing has checked.
+    - path: [docs/datasets/**/*.md]
+      intent: A dataset card says who fetched it, when, and where it came from
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: dataset, intent: Data an agent queries rather than reads through. }
+        retrieved.by: { presence: required, format: actor }
+        retrieved.at: { presence: required, format: datetime }
+        origin: { presence: required, format: uri }
+
     # ── Type presence only ─────────────────────────────────────────────────────
     # The narrowest useful payload there is. Under the old Floor this rule needed
     # no payload at all, because `type` was required everywhere by construction.

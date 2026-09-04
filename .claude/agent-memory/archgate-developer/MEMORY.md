@@ -24,3 +24,6 @@
 - [Shell: test the degenerate inputs](feedback_shell_degenerate_inputs.md) — `bash -n` plus a happy path proves nothing; empty lists and metachars on /bin/bash 3.2
 - [Variant in the run id is deliberate](project_variant_in_run_id_is_deliberate.md) — Han priced the blinding cost and chose ergonomics; don't re-blind the directory name
 - [Session-log token accounting](feedback_session_log_token_accounting.md) — RESULTS.md has no token data; dedupe JSONL by requestId or inflate 2-3x
+- [Stated intent beats "deliberately open"](feedback_stated_intent_beats_deliberately_open.md) — a named concrete second consumer defeats the speculative-generality argument; the doc marker does not
+- [Body-governing Modules are planned](project_body_governing_modules_planned.md) — spec §9 and architecture.md only scope the current delivery; enumeration is shared surface
+- [Four codes reached without being named](project_four_codes_reached_without_being_named.md) — grep under-reports corpus coverage; build the mapping by first-match, not by name
