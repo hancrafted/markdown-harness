@@ -35,6 +35,22 @@ appeared in one session:
    the tree immediately found a real leak in `governed/vitest.config.ts` — a comment
    explaining the experiment to its subject. A sweep's scope is part of its claim.
 
+8. On 2026-09-04 the same skill produced the worst one yet, and I wrote it myself. A
+   leak sweep interpolated the run id into `sed "s|$RUN_ID||g" "$f" 2>/dev/null | grep -qiE`.
+   A run id holding a regex metacharacter — a `|` closing the `s///` command, a `.`
+   matching any character — made `sed` exit 1, handed `grep` an empty stream, and
+   printed `ok tree sweep clean` over a tree it never read. `gemini-3.8-flash` also
+   silently stripped `gemini-3X8-flash`. It passed every happy-path test I ran, because
+   every id I tested with was well-formed.
+
+**The remedy generalises: give a silent check a canary it runs on itself.** Before the
+sweep loop, it now feeds itself two synthetic lines and refuses if either misbehaves —
+one planted forbidden word that it must still catch, one bare run id that it must still
+suppress. Two-sided, because a strip has two ways to be wrong. A one-sided canary that
+only proves "it can still fire" would have passed while the strip did nothing at all.
+This beats "break it once by hand" because it re-proves itself on every run, against the
+actual input in hand, rather than against the input I happened to imagine.
+
 **How to apply:** after writing any check, break the thing it guards and watch it fail.
 The preflight bug cost nothing only because a dirty tree happened to arrive while I was
 still looking. Specifically: never chain `&& echo ok` off a pipeline — capture the exit

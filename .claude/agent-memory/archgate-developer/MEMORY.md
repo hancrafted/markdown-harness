@@ -17,7 +17,9 @@
 - [docs/workshop is workshop material only](feedback_docs_workshop_not_for_instruments.md) — evals/instruments go to docs/evals/; map fog item 6's home is stale
 - [Spec holds behaviour, not setup](feedback_spec_holds_behaviour_not_setup.md) — the spec is copied into every arm, so run-environment decisions go to the scaffold ticket
 - [A fixture never models the treatment](feedback_fixture_never_models_the_treatment.md) — strip what the records ask an agent to produce; when spec and fixture disagree, the fixture moves
-- [RTK-filtered output lies](feedback_rtk_filtered_output_lies.md) — its `diff` calls differing files identical and its `ls` size suffixes break grep anchors; hash instead
+- [RTK-filtered output lies](feedback_rtk_filtered_output_lies.md) — `diff`, `ls` anchors, "No such file", **whole entries omitted**, and corrupted file reads; use `rtk proxy` or hash
 - [Self-describing names beat inherited jargon](feedback_self_describing_over_inherited_jargon.md) — trace the provenance, offer it, expect to lose; then record the translation
 - [Vendored material carries its origin](feedback_vendored_material_carries_its_origin.md) — audit frontmatter too; `disable-model-invocation` made a named skill unreachable
-- [Vacuous green](feedback_vacuous_green.md) — prove a check can fail before trusting it passing; `eval $(guard)` and `| tail && echo ok` both swallow the status
+- [Vacuous green](feedback_vacuous_green.md) — prove a check can fail before trusting it; give a silent check a two-sided canary it runs on itself
+- [Shell: test the degenerate inputs](feedback_shell_degenerate_inputs.md) — `bash -n` plus a happy path proves nothing; empty lists and metachars on /bin/bash 3.2
+- [Variant in the run id is deliberate](project_variant_in_run_id_is_deliberate.md) — Han priced the blinding cost and chose ergonomics; don't re-blind the directory name
