@@ -13,6 +13,9 @@
     "verify": "archgate check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && vitest run && knip",
     "verify:commit": "lint-staged && archgate check && tsc --noEmit && vitest run"
   },
+  "dependencies": {
+    "yaml": "~2.9.0"
+  },
   "devDependencies": {
     "@eslint/js": "~10.0.1",
     "@types/node": "~26.3.0",
@@ -29,7 +32,6 @@
     "prettier-plugin-organize-imports": "~4.3.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "~8.68.0",
-    "vitest": "~4.1.11",
-    "yaml": "~2.9.0"
+    "vitest": "~4.1.11"
   }
 }
