@@ -5,22 +5,19 @@ set -euo pipefail
 SKILL_DIR=$(cd "$(dirname "$0")/.." && pwd)
 SRC_REPO=$(cd "$SKILL_DIR/../../.." && pwd)
 RUNS_ROOT="${RUNS_ROOT:-$HOME/Developer/ablation-runs}"
-# The slug reaches the agent through its own working directory, which the harness
-# stamps into context every turn. `mh` is the CLI the spec already asks the run to
-# build, so it names nothing the run does not already know. `adr-ablation` named
-# both the subject under test and the fact that this is a study.
-SLUG=mh
 
 . "$SKILL_DIR/scripts/lib/layers.sh"
 . "$SKILL_DIR/scripts/lib/stamp.sh"
 . "$SKILL_DIR/scripts/lib/symlink.sh"
 . "$SKILL_DIR/scripts/lib/report.sh"
 
-VARIANT="" MODEL="" SPEC_REL="docs/evals/ablation/implementation-spec.md" HARNESS="unknown"
+VARIANT="" MODEL="" SLUG=""
+SPEC_REL="docs/evals/ablation/implementation-spec.md" HARNESS="unknown"
 while [ $# -gt 0 ]; do
   case "$1" in
     --variant) VARIANT="$2"; shift 2 ;;
     --model)   MODEL="$2";   shift 2 ;;
+    --slug)    SLUG="$2";    shift 2 ;;
     --spec)    SPEC_REL="$2"; shift 2 ;;
     --harness) HARNESS="$2"; shift 2 ;;
     *) echo "prepare-run: unknown argument $1" >&2; exit 2 ;;
@@ -33,6 +30,37 @@ case "$VARIANT" in
 esac
 [ -n "$MODEL" ] || { echo "prepare-run: --model is required; it is the last field of the run id" >&2; exit 2; }
 
+# The model is a run-id field, not prose, so it is held to the identifier charset.
+# This is not cosmetic. The run id is interpolated into verify-run.sh's sed
+# expression, where a `|` ends the s/// command outright and a `.` matches any
+# character -- `gemini-3.8-flash` silently strips `gemini-3X8-flash` too. Confining
+# the id to [a-z0-9-] leaves no regex metacharacter to interpret, so write the model
+# with dashes: gemini-3-8-flash-high, not gemini/3.8-flash-high.
+case "$MODEL" in
+  *[!a-z0-9-]*|-*|*-|*--*)
+    echo "prepare-run: --model must be lowercase kebab-case with no dots or slashes: $MODEL" >&2
+    echo "prepare-run: write gemini-3-8-flash-high rather than gemini-3.8-flash-high" >&2
+    exit 2 ;;
+esac
+
+# The slug names the task the run performs, and it reaches the agent through the
+# working directory the harness stamps into context every turn. So it is held to
+# the same line the leak sweep draws: a slug may describe the build, never the
+# study around it. Two words minimum, because an abbreviation describes nothing.
+[ -n "$SLUG" ] || {
+  echo "prepare-run: --slug is required; it names the task, e.g. build-initial-cli" >&2; exit 2; }
+case "$SLUG" in
+  *[!a-z0-9-]*|-*|*-|*--*)
+    echo "prepare-run: --slug must be lowercase kebab-case: $SLUG" >&2; exit 2 ;;
+esac
+case "$SLUG" in
+  *-*) ;;
+  *) echo "prepare-run: --slug must name the task in words, not one abbreviation: $SLUG" >&2; exit 2 ;;
+esac
+if printf '%s' "$SLUG" | grep -qiE 'ablation|governed|checks|bare|variant|treatment|\badr\b|archgate'; then
+  echo "prepare-run: --slug names the study rather than the task: $SLUG" >&2; exit 2
+fi
+
 # Check the status explicitly. `eval "$(preflight)"` hides it: the substitution
 # captures stdout, the refusal goes to stderr, and eval on an empty string
 # succeeds -- so a refusal printed REFUSED and then minted anyway.
@@ -42,13 +70,16 @@ if ! PREFLIGHT=$(bash "$SKILL_DIR/scripts/preflight.sh" --spec "$SPEC_REL"); the
 fi
 eval "$PREFLIGHT"
 
-# Run ids are dated and numbered, never named for the variant: the directory name
-# reaches the agent, and the variant is exactly what it must not know. The operator
-# reads the variant from the sidecar and from by-variant/, both outside the run.
+# The variant is in the run id by decision: the operator reads the runs root at a
+# glance, which neither a codename nor a sidecar-only record delivers. The cost is
+# real and accepted -- the harness stamps the working directory into context every
+# turn, so a governed run can read the word "governed" about itself. What stays out
+# of the name is the study *around* the run: no "ablation", no sibling variant, no
+# hint that anything is being compared. The slug is checked above on that same line.
 DATE=$(date -u +%Y%m%d)
 n=1
-while [ -e "$RUNS_ROOT/$DATE-$SLUG-$n-$MODEL" ]; do n=$((n + 1)); done
-RUN_ID="$DATE-$SLUG-$n-$MODEL"
+while [ -e "$RUNS_ROOT/$DATE-$SLUG-$VARIANT-$n-$MODEL" ]; do n=$((n + 1)); done
+RUN_ID="$DATE-$SLUG-$VARIANT-$n-$MODEL"
 RUN_DIR="$RUNS_ROOT/$RUN_ID"
 
 # A run that dies half-built must not be left looking like a run.
@@ -62,6 +93,10 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$RUN_DIR"
+# Canonicalise before anything cd's. cleanup() re-tests [ -d "$RUN_DIR" ] from
+# whatever directory the failure happened in, so a relative RUNS_ROOT would make
+# the trap resolve nothing, find nothing, and leave a half-built run in place.
+RUN_DIR=$(cd "$RUN_DIR" && pwd)
 stack_layers "$RUN_DIR" "$VARIANT" "$SKILL_DIR" "$SRC_REPO"
 copy_kit "$RUN_DIR" "$SRC_REPO"
 link_skills "$RUN_DIR" "$SKILL_DIR"
@@ -103,9 +138,4 @@ git -c user.name=scaffold -c user.email=scaffold@local commit -qm "scaffold: $RU
 git branch scaffold
 SCAFFOLD=$(git rev-parse HEAD)
 
-# The operator's index. It lives outside every run directory, so it is readable at
-# a glance without the variant ever entering an agent's working path.
-mkdir -p "$RUNS_ROOT/by-variant/$VARIANT"
-ln -sfn "../../$RUN_ID" "$RUNS_ROOT/by-variant/$VARIANT/$DATE-$n-$MODEL"
-
-report_run "$RUN_DIR" "$VARIANT" "$MODEL" "$spec_sha" "$SCAFFOLD" "$RUNS_ROOT"
+report_run "$RUN_DIR" "$VARIANT" "$MODEL" "$spec_sha" "$SCAFFOLD" "$RUNS_ROOT" "$SKILL_DIR"

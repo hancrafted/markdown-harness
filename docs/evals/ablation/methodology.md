@@ -235,60 +235,37 @@ run.
 
 ## Run-record schema
 
-Each run produces a record at `docs/evals/ablation/runs/<cell>-<n>.md`. The cell name encodes the
-arm and model: e.g. `governed-sonnet-1.md`, `bare-gemini-1.md`.
+Each run produces a record at `docs/evals/ablation/runs/<run-id>.md`, where the run id is the
+directory the mint script produced — `20260904-build-initial-cli-governed-1-sonnet-5`. The id
+already encodes date, task, variant, repeat and model, so the record needs no separate cell name.
 
-```markdown
-# <cell>-<n>
+The record is read top-down by someone deciding whether this run is worth opening. So it opens on
+the verdict and the numbers, carries the commands to reproduce it in the middle, and keeps the
+reasoning last — the reasoning is the run's own `RESULTS.md`, which this record points at rather
+than restates.
 
-## Identity
+````markdown
+# <run-id>
 
-| key          | value                                         |
-| ------------ | --------------------------------------------- |
-| arm          | governed · checks-only · bare                 |
-| model        | sonnet-5 · gemini-3.8-flash-high              |
-| run          | <n>                                           |
-| scaffold SHA | <commit stamped by the script>                |
-| spec SHA     | <freeze commit of implementation-spec.md>     |
-| host harness | Claude Code <version> · Antigravity <version> |
-| start        | <ISO 8601 timestamp>                          |
-| end          | <ISO 8601 timestamp>                          |
-| status       | <completed · stalled · waiting · errored>     |
+**<completed · stalled · waiting · errored>** — functional gate <pass · fail>, <n> of 3 configs
+green, ~$<estimated cost>, <duration>. <One sentence: the single thing a reader should know.>
 
-## Metrics
+## Telemetry
 
-### Tokens
+| metric             | value |     | metric        | value |
+| ------------------ | ----- | --- | ------------- | ----- |
+| input tokens       |       |     | wall-clock s  |       |
+| output tokens      |       |     | turns         |       |
+| thinking tokens    |       |     | files changed |       |
+| cache read tokens  |       |     | insertions    |       |
+| cache write tokens |       |     | deletions     |       |
 
-| metric             | value |
-| ------------------ | ----- |
-| input tokens       |       |
-| output tokens      |       |
-| thinking tokens    |       |
-| cache read tokens  |       |
-| cache write tokens |       |
+Cost is **computed, not read** — token counts times published pricing at run time. Never present
+it as measured.
 
-### Duration and turns
+## Scores
 
-| metric             | value |
-| ------------------ | ----- |
-| wall-clock seconds |       |
-| turns              |       |
-
-### Cost (estimated)
-
-| metric         | value |
-| -------------- | ----- |
-| estimated cost |       |
-
-### Churn
-
-| metric        | value |
-| ------------- | ----- |
-| files changed |       |
-| insertions    |       |
-| deletions     |       |
-
-## Functional gate
+### Functional gate (layer 1)
 
 | config                         | pass/fail | governedFiles | invalidFiles | totalViolations |
 | ------------------------------ | --------- | ------------- | ------------ | --------------- |
@@ -296,15 +273,64 @@ arm and model: e.g. `governed-sonnet-1.md`, `bare-gemini-1.md`.
 | governs-everything-config.yaml |           |               |              |                 |
 | empty-rule-list-config.yaml    |           |               |              |                 |
 
-## Entry point
+### Per-record differential (layer 2)
 
-`bin.mh` → `<path declared by the agent>`
+| record | violations | binds? |
+| ------ | ---------- | ------ |
+
+### Rubric (layer 3)
+
+| axis | score | reviewer note |
+| ---- | ----- | ------------- |
+
+## Reproduce
+
+Copy-pastable, in order. Each line names what it should print.
+
+```sh
+cd ~/Developer/ablation-runs/<run-id>
+git log --oneline scaffold..HEAD          # the run's own commits, scaffold excluded
+npm ci && npm run verify                  # the gate as the run left it
+node "$(node -p "require('./package.json').bin.mh")" --check --root fixtures/corpus
+                                          # expect the frozen verdict, exit 1
+bash <skill>/scripts/collect-metrics.sh .  # regenerates every number above
+```
+
+## Record channel
+
+Which records the run opened, by which tool, and how far in. A governed run that never opened one
+is the strongest result in the study and the easiest to miss, so it is recorded as a number.
+
+| metric                       | value |
+| ---------------------------- | ----- |
+| records in the tree          |       |
+| records ever opened          |       |
+| via Read / via Bash          |       |
+| first access, s into session |       |
+
+## Shape
+
+`bin.mh` → `<path the run declared>`. Whether it sits inside a Package is direct evidence on
+`ARCH-004`, so read it first.
+
+| metric                          | value |
+| ------------------------------- | ----- |
+| pure files                      |       |
+| pure files with no sibling test |       |
+| tests in a package suite        |       |
+| tests as same-name siblings     |       |
+
+## Reasoning
+
+The run's own account is `RESULTS.md` at its repo root: what it built, what it decided against,
+where the spec ran out. Link it; do not restate it. Add here only what the run could not know —
+how its decisions read against the other variants.
 
 ## Anomalies
 
-<anything unexpected: stalls, permission denials, self-authored governance, network errors during
-dependency installation, etc.>
-```
+<stalls, permission denials, self-authored governance, network errors during dependency
+installation, anything that makes this run not comparable to its siblings>
+````
 
 ## Inspection-tour report
 

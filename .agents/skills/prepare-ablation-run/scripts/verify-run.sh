@@ -12,8 +12,11 @@ bad()  { echo "  FAIL $*"; fails=$((fails + 1)); }
 
 [ -f "$SIDECAR" ] || { echo "verify-run: no sidecar at $SIDECAR" >&2; exit 2; }
 VARIANT=$(sed -n 's/^variant: //p' "$SIDECAR")
-grep -q '^variant:' PROVENANCE \
-  && { echo "  FAIL in-run PROVENANCE still names the variant"; exit 1; } || true
+# The directory name carries the variant, so PROVENANCE withholding it buys no
+# blinding. It still buys one thing: spec_path names `docs/evals/ablation/...`,
+# and that is the study, not the run. Keeping the split keeps that field out.
+grep -qE '^(variant|spec_path):' PROVENANCE \
+  && { echo "  FAIL in-run PROVENANCE names an operator-only field"; exit 1; } || true
 echo "verify-run: $RUN_DIR (variant: $VARIANT)"
 
 [ -L CLAUDE.md ] && ok "CLAUDE.md is a symlink to AGENTS.md" || bad "CLAUDE.md is not a symlink"
@@ -83,9 +86,30 @@ done < <(find . -type l -not -path './node_modules/*')
 # fixtures, its suite, the record layer itself. It legitimately says "governed"
 # (the tool being built classifies files that way) and "variants" (ordinary
 # English in a lint message), so only the study's own name is a leak there.
+#
+# The run id is stripped from every file before matching. It carries the variant
+# by decision now, and it is written into the run's own PROVENANCE, package-lock
+# and git metadata -- so without the strip, every checks-only run reports itself
+# as a leak and the sweep becomes noise the operator learns to skip.
 STUDY='ablation|checks-only|\btreatment\b|\bvariants?\b'
 RECORDS='\bADR\b|archgate|governance'
 COPIED='ablation'
+
+# A sweep that cannot fail is worse than no sweep: it prints "clean" over a tree it
+# never read. The run id is interpolated into the sed expression below, so a single
+# metacharacter in it -- a `|` ending the s/// command, a `.` matching any character
+# -- hands grep an empty stream and reports every file clean. prepare-run.sh confines
+# the id to [a-z0-9-] so that cannot arise; this proves it for the id actually in
+# hand. Two-sided, because the strip has two ways to be wrong: it must still fire on
+# a planted word, and it must still suppress the run id itself.
+fires=$(printf 'ablation %s\n' "$RUN_ID" | sed "s|$RUN_ID||g" 2>/dev/null | grep -ciE "$STUDY")
+mutes=$(printf '%s\n' "$RUN_ID"          | sed "s|$RUN_ID||g" 2>/dev/null | grep -ciE "$STUDY")
+if [ "${fires:-0}" -ne 1 ] || [ "${mutes:-0}" -ne 0 ]; then
+  echo "  FAIL leak sweep is inoperative for run id $RUN_ID (fires=$fires mutes=$mutes)"
+  exit 1
+fi
+ok "leak sweep fires on a planted word and mutes the run id"
+
 leaks=0
 while IFS= read -r f; do
   case "$f" in
@@ -95,7 +119,8 @@ while IFS= read -r f; do
       pattern="$STUDY"
       [ "$VARIANT" != "governed" ] && pattern="$STUDY|$RECORDS" ;;
   esac
-  grep -qiE "$pattern" "$f" 2>/dev/null && { echo "     leaks: $f"; leaks=$((leaks + 1)); }
+  sed "s|$RUN_ID||g" "$f" 2>/dev/null | grep -qiE "$pattern" \
+    && { echo "     leaks: $f"; leaks=$((leaks + 1)); }
 done < <(find . -type f -not -path './node_modules/*' -not -path './.git/*')
 [ "$leaks" -eq 0 ] && ok "tree sweep clean ($VARIANT)" \
   || bad "$leaks file(s) name what the run must not know"
