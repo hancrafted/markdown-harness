@@ -25,3 +25,9 @@ docs/evals/ablation/kit/**
 # not parse, a block that is a list. Formatting them would repair the exact defects
 # they exist to present.
 docs/evals/ablation/held-out/fixtures/**
+
+# Conformance cases whose frontmatter block is deliberately defective -- a flow
+# sequence that never closes, a fence that never closes, a block that parses to a
+# list. Formatting would repair the exact defects they exist to present: prettier
+# reads a lone `---` as a thematic break and inserts a blank line after it.
+fixtures/conformance/docs/plain/broken/**
