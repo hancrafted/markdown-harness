@@ -125,11 +125,12 @@ describe('auditRules', () => {
       // ARRANGE
       const empty: readonly string[] = [];
       const ruleCount = CONFIG.frontmatter?.rules.length;
+      const noRuleWon = [0, 0, 0, 0];
       // ACT
       const actual = auditRules(empty, CONFIG);
       // ASSERT
       expect(actual.rules).toHaveLength(ruleCount ?? 0);
-      expect(actual.rules.every((row) => row.won === 0)).toBe(true);
+      expect(actual.rules.map((row) => row.won)).toEqual(noRuleWon);
     });
 
     it('normalises a decorated path before resolving it', () => {

@@ -189,11 +189,12 @@ describe('tallyRules', () => {
       // ARRANGE
       const noFiles: readonly string[] = [];
       const ruleCount = RULES.length;
+      const noRuleWon = [0, 0, 0, 0];
       // ACT
       const actual = tallyRules(noFiles, RULES, matches);
       // ASSERT
       expect(actual).toHaveLength(ruleCount);
-      expect(actual.map((row) => row.won)).toEqual([0, 0, 0, 0]);
+      expect(actual.map((row) => row.won)).toEqual(noRuleWon);
     });
 
     it('reports no rows at all when the config holds no rules', () => {
