@@ -17,10 +17,14 @@
 - [docs/workshop is workshop material only](feedback_docs_workshop_not_for_instruments.md) — evals/instruments go to docs/evals/; map fog item 6's home is stale
 - [Spec holds behaviour, not setup](feedback_spec_holds_behaviour_not_setup.md) — the spec is copied into every arm, so run-environment decisions go to the scaffold ticket
 - [A fixture never models the treatment](feedback_fixture_never_models_the_treatment.md) — strip what the records ask an agent to produce; when spec and fixture disagree, the fixture moves
-- [RTK-filtered output lies](feedback_rtk_filtered_output_lies.md) — omitted entries, "No such file", corrupted reads, `[↑4L…]` placeholders; hash it, tell subagents to `cat`
+- [RTK-filtered output lies](feedback_rtk_filtered_output_lies.md) — omitted entries, corrupted reads, `[↑4L…]` placeholders, and "0 matches" for a regex it cannot parse
 - [Self-describing names beat inherited jargon](feedback_self_describing_over_inherited_jargon.md) — trace the provenance, offer it, expect to lose; then record the translation
 - [Vendored material carries its origin](feedback_vendored_material_carries_its_origin.md) — audit frontmatter too; `disable-model-invocation` made a named skill unreachable
-- [Vacuous green](feedback_vacuous_green.md) — prove a check can fail before trusting it; give a silent check a two-sided canary it runs on itself
+- [Vacuous green](feedback_vacuous_green.md) — prove a check can fail before trusting it; vitest is silent on types, review-context ships empty briefings
 - [Shell: test the degenerate inputs](feedback_shell_degenerate_inputs.md) — `bash -n` plus a happy path proves nothing; empty lists and metachars on /bin/bash 3.2
 - [Variant in the run id is deliberate](project_variant_in_run_id_is_deliberate.md) — Han priced the blinding cost and chose ergonomics; don't re-blind the directory name
 - [Session-log token accounting](feedback_session_log_token_accounting.md) — RESULTS.md has no token data; dedupe JSONL by requestId or inflate 2-3x
+- [Stated intent beats "deliberately open"](feedback_stated_intent_beats_deliberately_open.md) — a named concrete second consumer defeats the speculative-generality argument; the doc marker does not
+- [Body-governing Modules are planned](project_body_governing_modules_planned.md) — spec §9 and architecture.md only scope the current delivery; enumeration is shared surface
+- [Four codes reached without being named](project_four_codes_reached_without_being_named.md) — grep under-reports corpus coverage; build the mapping by first-match, not by name
+- [Glob semantics are measured, never reasoned](feedback_glob_semantics_are_measured.md) — matchesGlob flips case-sensitivity per segment; node_modules matches `**/*.md`, `.git` does not

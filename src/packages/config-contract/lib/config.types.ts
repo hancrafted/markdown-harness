@@ -78,6 +78,21 @@ export type FrontmatterRule = RuleCommon & RuleSelector & RulePayload;
 /** Keys every rule carries, whatever it selects and whatever it asserts. */
 export interface RuleCommon {
   /**
+   * This rule's name, in the config author's own words. MANDATORY, and unique
+   * across the list.
+   *
+   * Reports refer to a rule by id and never by position, so that a rule
+   * reordered — which under first-match is an ordinary and expected edit —
+   * does not silently repoint every stored answer that named it. An index is
+   * the one identifier this language cannot use, because the ordering it would
+   * be drawn from is the very thing an author changes.
+   *
+   * Two rules sharing an id is a config error, and it points at the LATER
+   * occurrence: the first one to claim a name is not the mistake.
+   */
+  ruleId: string;
+
+  /**
    * Why this rule exists, in the config author's own words. MANDATORY.
    *
    * Appended to every violation this rule reports — never substituted for the

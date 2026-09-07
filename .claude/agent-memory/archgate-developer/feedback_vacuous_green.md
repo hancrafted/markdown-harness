@@ -43,6 +43,19 @@ appeared in one session:
    silently stripped `gemini-3X8-flash`. It passed every happy-path test I ran, because
    every id I tested with was well-formed.
 
+9. On 2026-09-07, finishing #32, two shapes of `archgate check` reporting on nothing.
+   `AGENTS.md` trap 1 already says `total: 0` means _nothing in scope changed_, but not
+   the two ways to land there by accident. First: **a directory or a glob argument always
+   yields `total: 0`.** `archgate check src/packages/markdown-file-tree` and
+   `archgate check 'src/packages/markdown-file-tree/**/*'` both returned 0 while a single
+   concrete file path returned 1 — explicit arguments are intersected with the changed set
+   and only real file paths are in it. Second: **untracked files are outside the changed set
+   entirely.** A brand-new Package scored 0 until `git add`, so the governance covering the
+   only files I had written was measuring nothing. Both read as "governance passed".
+   The fix was a canary rather than an argument: planting one `eslint-disable` in the new
+   Package took the run to 14 passed / 1 failed, which is the only thing that proved GEN-003
+   reaches it.
+
 **The remedy generalises: give a silent check a canary it runs on itself.** Before the
 sweep loop, it now feeds itself two synthetic lines and refuses if either misbehaves —
 one planted forbidden word that it must still catch, one bare run id that it must still
@@ -50,6 +63,23 @@ suppress. Two-sided, because a strip has two ways to be wrong. A one-sided canar
 only proves "it can still fire" would have passed while the strip did nothing at all.
 This beats "break it once by hand" because it re-proves itself on every run, against the
 actual input in hand, rather than against the input I happened to imagine.
+
+10. **A per-file `vitest run` is green about behaviour and silent about types.** Vitest
+    transforms with esbuild, which strips types without reading them. Five units in a row
+    went green that way during #33, and `tsc --noEmit` then produced 21 errors across
+    those same five files — including an `as` cast that had widened a discriminated
+    union's key to an index signature, which no test could catch because both shapes hold
+    identical data at run time. Run the typecheck beside the test, not after the batch.
+    Recorded as trap 8 in `AGENTS.md`.
+
+11. **`archgate review-context` (0.13.2) returns no briefing text at all.** Each ADR object
+    carries only `id`, `title`, `domain`, `files`, `rules` — with `truncatedBriefings: []`
+    and `truncatedFiles: false`, so nothing announces the absence. The `archgate:reviewer`
+    skill's Step 2 instructs pasting each ADR's Decision and Do's-and-Don'ts into the
+    sub-agent prompt; against this output that paste is empty, and a sub-agent asked to
+    verify against nothing returns a confident PASS. Point sub-agents at the
+    `.archgate/adrs/*.md` files to read directly, and never trust a domain PASS whose
+    prompt you did not confirm carried real rules.
 
 **How to apply:** after writing any check, break the thing it guards and watch it fail.
 The preflight bug cost nothing only because a dirty tree happened to arrive while I was

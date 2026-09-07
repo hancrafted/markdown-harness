@@ -88,6 +88,16 @@ receive `.archgate/`, which is why an ADR must not hold it. **Core** reads a con
 _Avoid_: schema, config types, the config API, the contract (unqualified — this repo also has
 Interface-level contracts, and design-ADR 0002 turns on the distinction)
 
+**response contract**:
+The shape of everything `mh` writes to stdout: one envelope per command, discriminated on
+`command`, plus the result shapes each envelope carries. It lives in the `response-contract`
+Package. This is what `docs/vision/architecture.md` calls **the report format**; the Package is
+named for the frozen type names — `QueryResponse`, `CheckResponse`, `AuditResponse` — rather than
+for the prose, so the phrase is bound here instead of either side being renamed. Portable on the
+same terms as the config contract, and it stores no prose of ours: a code, the value found and the
+Operator's verbatim `intent`, never a sentence this repo wrote.
+_Avoid_: report contract (as a Package name), output schema, the response type (unqualified)
+
 **Core**:
 The parts that know nothing about markdown frontmatter: config reading, path resolution, the
 command surface, and reporting. It owns the config file and hands each Module its section.
