@@ -1,6 +1,6 @@
 ---
 name: rtk-filtered-output-lies
-description: Filtered output lies in every direction — `diff` says "identical" for differing hashes, `ls` breaks grep anchors and omits whole entries, an existing directory reads "No such file", and file reads come back with keywords dropped or a block replaced by a `[↑4L same as msg N]` placeholder; hash, byte-count or `rtk proxy` instead, and tell subagents to `cat`
+description: RTK-proxied output is lossy in several distinct ways — omitted entries, phantom "No such file", corrupted reads, dedup placeholders, and a silent "0 matches" for regex syntax its engine does not support.
 metadata:
   type: feedback
 ---
@@ -59,3 +59,20 @@ start, so the finding arrives on first read rather than after a detour.
 Same family as [[reproduce-measurement-before-calling-drift]] and
 [[evaluate-arrays-never-grep-them]] — the cause differs each time, but the lesson is that
 the count is lying before the reasoning is.
+
+## RTK substitutes its own regex engine, and reports "0 matches" rather than an error
+
+`grep -n '^#\{1,4\} ' <file>` returned `0 matches for '^#\{1,4\} '` against a file holding
+22 heading lines. The BRE interval quantifier is valid POSIX grep and RTK's reimplementation
+does not honour it — but the output is shaped like a successful search that found nothing,
+not like a rejected pattern, so it reads as a fact about the file.
+
+**Why:** this is the same failure family as the filtered reads above, one level down: the
+tool answers a question it did not actually ask. A "0 matches" that means "I could not
+parse your pattern" is indistinguishable from "your premise is wrong", and I acted on the
+second reading before checking.
+
+**How to apply:** when a grep returns zero matches and the premise says otherwise, re-run
+it through `rtk proxy grep` before concluding anything about the file. Prefer `-E` and
+real ERE over BRE intervals and backreferences. A cheap sanity probe — `rtk proxy grep -c
+'^#' <file>` — distinguishes "no such content" from "no such regex support" in one call.

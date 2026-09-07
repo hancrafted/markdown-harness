@@ -64,6 +64,23 @@ only proves "it can still fire" would have passed while the strip did nothing at
 This beats "break it once by hand" because it re-proves itself on every run, against the
 actual input in hand, rather than against the input I happened to imagine.
 
+10. **A per-file `vitest run` is green about behaviour and silent about types.** Vitest
+    transforms with esbuild, which strips types without reading them. Five units in a row
+    went green that way during #33, and `tsc --noEmit` then produced 21 errors across
+    those same five files — including an `as` cast that had widened a discriminated
+    union's key to an index signature, which no test could catch because both shapes hold
+    identical data at run time. Run the typecheck beside the test, not after the batch.
+    Recorded as trap 8 in `AGENTS.md`.
+
+11. **`archgate review-context` (0.13.2) returns no briefing text at all.** Each ADR object
+    carries only `id`, `title`, `domain`, `files`, `rules` — with `truncatedBriefings: []`
+    and `truncatedFiles: false`, so nothing announces the absence. The `archgate:reviewer`
+    skill's Step 2 instructs pasting each ADR's Decision and Do's-and-Don'ts into the
+    sub-agent prompt; against this output that paste is empty, and a sub-agent asked to
+    verify against nothing returns a confident PASS. Point sub-agents at the
+    `.archgate/adrs/*.md` files to read directly, and never trust a domain PASS whose
+    prompt you did not confirm carried real rules.
+
 **How to apply:** after writing any check, break the thing it guards and watch it fail.
 The preflight bug cost nothing only because a dirty tree happened to arrive while I was
 still looking. Specifically: never chain `&& echo ok` off a pipeline — capture the exit
