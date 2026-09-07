@@ -1,8 +1,11 @@
 /**
- * The usage text, and the only thing stderr ever carries.
+ * The usage text: what stderr carries whenever the invocation itself was wrong.
  *
- * Quoted from the specification rather than reworded, because it is the one
- * piece of prose this tool prints. Everything else it says, it says as data.
+ * Quoted from the specification rather than reworded, because it is nearly the
+ * one piece of prose this tool prints. Everything else it says, it says as
+ * data — the single exception being the runtime-floor refusal in
+ * `lib/runtime/node-support.pure.ts`, which answers "not on this machine"
+ * rather than "not that invocation" and so cannot be this text.
  */
 
 /** The `--config` default: resolved from the current directory, never from `--root`. */

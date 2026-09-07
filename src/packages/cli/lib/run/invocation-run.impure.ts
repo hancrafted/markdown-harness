@@ -5,7 +5,8 @@
  * the writes in the entry point leaves one place where output happens, so the
  * two channels cannot drift apart — §2's contract is that a usage error puts
  * text on stderr and NOTHING on stdout, and that is only checkable if one
- * function decides both.
+ * function decides both. The runtime floor is decided here for the same reason
+ * and no other: it is the file's one ambient read.
  */
 
 import { loadConfig } from '../../../config-loader/load-config.ts';
@@ -17,6 +18,7 @@ import type { AuditResponse, CheckResponse, ConfigFault, QueryResponse } from '.
 import type { Invocation } from '../argv/argv.types.ts';
 import { parseArgv } from '../argv/parse-argv.pure.ts';
 import { USAGE } from '../argv/usage.pure.ts';
+import { unsupportedRuntime } from '../runtime/node-support.pure.ts';
 
 /**
  * What the process should emit and exit with.
@@ -137,9 +139,18 @@ function checkRun({ root, config }: Invocation): Termination {
 /**
  * Run one invocation.
  *
+ * The runtime is checked BEFORE the argv, and the order is contract. Every
+ * command's answer depends on path matching, so a Node the floor rejects makes
+ * all three answers untrustworthy at once — reporting a usage error first would
+ * hand back a refusal about the wrong thing, and reporting a corpus verdict
+ * first would hand back the answer the floor exists to withhold.
+ *
  * @param argv The arguments after the executable and script.
  */
 export function run(argv: readonly string[]): Termination {
+  const refusal = unsupportedRuntime(process.versions.node);
+  if (refusal !== undefined) return { stdout: '', stderr: refusal, code: CANNOT_REPORT };
+
   const invocation = parseArgv(argv);
   if (invocation === undefined) return USAGE_ERROR;
 

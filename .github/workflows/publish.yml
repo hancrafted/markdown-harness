@@ -1,0 +1,93 @@
+name: Publish
+
+# The release pipeline: a `v*` tag re-runs the whole merge gate, then publishes
+# to npm over OIDC trusted publishing with no token anywhere.
+#
+# Only a tag publishes. Merging to the trunk publishes nothing, so a release is
+# always a deliberate act by a person: bump, annotated tag, push. The manual
+# path is documented in `docs/agents/release.md`, including its two silent
+# failure modes; a skill may sit on top of that path but never replaces it.
+#
+# Re-running verify and the vulnerability gate makes a release a strict superset
+# of the merge gate, so a tag can never ship code that skipped a check. A red
+# verify, a red scan or a failed build aborts before anything reaches the
+# registry.
+#
+# Bootstrap, one time only: OIDC cannot create a package that does not exist
+# yet, so a placeholder version is published by hand, from a machine, and never
+# tagged. The first tagged release is the first real one. A trusted publisher
+# for this package must also be configured on npmjs.com against this repository
+# and this workflow's filename.
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: verify + scan + publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # The OIDC token trusted publishing authenticates with, and the same token
+      # that gets provenance attached automatically.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history: archgate scopes its rules to the files changed against
+          # `origin/main` (.archgate/config.json), so that ref has to be present.
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          # Matches ci.yml's pin and satisfies `engines`. Node 26 ships npm 11.17,
+          # well past the 11.5.1 trusted publishing needs.
+          #
+          # `registry-url` is required rather than tidy: OIDC only engages when
+          # the registry is configured explicitly.
+          node-version: '26'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Enable OIDC trusted publishing
+        # The defect this step exists for, carried across from the sibling
+        # repository that hit it: `setup-node` writes a placeholder
+        # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` line whenever a
+        # registry is configured, and with no token in the environment that line
+        # still makes npm choose token authentication and skip the OIDC exchange
+        # entirely. Publishing then fails in a way that names neither cause.
+        #
+        # Only that line goes. The explicit registry has to stay, because OIDC
+        # needs it. The echo confirms the OIDC environment is present without
+        # putting any of it in the log.
+        run: |
+          set -eu
+          sed -i '/_authToken/d' "${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
+          echo "OIDC request URL present: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
+      - run: npm ci
+      # The merge gate, whole and under one name. `verify` builds before it
+      # tests, so this covers the build too.
+      - run: npm run verify
+      # The same gate security.yml applies on a pull request, so a tag cannot
+      # ship past a HIGH or CRITICAL finding that a pull request would have
+      # stopped. Dev dependencies are included because they are most of the
+      # lockfile — the package ships exactly one runtime dependency — and Trivy
+      # suppresses them by default.
+      - name: Trivy gate (HIGH / CRITICAL — fail)
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_INCLUDE_DEV_DEPS: 'true'
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      # No token, and no `--access`: the npm CLI detects the GitHub Actions OIDC
+      # environment and authenticates against the trusted publisher, and an
+      # unscoped package publishes public with no flag. `prepack` rebuilds
+      # `dist/` here as a last guard, so a stale or absent build cannot ship
+      # however this job was reached.
+      - run: npm publish

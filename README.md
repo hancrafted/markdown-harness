@@ -8,17 +8,54 @@ and enough:
 
 > **A document can tell you how much of itself to believe.**
 
+## Install
+
+```bash
+npm install --save-dev markdown-harness
+```
+
+Two names for one command: `markdown-harness` to read in a script, `mh` to type in a session.
+
+Node `>=24.16.0 <25 || >=26.1.0`. The range is narrow rather than tidy because path matching
+delegates to the platform's glob matcher, and only those releases carry the segment-aware behaviour
+the config language is specified against. Outside it the command refuses and names the range — a
+refusal is better than the same corpus reporting differently on your machine than on CI.
+
+## Usage
+
+Write one config at the repo root, `markdown-harness.config.yaml` — the shape is below — then:
+
+```bash
+mh --check                       # every governed file's violations, and the counts
+mh --query docs/research/new.md  # what the config asks of a path, before the file exists
+mh --audit                       # how every rule fared, so a rule that governs nothing is visible
+```
+
+Every command answers as JSON on stdout. The exit codes are the contract: **0** nothing wrong, **1**
+the corpus is wrong — `--check` alone ever exits this — and **2** it could not report at all, which
+is either a usage error on stderr or a rejected config on stdout. So `--check` goes straight into
+your own gate, and a green build starts meaning something:
+
+```json
+{ "scripts": { "verify": "... && mh --check" } }
+```
+
+Nothing generates a config for you, and nothing writes to your tree. If you would rather not learn
+the config language before your first run, ask your Host harness to write one and let `mh --query`
+judge it: a malformed config comes back with a fault code and the location inside the file, and a
+sound one comes back with the rule that governs the path. That is a complete authoring loop, and it
+needs no extra command.
+
 ## Status
 
-**Pre-release. Nothing to install yet.** The config contract, the fixture corpus and its tests exist;
-the CLI does not. Names and shapes in this README are derived and may still change.
+Pre-1.0. Shapes may still change, and what is here is honest about what is not:
 
-| exists today                                          | not yet                              |
-| ----------------------------------------------------- | ------------------------------------ |
-| The config contract (`src/packages/config-contract/`) | The CLI — `init`, `check`, `steer`   |
-| A 15-file fixture corpus and its tests                | The OKF Preset                       |
-| The pinned OKF revision (`docs/okf/`)                 | Index generation, scheduling, any UI |
-| Product and architecture vision (`docs/vision/`)      | A published package                  |
+| exists today                                     | not yet                              |
+| ------------------------------------------------ | ------------------------------------ |
+| `--check`, `--query` and `--audit`               | The OKF Preset                       |
+| The config contract and the Conformance suite    | Index generation, scheduling, any UI |
+| The pinned OKF revision (`docs/okf/`)            | An importable library surface        |
+| Product and architecture vision (`docs/vision/`) | MCP, or any second surface           |
 
 ## The problem
 
@@ -137,5 +174,4 @@ push.
 
 ## Licence
 
-Intended to be permissive and free to use. A `LICENSE` file has not been added yet — until it is,
-no licence is granted.
+MIT — see [`LICENSE`](LICENSE).

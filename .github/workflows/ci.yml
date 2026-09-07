@@ -2,8 +2,9 @@ name: CI
 
 # Correctness gate. One job that runs every check `npm run verify` runs, in
 # verify's order, each as its own named step — a red run names the failing check
-# without opening a log. Security scanning lives in security.yml; nothing
-# publishes yet.
+# without opening a log. Security scanning lives in security.yml, the packed
+# artefact is smoked on three platforms in smoke.yml, and only a `v*` tag
+# publishes (publish.yml). Nothing here reaches the registry.
 #
 # Triggers: pushes to main and every pull request, so a branch with an open PR
 # runs once rather than twice. A branch with no PR gets no run, which is what a
@@ -39,8 +40,9 @@ jobs:
           # to `node:path`'s `matchesGlob`, and the segment-aware behaviour
           # docs/vision/architecture.md measured — then wrote into the
           # specification — is 26's. An older runtime would answer a public
-          # question differently. package.json declares no `engines`, so this pin
-          # is currently the only place the supported runtime is named.
+          # question differently. `engines` now declares the supported range and
+          # the command refuses outside it, so this pin picks one runtime inside
+          # that range rather than being the only place it is named.
           node-version: '26'
           cache: npm
       # Lockfile-pinned install. `prepare` runs `husky`, which only rewrites this
@@ -75,10 +77,15 @@ jobs:
       # before the rules ran, and the pass is vacuous (AGENTS.md trap 5).
       - name: boundaries
         run: npm run lint:boundaries
+      # Before vitest, and in verify's order for the same reason: `bin.mh` names a
+      # build artefact, and the suite that spawns it refuses to start when that
+      # artefact is absent rather than failing 24 times without naming a build.
+      - name: build
+        run: npm run build
       # Includes the process-boundary suite, which spawns the `bin.mh` entry under
-      # this Node: the shebang, running TypeScript straight from source, and the
-      # exit codes are covered here — which is why there is no separate smoke step
-      # for a published artefact, as there is nothing built to smoke.
+      # this Node: the shebang, the compiled entry, the runtime floor and the exit
+      # codes are all covered here. What it cannot cover is the artefact an adopter
+      # actually receives — that is smoke.yml, on three platforms.
       - name: vitest
         run: npm test
       - name: knip

@@ -6,9 +6,9 @@
  * conflicts do not.
  *
  * Refusal is spelled `undefined` and carries no reason: §2 gives stderr one
- * job — the usage text — so a caller learns THAT its argv was refused and
- * reads the usage to learn why. A per-shape message would be a second output
- * format, and only one of them would be a contract.
+ * job for an argv it will not take — the usage text — so a caller learns THAT
+ * its argv was refused and reads the usage to learn why. A per-shape message
+ * would be a second output format, and only one of them would be a contract.
  */
 
 import type { Command, Invocation } from './argv.types.ts';

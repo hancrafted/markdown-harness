@@ -1,12 +1,39 @@
 {
   "name": "markdown-harness",
   "version": "0.0.0",
-  "private": true,
-  "bin": {
-    "mh": "src/packages/cli/cli.ts"
+  "description": "Governance for a markdown knowledge base that agents help maintain — one config declares what each path must carry, and a steering query answers what governs a path before the file exists.",
+  "keywords": [
+    "markdown",
+    "frontmatter",
+    "governance",
+    "knowledge-base",
+    "llm-wiki",
+    "agents",
+    "okf",
+    "cli"
+  ],
+  "homepage": "https://github.com/hancrafted/markdown-harness#readme",
+  "bugs": "https://github.com/hancrafted/markdown-harness/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hancrafted/markdown-harness.git"
   },
+  "license": "MIT",
+  "author": "Han Che",
   "type": "module",
+  "engines": {
+    "node": ">=24.16.0 <25 || >=26.1.0"
+  },
+  "bin": {
+    "markdown-harness": "dist/packages/cli/cli.js",
+    "mh": "dist/packages/cli/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint:boundaries": "depcruise src",
@@ -14,8 +41,8 @@
     "test:watch": "vitest watch",
     "knip": "knip",
     "prepare": "husky",
-    "verify": "archgate check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && vitest run && knip",
-    "verify:commit": "lint-staged && archgate check && tsc --noEmit && vitest run"
+    "verify": "archgate check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && npm run build && vitest run && knip",
+    "verify:commit": "lint-staged && archgate check && tsc --noEmit && npm run build && vitest run"
   },
   "dependencies": {
     "yaml": "~2.9.0"

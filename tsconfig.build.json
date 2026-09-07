@@ -1,0 +1,42 @@
+{
+  // The build-only compiler configuration: the one invocation that emits.
+  //
+  // Why a build exists at all, given Node runs TypeScript directly: it refuses
+  // to do so for files under `node_modules`, and no flag lifts the refusal
+  // (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`). An installed adopter can
+  // therefore only run compiled JavaScript. The reasoning is recorded in
+  // `docs/design-adr/0004-compiled-entry-and-bounded-tarball.md`, so this step is not
+  // removed on the grounds that Node runs TypeScript.
+  //
+  // `tsconfig.json` forbids emit because relative imports here carry explicit
+  // `.ts` extensions, which only a type-check pass can leave alone. This config
+  // turns extension rewriting on instead, so every emitted import resolves to
+  // the `.js` beside it.
+  //
+  // Two invocations, two jobs: `tsc --noEmit` type-checks the whole tree,
+  // including the tests and the ablation kit's suite that this one excludes.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist",
+    // Measured, not assumed: setting `rootDir` stops the automatic inclusion of
+    // `node_modules/@types/*`, and every `node:` import then fails with
+    // TS2591 "Cannot find name 'node:fs'" — eleven errors that read as a
+    // missing devDependency rather than as a resolution change. Naming the one
+    // ambient package `src/` actually uses restores it, and narrows the build
+    // to it: nothing that ships may depend on a test runner's globals.
+    "types": ["node"],
+    // What makes `allowImportingTsExtensions` compatible with emit: the `.ts` in
+    // a relative import becomes `.js` on the way out.
+    "rewriteRelativeImportExtensions": true,
+    // The package is bin-only — no export map, no `types` entry — so nothing
+    // downstream consumes declarations or source maps from the tarball.
+    "declaration": false,
+    "sourceMap": false
+  },
+  // `src` alone. The type-check config also reaches the root scripts and
+  // `docs/evals/ablation/kit/tests`; neither ships.
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

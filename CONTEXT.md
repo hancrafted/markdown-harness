@@ -129,8 +129,21 @@ are its entry points and are public; everything in a subfolder is private. A Pac
 module in the `codebase-design` sense. It is **not** a Module: a Module is a checking domain
 and a Package is a unit of code, and neither implies the other.
 It is also **not** an npm package: no `package.json` sits below the repo root and the root
-one declares no workspaces, so nothing here is installable or versioned on its own.
-_Avoid_: module (collides in both directions), library, workspace, folder
+one declares no workspaces, so no Package is installable or versioned on its own. That much is
+unchanged, but the disclaimer was cheap while nothing was published and is not any more — three
+senses of the word are now live at once, and denying one of them is no longer enough:
+
+| written                  | means                                                             |
+| ------------------------ | ----------------------------------------------------------------- |
+| **Package**, capitalised | one folder under `src/packages/`, and only ever this              |
+| the published package    | the npm package `markdown-harness`, which the whole repo produces |
+| `markdown-harness`       | the product — see its own entry above                             |
+
+Qualify whenever more than one could be meant. The npm sense is what
+`docs/design-adr/0004-compiled-entry-and-bounded-tarball.md` calls the artefact, and it contains
+every Package at once rather than corresponding to any.
+_Avoid_: module (collides in both directions), library, workspace, folder; bare "package" where the
+npm sense and this one could both be read
 
 **classifier**:
 The single token a file carries to declare its discipline — by **position** at a Package root

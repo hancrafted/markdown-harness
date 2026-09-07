@@ -1,10 +1,17 @@
 #!/usr/bin/env node
 // The `mh` entry point, and the only file that writes.
 //
-// Node runs this file directly rather than a build artefact, which is why the
-// entry path carries no `enum` anywhere: type stripping erases declarations, it
-// does not compile them, and an `enum` is the one TypeScript construct with
-// runtime substance. `verbatimModuleSyntax` holds the same line for imports.
+// COMPILED rather than run from source, and not by preference: Node refuses to
+// strip types for a file under `node_modules` and no flag lifts the refusal, so
+// an installed adopter can only run JavaScript. `package.json`'s `bin` names the
+// emitted twin of this file, never this file, and
+// `docs/design-adr/0004-compiled-entry-and-bounded-tarball.md` records why — a
+// reader who knows Node runs TypeScript will otherwise delete the build step.
+//
+// Retired with that build step: the entry path used to carry no `enum` anywhere,
+// because type stripping erases declarations rather than compiling them. The
+// compiler emits one correctly, so the ban has no reason left. Nothing here
+// needs an `enum`, and none was added — the constraint is simply no longer one.
 
 import { run } from './lib/run/invocation-run.impure.ts';
 

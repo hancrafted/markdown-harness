@@ -42,13 +42,17 @@ The five canonical triage roles use their default label strings: `needs-triage`,
 
 Single-context: one `CONTEXT.md` at the repo root, design-ADRs in `docs/design-adr/`. See `docs/agents/domain.md`.
 
+## Releasing
+
+Only a `v*` tag publishes; merging `main` publishes nothing. The manual path is the contract and must work with no skill installed — it is in `docs/agents/release.md`, with the three ways a release fails silently.
+
 ## Source layout
 
 Packages under `src/packages/` are deep modules, and every file carries exactly one classifier — by position at a Package root, by suffix below it. Read [`src/packages/AGENTS.md`](./src/packages/AGENTS.md) before adding, naming, or importing a file there — `src/packages/CLAUDE.md` is a symlink to it, so it also loads on its own.
 
 ## Verification
 
-`npm run verify` is the gate. Eight traps inside it.
+`npm run verify` is the gate. Nine traps inside it.
 
 **1. `archgate check` is changed-files-scoped.** It evaluates only ADRs whose `files:` glob matches a file changed against `baseBranch` (`.archgate/config.json`), and explicit path arguments are intersected with that same set. So `total: 0` means _nothing in scope changed_ — never _governance passed_. To exercise the rules deliberately, give it a base that reaches an ADR edit: `npx archgate check --base HEAD~3`.
 
@@ -67,3 +71,5 @@ So a worktree agent must not conclude "this failure is pre-existing" by stashing
 **7. A repo-wide formatter can brick the mint, and the refusal will not say so.** Two trees are pinned by content hash — `docs/evals/ablation/kit/**` against `assets/kit.sha256`, and the stamped assets against `assets/assets.sha256` — and `preflight.sh` refuses to mint a run when a pin and its tree disagree. `prettier --write .` over either tree therefore produces a refusal that reads as tampering, over a reformat nobody chose, and the message names the drift rather than the cause. Both are in `.prettierignore` with that reason attached, and the same care is owed to anything pinned later: **a content pin and a repo-wide `--write` are incompatible unless the pinned path is ignored.** The held-out fixtures are ignored for a neighbouring reason — they are deliberately malformed, and formatting them would repair the defects they exist to present. `fixtures/conformance/docs/plain/broken/**` joins them on the same grounds. Scope an entry like that to the directory, never to the files that fail today: of the four malformed blocks there, only the unclosed fence moves under `prettier --write` — prettier leaves a block it cannot parse alone — so which shapes survive formatting is an accident of the parser rather than a property anyone chose.
 
 **8. `vitest` never typechecks, so a per-file green proves only that the code ran.** Vitest transforms with esbuild, which strips types without reading them — so `npx vitest run <one file>`, which is exactly the inner loop §7's "work in vertical slices" produces, passes happily over code `tsc` rejects. Measured 2026-09-07: five units went green that way one after another, and `tsc --noEmit` then found 21 errors across those same five files — among them an `as` cast that had widened a discriminated union's `requirement` key to an index signature, which no test could have caught because both shapes hold identical data at run time. The full chain runs `tsc` **before** `vitest`, so the gate does catch this; the trap lives entirely in the inner loop, where the temptation is to defer the typecheck to the end. Run `tsc --noEmit` beside the single-file test run, not once after all of them — a green unit test is evidence about behaviour and says nothing whatever about types.
+
+**9. A green process-boundary suite can be measuring the previous build.** `bin.mh` names a compiled artefact under `dist/`, and `src/packages/cli/tests/cli.test.ts` spawns exactly what it names — so `npx vitest run src/packages/cli/tests/cli.test.ts` after an edit you have not built runs the **old** entry. The suite's start-up guard only asks whether `dist/` exists, never whether it is current, and nothing anywhere checks freshness. Measured 2026-09-07: a changed refusal string that never reached `dist/` left all 26 tests green while the source on disk said something else. `npm run verify` runs `npm run build` before `vitest`, so the gate is safe; the trap lives entirely in the inner loop, beside trap 8 and with the same shape. Run `npm run build` next to the single-file test run — a green integration suite is evidence about the artefact, and only a build makes the artefact evidence about your source.

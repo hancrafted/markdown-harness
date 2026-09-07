@@ -1,0 +1,152 @@
+name: Smoke
+
+# The packed artefact, installed and executed the way an Operator receives it,
+# on all three platforms.
+#
+# This is the highest seam available, and the only one that can catch a wrong
+# entry target, a `files` entry that was never added, a broken interpreter line,
+# or a platform-specific shim fault. Everything below it is already proved by
+# the suites `ci.yml` runs, which is why this workflow asserts nothing about
+# emitted JavaScript, about the build configuration, or about which files the
+# compiler produced — only about what an adopter can observe.
+#
+# It runs on pull requests so it is watched green BEFORE a tag depends on it. A
+# publishing change that never ran through a pull request is the one that fails
+# on the tag, when failure is most expensive.
+#
+# It deliberately runs NO formatter. There is no line-ending attributes file and
+# prettier is configured for line-feed endings, so a Windows checkout with
+# line-ending conversion enabled would fail formatting on every file — a red run
+# carrying no information whatever about the CLI. Keeping the formatter out of
+# this workflow makes that impossible rather than unlikely.
+on:
+  pull_request:
+
+# Least privilege: this only reads the tree and writes inside the workspace.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packed:
+    name: packed artefact (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Every platform reports, rather than the first red cancelling the rest:
+      # "does it work on Windows" and "does it work on macOS" are two separate
+      # answers, and this workflow exists to have both.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        # One script for three platforms. Git Bash ships on the Windows runner,
+        # and the shim it resolves is the POSIX wrapper npm generates from `bin`
+        # — the one this seam exists to exercise. The `.cmd` and `.ps1` shims npm
+        # writes beside it come from npm's own templates and are NOT covered
+        # here; a fault in them would be a fault in npm rather than in this
+        # package. Written down because it is the one gap in this job's cover.
+        #
+        # macOS runners ship bash 3.2, so nothing below uses a bash 4 feature.
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          # Matches ci.yml's pin, and satisfies `engines` — under any other Node
+          # the command refuses by design, so every assertion below would fail
+          # with the range on stderr rather than with a wrong verdict.
+          node-version: '26'
+          cache: npm
+      - run: npm ci
+      # `prepack` builds too, so the tarball can never carry a stale `dist/`.
+      # This step is kept separate anyway: a compile error then fails under its
+      # own name instead of inside a step called "pack".
+      - name: build
+        run: npm run build
+      # Packed into the workspace on purpose. `RUNNER_TEMP` is a Windows path on
+      # the Windows runner, and handing one to npm through bash loses its
+      # backslashes; every path below is relative and therefore identical on all
+      # three platforms.
+      #
+      # `mkdir -p` comes first because it has to. Measured 2026-09-07 on npm
+      # 11.17: `--pack-destination` does NOT create the directory it is handed —
+      # it exits ENOENT naming the tarball it was about to write, which reads as
+      # a packing failure rather than as a missing directory.
+      #
+      # The tarball is then named rather than globbed. An unmatched glob is
+      # passed through to npm verbatim under default bash settings, so `*.tgz`
+      # would report the same ENOENT for "nothing was packed" as for "the
+      # directory is wrong", and `ls` under `set -e` distinguishes them.
+      #
+      # Packing and installing share a step so the tarball's name never has to
+      # cross a step boundary.
+      - name: pack and install the tarball into a scratch project
+        run: |
+          set -eu
+          mkdir -p packed
+          npm pack --pack-destination packed
+          tarball=$(ls packed/*.tgz)
+          echo "packed $tarball"
+
+          mkdir -p scratch/docs
+          cd scratch
+          printf '%s\n' '{ "name": "scratch", "version": "1.0.0", "private": true }' > package.json
+          cat > markdown-harness.config.yaml <<'CONFIG'
+          frontmatter:
+            rules:
+              - ruleId: docs
+                path: ['docs/**/*.md']
+                intent: Every document says what it is
+                fields:
+                  type:
+                    presence: required
+          CONFIG
+          printf -- '---\ntype: note\n---\n\nA governed document with nothing wrong with it.\n' > docs/good.md
+          printf -- 'A governed document carrying no frontmatter at all.\n' > docs/bad.md
+          npm install --no-audit --no-fund "../$tarball"
+          ls node_modules/.bin
+      # The exit contract, against both declared bin names. Exit codes are the
+      # whole assertion: an Operator puts `--check` in their own verify script,
+      # so 1 on a wrong corpus and 0 on a sound one is the contract that makes a
+      # green build mean anything.
+      - name: run both installed shims
+        working-directory: scratch
+        run: |
+          set -eu
+
+          expect_exit() {
+            want=$1
+            shift
+            got=0
+            "$@" > smoke.out 2> smoke.err || got=$?
+            if [ "$got" != "$want" ]; then
+              echo "::error::expected exit $want from '$*', got $got"
+              echo "--- stdout ---"
+              cat smoke.out
+              echo "--- stderr ---"
+              cat smoke.err
+              exit 1
+            fi
+            echo "ok  exit $want  $*"
+          }
+
+          node --version
+
+          for shim in markdown-harness mh; do
+            bin="./node_modules/.bin/$shim"
+
+            # The Steering query, on a path that does not exist yet — the answer
+            # the product is for, and it must not depend on the file being there.
+            expect_exit 0 "$bin" --query docs/not-written-yet.md --config markdown-harness.config.yaml
+
+            # A config it cannot read: a refusal about the invocation, never a
+            # verdict about the corpus.
+            expect_exit 2 "$bin" --query docs/not-written-yet.md --config no-such-config.yaml
+
+            # A corpus with a violation in it.
+            expect_exit 1 "$bin" --check --root . --config markdown-harness.config.yaml
+          done

@@ -3,12 +3,15 @@
 // Exit codes and the stdout/stderr split are contract, and neither is
 // observable from inside the process. The entry file is resolved from
 // `package.json`'s `bin.mh` rather than hard-coded, so a declaration that goes
-// missing fails this suite instead of being quietly worked around.
+// missing fails this suite instead of being quietly worked around — and since
+// that declaration now names a build artefact, so does one that was never
+// built.
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const CONFIG = 'fixtures/conformance/valid-test-config.yaml';
@@ -20,10 +23,37 @@ const REJECTED = 'CONFIG_REJECTED';
 const GOVERNED = 'governed';
 const INVISIBLE = 'invisible';
 
-const manifest = JSON.parse(readFileSync('package.json', 'utf8')) as { bin?: { mh?: string } };
+const manifest = JSON.parse(readFileSync('package.json', 'utf8')) as {
+  bin?: { mh?: string };
+  engines?: { node?: string };
+};
 const declared = manifest.bin?.mh;
 if (declared === undefined) throw new Error('package.json must declare bin.mh for this suite to run');
 const entry = declared;
+
+// The forgotten build, named. Measured 2026-09-07 with the guard off and
+// `dist/` moved aside: 24 of this file's 26 tests failed — 15 value mismatches
+// and 9 `SyntaxError: Unexpected end of JSON input` from parsing an empty
+// stdout — and not one of them mentioned a build. So the suite refuses to start
+// instead, in one sentence that does. The shape is the acceptance kit's own
+// runner's, which refuses when the manifest declares no entry and names the
+// manifest key in its message.
+//
+// The ordinary path never meets this, because `npm run verify` builds before it
+// tests. It exists for the direct and watch-mode runs that bypass that chain.
+if (!existsSync(entry)) {
+  throw new Error(`package.json bin.mh names "${entry}", and nothing is there — run \`npm run build\` first.`);
+}
+
+/**
+ * The supported Node range, read off the manifest rather than written out here.
+ *
+ * An adopter's installer reads `engines.node`; the command prints its own range
+ * when it refuses. Asserting that the printed text carries this value is what
+ * keeps the two from drifting apart — there is no third place to check.
+ */
+const engines = manifest.engines?.node;
+if (engines === undefined) throw new Error('package.json must declare engines.node for this suite to run');
 
 /**
  * A corpus planted in a tmpdir, with a config that governs every markdown file
@@ -49,6 +79,9 @@ let plantedConfig = '';
 let conforming = '';
 let conformingConfig = '';
 
+/** Where the one-line Node-version stand-ins are written. See `mhOnNode`. */
+let shimmed = '';
+
 beforeAll(() => {
   planted = mkdtempSync(join(tmpdir(), 'mh-cli-audit-'));
 
@@ -58,6 +91,8 @@ beforeAll(() => {
   writeFileSync(join(planted, 'kept.md'), '');
   writeFileSync(join(planted, 'node_modules', 'pkg', 'refused.md'), '');
   writeFileSync(join(planted, '.git', 'refused.md'), '');
+
+  shimmed = mkdtempSync(join(tmpdir(), 'mh-node-shim-'));
 
   conforming = mkdtempSync(join(tmpdir(), 'mh-check-clean-'));
   writeFileSync(join(conforming, 'ok.md'), '---\ntype: note\n---\n');
@@ -97,11 +132,40 @@ beforeAll(() => {
 afterAll(() => {
   rmSync(planted, { recursive: true, force: true });
   rmSync(conforming, { recursive: true, force: true });
+  rmSync(shimmed, { recursive: true, force: true });
 });
 
 /** Run the built entry file the way a caller would, and report all three channels. */
 function mh(...args: readonly string[]): { stdout: string; stderr: string; code: number | null } {
   const run = spawnSync(process.execPath, [entry, ...args], { encoding: 'utf8' });
+  return { stdout: run.stdout, stderr: run.stderr, code: run.status };
+}
+
+/**
+ * Run the entry under a STATED Node version rather than under this one.
+ *
+ * The runtime floor is only observable from a Node the floor rejects, and there
+ * is no such Node here to run on. The honest way to arrange one is to hand the
+ * spawned process a stand-in for the single ambient read the floor makes — one
+ * line, written out below where a reader can see it does nothing else. It runs
+ * in the CHILD, so this suite's own process keeps its real version, and the
+ * shipped code carries no test hook: `process.versions.node` is what every real
+ * Node reports and what the floor reads.
+ *
+ * `defineProperty` rather than assignment: the property is read-only, and a
+ * plain write is discarded without a word outside strict mode.
+ */
+function mhOnNode(
+  version: string,
+  ...args: readonly string[]
+): { stdout: string; stderr: string; code: number | null } {
+  const shim = join(shimmed, `node-${version}.mjs`);
+  const stand = `Object.defineProperty(process.versions, 'node', { value: ${JSON.stringify(version)} });\n`;
+  writeFileSync(shim, stand);
+
+  const run = spawnSync(process.execPath, ['--import', pathToFileURL(shim).href, entry, ...args], {
+    encoding: 'utf8',
+  });
   return { stdout: run.stdout, stderr: run.stderr, code: run.status };
 }
 
@@ -444,6 +508,116 @@ describe('mh --check against the frozen acceptance kit', () => {
       // ASSERT
       expect(run.code).toBe(nothingWrong);
       expect(JSON.parse(run.stdout).result.summary).toEqual(clean);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The runtime floor, at the same process seam.
+// ---------------------------------------------------------------------------
+//
+// `engines` is advisory — npm enforces it only for an adopter who opted into
+// strictness — so the command refuses for itself rather than trusting the
+// installer to have done it. What that protects is tenet 3: path matching
+// delegates to the platform's glob matcher, whose behaviour is fixed by the
+// matcher bundled with each Node release, and outside the declared range the
+// same tree gives a different result out. A refusal is the only honest answer
+// available there, and it is preferable to a quietly different one.
+
+describe('mh under a stated Node version', () => {
+  describe('success cases', () => {
+    it('answers normally on the first release of the upper window', () => {
+      // ARRANGE
+      const supported = '26.1.0';
+      const success = 0;
+      const empty = '';
+      // ACT
+      const run = mhOnNode(supported, '--query', 'docs/reference/api-limits.md', '--config', CONFIG);
+      // ASSERT
+      expect(run.code).toBe(success);
+      expect(run.stderr).toBe(empty);
+      expect(JSON.parse(run.stdout).result.governance).toBe(GOVERNED);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses a Node the range excludes, naming the range on stderr, and exits 2', () => {
+      // A THIRD thing stderr carries, and deliberately so: the usage text
+      // answers "what did you ask for", and this answers "not on this machine".
+      // Both are refusals to report at all, which is what stderr is for here.
+      // ARRANGE
+      const unsupported = '25.4.0';
+      const refused = 2;
+      const empty = '';
+      // ACT
+      const run = mhOnNode(unsupported, '--query', 'README.md', '--config', CONFIG);
+      // ASSERT
+      expect(run.code).toBe(refused);
+      expect(run.stdout).toBe(empty);
+      expect(run.stderr).toContain(engines);
+      expect(run.stderr).toContain(unsupported);
+    });
+
+    it('refuses before it reads anything, so a doomed invocation still names the runtime', () => {
+      // The bare invocation would otherwise reject a missing default config on
+      // stdout and exit 2 for THAT reason. Both exit 2, so the channel is the
+      // only thing telling "wrong runtime" from "wrong config" apart — and only
+      // one of the two is worth an Operator's next five minutes.
+      // ARRANGE
+      const unsupported = '22.20.0';
+      const refused = 2;
+      const empty = '';
+      // ACT
+      const run = mhOnNode(unsupported);
+      // ASSERT
+      expect(run.code).toBe(refused);
+      expect(run.stdout).toBe(empty);
+      expect(run.stderr).toContain(engines);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('takes each window at its first release and refuses the release below it', () => {
+      // Written out by hand, because the boundaries ARE the decision. A
+      // prerelease is read as its release: `26.1.0-rc.1` is below `26.1.0` to
+      // semver, and refusing it would be a refusal about version syntax rather
+      // than about matcher behaviour, which is the only thing at stake.
+      // ARRANGE
+      const nothingWrong = 0;
+      const cannotReport = 2;
+      const boundaries = [
+        { version: '22.20.0', code: cannotReport },
+        { version: '24.15.9', code: cannotReport },
+        { version: '24.16.0', code: nothingWrong },
+        { version: '24.99.0', code: nothingWrong },
+        { version: '25.0.0', code: cannotReport },
+        { version: '26.0.9', code: cannotReport },
+        { version: '26.1.0', code: nothingWrong },
+        { version: '26.1.0-rc.1', code: nothingWrong },
+        { version: '27.0.0', code: nothingWrong },
+      ];
+      // ACT
+      const actual = boundaries.map(({ version }) => ({
+        version,
+        code: mhOnNode(version, '--query', 'README.md', '--config', CONFIG).code,
+      }));
+      // ASSERT
+      expect(actual).toEqual(boundaries);
+    });
+
+    it('refuses a version it cannot read rather than assuming it is new enough', () => {
+      // Nothing reports this; a nightly reports `27.0.0-nightly…`, which parses.
+      // What the case pins is the direction of the doubt.
+      // ARRANGE
+      const unreadable = 'not-a-version';
+      const refused = 2;
+      const empty = '';
+      // ACT
+      const run = mhOnNode(unreadable, '--query', 'README.md', '--config', CONFIG);
+      // ASSERT
+      expect(run.code).toBe(refused);
+      expect(run.stdout).toBe(empty);
+      expect(run.stderr).toContain(engines);
     });
   });
 });

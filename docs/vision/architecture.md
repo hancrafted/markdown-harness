@@ -168,6 +168,13 @@ Measured, and relevant: Node 26's `path.matchesGlob` is segment-aware — `docs/
 `docs/log/**` is `false`, which is exactly the Jekyll defect in tenet 5. Good behaviour to adopt,
 and still behaviour that must be written down rather than assumed.
 
+Coming due, and the reason this section is not merely a caution: the same builtin makes matching
+case-insensitive on a case-insensitive host, in wildcard-bearing pattern segments only, which
+contradicts tenet 3.
+[`0005-host-dependent-glob-case-matching.md`](../design-adr/0005-host-dependent-glob-case-matching.md)
+records the measurement, why the obvious fix was rejected, and that the fix itself is deferred to its
+own ticket. The behaviour is written down; it is not yet chosen.
+
 ## Deliberately open
 
 Named here so their absence reads as a choice rather than an oversight: the steering channel and
