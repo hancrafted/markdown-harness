@@ -429,7 +429,7 @@ describe('the harness reports the verdict each Conformance case states', () => {
       // whatever the tree now holds — and `corpus.length` compared against
       // anything derived from `corpus` could not fail at all.
       // ARRANGE
-      const declaredCases = 34;
+      const declaredCases = 37;
       // ACT
       const enumerated = corpus.length;
       // ASSERT

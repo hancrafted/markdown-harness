@@ -17,3 +17,8 @@ Initial Conformance suite: 14 cases.
 Violation-code coverage: 20 cases added, reaching all eighteen field violation codes
 plus both unparseable-frontmatter edges. One new rule, `datasets/`, so a named format
 is reachable by a file that disobeys it. 34 cases.
+
+## 2026-09-07
+
+Empty values under constraints: 3 cases added covering optional and required fields
+written with no value under string and list constraints. 37 cases.

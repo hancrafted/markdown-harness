@@ -42,6 +42,30 @@ describe('field constraints', () => {
       // ASSERT
       expect(actual).toEqual(clean);
     });
+
+    it('reports nothing for an optional field written empty under string constraints', () => {
+      // The presence tier owns emptiness. An optional field left blank reports no
+      // violation, and must not collide with constraints naming strings.
+      // ARRANGE
+      const constraints = { presence: 'optional', maxLength: 200 } as const;
+      const data = { description: null };
+      const clean: readonly unknown[] = [];
+      // ACT
+      const actual = fieldViolations('description', constraints, data);
+      // ASSERT
+      expect(actual).toEqual(clean);
+    });
+
+    it('reports nothing for an optional field written empty under list constraints', () => {
+      // ARRANGE
+      const constraints = { minItems: 1, maxItems: 5 } as const;
+      const data = { tags: null };
+      const clean: readonly unknown[] = [];
+      // ACT
+      const actual = fieldViolations('tags', constraints, data);
+      // ASSERT
+      expect(actual).toEqual(clean);
+    });
   });
 
   describe('failure cases', () => {
@@ -65,6 +89,31 @@ describe('field constraints', () => {
       const expected = [{ field: 'type', value: null, violation: 'EMPTY_REQUIRED_FIELD', requirement: constraints }];
       // ACT
       const actual = fieldViolations('type', constraints, data);
+      // ASSERT
+      expect(actual).toStrictEqual(expected);
+    });
+
+    it('reports a required field written empty under string constraints once, as empty', () => {
+      // Emptiness belongs to presence alone: no second report for `CONSTRAINT_SHAPE_MISMATCH`.
+      // ARRANGE
+      const constraints = { presence: 'required', maxLength: 200 } as const;
+      const data = { description: null };
+      const expected = [
+        { field: 'description', value: null, violation: 'EMPTY_REQUIRED_FIELD', requirement: constraints },
+      ];
+      // ACT
+      const actual = fieldViolations('description', constraints, data);
+      // ASSERT
+      expect(actual).toStrictEqual(expected);
+    });
+
+    it('reports a required field written empty under list constraints once, as empty', () => {
+      // ARRANGE
+      const constraints = { presence: 'required', minItems: 1 } as const;
+      const data = { tags: null };
+      const expected = [{ field: 'tags', value: null, violation: 'EMPTY_REQUIRED_FIELD', requirement: constraints }];
+      // ACT
+      const actual = fieldViolations('tags', constraints, data);
       // ASSERT
       expect(actual).toStrictEqual(expected);
     });
