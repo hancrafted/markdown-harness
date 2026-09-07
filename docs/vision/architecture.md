@@ -172,5 +172,10 @@ and still behaviour that must be written down rather than assumed.
 
 Named here so their absence reads as a choice rather than an oversight: the steering channel and
 whether MCP ships; what happens when a document goes stale, as opposed to how staleness is detected;
-severity tiers, which are contested rather than merely undecided; suppression; the report format;
-the config filename; and the shape of the second Module, which is aimed at reviewability.
+severity tiers, which are contested rather than merely undecided; suppression; and the shape of the
+second Module, which is aimed at reviewability.
+
+The report format and the config filename sat on this list until building `--query` settled both.
+They are struck rather than deleted quietly:
+[`0003-response-envelope-and-config-filename.md`](../design-adr/0003-response-envelope-and-config-filename.md)
+records what closed them and what was rejected on the way.
