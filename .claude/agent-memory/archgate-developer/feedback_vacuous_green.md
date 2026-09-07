@@ -43,6 +43,19 @@ appeared in one session:
    silently stripped `gemini-3X8-flash`. It passed every happy-path test I ran, because
    every id I tested with was well-formed.
 
+9. On 2026-09-07, finishing #32, two shapes of `archgate check` reporting on nothing.
+   `AGENTS.md` trap 1 already says `total: 0` means _nothing in scope changed_, but not
+   the two ways to land there by accident. First: **a directory or a glob argument always
+   yields `total: 0`.** `archgate check src/packages/markdown-file-tree` and
+   `archgate check 'src/packages/markdown-file-tree/**/*'` both returned 0 while a single
+   concrete file path returned 1 — explicit arguments are intersected with the changed set
+   and only real file paths are in it. Second: **untracked files are outside the changed set
+   entirely.** A brand-new Package scored 0 until `git add`, so the governance covering the
+   only files I had written was measuring nothing. Both read as "governance passed".
+   The fix was a canary rather than an argument: planting one `eslint-disable` in the new
+   Package took the run to 14 passed / 1 failed, which is the only thing that proved GEN-003
+   reaches it.
+
 **The remedy generalises: give a silent check a canary it runs on itself.** Before the
 sweep loop, it now feeds itself two synthetic lines and refuses if either misbehaves —
 one planted forbidden word that it must still catch, one bare run id that it must still

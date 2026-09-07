@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import { globsForRule, ruleSelects } from './selector.pure';
+import { globsForRule, ruleSelects, selectionFor } from './selector.pure';
 
 /** A hand-written stand-in covering exact globs and the one `**` shape the sugar emits. */
 function matches(glob: string, path: string): boolean {
@@ -57,6 +57,16 @@ describe('rule selection', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('reports a claimed path as selected', () => {
+      // ARRANGE
+      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: ['docs/a.md'] };
+      const expected = 'selected';
+      // ACT
+      const actual = selectionFor(rule, 'docs/a.md', matches);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
   });
 
   describe('failure cases', () => {
@@ -85,6 +95,27 @@ describe('rule selection', () => {
       const actual = ruleSelects(rule, 'docs/a.md', matches);
       // ASSERT
       expect(actual).toBe(selected);
+    });
+
+    it('tells an excluded path apart from one no glob reached', () => {
+      // `--audit` reports these differently: a rule that never reached a file
+      // may hold a glob typo, while a rule whose own excludeFiles took the file
+      // back is working as written. A boolean cannot carry the difference.
+      // ARRANGE
+      const rule: FrontmatterRule = {
+        ruleId: 'r',
+        intent: 'i',
+        path: ['**/a.md'],
+        excludeFiles: ['docs/a.md'],
+      };
+      const removedByItsOwnExclude = 'excluded';
+      const neverReached = 'unselected';
+      // ACT
+      const excluded = selectionFor(rule, 'docs/a.md', matches);
+      const unselected = selectionFor(rule, 'docs/b.md', matches);
+      // ASSERT
+      expect(excluded).toBe(removedByItsOwnExclude);
+      expect(unselected).toBe(neverReached);
     });
   });
 
@@ -117,6 +148,24 @@ describe('rule selection', () => {
       const actual = ruleSelects(rule, 'docs/a.md', matches);
       // ASSERT
       expect(actual).toBe(selected);
+    });
+
+    it('does not call a path excluded when the rule never selected it anyway', () => {
+      // An excludeFiles that names a file outside the rule's own globs has
+      // removed nothing, and counting it as an exclusion would inflate the
+      // tally with work the rule never did.
+      // ARRANGE
+      const rule: FrontmatterRule = {
+        ruleId: 'r',
+        intent: 'i',
+        path: ['docs/a.md'],
+        excludeFiles: ['docs/b.md'],
+      };
+      const neverReached = 'unselected';
+      // ACT
+      const actual = selectionFor(rule, 'docs/b.md', matches);
+      // ASSERT
+      expect(actual).toBe(neverReached);
     });
   });
 });

@@ -27,3 +27,4 @@
 - [Stated intent beats "deliberately open"](feedback_stated_intent_beats_deliberately_open.md) — a named concrete second consumer defeats the speculative-generality argument; the doc marker does not
 - [Body-governing Modules are planned](project_body_governing_modules_planned.md) — spec §9 and architecture.md only scope the current delivery; enumeration is shared surface
 - [Four codes reached without being named](project_four_codes_reached_without_being_named.md) — grep under-reports corpus coverage; build the mapping by first-match, not by name
+- [Glob semantics are measured, never reasoned](feedback_glob_semantics_are_measured.md) — matchesGlob flips case-sensitivity per segment; node_modules matches `**/*.md`, `.git` does not
