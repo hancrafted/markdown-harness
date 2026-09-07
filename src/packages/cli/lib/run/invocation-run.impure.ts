@@ -10,10 +10,11 @@
 
 import { loadConfig } from '../../../config-loader/load-config.ts';
 import { auditRules } from '../../../frontmatter-harness/audit.ts';
+import { checkCorpus } from '../../../frontmatter-harness/check.ts';
 import { queryPath } from '../../../frontmatter-harness/query.ts';
 import { listMarkdownFiles } from '../../../markdown-file-tree/list-markdown-files.ts';
-import type { AuditResponse, ConfigFault, QueryResponse } from '../../../response-contract/index.ts';
-import type { Command, Invocation } from '../argv/argv.types.ts';
+import type { AuditResponse, CheckResponse, ConfigFault, QueryResponse } from '../../../response-contract/index.ts';
+import type { Invocation } from '../argv/argv.types.ts';
 import { parseArgv } from '../argv/parse-argv.pure.ts';
 import { USAGE } from '../argv/usage.pure.ts';
 
@@ -33,20 +34,18 @@ interface Termination {
   code: number;
 }
 
-/**
- * The commands this build can answer.
- *
- * `--check` arrives with the phase that implements it. The set is named here
- * rather than tested as a literal inside the guard, so which commands exist is
- * a fact stated once and the next phase edits this line and nothing else.
- */
-const IMPLEMENTED: readonly Command[] = ['query', 'audit'];
-
 /** Could not report at all: a usage error, or a config that cannot be trusted. */
 const CANNOT_REPORT = 2;
 
-/** Ran, nothing wrong. Every `--audit` that reported at all exits this. */
+/** Ran, nothing wrong. Every command but `--check` exits this whenever it reported. */
 const NOTHING_WRONG = 0;
+
+/**
+ * The corpus is wrong. `--check` alone can exit this, and exactly when
+ * `invalidFiles > 0` — never for a config it could not read, which is a
+ * statement about the invocation and not about the documents.
+ */
+const CORPUS_IS_WRONG = 1;
 
 /** Usage text on stderr, nothing on stdout, exit 2. */
 const USAGE_ERROR: Termination = { stdout: '', stderr: USAGE, code: 2 };
@@ -65,7 +64,7 @@ function rejection(faults: readonly ConfigFault[]) {
 }
 
 /** JSON on stdout: 2-space indentation, trailing newline. */
-function emit(response: QueryResponse | AuditResponse, code: number): Termination {
+function emit(response: CheckResponse | QueryResponse | AuditResponse, code: number): Termination {
   return { stdout: `${JSON.stringify(response, null, 2)}\n`, stderr: '', code };
 }
 
@@ -107,11 +106,36 @@ function auditRun({ root, config }: Invocation): Termination {
 }
 
 /**
- * Run one invocation.
+ * Every governed file's violations, across one corpus.
  *
- * `--check` — and the bare invocation that defaults to it — is refused as a
- * usage error for now, which keeps stderr's single job intact rather than
- * inventing a code or a stdout shape the specification does not define.
+ * Enumerated before the config is read, for the same reason `--audit` is: a
+ * `--root` that cannot be read is part of the invocation and must put nothing
+ * at all on stdout.
+ *
+ * THE ONE COMMAND THAT CAN EXIT 1, and only on `invalidFiles`. A corpus it
+ * could not finish reading exits 2 instead — "could not report at all" — because
+ * a governed file silently missing from the report would make an incomplete
+ * verdict look like a clean one.
+ */
+function checkRun({ root, config }: Invocation): Termination {
+  const files = listMarkdownFiles(root);
+  if (files === undefined) return USAGE_ERROR;
+
+  const load = loadConfig(config);
+
+  if (load.config === undefined) {
+    return emit({ command: 'check', root, config, result: rejection(load.faults) }, CANNOT_REPORT);
+  }
+
+  const result = checkCorpus(root, files, load.config);
+  if (result === undefined) return USAGE_ERROR;
+
+  const wrong = result.summary.invalidFiles > 0;
+  return emit({ command: 'check', root, config, result }, wrong ? CORPUS_IS_WRONG : NOTHING_WRONG);
+}
+
+/**
+ * Run one invocation.
  *
  * @param argv The arguments after the executable and script.
  */
@@ -119,9 +143,7 @@ export function run(argv: readonly string[]): Termination {
   const invocation = parseArgv(argv);
   if (invocation === undefined) return USAGE_ERROR;
 
-  const implemented = IMPLEMENTED.includes(invocation.command);
-  if (!implemented) return USAGE_ERROR;
-
+  if (invocation.command === 'check') return checkRun(invocation);
   if (invocation.command === 'audit') return auditRun(invocation);
   return queryRun(invocation);
 }

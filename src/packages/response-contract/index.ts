@@ -9,6 +9,7 @@
 // sibling and is re-exported here, giving the Package one public shape.
 
 export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';
+export type { CheckResult, CheckSummary, FileViolations } from './lib/check.types.ts';
 export { isConfigError } from './lib/config-error.pure.ts';
 export type { ConfigErrorResult, ConfigFault, ConfigFaultCode } from './lib/config-error.types.ts';
 export type {
@@ -20,4 +21,15 @@ export type {
   QueryResult,
   Requirements,
 } from './lib/query.types.ts';
-export type { AuditResponse, QueryResponse } from './lib/response.types.ts';
+export type { AuditResponse, CheckResponse, MarkdownHarnessResponse, QueryResponse } from './lib/response.types.ts';
+export type {
+  CrossFieldViolation,
+  CrossFieldViolationOf,
+  FieldValue,
+  FieldViolation,
+  FieldViolationCode,
+  FrontmatterForbiddenViolation,
+  FrontmatterUnparseableViolation,
+  UnknownKeyViolation,
+  Violation,
+} from './lib/violation.types.ts';
