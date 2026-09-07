@@ -1,0 +1,85 @@
+name: CI
+
+# Correctness gate. One job that runs every check `npm run verify` runs, in
+# verify's order, each as its own named step — a red run names the failing check
+# without opening a log. Security scanning lives in security.yml; nothing
+# publishes yet.
+#
+# Triggers: pushes to main and every pull request, so a branch with an open PR
+# runs once rather than twice. A branch with no PR gets no run, which is what a
+# PR-based flow wants.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: every check only reads the tree.
+permissions:
+  contents: read
+
+# A newer push to the same ref cancels the run in flight. Push and PR runs sit in
+# separate groups (distinct refs), so neither cancels the other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history: archgate scopes its rules to the files changed against
+          # `origin/main` (.archgate/config.json), so that ref has to be present.
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          # Node 26, and no matrix: `glob-match.impure.ts` delegates path matching
+          # to `node:path`'s `matchesGlob`, and the segment-aware behaviour
+          # docs/vision/architecture.md measured — then wrote into the
+          # specification — is 26's. An older runtime would answer a public
+          # question differently. package.json declares no `engines`, so this pin
+          # is currently the only place the supported runtime is named.
+          node-version: '26'
+          cache: npm
+      # Lockfile-pinned install. `prepare` runs `husky`, which only rewrites this
+      # checkout's hooks path — harmless here, and it needs devDependencies,
+      # which `npm ci` installs.
+      - run: npm ci
+      # The chain below is duplicated from `npm run verify` rather than invoked
+      # through it, so each check fails under its own name. The duplication has a
+      # standing cost: a change to that script has to be made here too. One is
+      # already decided and pending — issue #27 puts `--strict` on verify's
+      # archgate call, and this step must follow it there.
+      # https://github.com/hancrafted/markdown-harness/issues/27
+      #
+      # `--output github` annotates the diff instead of printing the JSON archgate
+      # emits when stdout is not a terminal; pass/fail is unchanged.
+      #
+      # On a push to main the scope is empty by construction — nothing differs
+      # from `origin/main` — so that run is green over zero rules (AGENTS.md trap
+      # 1). The PR run is the governance gate; the push run re-checks the other
+      # six against the merged tree.
+      - name: archgate
+        run: npx archgate check --output github
+      - name: eslint
+        run: npx eslint .
+      - name: prettier
+        run: npm run format:check
+      - name: tsc
+        run: npx tsc --noEmit
+      # Import-boundary rules. Read the count in "N modules, M dependencies
+      # cruised" rather than the checkmark: M near zero means
+      # `tsPreCompilationDeps` got turned off, every type-only edge was erased
+      # before the rules ran, and the pass is vacuous (AGENTS.md trap 5).
+      - name: boundaries
+        run: npm run lint:boundaries
+      # Includes the process-boundary suite, which spawns the `bin.mh` entry under
+      # this Node: the shebang, running TypeScript straight from source, and the
+      # exit codes are covered here — which is why there is no separate smoke step
+      # for a published artefact, as there is nothing built to smoke.
+      - name: vitest
+        run: npm test
+      - name: knip
+        run: npm run knip
