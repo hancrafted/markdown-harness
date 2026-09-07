@@ -6,7 +6,7 @@
 // does not compile them, and an `enum` is the one TypeScript construct with
 // runtime substance. `verbatimModuleSyntax` holds the same line for imports.
 
-import { run } from './lib/run/query-run.impure.ts';
+import { run } from './lib/run/invocation-run.impure.ts';
 
 const termination = run(process.argv.slice(2));
 

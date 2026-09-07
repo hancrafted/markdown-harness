@@ -9,7 +9,7 @@
  */
 
 import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import type { GlobMatcher } from './rules.types.ts';
+import type { GlobMatcher, RuleSelection } from './rules.types.ts';
 
 /**
  * The globs a rule selects by, with `fileName` desugared.
@@ -24,19 +24,43 @@ export function globsForRule(rule: FrontmatterRule): readonly string[] {
 }
 
 /**
+ * What this rule did with this path.
+ *
+ * Exclusion still wins outright, but the globs are asked FIRST so that the two
+ * ways of not selecting stay distinguishable: `excluded` means this rule's own
+ * globs reached the file and its own `excludeFiles` took it back, while
+ * `unselected` means the rule never reached it at all. `--audit` reports the
+ * two differently, and only this function knows which is which.
+ *
+ * Exclusion takes no part in ordering — it answers one yes/no question before
+ * any rule is chosen, which is what lets a file fall THROUGH to a later,
+ * broader rule without restating that rule's constraints. That is also why an
+ * `excluded` verdict is a fact about one rule alone and never about the list.
+ *
+ * @param rule The rule under test.
+ * @param path A normalised, repo-root-relative path.
+ * @param matches The glob matcher to decide with.
+ */
+export function selectionFor(rule: FrontmatterRule, path: string, matches: GlobMatcher): RuleSelection {
+  const matched = globsForRule(rule).some((glob) => matches(glob, path));
+  if (!matched) return 'unselected';
+
+  const excluded = (rule.excludeFiles ?? []).some((glob) => matches(glob, path));
+  return excluded ? 'excluded' : 'selected';
+}
+
+/**
  * Whether this rule claims this path.
  *
- * Exclusion is asked first and wins outright. It takes no part in ordering: it
- * answers one yes/no question before any rule is chosen, which is what lets a
- * file fall THROUGH to a later, broader rule without restating that rule's
- * constraints.
+ * Defined in terms of `selectionFor` rather than beside it, so that the
+ * resolver `--query` and `--check` run on and the tallies `--audit` reports
+ * cannot drift apart about what selecting means. A diagnostic that explained
+ * first-match using its own second opinion would be worse than none.
  *
  * @param rule The rule under test.
  * @param path A normalised, repo-root-relative path.
  * @param matches The glob matcher to decide with.
  */
 export function ruleSelects(rule: FrontmatterRule, path: string, matches: GlobMatcher): boolean {
-  const excluded = (rule.excludeFiles ?? []).some((glob) => matches(glob, path));
-  if (excluded) return false;
-  return globsForRule(rule).some((glob) => matches(glob, path));
+  return selectionFor(rule, path, matches) === 'selected';
 }

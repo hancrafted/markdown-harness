@@ -13,3 +13,14 @@
  * where a rule owns globs and is offered paths.
  */
 export type GlobMatcher = (glob: string, path: string) => boolean;
+
+/**
+ * What one rule did with one path.
+ *
+ * Three states rather than a boolean, because `--audit` has to tell the two
+ * ways of not selecting apart: a rule whose globs never reached a file is
+ * reporting a possible typo, while a rule whose own `excludeFiles` removed one
+ * is reporting the exclusion working. Collapsing them would make the
+ * diagnostic silent in the direction it exists to speak.
+ */
+export type RuleSelection = 'selected' | 'excluded' | 'unselected';

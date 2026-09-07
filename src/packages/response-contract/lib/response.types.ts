@@ -11,6 +11,7 @@
  * nothing.
  */
 
+import type { AuditResult } from './audit.types.ts';
 import type { ConfigErrorResult } from './config-error.types.ts';
 import type { QueryResult } from './query.types.ts';
 
@@ -24,4 +25,16 @@ export interface QueryResponse {
   config: string;
   /** The answer, or the reason the config could not be trusted. */
   result: QueryResult | ConfigErrorResult;
+}
+
+/** The `--audit` envelope. */
+export interface AuditResponse {
+  /** The discriminant, naming what was asked. */
+  command: 'audit';
+  /** The corpus directory, echoed exactly as the caller wrote it — never resolved. */
+  root: string;
+  /** The config path, echoed exactly as the caller wrote it — never resolved. */
+  config: string;
+  /** Every rule's fate, or the reason the config could not be trusted. */
+  result: AuditResult | ConfigErrorResult;
 }
