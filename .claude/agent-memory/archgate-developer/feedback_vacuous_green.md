@@ -81,6 +81,15 @@ actual input in hand, rather than against the input I happened to imagine.
     `.archgate/adrs/*.md` files to read directly, and never trust a domain PASS whose
     prompt you did not confirm carried real rules.
 
+12. **Item 11 reproduced on 2026-09-07 (archgate 0.55.0), and it has a fix.** Plain
+    `review-context --run-checks` returned `decision` and `dosAndDonts` of **0 characters**
+    for all seven in-scope ADRs. `CONTEXT.md`'s own **Briefing** entry says why: there is "no
+    prose at all without `--verbose`". With `--verbose` all seven came back non-empty, and all
+    seven sat under the 2,000-character cap (largest: ARCH-003 at 1,997), so nothing was
+    truncated either. So the reviewer skill is usable — but only with `--verbose`, and only
+    after checking the lengths. I still pointed the sub-agents at `.archgate/adrs/*.md` to read
+    in full, which is what `CONTEXT.md` says is how an ADR actually reaches an agent.
+
 **How to apply:** after writing any check, break the thing it guards and watch it fail.
 The preflight bug cost nothing only because a dirty tree happened to arrive while I was
 still looking. Specifically: never chain `&& echo ok` off a pipeline — capture the exit

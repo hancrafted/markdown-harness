@@ -60,6 +60,28 @@ Same family as [[reproduce-measurement-before-calling-drift]] and
 [[evaluate-arrays-never-grep-them]] — the cause differs each time, but the lesson is that
 the count is lying before the reasoning is.
 
+## `rtk proxy` is not the raw second opinion this note kept recommending
+
+Measured 2026-09-07: `rtk proxy cat skills-lock.json` returned **15 of the file's 38 skill
+entries**, with no marker of any kind. The file is 9,484 bytes on **one line**, so there was no
+line for a placeholder to sit on — the JSON simply came back shorter and still parsed as valid
+JSON. I read it as "the channel carries 15 skills, all from `mattpocock/skills`, and `commit`
+is not among them", which was wrong in both directions: `commit` is there, and it is the one
+entry sourced from `hancrafted/skills`. That is the exact fact the whole skills-channel
+decision rested on.
+
+**Why this is worse than the cases above:** every remedy in this note points at `rtk proxy`
+as the way to get a raw answer. For a single-line file it is not one. And a truncated JSON
+that still parses defeats the usual tell — there is no syntax error, no placeholder, no
+suspicious blank.
+
+**How to apply:** read anything load-bearing with
+`node -e 'process.stdout.write(require("fs").readFileSync(process.argv[1],"utf8"))' <path>`,
+and prove the read was whole by comparing a count you computed in the same process —
+`.split("\n").length` or `[...s].length` — against `wc -c`. For JSON, never eyeball it:
+`JSON.parse` it in node and print `Object.keys(x).length`. Single-line and minified files are
+the highest-risk shape, because none of the visible tells apply to them.
+
 ## RTK substitutes its own regex engine, and reports "0 matches" rather than an error
 
 `grep -n '^#\{1,4\} ' <file>` returned `0 matches for '^#\{1,4\} '` against a file holding
