@@ -7,27 +7,49 @@
  * a type guarantees nothing about what was actually written.
  */
 
-import type { UnknownKeys } from '../../../config-contract/index.ts';
+import type { FrontmatterRule, NoFrontmatterPayload, UnknownKeys } from '../../../config-contract/index.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
 import { constraintFaults } from './constraint-faults.pure.ts';
 
-/** Every key a rule may carry. */
-const RULE_KEYS: readonly string[] = [
-  'ruleId',
-  'path',
-  'fileName',
-  'excludeFiles',
-  'intent',
-  'frontmatter',
-  'fields',
-  'unknownKeys',
-  'exactlyOneOf',
-  'anyOf',
-  'allOf',
-];
+/**
+ * Every key a rule may carry, keyed by the type that declares them.
+ *
+ * `keyof FrontmatterRule` reaches all eleven even though the type is an
+ * intersection of two unions: both `RuleSelector` members declare `path` and
+ * `fileName`, and both `RulePayload` members declare all five payload keys, so
+ * the absent half of each is `never` rather than missing. That is what makes
+ * the whole rule vocabulary readable from the contract in one expression.
+ */
+const RULE_KEYS: Record<keyof FrontmatterRule, true> = {
+  ruleId: true,
+  path: true,
+  fileName: true,
+  excludeFiles: true,
+  intent: true,
+  frontmatter: true,
+  fields: true,
+  unknownKeys: true,
+  exactlyOneOf: true,
+  anyOf: true,
+  allOf: true,
+};
 
-/** What `frontmatter: forbidden` excludes — each asserts something about frontmatter that must not exist. */
-const PAYLOAD_KEYS: readonly string[] = ['fields', 'unknownKeys', 'exactlyOneOf', 'anyOf', 'allOf'];
+/**
+ * What `frontmatter: forbidden` excludes — each asserts something about
+ * frontmatter that must not exist.
+ *
+ * Read off `NoFrontmatterPayload`, which is the type that already spells the
+ * exclusion out as `never` per key. Only `frontmatter` itself is dropped, being
+ * the discriminator rather than one of the things it forbids, so a payload key
+ * added to the contract joins this set without anyone remembering to add it.
+ */
+const PAYLOAD_KEYS: Record<Exclude<keyof NoFrontmatterPayload, 'frontmatter'>, true> = {
+  fields: true,
+  unknownKeys: true,
+  exactlyOneOf: true,
+  anyOf: true,
+  allOf: true,
+};
 
 /** Keys whose value must be a list of globs or addresses. */
 const LIST_KEYS: readonly string[] = ['path', 'excludeFiles', 'exactlyOneOf', 'anyOf', 'allOf'];
@@ -115,7 +137,7 @@ function shapeFaults(rule: Record<string, unknown>, at: string): readonly Config
 /** `frontmatter: forbidden` is exclusive of every payload key. */
 function payloadFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
   if (rule.frontmatter !== 'forbidden') return [];
-  if (!PAYLOAD_KEYS.some((key) => key in rule)) return [];
+  if (!Object.keys(PAYLOAD_KEYS).some((key) => key in rule)) return [];
   return [{ code: 'CONFIG_FRONTMATTER_FORBIDDEN_WITH_PAYLOAD', location: at }];
 }
 
@@ -139,7 +161,7 @@ export function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
 
   return [
     ...Object.keys(rule)
-      .filter((key) => !RULE_KEYS.includes(key))
+      .filter((key) => !Object.hasOwn(RULE_KEYS, key))
       .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${at}.${key}` })),
     ...identityFaults(rule, at),
     ...selectorFaults(rule, at),
