@@ -30,3 +30,7 @@
 - [Run a workflow's shell locally](feedback_run_workflow_shell_locally.md) — extract the run blocks, execute on bash 3.2; found `--pack-destination` does not mkdir
 - [Glob semantics are measured, never reasoned](feedback_glob_semantics_are_measured.md) — matchesGlob flips case-sensitivity per segment; node_modules matches `**/*.md`, `.git` does not
 - [`--strict` is not adopted](project_strict_not_adopted.md) — GEN-001 line 18 says it gates commit+push; it does not, and line 103 contradicts it
+- [Ablation experiment retired](project_ablation_experiment_retired.md) — a425162 deleted docs/evals; kit-verdict criteria are void, not failing
+- [Fixture bodies are the contract](feedback_fixture_bodies_are_the_contract.md) — measure a predicate change against the corpus first
+- [Two-corpus governance test](project_two_corpus_governance_test.md) — map #54: greenfield ai-coaching-hub leads, this repo's docs/ is the proof obligation
+- [Split a vision into channel and condition](feedback_split_vision_into_channel_and_condition.md) — price each half, ship the cheap one as a same-day fallback

@@ -124,3 +124,32 @@ or blocking a close — confirm the change exists with a direct read in a fresh 
 two filtered commands is one observation, not two. This is [[reproduce-measurement-before-calling-drift]]
 applied to the working tree rather than to a measurement, and the tell is the same: a diff you
 cannot reproduce from disk is not a diff.
+
+## The remedy that worked: `Read` in ≤40-line slices, keyed off the compression marker
+
+Measured 2026-09-08 on `field-constraint.pure.ts` (233 lines). A whole-file `Read` returned
+line 24 as `const STRING_KEYS = ['minLength', …] const;` — the `as` of `as const` deleted —
+and line 63 as `(typeof value === 'string') return …` with the `if` deleted, plus four
+function bodies collapsed to bare parameter lists. **This is the dangerous shape: the result
+is not obviously damaged, it is plausible TypeScript that says something different.** Had I
+reasoned about `collides()` from that read I would have concluded the null guard was missing.
+
+The tell was a trailing `[1565 items compressed to 1202. Retrieve more: hash=…]` marker.
+Re-reading the same file with `Read` at `offset: 50, limit: 20` and `offset: 170, limit: 32`
+returned both regions byte-accurate, including the `as const` and every `if`.
+
+**How to apply:** treat the compression marker as a hard stop, not a footnote — if it is
+present, nothing in that output is quotable. Re-read the specific regions with `offset`/`limit`
+in slices of ≤40 lines; small files (≤60 lines) come through whole and clean. Note this
+supersedes the earlier advice in this note for source files: `cat -n` was mangled here too,
+and `rtk proxy` is already debunked above. Slicing is the cheap reliable move.
+
+Two more shapes confirmed the same day. `git show HEAD -- <path> | grep '^+'` returned
+**completely empty** for a commit that demonstrably added 49 lines to that path — a false
+"no diff", not a parse error. And `grep -rnE '…' . --glob '!node_modules'` returned a false
+CLEAN for a term present in the tree, the ripgrep `--glob` twin of the `--include` trap in
+[[sweep-every-file-type]]. In both cases dropping the flag and naming the directories
+explicitly (`grep -rn 'term' src fixtures docs`) gave the true answer.
+
+**Always run a control search for a term you KNOW exists before trusting any negative
+result** — one extra call converts a false CLEAN into a caught lie.

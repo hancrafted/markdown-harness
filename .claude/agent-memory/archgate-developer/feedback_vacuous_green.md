@@ -99,3 +99,21 @@ as sentinels for _my command produced no output_. And when a check asserts a cou
 what the count is at the moment the check runs — an assertion that can only be satisfied
 later is not a weaker check, it is a broken one. Related:
 [[reproduce-measurement-before-calling-drift]] and [[rtk-filtered-output-lies]].
+
+13. **A compile-time shadow is a check, and it can be vacuous too.** On 2026-09-08, working #42, I
+    bound five validator key vocabularies to the contract types they claim to cover, rewriting
+    `readonly string[]` as `Record<keyof T, true>` so that a type gaining a key stops compiling.
+    `tsc --noEmit` was green — which proves nothing, because a green shadow and an inert one look
+    identical, and `Record<string, true>` (had the `keyof` resolved to `string`) would have accepted
+    literally any set of keys while reading correctly at a glance. The probe is two-sided and cheap:
+    **delete one key from each record and expect `TS2741` (missing property); add a bogus key and
+    expect `TS2353` (object literal may only specify known properties).** All five sites produced
+    both, naming the exact record. The same probe shape caught a real bug in #41 — widening `Format`
+    with a test member made `tsc` fail at _one_ site when it should have failed at two, exposing an
+    `if`-chain in `value-format.pure.ts` that silently absorbed any new format into its last branch.
+
+**How to apply:** treat "the type system will catch this" as a claim needing the same canary as any
+runtime guard. Before writing a docblock promising that some future edit "will not compile", make
+that edit and watch it not compile. A `keyof` that quietly resolves to `string` — via an index
+signature, an `any`, or a type alias to `Record<string, unknown>` — turns the whole construction into
+decoration, and nothing anywhere reports it.

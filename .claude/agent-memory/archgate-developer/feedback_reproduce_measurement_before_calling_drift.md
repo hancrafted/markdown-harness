@@ -115,3 +115,21 @@ _ever_ produced a run. And the discipline point: labelling a block "MEASURED" pr
 inference to every agent downstream, which is far more expensive than being wrong alone. Anything
 under that caption must name the command that produced it. Related: [[vacuous-green]],
 [[audit-the-tree-not-the-ticket]].
+
+**Seventh failure mode: the corpus root that silently governs a subset.** On 2026-09-08, checking
+that #41's `Number.isFinite` change had not moved the conformance verdict, I ran the CLI with
+`--root fixtures/conformance/docs` and got `36 24 28` → **`5 3 3`**. Exit 1, stderr empty, valid
+JSON, a perfectly plausible-looking verdict — and it would have read as a catastrophic regression
+caused by my own edit. Nothing was wrong with the edit. Every `path:` selector in
+`valid-test-config.yaml` begins `docs/`, so rooting _at_ `docs/` left only the two `fileName` rules
+(`index.md`, `log.md`) able to match anything; the root must be `fixtures/conformance`, one level up,
+so paths resolve as `docs/research/...`. The correct invocation is
+`node dist/packages/cli/cli.js --root fixtures/conformance --config fixtures/conformance/valid-test-config.yaml`.
+
+**How to apply:** a path-glob tool given the wrong root does not error — it reports on the smaller
+set it _can_ match, and a smaller verdict looks exactly like a regression. Before reading any corpus
+number as a delta, confirm the root is the one the selectors are written relative to: grep the
+config's `path:` entries and check the prefix appears _below_ the root, not _at_ it. A governed-file
+count that dropped is a claim about the invocation before it is a claim about the code. The tell here
+was cheap and I nearly missed it: `governedFiles` fell to exactly the number of `fileName` rules.
+Related: [[vacuous-green]].
