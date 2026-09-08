@@ -23,6 +23,15 @@ const CONSTRAINT_KEYS: readonly string[] = [
   'intent',
 ];
 
+/** The three named presence states (§3.3). */
+const PRESENCE_STATES: readonly string[] = ['required', 'optional', 'forbidden'];
+
+/** The three named formats (§3.3). */
+const FORMATS: readonly string[] = ['datetime', 'uri', 'actor'];
+
+/** The five bounds, every one of which names a number (§3.3). */
+const BOUND_KEYS: readonly string[] = ['minLength', 'maxLength', 'minItems', 'maxItems', 'itemMaxLength'];
+
 /** A YAML mapping, excluding arrays — `typeof [] === 'object'` would otherwise admit a list. */
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -102,6 +111,49 @@ function patternFaults(constraint: Record<string, unknown>, location: string): r
 }
 
 /**
+ * Whether a written key holds something its closed vocabulary does not name.
+ *
+ * PRESENCE, not truthiness, for the same reason `emptyIntentAt` is not: a bare
+ * `presence:` parses to `null`, which is outside the vocabulary and so is the
+ * Operator saying something wrong rather than saying nothing. A key never
+ * written is not a fault here.
+ *
+ * Membership is tested with `some` rather than `includes` so that comparing an
+ * `unknown` against a list of strings needs no cast to make the types meet.
+ */
+function outsideVocabulary(constraint: Record<string, unknown>, key: string, permitted: readonly string[]): boolean {
+  return key in constraint && !permitted.some((word) => word === constraint[key]);
+}
+
+/**
+ * Whether a written bound holds anything other than a number.
+ *
+ * Type, never range: `maxItems: 0` is a coherent thing to write, and §3.3 puts
+ * no floor under a bound.
+ */
+function holdsNonNumber(constraint: Record<string, unknown>, key: string): boolean {
+  return key in constraint && typeof constraint[key] !== 'number';
+}
+
+/**
+ * The keys whose value is drawn from a closed vocabulary or names a number.
+ *
+ * Recognising a key and never reading what it holds is what let `presence:
+ * maybe` reach the evaluator, which branches on `required`/`forbidden` alone
+ * and so left the field silently ungoverned. §3.5 names that exact config as
+ * `CONFIG_INVALID_VALUE`.
+ */
+function vocabularyFaults(constraint: Record<string, unknown>, location: string): readonly ConfigFault[] {
+  const at = (key: string): ConfigFault => ({ code: 'CONFIG_INVALID_VALUE', location: `${location}.${key}` });
+
+  return [
+    ...(outsideVocabulary(constraint, 'presence', PRESENCE_STATES) ? [at('presence')] : []),
+    ...(outsideVocabulary(constraint, 'format', FORMATS) ? [at('format')] : []),
+    ...BOUND_KEYS.filter((key) => holdsNonNumber(constraint, key)).map(at),
+  ];
+}
+
+/**
  * Every fault one field constraint carries.
  *
  * @param constraint The value written under one field address.
@@ -117,6 +169,7 @@ export function constraintFaults(constraint: unknown, location: string): readonl
     ...keys
       .filter((key) => !CONSTRAINT_KEYS.includes(key))
       .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${location}.${key}` })),
+    ...vocabularyFaults(constraint, location),
     ...emptyIntentAt(constraint, location),
     ...allowedFaults(constraint, location),
     ...patternFaults(constraint, location),

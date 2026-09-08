@@ -31,6 +31,9 @@ const PAYLOAD_KEYS: readonly string[] = ['fields', 'unknownKeys', 'exactlyOneOf'
 /** Keys whose value must be a list of globs or addresses. */
 const LIST_KEYS: readonly string[] = ['path', 'excludeFiles', 'exactlyOneOf', 'anyOf', 'allOf'];
 
+/** The two spellings of `unknownKeys` (§3.3), of which `allowed` is the default. */
+const UNKNOWN_KEYS_STATES: readonly string[] = ['allowed', 'forbidden'];
+
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -55,14 +58,40 @@ function selectorFaults(rule: Record<string, unknown>, at: string): readonly Con
   return [{ code: count === 0 ? 'CONFIG_SELECTOR_MISSING' : 'CONFIG_SELECTOR_AMBIGUOUS', location: at }];
 }
 
-/** Keys whose written shape is wrong, reported at the key as written. */
+/**
+ * A list of strings, which is what every list-valued key holds.
+ *
+ * The elements are checked and not merely the container: a non-string glob
+ * reaches the matcher as something it cannot match, and §3.5 line 271 puts a
+ * cross-field set of the wrong shape under `CONFIG_INVALID_VALUE`.
+ *
+ * An empty list is a list of strings. It names no addresses, which is a
+ * different thing from naming a wrong one.
+ */
+function isStringList(value: unknown): boolean {
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+}
+
+/**
+ * Keys whose written shape is wrong, reported at the key as written.
+ *
+ * The location is the key and never the offending index, which §3.5 fixes: one
+ * bad element makes the whole list unusable, so an indexed fault would ask for
+ * the same repair once per element.
+ */
 function shapeFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
-  const lists = LIST_KEYS.filter((key) => key in rule && !Array.isArray(rule[key])).map((key) =>
+  const lists = LIST_KEYS.filter((key) => key in rule && !isStringList(rule[key])).map((key) =>
     invalid(`${at}.${key}`),
   );
   const fileName = 'fileName' in rule && typeof rule.fileName !== 'string' ? [invalid(`${at}.fileName`)] : [];
   const frontmatter = 'frontmatter' in rule && rule.frontmatter !== 'forbidden' ? [invalid(`${at}.frontmatter`)] : [];
-  return [...lists, ...fileName, ...frontmatter];
+  // The evaluator branches on `forbidden` alone, so every other spelling would
+  // otherwise read as the permissive default rather than as the mistake it is.
+  const unknownKeys =
+    'unknownKeys' in rule && !UNKNOWN_KEYS_STATES.some((state) => state === rule.unknownKeys)
+      ? [invalid(`${at}.unknownKeys`)]
+      : [];
+  return [...lists, ...fileName, ...frontmatter, ...unknownKeys];
 }
 
 /** `frontmatter: forbidden` is exclusive of every payload key. */
