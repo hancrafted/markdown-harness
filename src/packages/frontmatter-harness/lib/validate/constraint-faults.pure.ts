@@ -7,6 +7,7 @@
  * caller concatenates.
  */
 
+import type { FieldConstraints, Format } from '../../../config-contract/index.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
 
 /** Every key a constraint may carry. Grows only by deliberate amendment. */
@@ -23,14 +24,35 @@ const CONSTRAINT_KEYS: readonly string[] = [
   'intent',
 ];
 
-/** The three named presence states (§3.3). */
-const PRESENCE_STATES: readonly string[] = ['required', 'optional', 'forbidden'];
+/**
+ * The named vocabularies, keyed by the union each one shadows.
+ *
+ * A `Record` keyed by the type rather than a list of strings, because a type
+ * union is erased before any of this runs and a runtime check cannot read one.
+ * Keying by the union is the only thing that keeps the shadow honest: widening
+ * `Format` in `config-contract` and forgetting this file leaves a missing key,
+ * and a misspelt spelling an excess one, so neither compiles.
+ *
+ * The type is the source and these follow it. That is the opposite direction
+ * from the const-object pattern, which is for a vocabulary with no home — this
+ * one has one, in `config-contract`, and it stays the source.
+ */
+const PRESENCE_STATES: Record<NonNullable<FieldConstraints['presence']>, true> = {
+  required: true,
+  optional: true,
+  forbidden: true,
+};
 
-/** The three named formats (§3.3). */
-const FORMATS: readonly string[] = ['datetime', 'uri', 'actor'];
+const FORMATS: Record<Format, true> = { datetime: true, uri: true, actor: true };
 
 /** The five bounds, every one of which names a number (§3.3). */
-const BOUND_KEYS: readonly string[] = ['minLength', 'maxLength', 'minItems', 'maxItems', 'itemMaxLength'];
+const BOUND_KEYS: readonly (keyof FieldConstraints)[] = [
+  'minLength',
+  'maxLength',
+  'minItems',
+  'maxItems',
+  'itemMaxLength',
+];
 
 /** A YAML mapping, excluding arrays — `typeof [] === 'object'` would otherwise admit a list. */
 function isMapping(value: unknown): value is Record<string, unknown> {
@@ -118,11 +140,14 @@ function patternFaults(constraint: Record<string, unknown>, location: string): r
  * Operator saying something wrong rather than saying nothing. A key never
  * written is not a fault here.
  *
- * Membership is tested with `some` rather than `includes` so that comparing an
- * `unknown` against a list of strings needs no cast to make the types meet.
+ * Membership is `Object.hasOwn` and never `in`: `in` walks the prototype chain,
+ * so `format: toString` would answer true and pass a nonsense value straight
+ * through the check that exists to stop it.
  */
-function outsideVocabulary(constraint: Record<string, unknown>, key: string, permitted: readonly string[]): boolean {
-  return key in constraint && !permitted.some((word) => word === constraint[key]);
+function outsideVocabulary(constraint: Record<string, unknown>, key: string, permitted: Record<string, true>): boolean {
+  if (!(key in constraint)) return false;
+  const written = constraint[key];
+  return typeof written !== 'string' || !Object.hasOwn(permitted, written);
 }
 
 /**
