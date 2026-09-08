@@ -94,8 +94,13 @@ is the reverse of how they were first written down:**
    after fixing the configuration `gh run rerun <run-id>` publishes the same tag. Never bump the
    version to retry an auth failure.
 
-The `0.0.x` range means "not a release"; the first tagged release is the first real one, and it is
-a minor.
+The `0.0.x` range means "not a release", and the first _real_ release is a minor. `0.0.1` was
+nevertheless tagged and published on 2026-09-08, as a deliberate interim rather than a slip: the
+workshop is on 2026-09-10, and having an installable coordinate that trainees can put in front of a
+Host harness was worth more than keeping the range pure for two days. `0.1.0` — the release this
+page means by "the first real one" — is due 2026-09-09 EOB. Until it lands, read a `0.0.x` version
+as installable but provisional: it makes no promise about the command surface, and the surface may
+move under it without the number saying so.
 
 **The workflow cannot publish a prerelease, by construction.** `npm publish` refuses a prerelease
 version under the default tag — npm 11.17 `lib/commands/publish.js:126-133`, _"You must specify a

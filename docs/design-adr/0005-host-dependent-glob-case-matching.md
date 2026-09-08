@@ -22,8 +22,9 @@ literal pattern, and on Linux neither matches. Measured 2026-09-07 on macOS, Nod
 
 This contradicts tenet 3 in its own words — _the same tree in gives the same result out_ — and it is
 internally inconsistent on a single machine: on one host, one pattern is case-sensitive and its
-wildcard equivalent is not. It is recorded here and fixed under its own ticket, because the fix is a
-change to what a config means and this change is a packaging change.
+wildcard equivalent is not. It is recorded here and fixed under its own ticket,
+[#51](https://github.com/hancrafted/markdown-harness/issues/51), because the fix is a change to what
+a config means and this change is a packaging change.
 
 `docs/vision/architecture.md` already lists _"Glob semantics are written into the specification"_
 among the decisions cheap now and expensive later, and says that delegating to a runtime builtin is
@@ -55,8 +56,9 @@ standard library, and `ARCH-001`'s Admission bar would be engaged for a defect t
 than silent — a matcher that answers wrongly fails the Conformance suite. Owning a glob
 implementation is a large, permanent surface next to a divergence that no current selector reaches.
 
-**Refuse a selector whose wildcard-bearing segments carry uppercase.** Deferred to its own ticket,
-and the option this record expects to become the fix. It leaves matching exactly as it is and makes
+**Refuse a selector whose wildcard-bearing segments carry uppercase.** Deferred to
+[#51](https://github.com/hancrafted/markdown-harness/issues/51), and the option this record expects
+to become the fix. It leaves matching exactly as it is and makes
 the divergent case unreachable rather than reinterpreted, which is the only shape of fix that cannot
 change what an existing sound config means. It is deferred rather than taken here because it changes
 what a config may say, and reviewing that alongside a publishing pipeline would put two unrelated
