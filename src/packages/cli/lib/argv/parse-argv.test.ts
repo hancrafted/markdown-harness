@@ -12,6 +12,7 @@ const DEFAULT_ROOT = '.';
 const QUERY = 'query';
 const CHECK = 'check';
 const AUDIT = 'audit';
+const HELP = 'help';
 
 describe('parseArgv', () => {
   describe('success cases', () => {
@@ -53,6 +54,17 @@ describe('parseArgv', () => {
       const expected = { command: AUDIT, path: '', root, config: DEFAULT_CONFIG };
       // ACT
       const actual = parseArgv(['--audit', '--root', root]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reads help as a command of its own', () => {
+      // The defaults still travel, because one invocation shape is easier to
+      // hold than one with a hole in it — `help` simply reads neither.
+      // ARRANGE
+      const expected = { command: HELP, path: '', root: DEFAULT_ROOT, config: DEFAULT_CONFIG };
+      // ACT
+      const actual = parseArgv(['--help']);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -114,6 +126,17 @@ describe('parseArgv', () => {
       // ASSERT
       expect(actual).toBeUndefined();
     });
+
+    it('refuses help beside a real command rather than letting help win', () => {
+      // Two command flags name two different questions. Precedence would answer
+      // one of them silently, and this parser answers neither.
+      // ARRANGE
+      const argv = ['--check', '--help'];
+      // ACT
+      const actual = parseArgv(argv);
+      // ASSERT
+      expect(actual).toBeUndefined();
+    });
   });
 
   describe('edge cases', () => {
@@ -130,6 +153,17 @@ describe('parseArgv', () => {
     it('refuses the same command flag written twice', () => {
       // ARRANGE
       const argv = ['--audit', '--audit'];
+      // ACT
+      const actual = parseArgv(argv);
+      // ASSERT
+      expect(actual).toBeUndefined();
+    });
+
+    it('refuses help beside a flag it would only have ignored', () => {
+      // `--help` reads neither a corpus nor a config, so a `--config` beside it
+      // is conflicting input on the same terms a `--root` beside `--query` is.
+      // ARRANGE
+      const argv = ['--help', '--config', 'fixtures/valid-test-config.yaml'];
       // ACT
       const actual = parseArgv(argv);
       // ASSERT

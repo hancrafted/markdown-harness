@@ -164,6 +164,11 @@ jobs:
 
             # A corpus with a violation in it.
             expect_exit 1 "$bin" --check --root . --config markdown-harness.config.yaml
+
+            # `--help` is a question rather than a mistake, so it answers on
+            # stdout and succeeds. It takes no other flag and opens no config,
+            # which is why it is asserted with neither.
+            expect_exit 0 "$bin" --help
           done
       # Every step above resolves the extensionless POSIX shim through Git Bash.
       # A Windows Operator in cmd.exe or PowerShell resolves `mh.cmd` or

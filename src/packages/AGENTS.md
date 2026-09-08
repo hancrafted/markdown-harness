@@ -31,10 +31,15 @@ The measurement is in `docs/workshop/probe/adr-routing/measurement.md`.
 There is no copy-me template Package. The canonical shape is the `Example` block in `ARCH-004`,
 which loads itself when you open any file under `src/`.
 
-`config-contract/` is the only Package here, and it exercises two classifiers: `.types` under
-`lib/`, and `.test` under `tests/`. So `.pure` and `.impure` currently have **no on-disk
-instance** — read `ARCH-006` for the purity boundary rather than looking for an example of it.
-The first real `.impure.ts` file is expected to arrive with the record that governs it.
+Every classifier now has an on-disk instance, so read one rather than only the record: 35 `.pure.ts`
+files and 5 `.impure.ts` files sit under `src/packages/`, measured 2026-09-08. `config-contract/` is
+still the one Package that holds nothing but `.types` under `lib/` and `.test` under `tests/`, which
+is why its boundary edges are invisible to `dependency-cruiser` — trap 5 in the root `AGENTS.md`.
+
+For a `.pure` file whose determinism is the whole point, read `usage.pure.ts` or `parse-argv.pure.ts`
+under `cli/lib/argv/`. For the `.impure` boundary, read `cli/lib/run/invocation-run.impure.ts`, which
+states its one ambient read in its own docblock. `ARCH-006` and `ARCH-007` remain the records that
+govern them; the files are the example, never the authority.
 
 ## Running the checks
 

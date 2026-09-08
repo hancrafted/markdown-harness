@@ -498,6 +498,92 @@ describe('mh --check', () => {
 });
 
 // ---------------------------------------------------------------------------
+// `--help`, at the same process seam.
+// ---------------------------------------------------------------------------
+//
+// The one command that reads nothing. Every assertion below is about a channel
+// or an exit code rather than about wording, because the wording is prose that
+// should be free to improve without a test failing.
+
+describe('mh --help', () => {
+  describe('success cases', () => {
+    it('answers on stdout and exits 0', () => {
+      // A question, not a mistake: the answer goes to the success channel.
+      // ARRANGE
+      const nothingWrong = 0;
+      const empty = '';
+      // ACT
+      const run = mh('--help');
+      // ASSERT
+      expect(run.code).toBe(nothingWrong);
+      expect(run.stderr).toBe(empty);
+      expect(run.stdout.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
+    });
+
+    it('names all three reporting commands and the exit codes a caller must read', () => {
+      // What an agent cannot infer from a synopsis, and so the part worth pinning.
+      // ARRANGE
+      const commands = ['--check', '--query', '--audit'];
+      const contract = 'CONFIG_REJECTED';
+      const reference = 'https://github.com/hancrafted/markdown-harness';
+      // ACT
+      const help = mh('--help').stdout;
+      // ASSERT
+      for (const command of commands) expect(help).toContain(command);
+      expect(help).toContain(contract);
+      expect(help).toContain(reference);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses help beside a real command, on stderr and exit 2', () => {
+      // `--check --help` names two questions. Answering either one silently is
+      // the precedence this tool does not do.
+      // ARRANGE
+      const refused = 2;
+      const empty = '';
+      // ACT
+      const run = mh('--check', '--help');
+      // ASSERT
+      expect(run.code).toBe(refused);
+      expect(run.stdout).toBe(empty);
+      expect(run.stderr.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('answers where the default command cannot, having opened no config', () => {
+      // Run from the repo root, where `markdown-harness.config.yaml` does not
+      // exist: the bare invocation exits 2 for the missing default config, so
+      // help exiting 0 in the same directory is evidence it read no config at
+      // all rather than evidence it found one.
+      // ARRANGE
+      const nothingWrong = 0;
+      const cannotReport = 2;
+      // ACT
+      const help = mh('--help');
+      const bare = mh();
+      // ASSERT
+      expect(bare.code).toBe(cannotReport);
+      expect(help.code).toBe(nothingWrong);
+    });
+
+    it('opens with the very text a refusal puts on stderr, so the two cannot drift', () => {
+      // The help text is BUILT from the usage text. Asserting the containment
+      // rather than the wording is what keeps that true after an edit to either.
+      // ARRANGE
+      const refusedArgv = '--verbose';
+      // ACT
+      const refusal = mh(refusedArgv).stderr;
+      const help = mh('--help').stdout;
+      // ASSERT
+      expect(refusal.length).toBeGreaterThan(0);
+      expect(help.slice(0, refusal.length)).toBe(refusal);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // The runtime floor, at the same process seam.
 // ---------------------------------------------------------------------------
 //
