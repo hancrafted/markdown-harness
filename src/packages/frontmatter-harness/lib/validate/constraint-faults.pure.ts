@@ -151,17 +151,24 @@ function outsideVocabulary(constraint: Record<string, unknown>, key: string, per
 }
 
 /**
- * Whether a written bound holds anything other than a number.
+ * Whether a written bound holds anything other than a finite number.
  *
- * Type, never range: `maxItems: 0` is a coherent thing to write, and §3.3 puts
- * no floor under a bound.
+ * `Number.isFinite` and never `typeof`, because `typeof NaN === 'number'` and
+ * YAML spells NaN `.nan`. A bound of NaN passes a type check, so the config is
+ * accepted and governs its files, and then no comparison against it can ever be
+ * true — `'ab'.length < NaN` is false — so the bound reports nothing. That is
+ * exactly the failure this whole check exists to end. `.inf` does the same to a
+ * ceiling. `Number.isFinite` does not coerce, so it also rejects `'3'`.
+ *
+ * No floor and no ceiling otherwise: `maxItems: 0` is coherent, and §3.3 puts
+ * no range on a bound.
  */
-function holdsNonNumber(constraint: Record<string, unknown>, key: string): boolean {
-  return key in constraint && typeof constraint[key] !== 'number';
+function lacksFiniteBound(constraint: Record<string, unknown>, key: string): boolean {
+  return key in constraint && !Number.isFinite(constraint[key]);
 }
 
 /**
- * The keys whose value is drawn from a closed vocabulary or names a number.
+ * The keys whose value is drawn from a closed vocabulary or names a finite number.
  *
  * Recognising a key and never reading what it holds is what let `presence:
  * maybe` reach the evaluator, which branches on `required`/`forbidden` alone
@@ -174,7 +181,7 @@ function vocabularyFaults(constraint: Record<string, unknown>, location: string)
   return [
     ...(outsideVocabulary(constraint, 'presence', PRESENCE_STATES) ? [at('presence')] : []),
     ...(outsideVocabulary(constraint, 'format', FORMATS) ? [at('format')] : []),
-    ...BOUND_KEYS.filter((key) => holdsNonNumber(constraint, key)).map(at),
+    ...BOUND_KEYS.filter((key) => lacksFiniteBound(constraint, key)).map(at),
   ];
 }
 
