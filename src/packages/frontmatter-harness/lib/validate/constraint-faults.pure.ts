@@ -7,22 +7,28 @@
  * caller concatenates.
  */
 
-import type { FieldConstraints, Format } from '../../../config-contract/index.ts';
+import type { AllowedValue, FieldConstraints, Format } from '../../../config-contract/index.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
 
-/** Every key a constraint may carry. Grows only by deliberate amendment. */
-const CONSTRAINT_KEYS: readonly string[] = [
-  'presence',
-  'minLength',
-  'maxLength',
-  'format',
-  'pattern',
-  'minItems',
-  'maxItems',
-  'itemMaxLength',
-  'allowed',
-  'intent',
-];
+/**
+ * Every key a constraint may carry, keyed by the type that declares them.
+ *
+ * Grows only by deliberate amendment, and now cannot grow on one side alone:
+ * `Record<keyof T, true>` fails to compile both when the contract gains a key
+ * this forgot and when this names a key the contract does not have.
+ */
+const CONSTRAINT_KEYS: Record<keyof FieldConstraints, true> = {
+  presence: true,
+  minLength: true,
+  maxLength: true,
+  format: true,
+  pattern: true,
+  minItems: true,
+  maxItems: true,
+  itemMaxLength: true,
+  allowed: true,
+  intent: true,
+};
 
 /**
  * The named vocabularies, keyed by the union each one shadows.
@@ -45,7 +51,7 @@ const PRESENCE_STATES: Record<NonNullable<FieldConstraints['presence']>, true> =
 
 const FORMATS: Record<Format, true> = { datetime: true, uri: true, actor: true };
 
-/** The five bounds, every one of which names a number (§3.3). */
+/** The five bounds, every one of which names a finite number (§3.3). */
 const BOUND_KEYS: readonly (keyof FieldConstraints)[] = [
   'minLength',
   'maxLength',
@@ -65,8 +71,8 @@ function emptyIntentAt(carrier: Record<string, unknown>, location: string): read
   return [{ code: 'CONFIG_EMPTY_INTENT', location: `${location}.intent` }];
 }
 
-/** Every key an `allowed` entry may carry. */
-const ALLOWED_KEYS: readonly string[] = ['value', 'intent'];
+/** Every key an `allowed` entry may carry, keyed by the type that declares them. */
+const ALLOWED_KEYS: Record<keyof AllowedValue, true> = { value: true, intent: true };
 
 /**
  * One permitted value, and what choosing it means.
@@ -83,7 +89,7 @@ function allowedEntryFaults(entry: unknown, at: string): readonly ConfigFault[] 
   if (!isMapping(entry)) return [{ code: 'CONFIG_INVALID_VALUE', location: at }];
 
   const unrecognised = Object.keys(entry)
-    .filter((key) => !ALLOWED_KEYS.includes(key))
+    .filter((key) => !Object.hasOwn(ALLOWED_KEYS, key))
     .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${at}.${key}` }));
 
   const valueless: readonly ConfigFault[] =
@@ -199,7 +205,7 @@ export function constraintFaults(constraint: unknown, location: string): readonl
 
   return [
     ...keys
-      .filter((key) => !CONSTRAINT_KEYS.includes(key))
+      .filter((key) => !Object.hasOwn(CONSTRAINT_KEYS, key))
       .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${location}.${key}` })),
     ...vocabularyFaults(constraint, location),
     ...emptyIntentAt(constraint, location),
