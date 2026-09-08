@@ -53,8 +53,8 @@ describe('checkCorpus', () => {
       // ACT
       const actual = checkCorpus(root, files, CONFIG);
       // ASSERT
-      expect(actual?.summary).toEqual(expected);
-      expect(actual?.files.map((file) => file.path)).toEqual(reported);
+      expect(actual.result?.summary).toEqual(expected);
+      expect(actual.result?.files.map((file) => file.path)).toEqual(reported);
     });
 
     it('reports a conforming corpus as governed and clean', () => {
@@ -64,7 +64,7 @@ describe('checkCorpus', () => {
       // ACT
       const actual = checkCorpus(root, files, CONFIG);
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(actual.result).toEqual(expected);
     });
   });
 
@@ -72,12 +72,18 @@ describe('checkCorpus', () => {
     it('refuses the whole corpus when a governed file cannot be read', () => {
       // A governed file the report would have to be silent about makes an
       // incomplete verdict look like a clean one, so there is no partial answer.
+      //
+      // The refusal CARRIES the path. A bare absence tells the caller only that
+      // something failed, and the caller's only channel is a sentence for a
+      // human — so the path is the whole of what makes that sentence actionable.
       // ARRANGE
       const files = ['docs/typed.md', 'docs/phantom.md'];
+      const refused = join(root, 'docs', 'phantom.md');
       // ACT
       const actual = checkCorpus(root, files, CONFIG);
       // ASSERT
-      expect(actual).toBeUndefined();
+      expect(actual.result).toBeUndefined();
+      expect(actual.unreadable).toBe(refused);
     });
 
     it('governs nothing when the config holds no rules at all', () => {
@@ -87,7 +93,7 @@ describe('checkCorpus', () => {
       // ACT
       const actual = checkCorpus(root, files, {});
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(actual.result).toEqual(expected);
     });
   });
 
@@ -102,7 +108,7 @@ describe('checkCorpus', () => {
       // ACT
       const actual = checkCorpus(root, files, CONFIG);
       // ASSERT
-      expect(actual?.summary).toEqual(expected);
+      expect(actual.result?.summary).toEqual(expected);
     });
 
     it('reports paths in the shape the walker uses, not the shape it was handed', () => {
@@ -112,7 +118,7 @@ describe('checkCorpus', () => {
       // ACT
       const actual = checkCorpus(root, files, CONFIG);
       // ASSERT
-      expect(actual?.files.map((file) => file.path)).toEqual(expected);
+      expect(actual.result?.files.map((file) => file.path)).toEqual(expected);
     });
 
     it('keeps the order it was given rather than sorting', () => {
@@ -122,7 +128,7 @@ describe('checkCorpus', () => {
       // ACT
       const actual = checkCorpus(root, files, CONFIG);
       // ASSERT
-      expect(actual?.files.map((file) => file.path)).toEqual(expected);
+      expect(actual.result?.files.map((file) => file.path)).toEqual(expected);
     });
   });
 });

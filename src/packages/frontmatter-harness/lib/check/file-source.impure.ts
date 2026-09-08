@@ -11,38 +11,42 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { GovernedFile, GovernedSource } from './check.types.ts';
+import type { GovernedFile, GovernedRead, GovernedSource } from './check.types.ts';
 
 /**
- * Read every governed file, or refuse the whole batch.
+ * Read every governed file, or refuse the whole batch and name the first refusal.
  *
- * `undefined` on ANY failure, at any path. A governed file the walker
- * enumerated and this cannot open is a file the report would have to be silent
- * about, and a partial report that looks complete is the one failure a trust
- * tool cannot have — the same judgement the walker already makes about a
- * directory it cannot read. The caller turns it into exit 2, "could not report
- * all".
+ * Refuses on ANY failure, at any path. A governed file the walker enumerated
+ * and this cannot open is a file the report would have to be silent about, and
+ * a partial report that looks complete is the one failure a trust tool cannot
+ * have — the same judgement the walker already makes about a directory it
+ * cannot read. The caller turns it into exit 2, "could not report at all".
+ *
+ * The FIRST refusal only. Reading on to collect every unopenable path would
+ * name more files at the cost of a report that is refused either way, and one
+ * path is already enough for the Operator to act — the batch stops where a
+ * complete answer became impossible.
+ *
+ * The platform's own message is still dropped, and now that costs nothing: it
+ * says `EACCES` where the path says which file, and the path is the half a
+ * caller cannot reconstruct.
  *
  * @param root The corpus directory exactly as the caller wrote it — never resolved.
  * @param governed Every governed path, paired with the rule that won it.
  */
-export function readGovernedSources(
-  root: string,
-  governed: readonly GovernedFile[],
-): readonly GovernedSource[] | undefined {
+export function readGovernedSources(root: string, governed: readonly GovernedFile[]): GovernedRead {
   const sources: GovernedSource[] = [];
 
   for (const file of governed) {
+    const at = join(root, file.path);
     let text: string;
     try {
-      text = readFileSync(join(root, file.path), 'utf8');
+      text = readFileSync(at, 'utf8');
     } catch {
-      // The platform's message is deliberately dropped: stderr carries the usage
-      // text and nothing else, so there is nowhere for it to go.
-      return undefined;
+      return { unreadable: at };
     }
     sources.push({ path: file.path, rule: file.rule, text });
   }
 
-  return sources;
+  return { sources, unreadable: '' };
 }

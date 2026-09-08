@@ -10,6 +10,7 @@
  */
 
 import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { CheckResult } from '../../../response-contract/index.ts';
 
 /** A YAML mapping, before any key of it has been read. */
 export type FrontmatterMapping = Record<string, unknown>;
@@ -80,4 +81,38 @@ export interface GovernedSource {
   rule: FrontmatterRule;
   /** The file's full contents. */
   text: string;
+}
+
+/**
+ * The outcome of opening every governed file.
+ *
+ * Shaped like `config-loader`'s stages — the value is optional and the failure
+ * is always there — rather than as a tagged union, because that is what every
+ * other outcome in this codebase looks like and one shape is easier to read
+ * than two. Empty means nothing was refused, the same way `Termination.stdout`
+ * spells "write nothing".
+ *
+ * The path travels because the caller's only channel is a sentence for a human.
+ * A bare absence would let it say that something failed and nothing else, and
+ * `--check` already dropped the platform's own message on the floor.
+ */
+export interface GovernedRead {
+  /** Every governed file with its bytes, absent when one of them would not open. */
+  sources?: readonly GovernedSource[];
+  /** The path that would not open, exactly as the read addressed it; empty when all of them did. */
+  unreadable: string;
+}
+
+/**
+ * The outcome of checking one corpus.
+ *
+ * `GovernedRead` one tier up: the same refusal, now carrying a verdict instead
+ * of bytes. The two are separate shapes rather than one generic because
+ * `sources` is an internal seam and `result` is what a caller receives.
+ */
+export interface CorpusCheck {
+  /** The verdict, absent when a governed file would not open. */
+  result?: CheckResult;
+  /** The path that would not open, exactly as the read addressed it; empty when all of them did. */
+  unreadable: string;
 }

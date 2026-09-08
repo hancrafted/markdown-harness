@@ -8,7 +8,7 @@
 // built.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -74,8 +74,38 @@ let plantedConfig = '';
 let conforming = '';
 let conformingConfig = '';
 
+/**
+ * A corpus holding one governed file the walker enumerates and the read edge
+ * cannot open.
+ *
+ * It has to be a PERMISSION. Every other way a read refuses — a directory, a
+ * dangling symlink, a socket — the walker already declines to enumerate, so
+ * mode 000 is the only arrangement that reaches this branch at the process
+ * boundary at all. That buys one dependency on ambient state, and `denied`
+ * below is what stops it turning into a test that passes without testing.
+ */
+let locked = '';
+let lockedConfig = '';
+let lockedFile = '';
+
 /** Where the one-line Node-version stand-ins are written. See `mhOnNode`. */
 let shimmed = '';
+
+/**
+ * Whether a mode-000 file is genuinely closed to THIS uid.
+ *
+ * A uid that bypasses the mode bit reads the file anyway, and the refusal under
+ * test would never fire — leaving a green assertion about a condition that was
+ * never arranged. Setup asks first and refuses to run rather than report that.
+ */
+function denied(path: string): boolean {
+  try {
+    readFileSync(path, 'utf8');
+    return false;
+  } catch {
+    return true;
+  }
+}
 
 beforeAll(() => {
   planted = mkdtempSync(join(tmpdir(), 'mh-cli-audit-'));
@@ -107,6 +137,32 @@ beforeAll(() => {
     ].join('\n'),
   );
 
+  locked = mkdtempSync(join(tmpdir(), 'mh-check-locked-'));
+  writeFileSync(join(locked, 'readable.md'), '---\ntype: note\n---\n');
+  lockedFile = join(locked, 'sealed.md');
+  writeFileSync(lockedFile, '---\ntype: note\n---\n');
+  chmodSync(lockedFile, 0o000);
+  if (!denied(lockedFile)) {
+    throw new Error(
+      `${lockedFile} is mode 000 and still opens — this uid bypasses the mode bit, so the unreadable-file refusal cannot be arranged here`,
+    );
+  }
+  lockedConfig = join(locked, 'locked.config.yaml');
+  writeFileSync(
+    lockedConfig,
+    [
+      'frontmatter:',
+      '  rules:',
+      '    - ruleId: every-markdown-file',
+      "      path: ['**/*.md']",
+      '      intent: Governs every markdown file the walker enumerates',
+      '      fields:',
+      '        type:',
+      '          presence: required',
+      '',
+    ].join('\n'),
+  );
+
   plantedConfig = join(planted, 'walker.config.yaml');
   writeFileSync(
     plantedConfig,
@@ -125,6 +181,8 @@ beforeAll(() => {
 });
 
 afterAll(() => {
+  if (lockedFile !== '') chmodSync(lockedFile, 0o644);
+  rmSync(locked, { recursive: true, force: true });
   rmSync(planted, { recursive: true, force: true });
   rmSync(conforming, { recursive: true, force: true });
   rmSync(shimmed, { recursive: true, force: true });
@@ -471,6 +529,24 @@ describe('mh --check', () => {
       const actual = files.find((file) => file.path === row.path);
       // ASSERT
       expect(actual).toEqual(row);
+    });
+
+    it('names a governed file it cannot open, rather than printing the usage text', () => {
+      // Exit 2 was already right — "could not report at all". The CHANNEL was
+      // not: the invocation was well formed and the walker accepted the root, so
+      // a synopsis sent the Operator to check flags that were never wrong, and
+      // nothing anywhere named the file. §2 rule 3 tells the two exit-2 flavours
+      // apart by what the channel says, and this said the other one's line.
+      // ARRANGE
+      const cannotReport = 2;
+      const empty = '';
+      // ACT
+      const run = mh('--check', '--root', locked, '--config', lockedConfig);
+      // ASSERT
+      expect(run.code).toBe(cannotReport);
+      expect(run.stdout).toBe(empty);
+      expect(run.stderr).toContain(lockedFile);
+      expect(run.stderr).not.toContain(USAGE_LEAD);
     });
   });
 
