@@ -5,7 +5,7 @@ status: accepted
 
 # The published artefact is a compiled entry point, bounded to what runs, and refuses an unsupported Node
 
-`markdown-harness` publishes to npm as `markdown-harness`, unscoped. The `bin` field declares two
+`markdown-harness` publishes to npm as `@hancrafted/markdown-harness`. The `bin` field declares two
 names — the product's full name and the short alias `mh` — both pointing at one compiled entry under
 `dist/`. A `files` allowlist limits the tarball to that tree. The package is **bin-only**: no export
 map, no `types` entry, nothing importable. And because the entry's answers depend on the host's glob
@@ -46,12 +46,22 @@ repeatedly in a session should not have to. Adding an alias later is free, remov
 change, so both ship in the first release. The alias is also what keeps the existing usage text
 (`usage: mh …`) and the process-boundary suite true without a rewrite.
 
-**A scoped name, `@hancrafted/markdown-harness`.** Deferred, not rejected. Two facts decided it:
-unscoped packages are always public, whereas a scoped package publishes restricted unless access is
-set explicitly; and the registry's full unpublish window is 72 hours, so a first publish is
-effectively permanent and the unclaimed name is worth claiming. npm has no rename, so a scope can
-only ever be added as an additional package with a deprecation pointer on the old name — which
-remains possible and is not a breaking change.
+**An unscoped name, `markdown-harness`.** Rejected on 2026-09-08, reversing what this record first
+decided — the reversal is written here rather than left to the commit log, because the paragraph
+below is the reasoning it overturns. Two facts had decided for unscoped: unscoped packages are
+always public, whereas a scoped package publishes restricted unless access is set explicitly; and
+the registry's full unpublish window is 72 hours, so a first publish is effectively permanent and an
+unclaimed name is worth claiming. Neither fact turned out to be false; what they were weighed
+against was missing. The product has a sibling, `@hancrafted/typescript-ai-harness`, in an
+organisation this account already owns, and one namespace covering both is worth more than one
+shorter coordinate. The restricted-by-default consequence is real and is paid explicitly rather than
+avoided: `--access public` on every publish, in `publish.yml` and in the bootstrap step, without
+which the publish fails on visibility rather than on anything about the artefact. The scope is a
+registry namespace and nothing else — `bin` still installs `markdown-harness` and `mh`, the config
+file is still `markdown-harness.config.yaml`, and `npm pack` reports the same 59 files at the same
+38.5 kB, only the tarball's filename gaining a prefix. The unscoped name remains unclaimed. npm has
+no rename, so claiming it later would be an additional package with a deprecation pointer on it —
+which remains possible and is not a breaking change.
 
 **An export map and a `types` entry, so the config contract is importable.** Deferred. Every argument
 for exporting it is an argument about reimplementation in another language, which a TypeScript export

@@ -133,11 +133,11 @@ one declares no workspaces, so no Package is installable or versioned on its own
 unchanged, but the disclaimer was cheap while nothing was published and is not any more — three
 senses of the word are now live at once, and denying one of them is no longer enough:
 
-| written                  | means                                                             |
-| ------------------------ | ----------------------------------------------------------------- |
-| **Package**, capitalised | one folder under `src/packages/`, and only ever this              |
-| the published package    | the npm package `markdown-harness`, which the whole repo produces |
-| `markdown-harness`       | the product — see its own entry above                             |
+| written                  | means                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| **Package**, capitalised | one folder under `src/packages/`, and only ever this                          |
+| the published package    | the npm package `@hancrafted/markdown-harness`, which the whole repo produces |
+| `markdown-harness`       | the product — see its own entry above                                         |
 
 Qualify whenever more than one could be meant. The npm sense is what
 `docs/design-adr/0004-compiled-entry-and-bounded-tarball.md` calls the artefact, and it contains
