@@ -51,7 +51,8 @@ describe('checkCorpus', () => {
       const expected = { governedFiles: 2, invalidFiles: 1, totalViolations: 1 };
       const reported = ['docs/untyped.md'];
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual?.summary).toEqual(expected);
       expect(actual?.files.map((file) => file.path)).toEqual(reported);
@@ -62,7 +63,8 @@ describe('checkCorpus', () => {
       const files = ['docs/typed.md'];
       const expected = { summary: { governedFiles: 1, invalidFiles: 0, totalViolations: 0 }, files: [] };
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -72,12 +74,18 @@ describe('checkCorpus', () => {
     it('refuses the whole corpus when a governed file cannot be read', () => {
       // A governed file the report would have to be silent about makes an
       // incomplete verdict look like a clean one, so there is no partial answer.
+      //
+      // The refusal CARRIES the path. A bare absence tells the caller only that
+      // something failed, and the caller's only channel is a sentence for a
+      // human — so the path is the whole of what makes that sentence actionable.
       // ARRANGE
       const files = ['docs/typed.md', 'docs/phantom.md'];
+      const refused = join(root, 'docs', 'phantom.md');
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'unreadable' ? outcome.path : undefined;
       // ASSERT
-      expect(actual).toBeUndefined();
+      expect(actual).toBe(refused);
     });
 
     it('governs nothing when the config holds no rules at all', () => {
@@ -85,7 +93,8 @@ describe('checkCorpus', () => {
       const files = ['docs/untyped.md'];
       const expected = { summary: { governedFiles: 0, invalidFiles: 0, totalViolations: 0 }, files: [] };
       // ACT
-      const actual = checkCorpus(root, files, {});
+      const outcome = checkCorpus(root, files, {});
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -100,7 +109,8 @@ describe('checkCorpus', () => {
       const files = ['docs/typed.md', 'ungoverned.md'];
       const expected = { governedFiles: 1, invalidFiles: 0, totalViolations: 0 };
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual?.summary).toEqual(expected);
     });
@@ -110,7 +120,8 @@ describe('checkCorpus', () => {
       const files = ['./docs/untyped.md'];
       const expected = ['docs/untyped.md'];
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual?.files.map((file) => file.path)).toEqual(expected);
     });
@@ -120,7 +131,8 @@ describe('checkCorpus', () => {
       const files = ['docs/untyped.md', 'docs/typed.md', 'docs/untyped.md'];
       const expected = ['docs/untyped.md', 'docs/untyped.md'];
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual?.files.map((file) => file.path)).toEqual(expected);
     });
