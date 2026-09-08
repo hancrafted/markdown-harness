@@ -51,6 +51,28 @@ jobs:
           # the registry is configured explicitly.
           node-version: '26'
           registry-url: 'https://registry.npmjs.org'
+      - name: Refuse a tag that disagrees with the manifest
+        # `npm publish` ships `package.json`'s version and never the tag's, and
+        # the release path bumps the manifest and writes the tag in two separate
+        # commands (docs/agents/release.md), so until this step nothing but habit
+        # kept the two in agreement.
+        #
+        # npm itself catches two of the three ways they diverge, loudly: a
+        # version already on the registry, and an implicit `latest` applied over
+        # a higher published version (npm 11.17 lib/commands/publish.js:175-181).
+        # The case it does not catch is a manifest version HIGHER than `latest`
+        # that simply is not the number tagged — that publishes successfully,
+        # under a version nobody chose, and this step is the only thing in front
+        # of it. Placed before `npm ci` so it costs seconds when it fires.
+        run: |
+          set -eu
+          tagged="${GITHUB_REF_NAME#v}"
+          manifest=$(node -p 'require("./package.json").version')
+          if [ "$tagged" != "$manifest" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} carries version '${tagged}' but package.json says '${manifest}' — bump and re-tag rather than publishing a number nobody chose"
+            exit 1
+          fi
+          echo "tag ${GITHUB_REF_NAME} and package.json agree on ${manifest}"
       - name: Enable OIDC trusted publishing
         # The defect this step exists for, carried across from the sibling
         # repository that hit it: `setup-node` writes a placeholder
