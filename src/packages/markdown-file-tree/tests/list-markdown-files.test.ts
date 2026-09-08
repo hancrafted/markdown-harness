@@ -1,10 +1,7 @@
 // Integration suite for the walker, through its entry point.
 //
-// The tree is planted in a tmpdir rather than committed. The kit ships
-// `governs-everything-config.yaml` precisely to make the walker observable, but
-// planting a `node_modules/` fixture anywhere under `docs/evals/ablation/kit/`
-// would change `kit.sha256` and make `preflight.sh` refuse every future mint.
-// A tmpdir also lets the suite plant the two things a repository cannot hold
+// The tree is planted in a tmpdir rather than committed.
+// A tmpdir lets the suite plant the two things a repository cannot hold
 // conveniently: a symlinked directory, and a symlinked document.
 
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';

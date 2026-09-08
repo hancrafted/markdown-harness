@@ -14,7 +14,7 @@
   // the `.js` beside it.
   //
   // Two invocations, two jobs: `tsc --noEmit` type-checks the whole tree,
-  // including the tests and the ablation kit's suite that this one excludes.
+  // including the tests that this one excludes.
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
@@ -35,8 +35,7 @@
     "declaration": false,
     "sourceMap": false
   },
-  // `src` alone. The type-check config also reaches the root scripts and
-  // `docs/evals/ablation/kit/tests`; neither ships.
+  // `src` alone. The type-check config also reaches the root scripts; neither ships.
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"]
 }

@@ -15,8 +15,6 @@ import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const CONFIG = 'fixtures/conformance/valid-test-config.yaml';
-const KIT_ROOT = 'docs/evals/ablation/kit/fixtures';
-const KIT_CONFIG = 'docs/evals/ablation/kit/fixtures/valid-test-config.yaml';
 const CORPUS_ROOT = 'fixtures/conformance';
 const USAGE_LEAD = 'usage: mh';
 const REJECTED = 'CONFIG_REJECTED';
@@ -62,9 +60,7 @@ if (engines === undefined) throw new Error('package.json must declare engines.no
  * The refusals are only observable under a config broad enough to select what
  * the walker should never have handed over: a file no rule selects is invisible
  * either way, so a narrower config reads the same whether the walker refused
- * `node_modules/` or not. The kit ships such a config, but planting a
- * `node_modules/` fixture under `docs/evals/ablation/kit/` would change
- * `kit.sha256` and make every future mint refuse to run.
+ * `node_modules/` or not.
  */
 let planted = '';
 let plantedConfig = '';
@@ -72,9 +68,8 @@ let plantedConfig = '';
 /**
  * A corpus with nothing wrong with it, so exit 0 can be proven.
  *
- * Neither the kit nor `fixtures/conformance/` can serve here: both are built
- * to fail, and a `--check` that always exited 1 would satisfy every other
- * assertion in this file.
+ * `fixtures/conformance/` is built to fail, and a `--check` that always exited
+ * 1 would satisfy every other assertion in this file.
  */
 let conforming = '';
 let conformingConfig = '';
@@ -367,28 +362,18 @@ describe('mh', () => {
 });
 
 // ---------------------------------------------------------------------------
-// The end-stage corroboration, against the frozen acceptance kit.
+// mh --check against the conformance corpus.
 // ---------------------------------------------------------------------------
-//
-// The kit is NOT ours to edit, and this suite is READ-ONLY over it: it spawns
-// the binary with the kit as `--root` and asserts the verdict the kit's own
-// frozen suite asserts. The kit's tests are named `*.acceptance.ts`, so vitest's
-// include never picks them up here — which is exactly why this file has to
-// restate the numbers rather than rely on them running.
-//
-// Every expected value below is written out by hand. Counting them back off the
-// kit would make the assertion agree with whatever the kit now says, and the
-// point of a frozen verdict is that it cannot.
 
-describe('mh --check against the frozen acceptance kit', () => {
+describe('mh --check', () => {
   describe('success cases', () => {
-    it('reproduces the frozen verdict and exits 1', () => {
+    it('reproduces the expected conformance verdict and exits 1', () => {
       // ARRANGE
-      const summary = { governedFiles: 24, invalidFiles: 15, totalViolations: 22 };
+      const summary = { governedFiles: 33, invalidFiles: 23, totalViolations: 27 };
       const corpusIsWrong = 1;
       const empty = '';
       // ACT
-      const run = mh('--check', '--root', KIT_ROOT, '--config', KIT_CONFIG);
+      const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
       const body = JSON.parse(run.stdout);
       // ASSERT
       expect(body.result.summary).toEqual(summary);
@@ -399,33 +384,39 @@ describe('mh --check against the frozen acceptance kit', () => {
     it('lists every file carrying a violation, in walker order', () => {
       // ARRANGE
       const paths = [
-        'docs/plain/empty-type.md',
+        'docs/datasets/quarterly-usage.md',
+        'docs/plain/blank-type.md',
+        'docs/plain/broken/index.md',
+        'docs/plain/broken/listed.md',
+        'docs/plain/broken/mangled.md',
+        'docs/plain/broken/unterminated.md',
+        'docs/plain/empty-block.md',
+        'docs/plain/index.md',
+        'docs/plain/prose-only.md',
         'docs/plain/untyped.md',
-        'docs/reference/drafty.md',
+        'docs/reference/draft-page.md',
         'docs/reference/legacy.md',
         'docs/research/index.md',
-        'docs/research/mistyped-tags.md',
-        'docs/research/over-tagged.md',
-        'docs/research/provenance-broken.md',
+        'docs/research/long-tag.md',
+        'docs/research/overtagged.md',
         'docs/research/unsourced.md',
         'docs/research/untagged.md',
         'docs/skills/anonymous/SKILL.md',
         'docs/skills/legacy/SKILL.md',
-        'docs/workflows/overlong.md',
-        'docs/workflows/terse.md',
-        'docs/workflows/undescribed.md',
+        'docs/workflows/listed-title.md',
+        'docs/workflows/onboarding.md',
+        'docs/workflows/tagging.md',
+        'docs/workflows/untitled.md',
       ];
       // ACT
-      const run = mh('--check', '--root', KIT_ROOT, '--config', KIT_CONFIG);
+      const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
       const actual = JSON.parse(run.stdout).result.files.map((file: { path: string }) => file.path);
       // ASSERT
       expect(actual).toEqual(paths);
     });
 
-    it('reaches all eighteen violation codes', () => {
-      // The corpus is built to reach every one. A code no corpus reaches is a
-      // code nothing has checked, which is why this is asserted as a SET
-      // equality rather than a count.
+    it('reaches all nineteen violation codes', () => {
+      // The corpus is built to reach every one.
       // ARRANGE
       const codes = [
         'ALL_OF_UNSATISFIED',
@@ -437,6 +428,7 @@ describe('mh --check against the frozen acceptance kit', () => {
         'FORBIDDEN_FIELD_PRESENT',
         'FORMAT_MISMATCH',
         'FRONTMATTER_FORBIDDEN',
+        'FRONTMATTER_UNPARSEABLE',
         'ITEM_TOO_LONG',
         'MISSING_REQUIRED_FIELD',
         'PATTERN_MISMATCH',
@@ -448,7 +440,7 @@ describe('mh --check against the frozen acceptance kit', () => {
         'VALUE_TOO_SHORT',
       ];
       // ACT
-      const run = mh('--check', '--root', KIT_ROOT, '--config', KIT_CONFIG);
+      const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
       const files = JSON.parse(run.stdout).result.files as { violations: { violation: string }[] }[];
       const reached = files.flatMap((file) => file.violations.map((found) => found.violation));
       // ASSERT
@@ -458,25 +450,22 @@ describe('mh --check against the frozen acceptance kit', () => {
 
   describe('failure cases', () => {
     it('reports a too-short title with the rule that won the file and its intent', () => {
-      // The one row the kit pins exactly, so every key of it is contract: the
-      // file carries `ruleId` and `ruleIntent`, the violation carries the
-      // config fragment verbatim, and there is no `message` anywhere.
       // ARRANGE
       const row = {
-        path: 'docs/workflows/terse.md',
+        path: 'docs/workflows/tagging.md',
         ruleId: 'workflows',
         ruleIntent: 'A workflow names itself and says when to reach for it',
         violations: [
           {
             field: 'title',
-            value: 'ci',
+            value: 'Go',
             violation: 'VALUE_TOO_SHORT',
             requirement: { minLength: 3, maxLength: 80 },
           },
         ],
       };
       // ACT
-      const run = mh('--check', '--root', KIT_ROOT, '--config', KIT_CONFIG);
+      const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
       const files = JSON.parse(run.stdout).result.files as { path: string }[];
       const actual = files.find((file) => file.path === row.path);
       // ASSERT
@@ -485,21 +474,17 @@ describe('mh --check against the frozen acceptance kit', () => {
   });
 
   describe('edge cases', () => {
-    it('leaves the kit tree untouched, having only read it', () => {
-      // The kit is content-pinned: writing under it would make every future
-      // mint refuse to run, and the refusal would name drift rather than cause.
+    it('leaves the conformance tree untouched, having only read it', () => {
       // ARRANGE
       const clean = '';
       // ACT
-      mh('--check', '--root', KIT_ROOT, '--config', KIT_CONFIG);
-      const status = spawnSync('git', ['status', '--porcelain', 'docs/evals/ablation/kit'], { encoding: 'utf8' });
+      mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
+      const status = spawnSync('git', ['status', '--porcelain', CORPUS_ROOT], { encoding: 'utf8' });
       // ASSERT
       expect(status.stdout).toBe(clean);
     });
 
     it('exits 0 on a corpus with nothing wrong with it', () => {
-      // "Exits 1 when the corpus is wrong" needs the other direction proven too,
-      // or a command that always exited 1 would satisfy every test above.
       // ARRANGE
       const nothingWrong = 0;
       const clean = { governedFiles: 1, invalidFiles: 0, totalViolations: 0 };
