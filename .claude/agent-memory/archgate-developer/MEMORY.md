@@ -17,7 +17,7 @@
 - [docs/workshop is workshop material only](feedback_docs_workshop_not_for_instruments.md) — evals/instruments go to docs/evals/; map fog item 6's home is stale
 - [Spec holds behaviour, not setup](feedback_spec_holds_behaviour_not_setup.md) — the spec is copied into every arm, so run-environment decisions go to the scaffold ticket
 - [A fixture never models the treatment](feedback_fixture_never_models_the_treatment.md) — strip what the records ask an agent to produce; when spec and fixture disagree, the fixture moves
-- [RTK-filtered output lies](feedback_rtk_filtered_output_lies.md) — omitted entries, corrupted reads, `[↑4L…]` placeholders, and "0 matches" for a regex it cannot parse
+- [RTK-filtered output lies](feedback_rtk_filtered_output_lies.md) — omitted entries, corrupted reads, `[↑4L…]` placeholders, "0 matches" for a regex it cannot parse, and stale diffs of changes already reverted
 - [Self-describing names beat inherited jargon](feedback_self_describing_over_inherited_jargon.md) — trace the provenance, offer it, expect to lose; then record the translation
 - [Vendored material carries its origin](feedback_vendored_material_carries_its_origin.md) — audit frontmatter too; `disable-model-invocation` made a named skill unreachable
 - [Vacuous green](feedback_vacuous_green.md) — prove a check can fail before trusting it; vitest is silent on types, review-context ships empty briefings
@@ -29,3 +29,4 @@
 - [Four codes reached without being named](project_four_codes_reached_without_being_named.md) — grep under-reports corpus coverage; build the mapping by first-match, not by name
 - [Run a workflow's shell locally](feedback_run_workflow_shell_locally.md) — extract the run blocks, execute on bash 3.2; found `--pack-destination` does not mkdir
 - [Glob semantics are measured, never reasoned](feedback_glob_semantics_are_measured.md) — matchesGlob flips case-sensitivity per segment; node_modules matches `**/*.md`, `.git` does not
+- [`--strict` is not adopted](project_strict_not_adopted.md) — GEN-001 line 18 says it gates commit+push; it does not, and line 103 contradicts it

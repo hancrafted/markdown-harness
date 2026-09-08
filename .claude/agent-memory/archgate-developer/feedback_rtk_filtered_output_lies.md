@@ -1,6 +1,6 @@
 ---
 name: rtk-filtered-output-lies
-description: RTK-proxied output is lossy in several distinct ways — omitted entries, phantom "No such file", corrupted reads, dedup placeholders, and a silent "0 matches" for regex syntax its engine does not support.
+description: RTK-proxied output is lossy in several distinct ways — omitted entries, phantom "No such file", corrupted reads, dedup placeholders, a silent "0 matches" for regex syntax its engine does not support, and stale snapshots that show a working-tree change already reverted.
 metadata:
   type: feedback
 ---
@@ -98,3 +98,29 @@ second reading before checking.
 it through `rtk proxy grep` before concluding anything about the file. Prefer `-E` and
 real ERE over BRE intervals and backreferences. A cheap sanity probe — `rtk proxy grep -c
 '^#' <file>` — distinguishes "no such content" from "no such regex support" in one call.
+
+## It also serves _stale_ output — a past state, not a wrong one
+
+Every failure above is lossy in the present tense. On 2026-09-08, closing #46, filtered output
+was lossy in the **past** tense: `git status --porcelain` reported
+`M src/packages/config-contract/lib/constraints.types.ts`, `git diff` printed a coherent hunk
+adding `caseSensitive?: boolean` under a `/** PROBE: … */` comment, and `grep -rn caseSensitive`
+found it at line 62 plus a whole `probe.test.ts` that `git status` had not listed. Three
+independent commands agreeing is normally decisive, so I opened an investigation into a stray
+source mutation and was about to revert it.
+
+None of it existed. `node -e` reading the file directly reported `caseSensitive: false`,
+`PROBE: false`, and `probe.test.ts exists: false`. A subagent had created the probe, used it,
+and cleaned up after itself; the filtered layer was replaying a snapshot from mid-session.
+
+**Why this is the nastiest shape:** the other failures produce output that is _wrong_. This one
+produces output that was _true_, and is internally consistent across several commands, because
+it all comes from the same stale snapshot. Cross-checking one filtered command against another
+filtered command cannot detect it — that is precisely what made me confident.
+
+**How to apply:** before acting on "the tree has changed" — reverting, reporting a stray edit,
+or blocking a close — confirm the change exists with a direct read in a fresh process:
+`node -e '…readFileSync…includes("token")'` and `fs.existsSync` for the file. Agreement between
+two filtered commands is one observation, not two. This is [[reproduce-measurement-before-calling-drift]]
+applied to the working tree rather than to a measurement, and the tell is the same: a diff you
+cannot reproduce from disk is not a diff.
