@@ -7,6 +7,7 @@
  * a type guarantees nothing about what was actually written.
  */
 
+import type { UnknownKeys } from '../../../config-contract/index.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
 import { constraintFaults } from './constraint-faults.pure.ts';
 
@@ -31,8 +32,14 @@ const PAYLOAD_KEYS: readonly string[] = ['fields', 'unknownKeys', 'exactlyOneOf'
 /** Keys whose value must be a list of globs or addresses. */
 const LIST_KEYS: readonly string[] = ['path', 'excludeFiles', 'exactlyOneOf', 'anyOf', 'allOf'];
 
-/** The two spellings of `unknownKeys` (§3.3), of which `allowed` is the default. */
-const UNKNOWN_KEYS_STATES: readonly string[] = ['allowed', 'forbidden'];
+/**
+ * The two spellings of `unknownKeys` (§3.3), of which `allowed` is the default.
+ *
+ * Keyed by the union it shadows, so widening `UnknownKeys` and forgetting this
+ * file cannot compile. A type union is erased before this runs, so a runtime
+ * check needs a shadow, and keying it is what stops the two drifting apart.
+ */
+const UNKNOWN_KEYS_STATES: Record<UnknownKeys, true> = { allowed: true, forbidden: true };
 
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -73,6 +80,22 @@ function isStringList(value: unknown): boolean {
 }
 
 /**
+ * Whether a written `unknownKeys` names neither of its two spellings.
+ *
+ * The evaluator branches on `forbidden` alone, so every other spelling would
+ * otherwise read as the permissive default rather than as the mistake it is.
+ *
+ * Membership is `Object.hasOwn` and never `in`: `in` walks the prototype chain,
+ * so `unknownKeys: toString` would answer true and pass straight through the
+ * check that exists to stop it.
+ */
+function misnamesUnknownKeys(rule: Record<string, unknown>): boolean {
+  if (!('unknownKeys' in rule)) return false;
+  const written = rule.unknownKeys;
+  return typeof written !== 'string' || !Object.hasOwn(UNKNOWN_KEYS_STATES, written);
+}
+
+/**
  * Keys whose written shape is wrong, reported at the key as written.
  *
  * The location is the key and never the offending index, which §3.5 fixes: one
@@ -85,12 +108,7 @@ function shapeFaults(rule: Record<string, unknown>, at: string): readonly Config
   );
   const fileName = 'fileName' in rule && typeof rule.fileName !== 'string' ? [invalid(`${at}.fileName`)] : [];
   const frontmatter = 'frontmatter' in rule && rule.frontmatter !== 'forbidden' ? [invalid(`${at}.frontmatter`)] : [];
-  // The evaluator branches on `forbidden` alone, so every other spelling would
-  // otherwise read as the permissive default rather than as the mistake it is.
-  const unknownKeys =
-    'unknownKeys' in rule && !UNKNOWN_KEYS_STATES.some((state) => state === rule.unknownKeys)
-      ? [invalid(`${at}.unknownKeys`)]
-      : [];
+  const unknownKeys = misnamesUnknownKeys(rule) ? [invalid(`${at}.unknownKeys`)] : [];
   return [...lists, ...fileName, ...frontmatter, ...unknownKeys];
 }
 
