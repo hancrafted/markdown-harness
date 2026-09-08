@@ -6,8 +6,11 @@
  * no partially-understood invocation to model.
  */
 
-/** The three commands. Absent on the command line means `check`. */
-export type Command = 'check' | 'query' | 'audit';
+/**
+ * The three commands that report, plus `help`, which answers about the tool
+ * itself. Absent on the command line means `check`.
+ */
+export type Command = 'check' | 'query' | 'audit' | 'help';
 
 /** One fully-defaulted invocation. */
 export interface Invocation {
@@ -15,8 +18,8 @@ export interface Invocation {
   command: Command;
   /** `--query`'s path, exactly as the caller wrote it. Empty for the other commands. */
   path: string;
-  /** `--root`, exactly as the caller wrote it, or `.`. Meaningless for `query`. */
+  /** `--root`, exactly as the caller wrote it, or `.`. Meaningless for `query` and `help`. */
   root: string;
-  /** `--config`, exactly as the caller wrote it, or the default filename. */
+  /** `--config`, exactly as the caller wrote it, or the default filename. Meaningless for `help`. */
   config: string;
 }

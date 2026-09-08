@@ -17,7 +17,7 @@ import { listMarkdownFiles } from '../../../markdown-file-tree/list-markdown-fil
 import type { AuditResponse, CheckResponse, ConfigFault, QueryResponse } from '../../../response-contract/index.ts';
 import type { Invocation } from '../argv/argv.types.ts';
 import { parseArgv } from '../argv/parse-argv.pure.ts';
-import { USAGE } from '../argv/usage.pure.ts';
+import { HELP, USAGE } from '../argv/usage.pure.ts';
 import { unsupportedRuntime } from '../runtime/node-support.pure.ts';
 
 /**
@@ -51,6 +51,15 @@ const CORPUS_IS_WRONG = 1;
 
 /** Usage text on stderr, nothing on stdout, exit 2. */
 const USAGE_ERROR: Termination = { stdout: '', stderr: USAGE, code: 2 };
+
+/**
+ * Help text on stdout, nothing on stderr, exit 0.
+ *
+ * The mirror image of `USAGE_ERROR`, and deliberately so: the same synopsis
+ * reaches the caller on the success channel when it was asked for, and on the
+ * failure channel when it was not.
+ */
+const HELP_ANSWER: Termination = { stdout: HELP, stderr: '', code: NOTHING_WRONG };
 
 /**
  * A config that could not be trusted, in the one shape every command reports it.
@@ -145,6 +154,14 @@ function checkRun({ root, config }: Invocation): Termination {
  * hand back a refusal about the wrong thing, and reporting a corpus verdict
  * first would hand back the answer the floor exists to withhold.
  *
+ * `--help` sits behind that floor too, which is a choice rather than an
+ * oversight. Many tools answer help on any runtime, and the argument for doing
+ * so is real; the argument against it is that a caller on an unsupported Node
+ * is one command away from a report they must not trust, and the refusal names
+ * the supported range while the help text does not. So the more useful answer
+ * to `mh --help` on a rejected Node is the floor's, and it keeps the ordering
+ * above a single rule instead of one with an exception.
+ *
  * @param argv The arguments after the executable and script.
  */
 export function run(argv: readonly string[]): Termination {
@@ -153,6 +170,11 @@ export function run(argv: readonly string[]): Termination {
 
   const invocation = parseArgv(argv);
   if (invocation === undefined) return USAGE_ERROR;
+
+  // Answered before any of the three reporting commands, because it is the one
+  // command that reads nothing: no corpus is walked and no config is opened, so
+  // `--help` works in a directory that holds neither.
+  if (invocation.command === 'help') return HELP_ANSWER;
 
   if (invocation.command === 'check') return checkRun(invocation);
   if (invocation.command === 'audit') return auditRun(invocation);

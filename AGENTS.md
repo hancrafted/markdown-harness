@@ -50,6 +50,18 @@ Only a `v*` tag publishes; merging `main` publishes nothing. The manual path is 
 
 Packages under `src/packages/` are deep modules, and every file carries exactly one classifier — by position at a Package root, by suffix below it. Read [`src/packages/AGENTS.md`](./src/packages/AGENTS.md) before adding, naming, or importing a file there — `src/packages/CLAUDE.md` is a symlink to it, so it also loads on its own.
 
+## Running the CLI locally
+
+`npm run mh:dev -- <args>` runs the entry point **from source**, with no build step. Node strips types for anything outside `node_modules`, which is the whole reason the shipped `bin` must be compiled and this script need not be. Add `--silent` to pipe the JSON:
+
+```bash
+npm run --silent mh:dev -- --audit --root fixtures/conformance --config fixtures/conformance/valid-test-config.yaml
+```
+
+**The `--` is load-bearing, and omitting it fails silently.** npm consumes flags placed before it, so `npm run mh:dev --audit` runs the _default_ command instead — measured 2026-09-08, it answers `"command": "check"`. Both spellings exit 2 at the repo root, where no default config exists, so the exit code cannot tell you which one you ran and only the `command` field in the response can. `--help` is worse rather than better, because npm answers that one itself: `npm run mh:dev --help` prints npm's own usage and never reaches the tool.
+
+Two further asymmetries with the installed command, both deliberate. `npm run` prints its banner on **stdout**, which is why piping needs `--silent`. And this script runs source while an adopter runs the compiled `dist/` twin, so a working `mh:dev` is evidence about the source and none whatever about the artefact — `npm run build` is what says anything about that.
+
 ## Verification
 
 `npm run verify` is the gate. Nine traps inside it.

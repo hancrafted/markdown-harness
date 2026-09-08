@@ -19,6 +19,7 @@ const COMMAND_FLAGS: Record<string, Command> = {
   '--check': 'check',
   '--query': 'query',
   '--audit': 'audit',
+  '--help': 'help',
 };
 
 /** The flags that take a following value. `--query` is both a command and a value flag. */
@@ -93,6 +94,13 @@ export function parseArgv(argv: readonly string[]): Invocation | undefined {
   // A query has no corpus, so a `--root` beside one is conflicting input rather
   // than an argument to ignore.
   if (command === 'query' && given.has('--root')) return undefined;
+
+  // `--help` answers about the tool and reads neither a corpus nor a config, so
+  // anything beside it is conflicting input on the same terms. Refusing keeps
+  // `--help` from becoming a precedence rule that quietly wins over a real
+  // command — `mh --check --help` names two different questions, and guessing
+  // which one was meant is exactly what this parser does not do.
+  if (command === 'help' && given.size > 1) return undefined;
 
   return withDefaults(given, command);
 }

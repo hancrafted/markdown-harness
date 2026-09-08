@@ -31,9 +31,11 @@ Write one config at the repo root, `markdown-harness.config.yaml` — the shape 
 mh --check                       # every governed file's violations, and the counts
 mh --query docs/research/new.md  # what the config asks of a path, before the file exists
 mh --audit                       # how every rule fared, so a rule that governs nothing is visible
+mh --help                        # the three commands, the flag defaults, and the exit codes
 ```
 
-Every command answers as JSON on stdout. The exit codes are the contract: **0** nothing wrong, **1**
+Every command answers as JSON on stdout, and `mh --help` is the one exception — it prints the list
+above with the exit-code contract and exits 0. The exit codes are the contract: **0** nothing wrong, **1**
 the corpus is wrong — `--check` alone ever exits this — and **2** it could not report at all, which
 is either a usage error on stderr or a rejected config on stdout. So `--check` goes straight into
 your own gate, and a green build starts meaning something:
