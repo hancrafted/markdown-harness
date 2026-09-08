@@ -369,7 +369,7 @@ describe('mh --check', () => {
   describe('success cases', () => {
     it('reproduces the expected conformance verdict and exits 1', () => {
       // ARRANGE
-      const summary = { governedFiles: 33, invalidFiles: 23, totalViolations: 27 };
+      const summary = { governedFiles: 36, invalidFiles: 24, totalViolations: 28 };
       const corpusIsWrong = 1;
       const empty = '';
       // ACT
@@ -396,6 +396,7 @@ describe('mh --check', () => {
         'docs/plain/untyped.md',
         'docs/reference/draft-page.md',
         'docs/reference/legacy.md',
+        'docs/research/blank-description.md',
         'docs/research/index.md',
         'docs/research/long-tag.md',
         'docs/research/overtagged.md',
