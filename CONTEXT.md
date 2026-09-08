@@ -117,9 +117,28 @@ which Rules run.
 _Avoid_: default, built-in, profile, ruleset
 
 **Steering query**:
-Asking what governs a path **before** the file is written, rather than checking it after. The
-reason this is a CLI and an MCP server rather than a set of lint rules.
+Asking the config what governs a path **before** the file is written, rather than checking it
+after. It reads the config and never opens the file, which is what separates it from an
+Assessment.
 _Avoid_: lookup, dry run, preflight
+
+**Assessment**:
+What one document's own frontmatter says about how much of it to believe, judged against a
+stated instant rather than against whatever the clock reads. A Steering query asks the config
+about a path; an Assessment asks the file about itself.
+_Avoid_: steer, trust check, staleness check, verification, health, score
+
+**Assessment instant**:
+The moment an Assessment is judged against. Supplied by the caller and echoed in the answer,
+never read from a clock without being stated, so one tree and one instant always give one
+answer.
+_Avoid_: now, current time, today, the clock
+
+**Stale**:
+A Governed file whose `stale_after` value falls at or before the Assessment instant. OKF's
+word and OKF's test, adopted rather than invented. A file carrying no `stale_after` is not
+fresh — it cannot be assessed at all.
+_Avoid_: expired, out of date, old, rotten
 
 ### How the code is written
 
