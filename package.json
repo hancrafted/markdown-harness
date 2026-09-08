@@ -1,5 +1,5 @@
 {
-  "name": "markdown-harness",
+  "name": "@hancrafted/markdown-harness",
   "version": "0.0.0",
   "description": "Governance for a markdown knowledge base that agents help maintain — one config declares what each path must carry, and a steering query answers what governs a path before the file exists.",
   "keywords": [

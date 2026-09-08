@@ -26,7 +26,7 @@ Then watch **Publish** in the Actions tab. It re-runs `npm run verify` and the s
 Trivy gate `security.yml` applies, then publishes over OIDC with provenance attached. A red verify,
 a red scan or a failed build aborts before anything reaches the registry.
 
-Afterwards: `npm view markdown-harness version` reports the tag you cut, and
+Afterwards: `npm view @hancrafted/markdown-harness version` reports the tag you cut, and
 `gh release create vX.Y.Z --title vX.Y.Z --notes-file <file>` publishes the notes. Published versions
 are immutable — never overwrite one; bump again and re-tag.
 
@@ -49,18 +49,29 @@ nothing at release time.
 
 ## One-time bootstrap
 
+The package publishes into the `hancrafted` npm organisation as `@hancrafted/markdown-harness`,
+alongside its sibling `@hancrafted/typescript-ai-harness`. The scope is a registry namespace and
+nothing else: `bin` still installs `markdown-harness` and `mh`, and the config file is still
+`markdown-harness.config.yaml`. The one thing it does change is the publish command, which is why
+`--access public` appears in step 1 below and in `publish.yml`.
+
 Both are already-or-once, and neither is part of a normal release. **They run in this order, which
 is the reverse of how they were first written down:**
 
 1. **A placeholder version, published by hand and never tagged.** OIDC cannot create a package that
    does not exist yet, so the name is claimed once from a machine with interactive 2FA. Publish it
-   as `npm publish --tag placeholder`, not bare. A bare publish makes `0.0.0` the `latest` tag,
-   which hands anyone who installs the package a fully working CLI presented as the current release.
-   Measured 2026-09-07 against npm 11.17's own resolver: with only a `placeholder` tag,
-   `npm install markdown-harness` still resolves to `0.0.0`, because a bare name is the range
-   `*` rather than the tag `latest` — while `npm install markdown-harness@latest` fails
-   `ETARGET` until the first real release. That second failure is the signal, not a defect.
-2. **A trusted publisher** for `markdown-harness` on npmjs.com, scoped to this repository and to
+   as `npm publish --access public --tag placeholder`, and **neither flag is optional**. Without
+   `--access public` npm defaults a scoped package to `restricted`, which needs a paid
+   private-package plan, so the publish fails on the visibility rather than on the artefact. Without
+   `--tag placeholder` a bare publish makes `0.0.0` the `latest` tag, which hands anyone who installs
+   the package a fully working CLI presented as the current release.
+   Measured 2026-09-08 against npm 11.17's own resolver, for the scoped name specifically: with only
+   a `placeholder` tag, `npm install @hancrafted/markdown-harness` still resolves to `0.0.0`, because
+   a bare name is the range `*` rather than the tag `latest` — while
+   `npm install @hancrafted/markdown-harness@latest` fails `ETARGET` until the first real release.
+   That second failure is the signal, not a defect. The scope changes nothing here: `npm-package-arg`
+   returns the same `range` type and the same `*` fetch spec for the scoped and unscoped forms alike.
+2. **A trusted publisher** for `@hancrafted/markdown-harness` on npmjs.com, scoped to this repository and to
    `.github/workflows/publish.yml`. There is deliberately no `NPM_TOKEN` secret and nothing to
    rotate; do not add one. It is second because trusted publishing is configured per package, so
    until step 1 has run there is nothing to attach it to. That ordering is inferred from how npm
