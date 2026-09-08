@@ -257,15 +257,43 @@ describe('constraintFaults', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('accepts a bound of zero, which is a number like any other', () => {
-      // The check is on TYPE, not range: `maxItems: 0` is a coherent thing to
-      // write, and a truthiness test would have called it absent.
+    it('accepts a bound of zero, which is a finite number like any other', () => {
+      // No floor and no ceiling: `maxItems: 0` is a coherent thing to write, and
+      // a truthiness test would have called it absent.
       // ARRANGE
       const constraint = { maxItems: 0 };
       // ACT
       const actual = constraintFaults(constraint, AT);
       // ASSERT
       expect(actual).toEqual([]);
+    });
+
+    it('rejects a bound of NaN, which a type check alone would admit', () => {
+      // `typeof NaN === 'number'`, so a check on type alone accepts `.nan` and
+      // the config governs its files. Every comparison against NaN is false, so
+      // the bound then cannot fire: `'ab'.length < NaN` is false, and
+      // VALUE_TOO_SHORT never reports. That is this ticket's opening sentence —
+      // a config the spec names invalid, accepted, and quietly doing nothing.
+      // ARRANGE
+      const constraint = { minLength: NaN };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.minLength` }];
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects an infinite bound, which fails in the same silent direction', () => {
+      // `.inf` parses to a real Infinity. A ceiling nothing can exceed is not a
+      // ceiling, and the spec gives no spelling for `maxItems: no limit`:
+      // omitting the key is how the config language already says that.
+      // ARRANGE
+      const constraint = { maxItems: Infinity };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.maxItems` }];
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
   });
 });
