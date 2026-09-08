@@ -34,7 +34,6 @@
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
     "prepack": "npm run build",
-    "mh:dev": "node src/packages/cli/cli.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint:boundaries": "depcruise src",
