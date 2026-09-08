@@ -21,7 +21,9 @@ each ends on a criterion you check before moving on.
 
 Every gate below is a hard stop, not a warning:
 
-1. On an up-to-date trunk: `git checkout main && git pull`.
+1. On an up-to-date trunk. Run `git worktree list` first: this repo keeps several worktrees, and when one of
+   them holds `main`, `git checkout main` does not switch — it fails with `'main' is already used by worktree
+at ...`. Work from the checkout that holds `main` and `git pull` there, rather than switching to it.
 2. Working tree clean: `git status --porcelain` prints nothing.
 3. `npm run verify` exits 0. Run the whole thing, in this order, not a subset — `verify` builds before it tests, and
    `tsc --noEmit` runs before `vitest`, which never typechecks anything (AGENTS.md traps 8 and 9).
