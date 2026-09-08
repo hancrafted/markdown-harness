@@ -37,7 +37,7 @@ export function checkCorpus(root: string, files: readonly string[], config: Mark
   const governed = governedFiles(files.map(normalisePath), config.frontmatter?.rules ?? [], matchGlob);
 
   const read = readGovernedSources(root, governed);
-  if (read.sources === undefined) return { unreadable: read.unreadable };
+  if (read.kind === 'unreadable') return read;
 
-  return { result: checkResultFor(read.sources), unreadable: '' };
+  return { kind: 'checked', result: checkResultFor(read.sources) };
 }

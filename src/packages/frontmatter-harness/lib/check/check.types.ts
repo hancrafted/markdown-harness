@@ -84,35 +84,42 @@ export interface GovernedSource {
 }
 
 /**
+ * The first governed path that would not open, exactly as the read addressed it.
+ *
+ * Shared by both tiers below rather than spelled twice, so the refusal a read
+ * produces and the refusal a caller receives cannot drift into two shapes.
+ *
+ * Only the FIRST. Reading on to collect every unopenable path would name more
+ * files at the cost of a report that is refused either way, and one path is
+ * already enough to act on.
+ */
+export interface UnreadableGovernedFile {
+  kind: 'unreadable';
+  /** The path the read was attempted at — the corpus root as written, joined to the file's own. */
+  path: string;
+}
+
+/**
  * The outcome of opening every governed file.
  *
- * Shaped like `config-loader`'s stages — the value is optional and the failure
- * is always there — rather than as a tagged union, because that is what every
- * other outcome in this codebase looks like and one shape is easier to read
- * than two. Empty means nothing was refused, the same way `Termination.stdout`
- * spells "write nothing".
- *
- * The path travels because the caller's only channel is a sentence for a human.
- * A bare absence would let it say that something failed and nothing else, and
- * `--check` already dropped the platform's own message on the floor.
+ * A tagged union and not an optional field beside a sentinel, which is what
+ * `config-loader`'s stages use: those pair an optional value with a fault LIST,
+ * where empty is a real count and carries no second meaning. There is no
+ * equivalent here — a path is one string or no string, and `''` would be a
+ * value nobody reads standing in for a state nobody can test. The two unions
+ * already in this file, `FrontmatterData` and `AddressResolution`, are the
+ * closer precedent, and they tag.
  */
-export interface GovernedRead {
-  /** Every governed file with its bytes, absent when one of them would not open. */
-  sources?: readonly GovernedSource[];
-  /** The path that would not open, exactly as the read addressed it; empty when all of them did. */
-  unreadable: string;
-}
+export type GovernedRead =
+  /** Every governed file, with its bytes. */
+  { kind: 'read'; sources: readonly GovernedSource[] } | UnreadableGovernedFile;
 
 /**
  * The outcome of checking one corpus.
  *
- * `GovernedRead` one tier up: the same refusal, now carrying a verdict instead
- * of bytes. The two are separate shapes rather than one generic because
- * `sources` is an internal seam and `result` is what a caller receives.
+ * `GovernedRead` one tier up: the same refusal, passed through unchanged,
+ * now carrying a verdict instead of bytes.
  */
-export interface CorpusCheck {
-  /** The verdict, absent when a governed file would not open. */
-  result?: CheckResult;
-  /** The path that would not open, exactly as the read addressed it; empty when all of them did. */
-  unreadable: string;
-}
+export type CorpusCheck =
+  /** Every governed file was read and judged. */
+  { kind: 'checked'; result: CheckResult } | UnreadableGovernedFile;

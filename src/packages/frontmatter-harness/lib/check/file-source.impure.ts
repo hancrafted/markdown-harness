@@ -43,10 +43,10 @@ export function readGovernedSources(root: string, governed: readonly GovernedFil
     try {
       text = readFileSync(at, 'utf8');
     } catch {
-      return { unreadable: at };
+      return { kind: 'unreadable', path: at };
     }
     sources.push({ path: file.path, rule: file.rule, text });
   }
 
-  return { sources, unreadable: '' };
+  return { kind: 'read', sources };
 }

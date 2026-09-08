@@ -87,23 +87,32 @@ let conformingConfig = '';
 let locked = '';
 let lockedConfig = '';
 let lockedFile = '';
+let sealed = '';
 
 /** Where the one-line Node-version stand-ins are written. See `mhOnNode`. */
 let shimmed = '';
 
+/** What a mode-000 file gives THIS uid when the arrangement worked. */
+const REFUSED = 'refused';
+
 /**
- * Whether a mode-000 file is genuinely closed to THIS uid.
+ * What opening a mode-000 file gives THIS uid.
  *
  * A uid that bypasses the mode bit reads the file anyway, and the refusal under
  * test would never fire — leaving a green assertion about a condition that was
- * never arranged. Setup asks first and refuses to run rather than report that.
+ * never arranged. So the one test that needs it asserts this first.
+ *
+ * Returns a SENTENCE rather than a boolean, and the difference is the failure
+ * message: `expected 'opened anyway ...' to be 'refused'` names what happened,
+ * where `expected false to be true` would leave the reader to guess whether the
+ * chmod failed, the uid is privileged, or the file was never planted.
  */
-function denied(path: string): boolean {
+function openingGives(path: string): string {
   try {
     readFileSync(path, 'utf8');
-    return false;
+    return 'opened anyway — this uid bypasses the mode bit';
   } catch {
-    return true;
+    return REFUSED;
   }
 }
 
@@ -142,11 +151,9 @@ beforeAll(() => {
   lockedFile = join(locked, 'sealed.md');
   writeFileSync(lockedFile, '---\ntype: note\n---\n');
   chmodSync(lockedFile, 0o000);
-  if (!denied(lockedFile)) {
-    throw new Error(
-      `${lockedFile} is mode 000 and still opens — this uid bypasses the mode bit, so the unreadable-file refusal cannot be arranged here`,
-    );
-  }
+  // Recorded, not thrown. A throw here would abort every test in this file over
+  // a condition only one of them needs; the test that needs it asserts it.
+  sealed = openingGives(lockedFile);
   lockedConfig = join(locked, 'locked.config.yaml');
   writeFileSync(
     lockedConfig,
@@ -543,6 +550,7 @@ describe('mh --check', () => {
       // ACT
       const run = mh('--check', '--root', locked, '--config', lockedConfig);
       // ASSERT
+      expect(sealed).toBe(REFUSED);
       expect(run.code).toBe(cannotReport);
       expect(run.stdout).toBe(empty);
       expect(run.stderr).toContain(lockedFile);

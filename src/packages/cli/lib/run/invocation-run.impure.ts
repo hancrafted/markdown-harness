@@ -147,8 +147,8 @@ function checkRun({ root, config }: Invocation): Termination {
   }
 
   const checked = checkCorpus(root, files, load.config);
-  if (checked.result === undefined) {
-    return { stdout: '', stderr: unreadableGovernedFile(checked.unreadable), code: CANNOT_REPORT };
+  if (checked.kind === 'unreadable') {
+    return { stdout: '', stderr: unreadableGovernedFile(checked.path), code: CANNOT_REPORT };
   }
 
   const result = checked.result;

@@ -51,10 +51,11 @@ describe('checkCorpus', () => {
       const expected = { governedFiles: 2, invalidFiles: 1, totalViolations: 1 };
       const reported = ['docs/untyped.md'];
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
-      expect(actual.result?.summary).toEqual(expected);
-      expect(actual.result?.files.map((file) => file.path)).toEqual(reported);
+      expect(actual?.summary).toEqual(expected);
+      expect(actual?.files.map((file) => file.path)).toEqual(reported);
     });
 
     it('reports a conforming corpus as governed and clean', () => {
@@ -62,9 +63,10 @@ describe('checkCorpus', () => {
       const files = ['docs/typed.md'];
       const expected = { summary: { governedFiles: 1, invalidFiles: 0, totalViolations: 0 }, files: [] };
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
-      expect(actual.result).toEqual(expected);
+      expect(actual).toEqual(expected);
     });
   });
 
@@ -80,10 +82,10 @@ describe('checkCorpus', () => {
       const files = ['docs/typed.md', 'docs/phantom.md'];
       const refused = join(root, 'docs', 'phantom.md');
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'unreadable' ? outcome.path : undefined;
       // ASSERT
-      expect(actual.result).toBeUndefined();
-      expect(actual.unreadable).toBe(refused);
+      expect(actual).toBe(refused);
     });
 
     it('governs nothing when the config holds no rules at all', () => {
@@ -91,9 +93,10 @@ describe('checkCorpus', () => {
       const files = ['docs/untyped.md'];
       const expected = { summary: { governedFiles: 0, invalidFiles: 0, totalViolations: 0 }, files: [] };
       // ACT
-      const actual = checkCorpus(root, files, {});
+      const outcome = checkCorpus(root, files, {});
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
-      expect(actual.result).toEqual(expected);
+      expect(actual).toEqual(expected);
     });
   });
 
@@ -106,9 +109,10 @@ describe('checkCorpus', () => {
       const files = ['docs/typed.md', 'ungoverned.md'];
       const expected = { governedFiles: 1, invalidFiles: 0, totalViolations: 0 };
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
-      expect(actual.result?.summary).toEqual(expected);
+      expect(actual?.summary).toEqual(expected);
     });
 
     it('reports paths in the shape the walker uses, not the shape it was handed', () => {
@@ -116,9 +120,10 @@ describe('checkCorpus', () => {
       const files = ['./docs/untyped.md'];
       const expected = ['docs/untyped.md'];
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
-      expect(actual.result?.files.map((file) => file.path)).toEqual(expected);
+      expect(actual?.files.map((file) => file.path)).toEqual(expected);
     });
 
     it('keeps the order it was given rather than sorting', () => {
@@ -126,9 +131,10 @@ describe('checkCorpus', () => {
       const files = ['docs/untyped.md', 'docs/typed.md', 'docs/untyped.md'];
       const expected = ['docs/untyped.md', 'docs/untyped.md'];
       // ACT
-      const actual = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, CONFIG);
+      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
-      expect(actual.result?.files.map((file) => file.path)).toEqual(expected);
+      expect(actual?.files.map((file) => file.path)).toEqual(expected);
     });
   });
 });
