@@ -78,10 +78,21 @@ is the reverse of how they were first written down:**
 
 2. **A trusted publisher** for `@hancrafted/markdown-harness` on npmjs.com, scoped to this repository and to
    `.github/workflows/publish.yml`. There is deliberately no `NPM_TOKEN` secret and nothing to
-   rotate; do not add one. It is second because trusted publishing is configured per package, so
-   until step 1 has run there is nothing to attach it to. That ordering is inferred from how npm
-   organises the setting rather than measured — whoever runs it first should correct this line if the
-   interface turns out to allow pre-registering a name that has never been published.
+   rotate; do not add one. It is second because a trusted publisher lives on the package's own
+   settings page, so until step 1 has run there is nothing to attach it to — [npm/cli#8544](https://github.com/npm/cli/issues/8544),
+   and confirmed the hard way in the sibling repository, whose ADR-0009 records the same bootstrap.
+   The ordering is no longer inferred.
+
+   Four values have to match the OIDC claim exactly, and a mismatch in any of them surfaces as a
+   misleading `E404` or `ENEEDAUTH` rather than as a diagnostic naming the config
+   ([npm/cli#9088](https://github.com/npm/cli/issues/9088)): the **owner** `hancrafted`, the
+   **repository** `markdown-harness`, the **workflow filename** `publish.yml` — the bare filename,
+   no directory, no trailing space — and the **environment**, which must be left blank because this
+   workflow declares none.
+
+   **A rejected match costs a re-run, not a tag.** The OIDC token is minted fresh for each run, so
+   after fixing the configuration `gh run rerun <run-id>` publishes the same tag. Never bump the
+   version to retry an auth failure.
 
 The `0.0.x` range means "not a release"; the first tagged release is the first real one, and it is
 a minor.
