@@ -49,14 +49,33 @@ nothing at release time.
 
 ## One-time bootstrap
 
-Both are already-or-once, and neither is part of a normal release:
+Both are already-or-once, and neither is part of a normal release. **They run in this order, which
+is the reverse of how they were first written down:**
 
-1. **A trusted publisher** for `markdown-harness` on npmjs.com, scoped to this repository and to
+1. **A placeholder version, published by hand and never tagged.** OIDC cannot create a package that
+   does not exist yet, so the name is claimed once from a machine with interactive 2FA. Publish it
+   as `npm publish --tag placeholder`, not bare. A bare publish makes `0.0.0` the `latest` tag,
+   which hands anyone who installs the package a fully working CLI presented as the current release.
+   Measured 2026-09-07 against npm 11.17's own resolver: with only a `placeholder` tag,
+   `npm install markdown-harness` still resolves to `0.0.0`, because a bare name is the range
+   `*` rather than the tag `latest` — while `npm install markdown-harness@latest` fails
+   `ETARGET` until the first real release. That second failure is the signal, not a defect.
+2. **A trusted publisher** for `markdown-harness` on npmjs.com, scoped to this repository and to
    `.github/workflows/publish.yml`. There is deliberately no `NPM_TOKEN` secret and nothing to
-   rotate; do not add one.
-2. **A placeholder version, published by hand and never tagged.** OIDC cannot create a package that
-   does not exist yet, so the name is claimed once from a machine with interactive 2FA. The `0.0.x`
-   range means "not a release"; the first tagged release is the first real one, and it is a minor.
+   rotate; do not add one. It is second because trusted publishing is configured per package, so
+   until step 1 has run there is nothing to attach it to. That ordering is inferred from how npm
+   organises the setting rather than measured — whoever runs it first should correct this line if the
+   interface turns out to allow pre-registering a name that has never been published.
+
+The `0.0.x` range means "not a release"; the first tagged release is the first real one, and it is
+a minor.
+
+**The workflow cannot publish a prerelease, by construction.** `npm publish` refuses a prerelease
+version under the default tag — npm 11.17 `lib/commands/publish.js:126-133`, _"You must specify a
+tag using --tag when publishing a prerelease version"_ — and the publish step passes no `--tag`. A
+`v0.1.0-rc.1` tag therefore fails that step loudly rather than shipping something unintended, so
+release candidates are not a way to rehearse this pipeline. Cutting them means giving that step a
+`--tag`, deliberately, as its own change.
 
 ## Choosing the bump
 

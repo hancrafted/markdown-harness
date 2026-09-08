@@ -93,3 +93,25 @@ suppressed. And the deeper rule: **correcting yourself is a claim like any other
 evidence bar.** Retracting a true statement is a worse outcome than the original uncertainty,
 because it spends the credibility that self-correction is supposed to buy. Related:
 [[audit-the-tree-not-the-ticket]].
+
+**Sixth failure mode: reading push state off the tracking ref.** On 2026-09-07, asked for the
+deployment test plan, I ran `git rev-parse --abbrev-ref @{u}`, got `origin/main`, and concluded
+"this branch is not pushed" — reasoning that a pushed branch would track a remote branch of its
+own name. Wrong on both halves: the tracking ref records what the branch was _configured_ to
+compare against, and `origin/main` **already contained both commits**. `git rev-list --count
+origin/main..HEAD` was `0`, `git merge-base --is-ancestor HEAD origin/main` was true, and the work
+had reached `main` with no pull request at all. I then wrote "Nothing is pushed — that's yours" to
+Han and, worse, handed 11 workflow agents `THIS BRANCH IS NOT PUSHED` inside a block captioned
+_"Ground truth — MEASURED this session"_. The cost surfaced only when `gh pr create` refused with
+`No commits between main and feature/implement-deployment`.
+
+**How to apply:** push state is a two-way commit count, never a ref name. Before claiming pushed or
+unpushed, run `git rev-list --left-right --count origin/main...HEAD` (and `git fetch` first, or the
+remote label is itself stale). Ahead-0/behind-0 means merged, whatever the branch is called. The
+related trap: a workflow that triggers only `on: pull_request` never runs for work that reaches
+`main` by direct push — so "the gate is green" and "the gate has never executed" are
+indistinguishable from the branch name alone; ask `gh run list --workflow <file>` whether it has
+_ever_ produced a run. And the discipline point: labelling a block "MEASURED" propagates one bad
+inference to every agent downstream, which is far more expensive than being wrong alone. Anything
+under that caption must name the command that produced it. Related: [[vacuous-green]],
+[[audit-the-tree-not-the-ticket]].

@@ -14,6 +14,14 @@ name: Smoke
 # publishing change that never ran through a pull request is the one that fails
 # on the tag, when failure is most expensive.
 #
+# It also runs on trunk and on demand, and both of those were added only after
+# this workflow had spent its entire existence never having executed once.
+# Measured 2026-09-07: `gh run list --workflow smoke.yml` returned nothing,
+# because the change that introduced the workflow reached `main` by direct push
+# and a `pull_request` trigger is silent about those. "Watched green" and "has
+# never produced a run" are indistinguishable from a branch name, so the two
+# extra triggers exist to make the second state impossible rather than unlikely.
+#
 # It deliberately runs NO formatter. There is no line-ending attributes file and
 # prettier is configured for line-feed endings, so a Windows checkout with
 # line-ending conversion enabled would fail formatting on every file — a red run
@@ -21,6 +29,13 @@ name: Smoke
 # this workflow makes that impossible rather than unlikely.
 on:
   pull_request:
+  # Trunk, so a change that reaches `main` without review is still measured
+  # against a real runner instead of being assumed good.
+  push:
+    branches: [main]
+  # On demand, so the packed artefact can be re-proved on all three platforms
+  # without inventing a commit to carry the request.
+  workflow_dispatch:
 
 # Least privilege: this only reads the tree and writes inside the workspace.
 permissions:
@@ -46,9 +61,9 @@ jobs:
         # One script for three platforms. Git Bash ships on the Windows runner,
         # and the shim it resolves is the POSIX wrapper npm generates from `bin`
         # — the one this seam exists to exercise. The `.cmd` and `.ps1` shims npm
-        # writes beside it come from npm's own templates and are NOT covered
-        # here; a fault in them would be a fault in npm rather than in this
-        # package. Written down because it is the one gap in this job's cover.
+        # writes beside it are what a native Windows Operator invokes instead.
+        # Those two are covered by the Windows-only steps at the end of this job
+        # rather than by anything reachable under this default.
         #
         # macOS runners ship bash 3.2, so nothing below uses a bash 4 feature.
         shell: bash
@@ -150,3 +165,57 @@ jobs:
             # A corpus with a violation in it.
             expect_exit 1 "$bin" --check --root . --config markdown-harness.config.yaml
           done
+      # Every step above resolves the extensionless POSIX shim through Git Bash.
+      # A Windows Operator in cmd.exe or PowerShell resolves `mh.cmd` or
+      # `mh.ps1` instead, and until these two steps existed neither had been
+      # executed anywhere. They come from npm's own templates, so a fault in them
+      # is npm's rather than this package's — but an adopter cannot tell the
+      # difference, and an uninvoked shim is not a working one.
+      - name: run the cmd shim from cmd.exe
+        if: runner.os == 'Windows'
+        working-directory: scratch
+        shell: cmd
+        run: |
+          call .\node_modules\.bin\mh.cmd --query docs/not-written-yet.md --config markdown-harness.config.yaml
+          set rc=%ERRORLEVEL%
+          if not "%rc%"=="0" (
+            echo ::error::cmd shim: expected exit 0 from --query, got %rc%
+            exit /b 1
+          )
+          call .\node_modules\.bin\mh.cmd --check --root . --config markdown-harness.config.yaml
+          set rc=%ERRORLEVEL%
+          if not "%rc%"=="1" (
+            echo ::error::cmd shim: expected exit 1 from --check, got %rc%
+            exit /b 1
+          )
+          echo ok  cmd.exe honours the exit contract
+      - name: run the ps1 shim from PowerShell
+        if: runner.os == 'Windows'
+        working-directory: scratch
+        shell: pwsh
+        run: |
+          # Both preferences are set deliberately. GitHub's pwsh wrapper sets
+          # `$ErrorActionPreference = 'stop'`, and PowerShell 7.4 turns a native
+          # command's non-zero exit into a terminating error under it — which
+          # would abort on the exact exit codes these assertions exist to
+          # require, reporting a fault where the contract was honoured.
+          $ErrorActionPreference = 'Continue'
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          function Expect-Exit {
+            param([int]$Want, [string[]]$CliArgs)
+            & .\node_modules\.bin\mh.ps1 @CliArgs > $null 2>&1
+            if ($LASTEXITCODE -ne $Want) {
+              Write-Output "::error::ps1 shim: expected exit $Want from 'mh $CliArgs', got $LASTEXITCODE"
+              exit 1
+            }
+            Write-Output "ok  exit $Want  mh $CliArgs"
+          }
+
+          Expect-Exit 0 @('--query', 'docs/not-written-yet.md', '--config', 'markdown-harness.config.yaml')
+          Expect-Exit 2 @('--query', 'docs/not-written-yet.md', '--config', 'no-such-config.yaml')
+          Expect-Exit 1 @('--check', '--root', '.', '--config', 'markdown-harness.config.yaml')
+
+          # The wrapper ends on `exit $LASTEXITCODE`, which is the 1 the last
+          # assertion required. Leave on a deliberate zero.
+          exit 0
