@@ -11,10 +11,12 @@ and enough:
 ## Install
 
 ```bash
-npm install --save-dev markdown-harness
+npm install --save-dev @hancrafted/markdown-harness
 ```
 
-Two names for one command: `markdown-harness` to read in a script, `mh` to type in a session.
+Two names for one command: `markdown-harness` to read in a script, `mh` to type in a session. The
+scope is the registry coordinate only — the commands, the config filename and the product keep the
+bare name.
 
 Node `>=24.16.0 <25 || >=26.1.0`. The range is narrow rather than tidy because path matching
 delegates to the platform's glob matcher, and only those releases carry the segment-aware behaviour

@@ -107,9 +107,18 @@ jobs:
           scanners: vuln,secret,misconfig
           severity: HIGH,CRITICAL
           exit-code: '1'
-      # No token, and no `--access`: the npm CLI detects the GitHub Actions OIDC
-      # environment and authenticates against the trusted publisher, and an
-      # unscoped package publishes public with no flag. `prepack` rebuilds
-      # `dist/` here as a last guard, so a stale or absent build cannot ship
-      # however this job was reached.
-      - run: npm publish
+      # No token: the npm CLI detects the GitHub Actions OIDC environment and
+      # authenticates against the trusted publisher.
+      #
+      # `--access public` is required rather than tidy, and it is required
+      # because the package is scoped. npm defaults a scoped package to
+      # `restricted` (`npm publish --help`: "If you do not want your scoped
+      # package to be publicly viewable"), and restricted needs a paid
+      # private-package plan, so without this flag the publish fails on the
+      # visibility rather than on anything about the artefact. The sibling
+      # repository's working release of `@hancrafted/typescript-ai-harness`
+      # carries the same flag for the same reason.
+      #
+      # `prepack` rebuilds `dist/` here as a last guard, so a stale or absent
+      # build cannot ship however this job was reached.
+      - run: npm publish --access public
