@@ -49,6 +49,7 @@ Test-driven development (TDD) and the red-green-refactor cycle are the primary a
 5. **DO** treat a block you cannot fill as a question about the subject, not a rule to route around. (Decision 2.1)
 6. **DO** mark every body `// ARRANGE`, `// ACT`, `// ASSERT`, naming expected values before asserting them. (Decision 3.1)
 7. **DO** test a `*.pure.ts` file from its same-name sibling, and everything else through an entry point. (Decision 4.2)
+8. **DO** assert an absence of side effects by comparing an observation taken before the action against the same observation taken after it. (Decision 1.2)
 
 ### Don'ts
 
@@ -59,6 +60,7 @@ Test-driven development (TDD) and the red-green-refactor cycle are the primary a
 5. **DON'T** call `vi.mock`, `vi.doMock`, `vi.spyOn`, `vi.mocked`, `vi.stubGlobal`, or a `jest` equivalent. (Decision 1.2)
 6. **DON'T** assert an expected value the code under test computed. (Decision 1.2)
 7. **DON'T** inline a magic string or number in the `// ASSERT` block. (Decision 3.2)
+8. **DON'T** assert a side effect's absence against a pristine or empty baseline — that measures ambient repository state, and it fails on the very commit that changes the tree it guards. (Decision 1.2)
 
 ## Consequences
 
