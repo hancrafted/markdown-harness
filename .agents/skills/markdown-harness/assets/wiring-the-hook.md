@@ -1,6 +1,6 @@
 # Wiring the freshness hook into Claude Code
 
-Reference for the `Wiring the freshness hook` section of `SKILL.md`.
+Reference for the `Make a stale file say so` row of `SKILL.md`.
 
 A rule's `assess.stale` sentence is only ever heard by something that asks. This hook asks, once per
 file the agent opens: after every `Read`, it runs `mh --assess` on that path, and when the file is
@@ -12,11 +12,9 @@ whatever the body of the document claims about itself.
 
 ## Installing it
 
-**1. Install the skill**, at project scope so it is committed and every clone has it:
-
-```sh
-npx skills add hancrafted/markdown-harness --skill markdown-harness
-```
+**1. Have the skill installed at project scope**, which [`setup.md`](setup.md) step 1 does. The
+command below hard-codes the path `.agents/skills/markdown-harness/`, so an install performed with
+`--copy` puts the script somewhere else and the hook never runs.
 
 **2. Add the hook** to `.claude/settings.json` at the repository root. That is the one settings file
 meant to be committed and shared — `settings.local.json` is gitignored, and `~/.claude/settings.json`

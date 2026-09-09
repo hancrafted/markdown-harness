@@ -18,8 +18,9 @@ Two names for one command: `markdown-harness` to read in a script, `mh` to type 
 scope is the registry coordinate only — the commands, the config filename and the product keep the
 bare name.
 
-Optionally, install the config-authoring skill into your own repo, so your Host harness can write the
-config with you rather than you learning the language first:
+Optionally, install the skill into your own repo, so your Host harness can set the whole thing up
+with you — writing the config, putting `mh --check` in your gate, and wiring the freshness hook —
+rather than you learning the config language first:
 
 ```bash
 npx skills add hancrafted/markdown-harness
@@ -178,9 +179,9 @@ a sentence that could never be printed is worth telling you about.
 
 **Something has to ask, and on Claude Code a hook can ask for you.** It runs `--assess` after every
 file the agent reads and hands your sentence back when that file is past its date. It ships with the
-config-authoring skill rather than in this package, because a host-shaped asset inside a portable
-artefact works against the floor this tool stands on — and because hooks change far more often than
-built output. Install it with the skill, then follow `Wiring the freshness hook` in its `SKILL.md`.
+skill rather than in this package, because a host-shaped asset inside a portable artefact works
+against the floor this tool stands on — and because hooks change far more often than built output.
+Install it with the skill, then follow the `Make a stale file say so` row of its `SKILL.md`.
 
 ## Why not an existing tool
 
