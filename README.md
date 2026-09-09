@@ -1,14 +1,56 @@
+<div align="center">
+
+<!-- HERO ART SLOT — `.github/assets/hero.svg`, 880px wide.
+     Suggested subject: one frontmatter block with `stale_after` picked out, and an agent
+     opening it three months later. When it lands, put the <img> here and keep the H1 as
+     the image's alt text. -->
+
 # markdown-harness
 
-Governance for a markdown knowledge base that agents help maintain — so you can rely on documents
-you did not write, cannot re-read, and have not checked in months.
+**Governance for a markdown knowledge base that agents help maintain** — so you can rely on
+documents you did not write, cannot re-read, and have not checked in months.
 
-Full trust in such a corpus is not achievable, and this does not claim it. What it does is narrower
-and enough:
+<p>
+  <a href="https://www.npmjs.com/package/@hancrafted/markdown-harness"><img src="https://img.shields.io/npm/v/%40hancrafted%2Fmarkdown-harness?label=npm&color=1f6feb&labelColor=0d1117" alt="npm"></a>
+  <a href="https://github.com/hancrafted/markdown-harness/actions/workflows/ci.yml"><img src="https://github.com/hancrafted/markdown-harness/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="#1-install"><img src="https://img.shields.io/badge/node-24.16%2B%20%7C%2026.1%2B-1f6feb?labelColor=0d1117" alt="Node"></a>
+  <a href="#roadmap"><img src="https://img.shields.io/badge/status-pre--1.0-9e6a03?labelColor=0d1117" alt="Pre-1.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-1f6feb?labelColor=0d1117" alt="MIT"></a>
+</p>
+
+<p>
+  <b><a href="#quick-start">Quick start</a></b> ·
+  <a href="#what-it-does-today">Features</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#the-freshness-hook">Freshness hook</a> ·
+  <a href="#roadmap">Roadmap</a> ·
+  <a href="#why-not-an-existing-tool">Why not an existing tool</a> ·
+  <a href="#words-used-here">Glossary</a>
+</p>
+
+</div>
+
+---
 
 > **A document can tell you how much of itself to believe.**
+>
+> That is the whole product. Everything else is the machinery that keeps such a statement true.
 
-## Install
+Full trust in a corpus like that is not achievable, and this does not claim it. What is available is
+narrower and enough. One config declares what each path must carry. Every governed document states
+its own provenance, verification and expiry **in the file** — so a reader that has never heard of
+this tool still sees them. And `mh --check` turns all of it into an exit code your gate already
+understands.
+
+<!-- DEMO GIF SLOT — `.github/assets/demo.gif`, ~820px wide.
+     Suggested take: `mh --check` going red on a corpus, the frontmatter fix, then green.
+     Caption underneath: the rule's own `intent` sentence appearing in the violation. -->
+
+## Quick start
+
+Five steps, about a minute.
+
+### 1. Install
 
 ```bash
 npm install --save-dev @hancrafted/markdown-harness
@@ -18,76 +60,103 @@ Two names for one command: `markdown-harness` to read in a script, `mh` to type 
 scope is the registry coordinate only — the commands, the config filename and the product keep the
 bare name.
 
-Optionally, install the skill into your own repo, so your Host harness can set the whole thing up
-with you — writing the config, putting `mh --check` in your gate, and wiring the freshness hook —
-rather than you learning the config language first:
+<details>
+<summary>Node <code>&gt;=24.16.0 &lt;25 || &gt;=26.1.0</code> — why the range is narrow rather than tidy</summary>
+
+Path matching delegates to the platform's glob matcher, and only those releases carry the
+segment-aware behaviour the config language is specified against. Outside it the command refuses and
+names the range — a refusal is better than the same corpus reporting differently on your machine
+than on CI.
+
+</details>
+
+### 2. Get a config
+
+Nothing generates one for you, and nothing writes to your tree. Either write
+`markdown-harness.config.yaml` at the repo root by hand — [the shape is below](#how-it-works) — or
+install the skill and let your Host harness write it with you:
 
 ```bash
 npx skills add hancrafted/markdown-harness
 ```
 
-Node `>=24.16.0 <25 || >=26.1.0`. The range is narrow rather than tidy because path matching
-delegates to the platform's glob matcher, and only those releases carry the segment-aware behaviour
-the config language is specified against. Outside it the command refuses and names the range — a
-refusal is better than the same corpus reporting differently on your machine than on CI.
+Then ask for `markdown-harness` in a session. It probes the repo, says where you stand in one line,
+and offers numbered options: set it up, watch it work on throwaway files first, or author the first
+rule.
 
-## Usage
-
-Write one config at the repo root, `markdown-harness.config.yaml` — the shape is below — then:
+### 3. Ask what a rule expects, before the file exists
 
 ```bash
-mh --check                       # every governed file's violations, and the counts
-mh --query docs/research/new.md  # what the config asks of a path, before the file exists
-mh --audit                       # how every rule fared, so a rule that governs nothing is visible
-mh --assess docs/research/x.md   # what one file is worth believing, at one instant
-mh --help                        # the four commands, the flag defaults, and the exit codes
+mh --query docs/research/new.md
 ```
 
-Every command answers as JSON on stdout, and `mh --help` is the one exception — it prints the list
-above with the exit-code contract and exits 0. The exit codes are the contract: **0** nothing wrong, **1**
-the corpus is wrong — `--check` alone ever exits this — and **2** it could not report at all, which
-is either a usage error on stderr or a rejected config on stdout. So `--check` goes straight into
-your own gate, and a green build starts meaning something:
+This doubles as the authoring loop. A malformed config comes back with a fault code and its location
+inside the file; a sound one comes back with the rule that governs the path.
+
+### 4. Check the corpus
+
+```bash
+mh --check
+```
+
+Exit **0** clean, exit **1** the corpus is wrong. A path no rule matches is invisible — a correct
+answer, not an error — so a fresh install reports nothing on a corpus it has never seen.
+
+### 5. Put it in your gate
 
 ```json
 { "scripts": { "verify": "... && mh --check" } }
 ```
 
-Nothing generates a config for you, and nothing writes to your tree. If you would rather not learn
-the config language before your first run, ask your Host harness to write one and let `mh --query`
-judge it: a malformed config comes back with a fault code and the location inside the file, and a
-sound one comes back with the rule that governs the path. That is a complete authoring loop, and it
-needs no extra command.
+That is the whole adoption path. A green build starts meaning something.
 
-## Status
+<details>
+<summary><b>Optional — wire the freshness hook on Claude Code</b></summary>
 
-Pre-1.0. Shapes may still change, and what is here is honest about what is not:
+Install the skill as in step 2, then follow the `Wire the freshness hook on its own, on Claude Code`
+row of its `SKILL.md`. After that, any file an agent reads that is past its `stale_after` comes back
+with your own sentence attached. See [the freshness hook](#the-freshness-hook) for what it does and
+what it deliberately stays quiet about.
 
-| exists today                                     | not yet                              |
-| ------------------------------------------------ | ------------------------------------ |
-| `--check`, `--query`, `--audit` and `--assess`   | The OKF Preset                       |
-| The config contract and the Conformance suite    | Index generation, scheduling, any UI |
-| The pinned OKF revision (`docs/okf/`)            | An importable library surface        |
-| Product and architecture vision (`docs/vision/`) | MCP, or any second surface           |
+</details>
 
-## The problem
+## What it does today
 
-A knowledge base maintained by agents degrades along a predictable path:
+Four commands, and a `--help` that is the only one not answering in JSON.
 
-- **Volume outruns review.** Documents accumulate faster than anyone reads them.
-- **Confidence outlives correctness.** A document says "decided" long after the decision moved. Prose
-  carries no expiry, so age is invisible at the moment of reading.
-- **Governance drifts while checks stay green.** This is the one that ends it — once a standard can be
-  quietly relaxed, a passing check stops being evidence, and you stop believing any of it.
+| command              | answers                                                         |
+| -------------------- | --------------------------------------------------------------- |
+| `mh --check`         | every governed file's violations, and the counts. The default   |
+| `mh --query <path>`  | what the config asks of a path, before the file exists          |
+| `mh --audit`         | how every rule fared, so a rule that governs nothing is visible |
+| `mh --assess <path>` | what one file is worth believing, at one instant                |
+| `mh --help`          | the commands, the flag defaults and the exit-code contract      |
 
-The corpus then gets abandoned rather than repaired, because nothing distinguishes the parts that were
-still good.
+The exit codes are the contract: **0** nothing wrong, **1** the corpus is wrong — `--check` alone
+ever exits this — and **2** it could not report at all, which is either a usage error on stderr or a
+rejected config on stdout.
+
+And around them:
+
+- **One config, ordered rules, first match wins, nothing merges.** For any file the first matching
+  rule is the complete set of constraints.
+- **Governance is opt-in by path.** A file no rule names is never reported and never counted.
+- **Every rule states its `intent` in your words**, and that sentence travels with any violation it
+  reports — so a failure says why the rule exists, not just which check fired.
+- **The check path is hermetic.** No network, no model, no external service, no git call, no clock.
+  The same tree in gives the same result out.
+- **The contract is the portable artifact.** The config language, the report format and the
+  conformance corpus are the specification; the TypeScript is one implementation of it.
+- **OKF v0.2 is vendored and pinned** at [`docs/okf/`](docs/okf/), byte for byte.
+- **A skill for your Host harness** — [`npx skills add hancrafted/markdown-harness`](#2-get-a-config)
+  — carrying five workflows: set up, demo on throwaway files, author or debug a rule, wire the
+  gate, wire the hook.
+- **A Claude Code freshness hook**, and an activity log that proves it ran.
 
 ## How it works
 
 **One config declares what each path must carry.** Rules are an ordered list; for any file the first
-match is the complete set of constraints, and a file no rule names is invisible. Governance is opt-in,
-so a fresh install reports nothing on a corpus it has never seen.
+match is the complete set of constraints, and a file no rule names is invisible.
 
 ```yaml
 # markdown-harness.config.yaml
@@ -101,9 +170,6 @@ frontmatter:
         description: { presence: required, maxLength: 200 }
         sources: { minItems: 1 }
 ```
-
-**Every rule states its `intent` in the author's words**, and that sentence travels with any violation
-it reports — so a failure says why the rule exists, not just which check fired.
 
 **The steering query answers "what governs this path?" before the file exists.** That is the feature a
 linter cannot offer, and the reason this is a command rather than a lint rule: an agent about to write
@@ -177,14 +243,78 @@ A rule's block replaces the module-wide one **whole**, never key by key, so dele
 visible act. A prompt with no `stale_after: { presence: required }` beside it is a config error —
 a sentence that could never be printed is worth telling you about.
 
+## The freshness hook
+
 **Something has to ask, and on Claude Code a hook can ask for you.** It runs `--assess` after every
-file the agent reads and hands your sentence back when that file is past its date. It ships with the
-skill rather than in this package, because a host-shaped asset inside a portable artefact works
-against the floor this tool stands on — and because hooks change far more often than built output.
-Install it with the skill, then follow the `Wire the freshness hook on its own, on Claude Code` row
-of its `SKILL.md`. It records every invocation — the silent ones included — to
-`docs/markdown-harness/activity.csv`, because a hook that ran and had nothing to say is otherwise
-indistinguishable from one that never fired.
+file the agent reads and hands your sentence back when that file is past its date.
+
+<!-- HOOK GIF SLOT — `.github/assets/hook.gif`, ~820px wide.
+     Suggested take: a fresh Claude Code session asked to summarise a stale document, with the
+     freshness sentence arriving unasked. This is the product surface — worth the best asset. -->
+
+It ships with the skill rather than in this package, because a host-shaped asset inside a portable
+artefact works against the floor this tool stands on — and because hooks change far more often than
+built output. Install it with the skill, then follow the
+`Wire the freshness hook on its own, on Claude Code` row of its `SKILL.md`.
+
+It speaks on one state only. `PROCEED` is silence by contract, and `FIX_FILE` is a repair
+`mh --check` already reports once in the gate — a governance tool that talks on every read of every
+governed file gets switched off.
+
+Which leaves a problem worth naming: a hook that ran and had nothing to say is indistinguishable
+from one that never fired. So it records **every** invocation — the silent ones included — to
+`docs/markdown-harness/activity.csv`. A `fresh` row is the proof that it ran and chose to stay quiet.
+
+## The problem
+
+A knowledge base maintained by agents degrades along a predictable path:
+
+- **Volume outruns review.** Documents accumulate faster than anyone reads them.
+- **Confidence outlives correctness.** A document says "decided" long after the decision moved. Prose
+  carries no expiry, so age is invisible at the moment of reading.
+- **Governance drifts while checks stay green.** This is the one that ends it — once a standard can be
+  quietly relaxed, a passing check stops being evidence, and you stop believing any of it.
+
+The corpus then gets abandoned rather than repaired, because nothing distinguishes the parts that were
+still good.
+
+## Roadmap
+
+Pre-1.0. Shapes may still change, and what follows is honest about what is not here.
+
+**Shipped**
+
+| what exists                                         | and what it means                                      |
+| --------------------------------------------------- | ------------------------------------------------------ |
+| `--check`, `--query`, `--audit`, `--assess`         | The four commands and the exit-code contract           |
+| The config contract and the Conformance suite       | The portable specification, not just an implementation |
+| The pinned OKF revision                             | Vendored byte-identical at [`docs/okf/`](docs/okf/)    |
+| The skill, the gate wiring and the Claude Code hook | Including the activity log that proves the hook ran    |
+| Product and architecture vision                     | [`docs/vision/`](docs/vision/)                         |
+
+**On the horizon** — from [`docs/vision/product.md`](docs/vision/product.md). Anything here can move.
+
+| idea                                   | what it would give you                                                                                                                       |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The OKF Preset**                     | OKF v0.2 as an ordinary shipped config you can adopt, amend or delete                                                                        |
+| **A second Module: folders and files** | Governance over names and structure, not only frontmatter ([#63](https://github.com/hancrafted/markdown-harness/issues/63))                  |
+| **Index generation**                   | The index files OKF §8 reserves, produced rather than hand-maintained                                                                        |
+| **The Contributor path**               | Governance felt through your own Host harness, without ever opening the config                                                               |
+| **A config-authoring web app**         | The one deliberate exception to "no UI" — it configures, it never runs your corpus                                                           |
+| **An importable library surface**      | The core as a module, for tools that are not a CLI                                                                                           |
+| **This repo governed by itself**       | The vision's proof obligation: govern your own corpus, or have no standing ([#57](https://github.com/hancrafted/markdown-harness/issues/57)) |
+
+**Not on the roadmap, by design.** Each of these is a boundary, and moving one is a vision change
+rather than a feature request. The right-hand column is what the product does instead.
+
+| it will not                           | it does this instead                                                                  |
+| ------------------------------------- | ------------------------------------------------------------------------------------- |
+| Run a model or hold an API key        | Delegates judgment to your Host harness, on your own auth and bill                    |
+| Run as a service or phone home        | Runs on your machine, against files you can read                                      |
+| Index into a vector store             | Treats the markdown tree as the corpus; retrieval belongs to the Host harness         |
+| Sit on the consumption path           | Puts the signal in the file, so a reader needs nothing installed                      |
+| Rewrite your prose                    | Supplies the metadata, structure and steering that make someone else's rewrite better |
+| Be a Host harness, a chat UI or a TUI | Treats the Host harness as the interface                                              |
 
 ## Why not an existing tool
 
@@ -230,18 +360,24 @@ pin. The product outlives any spec it carries.
 "Harness" alone is ambiguous — the industry calls a host harness a harness too. This product is
 always written out in full. The complete glossary is [`CONTEXT.md`](CONTEXT.md).
 
-## Vision
+## Documentation
 
-- [`docs/vision/product.md`](docs/vision/product.md) — the promise, the two roles, the boundaries, the
-  horizons
-- [`docs/vision/architecture.md`](docs/vision/architecture.md) — the tenets, and the decisions that are
-  cheap now and expensive later
+| where                                                        | what is in it                                                           |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| [`docs/vision/product.md`](docs/vision/product.md)           | The promise, the two roles, the boundaries, the horizons                |
+| [`docs/vision/architecture.md`](docs/vision/architecture.md) | The tenets, and the decisions that are cheap now and expensive later    |
+| [`docs/okf/`](docs/okf/)                                     | The pinned OKF v0.2 revision                                            |
+| [`docs/research/`](docs/research/)                           | The survey behind [Why not an existing tool](#why-not-an-existing-tool) |
+| [`CONTEXT.md`](CONTEXT.md)                                   | The complete glossary                                                   |
+| [`AGENTS.md`](AGENTS.md)                                     | Conventions, decision records and agent instructions                    |
 
 ## Development
 
-Conventions, decision records and agent instructions: [`AGENTS.md`](AGENTS.md). Verification scripts
-are in `package.json`; `npm run verify` runs the full gate and the husky hooks run it on commit and
-push.
+Verification scripts are in `package.json`; `npm run verify` runs the full gate, and the husky hooks
+run it on commit and push. Start at [`AGENTS.md`](AGENTS.md) — it names the traps a check can fall
+into and report success over nothing.
+
+Issues and discussion: [github.com/hancrafted/markdown-harness/issues](https://github.com/hancrafted/markdown-harness/issues).
 
 ## Licence
 
