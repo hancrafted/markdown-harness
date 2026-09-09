@@ -1,0 +1,119 @@
+# markdown-harness.config.yaml — a worked example, not a preset.
+#
+# Copy it, delete the rules you do not want, and rename the paths to your own.
+# Every key in the language appears below at least once, so this file doubles as
+# the vocabulary: if a key is not here, it does not exist.
+#
+# Verify any edit with the query loop, which needs no file to exist yet:
+#
+#   mh --query docs/research/whatever.md --config markdown-harness.config.yaml
+#
+# Exit 0 prints the winning rule and what it asks for. Exit 2 prints a fault
+# whose `location` is the exact key to fix.
+
+frontmatter:
+  # ── The rule list is ORDERED, and the first match wins outright ─────────────
+  # For any file the harness walks top-down and stops at the first rule whose
+  # selector matches. Nothing merges and nothing is inherited, so the most
+  # specific rules go first and the broadest goes last. Reversed, a narrow rule
+  # silently governs zero files — `mh --audit` is what makes that visible.
+  rules:
+    # ── 1. A rule that forbids frontmatter outright ───────────────────────────
+    # `fileName` matches the basename at any depth, so it needs no glob. It is
+    # sugar for `path: ["**/index.md"]`.
+    #
+    # `frontmatter: forbidden` is the one payload that takes no other payload
+    # key — there is nothing to constrain on a file that must carry none.
+    - ruleId: index-files
+      fileName: index.md
+      intent: An index lists what is in a directory, and carries no frontmatter of its own
+      frontmatter: forbidden
+
+    # ── 2. The signal-bearing rule ────────────────────────────────────────────
+    # Research is where provenance matters, so this is the rule that reaches the
+    # nested addresses and the named formats.
+    - ruleId: research
+      path: [docs/research/**/*.md]
+      # Excluded paths fall THROUGH to a later, broader rule rather than being
+      # exempted from governance altogether. Per rule, never global.
+      excludeFiles: [docs/research/vendor/**]
+      intent: Research is only worth as much as the sources behind it, so it names them
+      # At least one of these must be present. `allOf` and `exactlyOneOf` are the
+      # other two spellings.
+      anyOf: [sources, generated]
+      fields:
+        type:
+          presence: required
+          # `allowed` replaces wholesale, never appends. Each entry is a record
+          # so it can say what choosing that value MEANS — the whole set is
+          # printed back when a membership check fails.
+          allowed:
+            - { value: research, intent: 'Findings gathered to settle a question, with sources.' }
+        # `required` means present AND non-empty, which is why there is no
+        # `minLength: 1` anywhere in this language.
+        description: { presence: required, maxLength: 200 }
+        tags: { minItems: 1, maxItems: 5, itemMaxLength: 20 }
+        # A field address reaches exactly one level into a nested shape.
+        generated.by: { presence: required, format: actor }
+        generated.at: { presence: required, format: datetime }
+        # Addressing a LIST and addressing EVERY ENTRY of it are different
+        # addresses, so the two never collide.
+        sources: { minItems: 1 }
+        sources[].resource: { presence: required, format: uri }
+        sources[].author: { format: actor }
+
+    # ── 3. Closing the key set, and the escape valve ──────────────────────────
+    - ruleId: reference
+      path: [docs/reference/**/*.md]
+      intent: Reference pages are looked up by slug and say how far they can be trusted
+      # Defaults to `allowed` when absent. `forbidden` is the only rule-level way
+      # to catch a typo'd frontmatter key.
+      unknownKeys: forbidden
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: reference, intent: Lookup data an agent consults rather than reads through. }
+        description: { presence: required }
+        status:
+          allowed:
+            - { value: draft, intent: 'Written down, not yet trusted.' }
+            - { value: stable, intent: Safe to rely on. }
+            - { value: deprecated, intent: 'Still here, no longer to be followed.' }
+        slug:
+          # `pattern` is the escape valve for anything the named formats cannot
+          # express. A sibling `intent` is MANDATORY beside it — without one the
+          # raw regex leaks into the violation, which is the reason the key exists.
+          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+          intent: Slugs are lowercase words joined by single hyphens
+
+    # ── 4. Freshness — the only rule that a clock ever reads ──────────────────
+    # `assess.stale` is your sentence, handed to an agent that opened the file at
+    # or past its `stale_after`. Write it as an instruction, because that is how
+    # it gets read.
+    #
+    # `stale_after: { presence: required }` is MANDATORY on the same rule. Without
+    # it the sentence below could never be printed, and the config is rejected
+    # with CONFIG_ASSESS_WITHOUT_REQUIRED_FIELD.
+    #
+    # Prefer this rule-level form. A Module-wide `frontmatter.assess:` forces
+    # `stale_after` onto EVERY constraining rule in the list, which is rarely
+    # what anyone means.
+    - ruleId: runbooks
+      path: [docs/runbooks/**/*.md]
+      intent: A runbook that has drifted from the system it describes is worse than none
+      assess:
+        stale: Re-run these steps against the live system before following them, then move stale_after.
+      fields:
+        type: { presence: required }
+        stale_after: { presence: required, format: datetime }
+
+    # ── 5. The broadest rule, deliberately last ───────────────────────────────
+    # The narrowest useful payload there is: say what you are. Governance is
+    # opt-in, so anything this does not match is invisible to the harness — never
+    # reported, never counted.
+    - ruleId: everything-else
+      path: [docs/**/*.md]
+      intent: Every document under docs/ still has to say what it is
+      fields:
+        type: { presence: required }

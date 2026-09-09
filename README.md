@@ -18,6 +18,13 @@ Two names for one command: `markdown-harness` to read in a script, `mh` to type 
 scope is the registry coordinate only — the commands, the config filename and the product keep the
 bare name.
 
+Optionally, install the config-authoring skill into your own repo, so your Host harness can write the
+config with you rather than you learning the language first:
+
+```bash
+npx skills add hancrafted/markdown-harness
+```
+
 Node `>=24.16.0 <25 || >=26.1.0`. The range is narrow rather than tidy because path matching
 delegates to the platform's glob matcher, and only those releases carry the segment-aware behaviour
 the config language is specified against. Outside it the command refuses and names the range — a
@@ -85,7 +92,8 @@ so a fresh install reports nothing on a corpus it has never seen.
 # markdown-harness.config.yaml
 frontmatter:
   rules:
-    - path: [docs/research/**/*.md]
+    - ruleId: research
+      path: [docs/research/**/*.md]
       intent: Research is indexed, and an index entry copies the description
       fields:
         type: { presence: required, allowed: [{ value: research }] }
