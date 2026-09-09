@@ -3,8 +3,8 @@ name: markdown-harness
 description:
   Author or update a markdown-harness.config.yaml by interviewing the user about their own corpus, then proving every
   rule against the CLI rather than asserting it. Use when governing a folder of markdown, writing or changing a
-  markdown-harness config, deciding what a document must declare about its provenance or freshness, or working out why
-  a rule governs nothing.
+  markdown-harness config, deciding what a document must declare about its provenance or freshness, working out why
+  a rule governs nothing, or wiring the Claude Code hook that reads a freshness sentence back to an agent.
 compatibility: Requires @hancrafted/markdown-harness >= 0.0.2, as `mh` or `npx mh`. Confirm with `mh --help`.
 ---
 
@@ -81,6 +81,9 @@ fields:
 Keep the block on the rule rather than module-wide, and keep the two keys together — the config is rejected when they
 come apart. The worked freshness rule in [`assets/starter-config.yaml`](assets/starter-config.yaml) says why.
 
+That sentence sits in the config until something asks for it. [Wiring the freshness hook](#wiring-the-freshness-hook)
+is how it gets asked on every file an agent opens.
+
 _Done when_ each rule either carries both keys or neither.
 
 ## 4. Verify the rule — the loop
@@ -147,6 +150,22 @@ Then run `mh --check` and tell them the count. A config that governs existing fi
 and that number is the real cost of the rules they just approved.
 
 _Done when_ the user has approved the change, the file is written, and they know what `mh --check` currently reports.
+
+## Wiring the freshness hook
+
+On Claude Code, one hook asks `mh --assess` about every markdown file the agent reads, and hands back the rule's
+`assess.stale` sentence when that file is past its date. It is one `PostToolUse` entry in the committed
+`.claude/settings.json`, pointing at `scripts/assess-hook.mjs`.
+
+It speaks on one answer and stays silent on every other — including in a repository with no config at all, which is
+what governance being opt-in means here. So its silence proves nothing on its own: prove it speaks before you trust
+it, by feeding it a file you know is stale.
+
+The settings entry, that check, the full silence table and troubleshooting live in
+[`assets/assess-hook.md`](assets/assess-hook.md). Read it before wiring, and again when the hook says nothing and you
+expected it to.
+
+_Done when_ the by-hand check prints a sentence for a stale file, and the settings entry is committed.
 
 ## Installing this skill
 

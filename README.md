@@ -176,6 +176,12 @@ A rule's block replaces the module-wide one **whole**, never key by key, so dele
 visible act. A prompt with no `stale_after: { presence: required }` beside it is a config error —
 a sentence that could never be printed is worth telling you about.
 
+**Something has to ask, and on Claude Code a hook can ask for you.** It runs `--assess` after every
+file the agent reads and hands your sentence back when that file is past its date. It ships with the
+config-authoring skill rather than in this package, because a host-shaped asset inside a portable
+artefact works against the floor this tool stands on — and because hooks change far more often than
+built output. Install it with the skill, then follow `Wiring the freshness hook` in its `SKILL.md`.
+
 ## Why not an existing tool
 
 The tools surveyed in [`docs/research/`](docs/research/) split cleanly, and neither half does this
