@@ -4,9 +4,11 @@
 // barrel ARCH-004 bans: a re-exported subtree grows silently, so a declaration
 // added to a types file becomes public without anyone deciding it.
 //
-// One runtime export, `isConfigError`. It cannot live beside its own types —
-// ARCH-005 keeps a `types` file free of runtime values — so it sits in a `pure`
-// sibling and is re-exported here, giving the Package one public shape.
+// Two runtime exports, `isConfigError` and `FIELD_VIOLATION_CODES`. Neither can
+// live beside its own types — ARCH-005 keeps a `types` file free of runtime
+// values — so each sits in a `pure` sibling and is re-exported here, giving the
+// Package one public shape. `FIELD_VIOLATION_CODES` is the reason the catalog is
+// a value at all: a consumer that cannot reach it cannot enumerate the codes.
 
 export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';
 export type { CheckResult, CheckSummary, FileViolations } from './lib/check.types.ts';
@@ -22,6 +24,7 @@ export type {
   Requirements,
 } from './lib/query.types.ts';
 export type { AuditResponse, CheckResponse, MarkdownHarnessResponse, QueryResponse } from './lib/response.types.ts';
+export { FIELD_VIOLATION_CODES } from './lib/violation.pure.ts';
 export type {
   CrossFieldViolation,
   CrossFieldViolationOf,
