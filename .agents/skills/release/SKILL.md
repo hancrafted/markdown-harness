@@ -26,7 +26,7 @@ Every gate below is a hard stop, not a warning:
 at ...`. Work from the checkout that holds `main` and `git pull` there, rather than switching to it.
 2. Working tree clean: `git status --porcelain` prints nothing.
 3. `npm run verify` exits 0. Run the whole thing, in this order, not a subset — `verify` builds before it tests, and
-   `tsc --noEmit` runs before `vitest`, which never typechecks anything (AGENTS.md traps 8 and 9).
+   `tsc --noEmit` runs before `vitest`, which never typechecks anything (docs/agents/verification.md, traps 8 and 9).
 4. CI is green on `main` in the Actions tab. Publish re-runs `verify` and the same Trivy gate, but catch it here.
 
 **Do not read a green `archgate check` inside step 3 as governance evidence.** It is scoped to the files changed against

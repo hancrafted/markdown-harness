@@ -60,9 +60,9 @@ jobs:
       # emits when stdout is not a terminal; pass/fail is unchanged.
       #
       # On a push to main the scope is empty by construction — nothing differs
-      # from `origin/main` — so that run is green over zero rules (AGENTS.md trap
-      # 1). The PR run is the governance gate; the push run re-checks the other
-      # six against the merged tree.
+      # from `origin/main` — so that run is green over zero rules (trap 1 in
+      # docs/agents/verification.md). The PR run is the governance gate; the push
+      # run re-checks the other six against the merged tree.
       - name: archgate
         run: npx archgate check --output github
       - name: eslint
@@ -74,7 +74,8 @@ jobs:
       # Import-boundary rules. Read the count in "N modules, M dependencies
       # cruised" rather than the checkmark: M near zero means
       # `tsPreCompilationDeps` got turned off, every type-only edge was erased
-      # before the rules ran, and the pass is vacuous (AGENTS.md trap 5).
+      # before the rules ran, and the pass is vacuous (trap 5 in
+      # docs/agents/verification.md).
       - name: boundaries
         run: npm run lint:boundaries
       # Before vitest, and in verify's order for the same reason: `bin.mh` names a

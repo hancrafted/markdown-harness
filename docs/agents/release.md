@@ -44,7 +44,7 @@ message and runs the gate before committing.
 
 **3. A green `archgate check` in the pre-flight is not evidence.** It is scoped to the files changed
 against `origin/main`, so on an up-to-date trunk its scope is empty by construction and it passes
-over zero rules (AGENTS.md trap 1). It is in `verify` because it belongs in `verify`; it tells you
+over zero rules ([`verification.md`](verification.md) trap 1). It is in `verify` because it belongs in `verify`; it tells you
 nothing at release time.
 
 ## One-time bootstrap
