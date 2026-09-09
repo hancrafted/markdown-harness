@@ -1,5 +1,6 @@
 {
   "agent": "archgate:developer",
+  "autoMemoryEnabled": false,
   "permissions": {
     "allow": ["Skill(archgate:architect)", "Skill(archgate:quality-manager)", "Skill(archgate:adr-author)"]
   }
