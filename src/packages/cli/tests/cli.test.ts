@@ -89,6 +89,19 @@ let lockedConfig = '';
 let lockedFile = '';
 let sealed = '';
 
+/**
+ * An empty directory holding no `markdown-harness.config.yaml`, so the default
+ * config can be observed MISSING.
+ *
+ * This used to be the repo root, which held no config only by accident. Issue
+ * #57 put one there to govern this repository's own `docs/`, and both tests
+ * below turned green over the wrong thing — a bare run that found a config and
+ * checked a real corpus. ARCH-003 §1.1 asks for zero dependence on ambient
+ * state, and the absence of a file is exactly the kind of arrangement that has
+ * to be made rather than assumed.
+ */
+let configless = '';
+
 /** Where the one-line Node-version stand-ins are written. See `mhOnNode`. */
 let shimmed = '';
 
@@ -127,6 +140,7 @@ beforeAll(() => {
   writeFileSync(join(planted, '.git', 'refused.md'), '');
 
   shimmed = mkdtempSync(join(tmpdir(), 'mh-node-shim-'));
+  configless = mkdtempSync(join(tmpdir(), 'mh-no-config-'));
 
   conforming = mkdtempSync(join(tmpdir(), 'mh-check-clean-'));
   writeFileSync(join(conforming, 'ok.md'), '---\ntype: note\n---\n');
@@ -193,6 +207,7 @@ afterAll(() => {
   rmSync(planted, { recursive: true, force: true });
   rmSync(conforming, { recursive: true, force: true });
   rmSync(shimmed, { recursive: true, force: true });
+  rmSync(configless, { recursive: true, force: true });
 });
 
 /** Run the built entry file the way a caller would, and report all three channels. */
@@ -322,7 +337,7 @@ describe('mh', () => {
       const notFound = 'CONFIG_NOT_FOUND';
       const empty = '';
       // ACT
-      const run = mh();
+      const run = mhIn(configless);
       const body = JSON.parse(run.stdout);
       // ASSERT
       expect(run.code).toBe(refused);
@@ -796,16 +811,17 @@ describe('mh --help', () => {
 
   describe('edge cases', () => {
     it('answers where the default command cannot, having opened no config', () => {
-      // Run from the repo root, where `markdown-harness.config.yaml` does not
-      // exist: the bare invocation exits 2 for the missing default config, so
-      // help exiting 0 in the same directory is evidence it read no config at
-      // all rather than evidence it found one.
+      // Run from a planted empty directory holding no config: the bare
+      // invocation exits 2 for the missing default config, so help exiting 0 in
+      // the same directory is evidence it read no config at all rather than
+      // evidence it found one. Not the repo root — that governs its own docs/
+      // since #57, so a bare run there finds a config and checks a real corpus.
       // ARRANGE
       const nothingWrong = 0;
       const cannotReport = 2;
       // ACT
-      const help = mh('--help');
-      const bare = mh();
+      const help = mhIn(configless, '--help');
+      const bare = mhIn(configless);
       // ASSERT
       expect(bare.code).toBe(cannotReport);
       expect(help.code).toBe(nothingWrong);

@@ -1,0 +1,38 @@
+# markdown-harness.config.yaml — governance for this repository's own docs/.
+#
+# This repo publishes markdown-harness, so it governs its own knowledge base with
+# it. See https://github.com/hancrafted/markdown-harness/issues/57.
+#
+# The rule list is ORDERED and the first match wins outright. Nothing merges and
+# nothing is inherited, so the narrow rule goes first and the catch-all last.
+# `mh --audit` is what proves that landed.
+frontmatter:
+  rules:
+    # ── 1. Vision — narrow, and the only rule a clock reads ───────────────────
+    # Must stay ABOVE the catch-all. Below it, `docs-carry-a-type` would match
+    # every vision file first and this rule would govern nothing.
+    - ruleId: vision
+      path: [docs/vision/**/*.md]
+      intent: 'Vision is the reasoning decisions get derived from, so it is re-read against the product before it is trusted'
+      assess:
+        stale: Re-read this against the product as it now stands before deriving anything from it, then move stale_after.
+      fields:
+        type: { presence: required }
+        stale_after: { presence: required, format: datetime }
+
+    # ── 2. Every document under docs/ says what it is ─────────────────────────
+    # OKF v0.2 §11's requirement floor, and nothing beyond it: a non-empty
+    # `type`. No `allowed` enum and no casing pattern, because the spec carries
+    # zero casing language and §11 forbids rejecting unknown `type` values —
+    # measured in docs/research/okf-conformance.md §1.
+    #
+    # Both exclusions are content-pinned files, already pinned in
+    # .prettierignore for the same reason: an edit destroys what they exist to
+    # preserve. Excluded paths fall through, and with no rule below this one
+    # they are ungoverned rather than exempted.
+    - ruleId: docs-carry-a-type
+      path: [docs/**/*.md]
+      excludeFiles: [docs/okf/SPEC-v0.2.md, docs/workshop/**/raw.md]
+      intent: 'OKF asks one thing of every concept document, that it says what it is'
+      fields:
+        type: { presence: required }

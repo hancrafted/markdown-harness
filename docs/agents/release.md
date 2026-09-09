@@ -1,3 +1,7 @@
+---
+type: agent-guide
+---
+
 # Releasing: tag-driven, manual, and always available
 
 A `v*` tag is the only thing that publishes. Merging to `main` publishes nothing.

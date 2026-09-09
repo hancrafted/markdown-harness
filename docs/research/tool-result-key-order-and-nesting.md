@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # Key Order and Nesting Depth in Small Tool-Result JSON: What the Evidence Actually Supports
 
 Research question: a CLI tool returns a small JSON object (~10 top-level keys, a few hundred

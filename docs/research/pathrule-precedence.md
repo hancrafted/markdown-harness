@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # Path-Rule Precedence: How Established Tools Resolve Overlapping Path Rules
 
 Research question: when a YAML config declares a list of rules that select markdown files

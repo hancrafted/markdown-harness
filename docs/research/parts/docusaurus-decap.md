@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # Docusaurus & Decap CMS: front matter constraints as code vs. as data
 
 These two bracket the design space: Docusaurus is **hardcoded, type-aware validation with

@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # Astro Content Collections and VitePress
 
 Research slice for the OKF frontmatter harness. Two tools that sit in front of directories of Markdown and must decide "which rules apply to this file?". Astro answers with a **code** config; VitePress mostly declines to answer. Every load-bearing claim is quoted from a primary source (upstream source, official docs source, RFC text, maintainer statement) with a URL. Where a fact could not be established from a primary source, this says so rather than inferring.

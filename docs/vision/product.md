@@ -1,3 +1,8 @@
+---
+type: vision
+stale_after: 2026-09-16T00:00:00Z
+---
+
 # Product vision
 
 Why `markdown-harness` exists, who it serves, and what it will never become.

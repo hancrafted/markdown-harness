@@ -1,3 +1,7 @@
+---
+type: agent-guide
+---
+
 # Grilling Format
 
 How a grilling round is written in this repo. It covers every round: `/grill-me`, `/grill-with-docs`, and the grilling Wayfinder runs while charting a map or resolving a `wayfinder:grilling` ticket.

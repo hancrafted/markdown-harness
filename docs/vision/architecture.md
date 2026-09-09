@@ -1,3 +1,8 @@
+---
+type: vision
+stale_after: 2026-09-16T00:00:00Z
+---
+
 # Architecture vision
 
 The tenets `markdown-harness` is built on, and the reasoning that produced each one.

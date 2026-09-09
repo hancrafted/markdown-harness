@@ -1,3 +1,7 @@
+---
+type: vendor-note
+---
+
 # Vendored OKF specification
 
 `SPEC-v0.2.md` is a **byte-identical, unmodified copy** of the Open Knowledge Format

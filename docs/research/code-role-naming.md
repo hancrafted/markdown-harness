@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # Naming the Code Roles: Orchestration, Purity, and What the Sources Actually Establish
 
 Research question: this repo intends to classify every TypeScript source file with exactly one

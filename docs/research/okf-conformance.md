@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # OKF v0.2 Conformance: What the Spec Requires vs What It Merely Recommends
 
 Research question: the harness implements OKF as an _interface_, so it must know exactly

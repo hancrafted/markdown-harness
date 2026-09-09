@@ -1,3 +1,7 @@
+---
+type: measurement
+---
+
 # ADR routing probe — measurement
 
 The phase-5 probe from issue #7 of the `define-archgate-adrs` map (#2). It answers whether scoping ADRs by

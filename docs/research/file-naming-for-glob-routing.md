@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # File Naming as a Context Router: What Tools Actually Enforce
 
 Research question: this repo governs its own source with Archgate ADRs. Each ADR declares a

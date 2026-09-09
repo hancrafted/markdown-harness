@@ -1,4 +1,8 @@
-# Verification: the gate and its twelve traps
+---
+type: agent-guide
+---
+
+# Verification: the gate and its thirteen traps
 
 `npm run verify` is the gate. This page holds the traps inside it — the places where a check
 reports success without having measured anything.
@@ -213,3 +217,22 @@ therefore carries no information on any of them. Peel with `^{}`.
 Either half alone passes a one-sided canary. The equality case has to be built to be seen: clone to
 a scratch path, `git tag -a` at `HEAD`, and prove the peeled ref equals `HEAD` while the unpeeled
 one does not.
+
+## 13. A gate appended to `verify` does not run in CI
+
+`.github/workflows/ci.yml` does **not** invoke `npm run verify`. It duplicates that chain as eight
+separately-named steps, on purpose, so each check fails under its own name — and its own comment
+records the standing cost: "a change to that script has to be made here too." Only
+`publish.yml` runs `verify`, and only on a tag.
+
+So a check appended to `verify` alone runs at publish time and **never on a pull request**, which is
+the run that gates the merge. Every PR stays green over a check that did not execute. The symptom is
+indistinguishable from the check passing, and worse than a vacuous green: the check is real, it
+works, and it is simply never reached on the path that matters.
+
+Measured 2026-09-09 adding `mh --check` for issue #57: appended to `verify`, it passed locally on
+every run while `ci.yml` had no step for it at all.
+
+**The gate is whichever command CI actually runs, which is not reliably the one named `verify`.**
+Read the workflow before appending to a script, and add the step in both places. Prove it the same
+way as anything else here — break what it guards, push, and watch the PR go red, not the tag.

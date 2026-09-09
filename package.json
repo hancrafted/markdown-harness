@@ -41,7 +41,7 @@
     "test:watch": "vitest watch",
     "knip": "knip",
     "prepare": "husky",
-    "verify": "archgate check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && npm run build && vitest run && knip",
+    "verify": "archgate check && mh --check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && npm run build && vitest run && knip",
     "verify:commit": "lint-staged && archgate check && tsc --noEmit && npm run build && vitest run"
   },
   "dependencies": {
@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@eslint/js": "~10.0.1",
+    "@hancrafted/markdown-harness": "~0.0.4",
     "@types/node": "~26.3.0",
     "@vitest/coverage-v8": "~4.1.11",
     "archgate": "~0.55.0",

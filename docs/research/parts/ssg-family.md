@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # SSG family: path-scoped frontmatter defaults (Hugo, Jekyll, Eleventy)
 
 Slice of research ticket #3. How three static-site generators attach frontmatter values to

@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # Canonical Key Order: What Real Tools Enforce, and Why
 
 Research question ([#14](https://github.com/hancrafted/okf-frontmatter-harness/issues/14) item 2):

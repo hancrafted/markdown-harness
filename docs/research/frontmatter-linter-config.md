@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # How Existing Frontmatter-Schema Linters Shape Their Config
 
 Research question ([#3](https://github.com/hancrafted/okf-frontmatter-harness/issues/3)):

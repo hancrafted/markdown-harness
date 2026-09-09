@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # markdownlint-cli2 and Obsidian Linter
 
 Research slice for the OKF frontmatter governance harness. Both tools are surveyed

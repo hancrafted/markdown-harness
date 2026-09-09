@@ -1,3 +1,7 @@
+---
+type: research
+---
+
 # Agent Skill Bundling: What `assets/`, `references/` and `scripts/` Actually Do
 
 Research question: this repo was about to ship its first adopter-facing skill — a config-authoring

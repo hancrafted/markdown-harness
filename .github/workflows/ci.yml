@@ -65,6 +65,13 @@ jobs:
       # run re-checks the other six against the merged tree.
       - name: archgate
         run: npx archgate check --output github
+      # Governs this repository's own docs/ with the published tarball, not the
+      # local build: `mh` resolves to the devDependency, so a green run here is
+      # evidence about the artefact an adopter installs. Duplicated from
+      # `npm run verify` like every other step in this chain.
+      # https://github.com/hancrafted/markdown-harness/issues/57
+      - name: markdown-harness
+        run: npx mh --check
       - name: eslint
         run: npx eslint .
       - name: prettier
