@@ -10,15 +10,23 @@
  */
 
 import { loadConfig } from '../../../config-loader/load-config.ts';
+import { assessPath } from '../../../frontmatter-harness/assess.ts';
 import { auditRules } from '../../../frontmatter-harness/audit.ts';
 import { checkCorpus } from '../../../frontmatter-harness/check.ts';
 import { queryPath } from '../../../frontmatter-harness/query.ts';
 import { listMarkdownFiles } from '../../../markdown-file-tree/list-markdown-files.ts';
-import type { AuditResponse, CheckResponse, ConfigFault, QueryResponse } from '../../../response-contract/index.ts';
+import type {
+  AssessResponse,
+  AuditResponse,
+  CheckResponse,
+  ConfigFault,
+  QueryResponse,
+} from '../../../response-contract/index.ts';
 import type { Invocation } from '../argv/argv.types.ts';
 import { parseArgv } from '../argv/parse-argv.pure.ts';
 import { HELP, USAGE } from '../argv/usage.pure.ts';
 import { unsupportedRuntime } from '../runtime/node-support.pure.ts';
+import { hostInstant } from './host-instant.impure.ts';
 
 /**
  * What the process should emit and exit with.
@@ -75,7 +83,7 @@ function rejection(faults: readonly ConfigFault[]) {
 }
 
 /** JSON on stdout: 2-space indentation, trailing newline. */
-function emit(response: CheckResponse | QueryResponse | AuditResponse, code: number): Termination {
+function emit(response: CheckResponse | QueryResponse | AuditResponse | AssessResponse, code: number): Termination {
   return { stdout: `${JSON.stringify(response, null, 2)}\n`, stderr: '', code };
 }
 
@@ -88,6 +96,34 @@ function queryRun({ path, config }: Invocation): Termination {
   }
 
   return emit({ command: 'query', path, config, result: queryPath(path, load.config) }, NOTHING_WRONG);
+}
+
+/**
+ * What one file is worth believing, at one instant.
+ *
+ * The instant is resolved HERE and nowhere deeper, which is the whole of this
+ * command's determinism story: `--now` is used as given, and only its absence
+ * reaches the clock. Whatever this settles on is echoed in the response, so a
+ * defaulted run can be replayed exactly by copying the instant back onto the
+ * command line.
+ *
+ * Never exits 1. This answer reaches an agent mid-task, and a command that can
+ * fail a build is one an Operator eventually stops running for information.
+ */
+function assessRun({ path, config, now, root }: Invocation): Termination {
+  const instant = now === '' ? hostInstant() : now;
+  const load = loadConfig(config);
+
+  if (load.config === undefined) {
+    return emit({ command: 'assess', path, now: instant, config, result: rejection(load.faults) }, CANNOT_REPORT);
+  }
+
+  // `root` is always the default here: `--root` beside `--assess` is refused as
+  // conflicting input, so this is the current directory by construction. The
+  // seam exists because the config's globs are anchored somewhere, and the
+  // Conformance suite anchors them at its own synthetic root.
+  const result = assessPath({ root, path }, load.config, instant);
+  return emit({ command: 'assess', path, now: instant, config, result }, NOTHING_WRONG);
 }
 
 /**
@@ -178,5 +214,6 @@ export function run(argv: readonly string[]): Termination {
 
   if (invocation.command === 'check') return checkRun(invocation);
   if (invocation.command === 'audit') return auditRun(invocation);
+  if (invocation.command === 'assess') return assessRun(invocation);
   return queryRun(invocation);
 }

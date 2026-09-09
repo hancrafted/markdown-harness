@@ -10,7 +10,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -200,7 +200,7 @@ describe('mh', () => {
       // rather than counting it back off the file keeps this test part of that
       // review instead of silently agreeing with whatever the config now says.
       // ARRANGE
-      const declaredRules = 9;
+      const declaredRules = 10;
       const rowShape = ['rule', 'won', 'shadowed', 'shadowedBy', 'excluded'];
       // ACT
       const run = mh('--audit', '--root', CORPUS_ROOT, '--config', CONFIG);
@@ -369,7 +369,7 @@ describe('mh --check', () => {
   describe('success cases', () => {
     it('reproduces the expected conformance verdict and exits 1', () => {
       // ARRANGE
-      const summary = { governedFiles: 33, invalidFiles: 23, totalViolations: 27 };
+      const summary = { governedFiles: 36, invalidFiles: 24, totalViolations: 28 };
       const corpusIsWrong = 1;
       const empty = '';
       // ACT
@@ -385,6 +385,7 @@ describe('mh --check', () => {
       // ARRANGE
       const paths = [
         'docs/datasets/quarterly-usage.md',
+        'docs/freshness/undated.md',
         'docs/plain/blank-type.md',
         'docs/plain/broken/index.md',
         'docs/plain/broken/listed.md',
@@ -475,13 +476,24 @@ describe('mh --check', () => {
 
   describe('edge cases', () => {
     it('leaves the conformance tree untouched, having only read it', () => {
+      // Compares the tree BEFORE the run against the tree AFTER it, rather than
+      // asserting the tree is pristine. The pristine form conflated two
+      // different claims — "the tool wrote nothing" and "the developer has
+      // nothing uncommitted" — and only the first is this test's subject.
+      //
+      // It also made the suite unrunnable during any change to the corpus: a
+      // staged edit under `fixtures/conformance/` shows in `--porcelain` too, so
+      // the pre-commit hook failed on the very commit that added a Conformance
+      // case. Measured 2026-09-09, on the first commit to touch the corpus since
+      // the assertion took that form. Proven still able to fail by writing a
+      // file between the two captures.
       // ARRANGE
-      const clean = '';
+      const treeBefore = spawnSync('git', ['status', '--porcelain', CORPUS_ROOT], { encoding: 'utf8' }).stdout;
       // ACT
       mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
-      const status = spawnSync('git', ['status', '--porcelain', CORPUS_ROOT], { encoding: 'utf8' });
+      const treeAfter = spawnSync('git', ['status', '--porcelain', CORPUS_ROOT], { encoding: 'utf8' }).stdout;
       // ASSERT
-      expect(status.stdout).toBe(clean);
+      expect(treeAfter).toBe(treeBefore);
     });
 
     it('exits 0 on a corpus with nothing wrong with it', () => {
@@ -504,6 +516,149 @@ describe('mh --check', () => {
 // The one command that reads nothing. Every assertion below is about a channel
 // or an exit code rather than about wording, because the wording is prose that
 // should be free to improve without a test failing.
+
+/**
+ * Run the built entry from a STATED directory.
+ *
+ * `--assess` anchors the config's globs at the current directory, because it
+ * names one file rather than a corpus and refuses `--root`. The Conformance
+ * config's globs are written relative to `fixtures/conformance/`, so the only
+ * honest way to exercise it at the process boundary is to stand where an
+ * Operator running that config would stand.
+ *
+ * The entry is resolved to an ABSOLUTE path first. `bin.mh` is declared
+ * relative to the package root, so spawning it from anywhere else would look
+ * for the artefact under the wrong directory and report a Node module error as
+ * though the command had refused the invocation.
+ */
+function mhIn(cwd: string, ...args: readonly string[]): { stdout: string; stderr: string; code: number | null } {
+  const run = spawnSync(process.execPath, [resolve(entry), ...args], { encoding: 'utf8', cwd });
+  return { stdout: run.stdout, stderr: run.stderr, code: run.status };
+}
+
+/** The Conformance config, named from inside the corpus root rather than from the repo root. */
+const LOCAL_CONFIG = 'valid-test-config.yaml';
+const STALE_CASE = 'docs/freshness/stale.md';
+const PINNED = '2026-12-01T00:00:00Z';
+
+describe('mh --assess', () => {
+  describe('success cases', () => {
+    it("answers a stale file with the Operator's sentence, echoes the instant, and exits 0", () => {
+      // ARRANGE
+      const expected = {
+        command: 'assess',
+        now: PINNED,
+        agentAction: 'REVIEW',
+        instruction: 'Re-verify this against the source before quoting it, then move stale_after.',
+        code: 0,
+      };
+      // ACT
+      const run = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', PINNED);
+      const answered = JSON.parse(run.stdout) as {
+        command: string;
+        now: string;
+        result: { agentAction: string; instruction: string };
+      };
+      const actual = {
+        command: answered.command,
+        now: answered.now,
+        agentAction: answered.result.agentAction,
+        instruction: answered.result.instruction,
+        code: run.code,
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('echoes an instant a caller could hand straight back, when none was given', () => {
+      // The replayability claim at the process boundary: with no `--now`, the
+      // clock is read once and the value it produced is echoed — and it is a
+      // value this same command accepts. So a run nobody pinned can be
+      // reproduced exactly by pinning what it printed.
+      //
+      // Deliberately asserts the two runs AGREE rather than naming a verb: the
+      // undefaulted run is judged against the real clock, so which verb it
+      // reaches depends on the day this suite runs. Replayability does not.
+      // ARRANGE
+      const instantShape = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
+      const expected = { matchesShape: true, sameAnswerReplayed: true, code: 0 };
+      // ACT
+      const first = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG);
+      const echoed = (JSON.parse(first.stdout) as { now: string }).now;
+      const again = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', echoed);
+      const firstAnswer = (JSON.parse(first.stdout) as { result: { agentAction: string } }).result.agentAction;
+      const replayed = (JSON.parse(again.stdout) as { result: { agentAction: string } }).result.agentAction;
+      const actual = {
+        matchesShape: instantShape.test(echoed),
+        sameAnswerReplayed: replayed === firstAnswer,
+        code: again.code,
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses an instant it could not compare against, on stderr, with nothing on stdout', () => {
+      // ARRANGE
+      const expected = { leadsWithUsage: true, stdout: '', code: 2 };
+      // ACT
+      const run = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', '2026-02-30T00:00:00Z');
+      const actual = { leadsWithUsage: run.stderr.startsWith(USAGE_LEAD), stdout: run.stdout, code: run.code };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('refuses an instant beside the one command that must stay clock-free', () => {
+      // ARRANGE
+      const expected = { leadsWithUsage: true, stdout: '', code: 2 };
+      // ACT
+      const run = mhIn(CORPUS_ROOT, '--check', '--config', LOCAL_CONFIG, '--now', PINNED);
+      const actual = { leadsWithUsage: run.stderr.startsWith(USAGE_LEAD), stdout: run.stdout, code: run.code };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('refuses a root beside an assessment, which answers about one path', () => {
+      // ARRANGE
+      const expected = { leadsWithUsage: true, stdout: '', code: 2 };
+      // ACT
+      const run = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--root', '.', '--config', LOCAL_CONFIG);
+      const actual = { leadsWithUsage: run.stderr.startsWith(USAGE_LEAD), stdout: run.stdout, code: run.code };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports a config it could not trust in the same envelope, on stdout, and exits 2', () => {
+      // The shared rejection contract, unchanged by this command: the payload
+      // goes to stdout and stderr stays empty, so the channel tells a config
+      // failure from a usage failure without reading the number.
+      // ARRANGE
+      const expected = { error: REJECTED, command: 'assess', stderr: '', code: 2 };
+      // ACT
+      const run = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', 'nothing-here.yaml', '--now', PINNED);
+      const answered = JSON.parse(run.stdout) as { command: string; result: { error: string } };
+      const actual = { error: answered.result.error, command: answered.command, stderr: run.stderr, code: run.code };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('names --assess and --now in the synopsis it prints when refused', () => {
+      // The synopsis is the only thing stderr ever carries, so a command absent
+      // from it is a command a refused caller cannot discover.
+      // ARRANGE
+      const assessFlag = '--assess';
+      const nowFlag = '--now';
+      // ACT
+      const printed = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--now', 'yesterday').stderr;
+      // ASSERT
+      expect(printed).toContain(assessFlag);
+      expect(printed).toContain(nowFlag);
+    });
+  });
+});
 
 describe('mh --help', () => {
   describe('success cases', () => {

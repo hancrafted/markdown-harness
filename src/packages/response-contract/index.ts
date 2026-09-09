@@ -8,6 +8,19 @@
 // ARCH-005 keeps a `types` file free of runtime values — so it sits in a `pure`
 // sibling and is re-exported here, giving the Package one public shape.
 
+export type {
+  AbsentFile,
+  AgentAction,
+  AssessEvidence,
+  AssessResult,
+  AssessState,
+  FreshFile,
+  PromptSource,
+  StaleFile,
+  UnassessableFile,
+  UngovernedFile,
+  WinningRule,
+} from './lib/assess.types.ts';
 export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';
 export type { CheckResult, CheckSummary, FileViolations } from './lib/check.types.ts';
 export { isConfigError } from './lib/config-error.pure.ts';
@@ -21,7 +34,13 @@ export type {
   QueryResult,
   Requirements,
 } from './lib/query.types.ts';
-export type { AuditResponse, CheckResponse, MarkdownHarnessResponse, QueryResponse } from './lib/response.types.ts';
+export type {
+  AssessResponse,
+  AuditResponse,
+  CheckResponse,
+  MarkdownHarnessResponse,
+  QueryResponse,
+} from './lib/response.types.ts';
 export type {
   CrossFieldViolation,
   CrossFieldViolationOf,

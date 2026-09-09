@@ -3,6 +3,11 @@
 // Sibling test for ARCH-002-conformance-suite.rules.ts — pass path plus the
 // three fail paths named in the ADR's acceptance criteria: a missing marker,
 // a duplicate marker, and an unknown verdict.
+//
+// `assess-marker` is tested beside it, and its pass path includes the case
+// `expect-marker` has none of: a file with NO marker at all. Absence is legal
+// there and illegal here, which is the one difference between the two rules and
+// the one thing a test of them both has to state.
 
 import { describe, expect, it } from 'vitest';
 import ruleSet from './ARCH-002-conformance-suite.rules';
@@ -124,6 +129,87 @@ describe('expect-marker', () => {
     const { ctx, violations } = makeCtx(files);
     // ACT
     await rule.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+});
+
+const rule2 = ruleSet.rules['assess-marker'];
+
+describe('assess-marker', () => {
+  it('passes when a case carries exactly one known action', async () => {
+    // ARRANGE
+    const files = {
+      [CASE_PATH]: `---\ntype: reference\n---\n\n<!-- expect: PASSES -->\n<!-- assess: REVIEW -->\n\nStale and conformant at once.\n`,
+    };
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await rule2.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('passes when a case carries no assess marker at all', async () => {
+    // THE DIFFERENCE FROM `expect-marker`, stated. Most of this corpus makes no
+    // freshness claim, and a rule that demanded one everywhere would force a
+    // claim onto every case that makes none.
+    // ARRANGE
+    const files = {
+      [CASE_PATH]: `---\ntype: reference\n---\n\n<!-- expect: PASSES -->\n\nNo freshness claim here.\n`,
+    };
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await rule2.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('fails when a case carries two assess markers', async () => {
+    // ARRANGE
+    const files = {
+      [CASE_PATH]: `---\ntype: reference\n---\n\n<!-- assess: REVIEW -->\n\nBody.\n\n<!-- assess: PROCEED -->\n`,
+    };
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await rule2.check(ctx);
+    // ASSERT
+    expect(violations.some((v) => /carries 2 assess markers/.test(v.message))).toBe(true);
+  });
+
+  it('fails when a marker names an action outside the closed set', async () => {
+    // ARRANGE
+    const files = {
+      [CASE_PATH]: `---\ntype: reference\n---\n\n<!-- assess: MAYBE -->\n\nBody.\n`,
+    };
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await rule2.check(ctx);
+    // ASSERT
+    expect(violations.some((v) => /unknown agent action 'MAYBE'/.test(v.message))).toBe(true);
+  });
+
+  it('carries the ARCH-002 provenance tag in its messages', async () => {
+    // ARRANGE
+    const provenance = '(ARCH-002 [assess-marker])';
+    const files = {
+      [CASE_PATH]: `---\ntype: reference\n---\n\n<!-- assess: MAYBE -->\n\nBody.\n`,
+    };
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await rule2.check(ctx);
+    const untagged = violations.filter((v) => !v.message.includes(provenance));
+    // ASSERT
+    expect(untagged).toEqual([]);
+  });
+
+  it('ignores files outside fixtures/conformance/docs/', async () => {
+    // ARRANGE
+    const files = {
+      'fixtures/llm-wiki/demo.md': `<!-- assess: MAYBE -->\n`,
+    };
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await rule2.check(ctx);
     // ASSERT
     expect(violations).toEqual([]);
   });

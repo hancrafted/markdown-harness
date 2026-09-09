@@ -7,6 +7,7 @@
 // declaration added to a types file becomes public without anyone deciding it.
 // Naming each one keeps the public surface a deliberate list.
 
+export type { AssessConditions } from './lib/assess.types';
 export type {
   ConstrainingPayload,
   FrontmatterConfig,

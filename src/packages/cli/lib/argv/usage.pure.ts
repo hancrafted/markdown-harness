@@ -21,8 +21,9 @@ export const DEFAULT_ROOT = '.';
 
 /** Printed on stderr for any usage error, and nothing else ever is. */
 export const USAGE = `usage: mh [--check] [--root <dir>] [--config <file>]
-       mh  --query <path>          [--config <file>]
-       mh  --audit  [--root <dir>] [--config <file>]
+       mh  --query  <path>          [--config <file>]
+       mh  --audit  [--root <dir>]  [--config <file>]
+       mh  --assess <path> [--now <iso>] [--config <file>]
        mh  --help
 
   --check   every governed file with a violation, and the counts. The default command.
@@ -30,6 +31,8 @@ export const USAGE = `usage: mh [--check] [--root <dir>] [--config <file>]
   --query   what the config asks of one path, before anything exists there. Never exits 1.
   --audit   how every rule fared across the corpus, so a rule that governs nothing is visible.
             Never exits 1.
+  --assess  what one file is worth believing, at one instant. Reads the file and
+            answers PROCEED, REVIEW or FIX_FILE. Never exits 1.
   --help    this text, plus the flag defaults and the exit-code contract. Exits 0.
 `;
 
@@ -52,6 +55,22 @@ export const HELP = `${USAGE}
   --root <dir>     the directory whose markdown files form the corpus. Default \`.\`.
   --config <file>  the config file, resolved from the current directory and never
                    from --root. Default \`${DEFAULT_CONFIG}\`.
+  --now <iso>      the instant --assess judges against, as RFC 3339 with an
+                   explicit offset: \`2026-12-01T00:00:00Z\`. Defaults to the host
+                   clock, and is echoed in the response either way — so a run you
+                   did not pin can be replayed exactly by pinning what it echoed.
+
+Assessing one file:
+  \`--assess\` is the only command that consults a clock, and it never reads one
+  of its own accord: the instant arrives through --now and travels back in the
+  answer. It reads the file and writes nothing.
+
+    PROCEED    fresh, or beyond what any rule claims
+    REVIEW     past its freshness date — carries your own sentence from the config
+    FIX_FILE   a rule governs it and the file cannot say when it goes stale
+
+  \`--check\` stays clock-free, so a corpus cannot go red overnight on a tree
+  nobody touched.
 
 Reading the output:
   Every command answers as JSON on stdout. This help text is the one exception.

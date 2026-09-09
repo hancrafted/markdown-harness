@@ -164,6 +164,26 @@ frontmatter:
         retrieved.at: { presence: required, format: datetime }
         origin: { presence: required, format: uri }
 
+    # ── Freshness ──────────────────────────────────────────────────────────────
+    # The only rule carrying `assess:`, and the reason a freshness judgement can
+    # be made at all. The block is RULE-LEVEL: a Module-wide `frontmatter.assess:`
+    # would force `stale_after: { presence: required }` onto every constraining
+    # rule above — that is what `CONFIG_ASSESS_WITHOUT_REQUIRED_FIELD` asserts —
+    # and rewriting all nine to adopt one key is not what this suite is for. The
+    # Module tier is covered by the config-validity unit tests instead, and the
+    # gap is recorded in ARCH-002.
+    #
+    # `stale_after` is `presence: required` here because the prompt below would
+    # otherwise be a sentence that can never be printed.
+    - ruleId: freshness
+      path: [docs/freshness/**/*.md]
+      intent: A page that goes out of date says when to stop trusting it
+      assess:
+        stale: Re-verify this against the source before quoting it, then move stale_after.
+      fields:
+        type: { presence: required }
+        stale_after: { presence: required, format: datetime }
+
     # ── Type presence only ─────────────────────────────────────────────────────
     # The narrowest useful payload there is. Under the old Floor this rule needed
     # no payload at all, because `type` was required everywhere by construction.

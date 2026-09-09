@@ -9,12 +9,21 @@
  */
 
 import type { ConfigFault } from '../../../response-contract/index.ts';
+import { assessBlockFaults } from './assess-faults.pure.ts';
 import { ruleFaults } from './rule-faults.pure.ts';
 
-/** The section's own address, and its one defined key. */
+/** The section's own address, and the two keys it defines. */
 const SECTION = 'frontmatter';
 const RULES = `${SECTION}.rules`;
-const SECTION_KEYS: readonly string[] = ['rules'];
+const ASSESS = `${SECTION}.assess`;
+
+/**
+ * The Module's own vocabulary: `rules:` for what varies by path, and the
+ * Module-wide keys for what does not. A key added here is a deliberate
+ * amendment — the growth rule is that the top level stays one key per Module,
+ * so anything that is not per-path lands at this tier instead.
+ */
+const SECTION_KEYS: readonly string[] = ['rules', 'assess'];
 
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -56,14 +65,17 @@ export function sectionFaults(section: unknown): readonly ConfigFault[] {
     .filter((key) => !SECTION_KEYS.includes(key))
     .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${SECTION}.${key}` }));
 
+  const assess = assessBlockFaults(section.assess, ASSESS);
+
   const rules = section.rules;
-  if (rules === undefined) return [...unrecognised, { code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
-  if (!Array.isArray(rules)) return [...unrecognised, { code: 'CONFIG_INVALID_VALUE', location: RULES }];
-  if (rules.length === 0) return [...unrecognised, { code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
+  if (rules === undefined) return [...unrecognised, ...assess, { code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
+  if (!Array.isArray(rules)) return [...unrecognised, ...assess, { code: 'CONFIG_INVALID_VALUE', location: RULES }];
+  if (rules.length === 0) return [...unrecognised, ...assess, { code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
 
   return [
     ...unrecognised,
+    ...assess,
     ...duplicateIdFaults(rules),
-    ...rules.flatMap((rule, index) => ruleFaults(rule, `${RULES}[${index}]`)),
+    ...rules.flatMap((rule, index) => ruleFaults(rule, `${RULES}[${index}]`, section.assess)),
   ];
 }

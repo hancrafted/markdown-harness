@@ -8,6 +8,7 @@
  */
 
 import type { ConfigFault } from '../../../response-contract/index.ts';
+import { assessBlockFaults, unfireableAssessFaults } from './assess-faults.pure.ts';
 import { constraintFaults } from './constraint-faults.pure.ts';
 
 /** Every key a rule may carry. */
@@ -23,10 +24,11 @@ const RULE_KEYS: readonly string[] = [
   'exactlyOneOf',
   'anyOf',
   'allOf',
+  'assess',
 ];
 
 /** What `frontmatter: forbidden` excludes — each asserts something about frontmatter that must not exist. */
-const PAYLOAD_KEYS: readonly string[] = ['fields', 'unknownKeys', 'exactlyOneOf', 'anyOf', 'allOf'];
+const PAYLOAD_KEYS: readonly string[] = ['fields', 'unknownKeys', 'exactlyOneOf', 'anyOf', 'allOf', 'assess'];
 
 /** Keys whose value must be a list of globs or addresses. */
 const LIST_KEYS: readonly string[] = ['path', 'excludeFiles', 'exactlyOneOf', 'anyOf', 'allOf'];
@@ -84,10 +86,16 @@ function fieldsFaults(rule: Record<string, unknown>, at: string): readonly Confi
 /**
  * Every fault one rule carries.
  *
+ * The Module-wide `assess:` block arrives as an argument rather than being read
+ * from here, because one fault is decided against the EFFECTIVE prompt — the
+ * rule's own block if it wrote one, the Module's otherwise. A rule cannot know
+ * which of the two answered for it without being told.
+ *
  * @param rule One entry of the ordered rule list, straight off the YAML.
  * @param at The rule's address in the config's own notation, e.g. `frontmatter.rules[3]`.
+ * @param moduleAssess The value written under `frontmatter.assess:`, if any.
  */
-export function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
+export function ruleFaults(rule: unknown, at: string, moduleAssess: unknown): readonly ConfigFault[] {
   if (!isMapping(rule)) return [invalid(at)];
 
   return [
@@ -99,5 +107,7 @@ export function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
     ...shapeFaults(rule, at),
     ...payloadFaults(rule, at),
     ...fieldsFaults(rule, at),
+    ...assessBlockFaults(rule.assess, `${at}.assess`),
+    ...unfireableAssessFaults(rule, at, moduleAssess),
   ];
 }
