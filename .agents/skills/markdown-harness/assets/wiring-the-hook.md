@@ -12,7 +12,7 @@ whatever the body of the document claims about itself.
 
 ## Installing it
 
-**1. Have the skill installed at project scope**, which [`setup.md`](setup.md) step 1 does. The
+**1. Have the skill installed at project scope**, which [`init.md`](init.md) does. The
 command below hard-codes the path `.agents/skills/markdown-harness/`, so an install performed with
 `--copy` puts the script somewhere else and the hook never runs.
 
