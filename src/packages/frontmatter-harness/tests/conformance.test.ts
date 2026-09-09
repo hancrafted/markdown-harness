@@ -125,6 +125,19 @@ describe('valid-test-config.yaml is a complete test surface', () => {
       expect(seen).toContain(key);
     });
 
+    it.each(ALLOWED_ENTRY_KEYS)('exercises the allowed-entry key %s', (key) => {
+      // The allowed-entry tier had a closure assertion and no coverage loop, so
+      // an entry key could have gone unreached while the suite still called
+      // itself complete. ARCH-002 §1.2 names this tier alongside the other
+      // three; §3.1 requires every one of them be reached.
+      // ARRANGE
+      const entries = everyAllowedValue();
+      // ACT
+      const seen = entries.flatMap((entry) => Object.keys(entry));
+      // ASSERT
+      expect(seen).toContain(key);
+    });
+
     it.each(FORMATS)('exercises the named format %s', (format) => {
       // ARRANGE
       const constraints = everyConstraint();
@@ -155,6 +168,21 @@ describe('valid-test-config.yaml is a complete test surface', () => {
       const known = ALLOWED_ENTRY_KEYS;
       // ACT
       const unknown = everyAllowedValue().flatMap((entry) => Object.keys(entry).filter((key) => !known.includes(key)));
+      // ASSERT
+      expect(unknown).toEqual([]);
+    });
+
+    it('names no format outside the vocabulary', () => {
+      // The named-format tier had a coverage loop and no closure assertion, so
+      // `format: datetiem` would have failed nothing here — the constraint-key
+      // closure test sees the KEY `format`, never its value. Only three formats
+      // exist, and a fourth is a deliberate amendment.
+      // ARRANGE
+      const known: readonly string[] = FORMATS;
+      // ACT
+      const unknown = everyConstraint()
+        .flatMap((constraint) => constraint.format ?? [])
+        .filter((format) => !known.includes(format));
       // ASSERT
       expect(unknown).toEqual([]);
     });

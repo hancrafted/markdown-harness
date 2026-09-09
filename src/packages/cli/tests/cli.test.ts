@@ -581,54 +581,57 @@ describe('mh --assess', () => {
       // reaches depends on the day this suite runs. Replayability does not.
       // ARRANGE
       const instantShape = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
-      const expected = { matchesShape: true, sameAnswerReplayed: true, code: 0 };
+      const nothingWrong = 0;
       // ACT
       const first = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG);
       const echoed = (JSON.parse(first.stdout) as { now: string }).now;
       const again = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', echoed);
       const firstAnswer = (JSON.parse(first.stdout) as { result: { agentAction: string } }).result.agentAction;
       const replayed = (JSON.parse(again.stdout) as { result: { agentAction: string } }).result.agentAction;
-      const actual = {
-        matchesShape: instantShape.test(echoed),
-        sameAnswerReplayed: replayed === firstAnswer,
-        code: again.code,
-      };
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(echoed).toMatch(instantShape);
+      expect(replayed).toBe(firstAnswer);
+      expect(again.code).toBe(nothingWrong);
     });
   });
 
   describe('failure cases', () => {
     it('refuses an instant it could not compare against, on stderr, with nothing on stdout', () => {
       // ARRANGE
-      const expected = { leadsWithUsage: true, stdout: '', code: 2 };
+      const empty = '';
+      const cannotReport = 2;
       // ACT
       const run = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', '2026-02-30T00:00:00Z');
-      const actual = { leadsWithUsage: run.stderr.startsWith(USAGE_LEAD), stdout: run.stdout, code: run.code };
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(run.stderr.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
+      expect(run.stdout).toBe(empty);
+      expect(run.code).toBe(cannotReport);
     });
 
     it('refuses an instant beside the one command that must stay clock-free', () => {
       // ARRANGE
-      const expected = { leadsWithUsage: true, stdout: '', code: 2 };
+      const empty = '';
+      const cannotReport = 2;
       // ACT
       const run = mhIn(CORPUS_ROOT, '--check', '--config', LOCAL_CONFIG, '--now', PINNED);
-      const actual = { leadsWithUsage: run.stderr.startsWith(USAGE_LEAD), stdout: run.stdout, code: run.code };
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(run.stderr.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
+      expect(run.stdout).toBe(empty);
+      expect(run.code).toBe(cannotReport);
     });
   });
 
   describe('edge cases', () => {
     it('refuses a root beside an assessment, which answers about one path', () => {
       // ARRANGE
-      const expected = { leadsWithUsage: true, stdout: '', code: 2 };
+      const empty = '';
+      const cannotReport = 2;
       // ACT
       const run = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--root', '.', '--config', LOCAL_CONFIG);
-      const actual = { leadsWithUsage: run.stderr.startsWith(USAGE_LEAD), stdout: run.stdout, code: run.code };
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(run.stderr.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
+      expect(run.stdout).toBe(empty);
+      expect(run.code).toBe(cannotReport);
     });
 
     it('reports a config it could not trust in the same envelope, on stdout, and exits 2', () => {
