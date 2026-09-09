@@ -1,1 +1,0 @@
-../../.archgate/adrs/ARCH-008-reading-a-type-at-runtime.md
