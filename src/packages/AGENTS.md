@@ -34,7 +34,7 @@ which loads itself when you open any file under `src/`.
 Every classifier now has an on-disk instance, so read one rather than only the record: 35 `.pure.ts`
 files and 5 `.impure.ts` files sit under `src/packages/`, measured 2026-09-08. `config-contract/` is
 still the one Package that holds nothing but `.types` under `lib/` and `.test` under `tests/`, which
-is why its boundary edges are invisible to `dependency-cruiser` — trap 5 in the root `AGENTS.md`.
+is why its boundary edges are invisible to `dependency-cruiser` — trap 5 in `docs/agents/verification.md`.
 
 For a `.pure` file whose determinism is the whole point, read `usage.pure.ts` or `parse-argv.pure.ts`
 under `cli/lib/argv/`. For the `.impure` boundary, read `cli/lib/run/invocation-run.impure.ts`, which

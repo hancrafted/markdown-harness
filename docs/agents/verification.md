@@ -1,0 +1,138 @@
+# Verification: the gate and its nine traps
+
+`npm run verify` is the gate. This page holds the traps inside it — the places where a check
+reports success without having measured anything.
+
+Every trap below is one shape of a **vacuous green**: a check reporting success over nothing.
+Before trusting a check that passed, break what it guards and watch it go red. Give a silent check
+a two-sided canary it re-proves on every run — one planted violation it must catch, one clean case
+it must pass — because a one-sided canary passes while the check does nothing.
+
+A compile-time guard makes the same claim and earns the same proof. Delete a key from the record
+and expect `TS2741`; add a bogus one and expect `TS2353`. A `keyof` that resolves to `string`
+through an index signature or an `any` accepts every key while reading correctly at a glance.
+
+**The numbers are load-bearing.** `docs/agents/release.md`, `.github/workflows/ci.yml`,
+`src/packages/AGENTS.md` and the `release` skill all cite these traps by number. Add at the end;
+renumbering silently breaks those citations.
+
+## 1. `archgate check` is changed-files-scoped
+
+It evaluates only ADRs whose `files:` glob matches a file changed against `baseBranch`
+(`.archgate/config.json`), and explicit path arguments are intersected with that same set. So
+`total: 0` means _nothing in scope changed_ — never _governance passed_. To exercise the rules
+deliberately, give it a base that reaches an ADR edit: `npx archgate check --base HEAD~3`.
+
+## 2. `verify` is not trustworthy inside an agent worktree
+
+A Host harness that isolates an agent puts the worktree under `.claude/worktrees/` — inside this
+repo — and installs it incompletely: `node_modules/.bin` comes out empty. `knip` then reports every
+devDependency unused and every binary unlisted, and the same nesting makes typescript-eslint fail
+all files with _"multiple candidate TSConfigRootDirs"_ from the repo root. Both are artifacts of the
+location, not of the diff.
+
+So a worktree agent must not conclude "this failure is pre-existing" by stashing and re-running _in
+the worktree_ — the baseline is contaminated the same way. Re-run `verify` from the real root after
+merging, and treat a worktree's green or red on `knip` and `eslint` as unmeasured. But install it
+first: measured 2026-09-04 in a `.worktrees/` worktree — the second worktree location this repo
+uses, so the diagnosis is not specific to the `.claude/` path — `node_modules/` was present and
+empty, `knip` reported all eleven devDependency binaries unlisted, and `eslint` passed, so the two
+halves of this trap do not fail together. `npm ci` inside the worktree took `node_modules/.bin` from
+absent to 32 entries and `npm run verify` to exit 0 including `knip`. An installed worktree is
+measurable; "unmeasured" is the fallback when installing is impossible, not the first move.
+
+## 3. The ADR size budget counts characters, not bytes
+
+`wc -c` overstates by two per em dash, and this repo's ADR prose is full of them — enough to
+misreport a record by a hundred characters and to disagree with the figure `archgate check` prints.
+Measure with something character-aware, and when planning a cut, trust `archgate check`'s number
+over the shell's.
+
+## 4. An enforcer's rule count comes from evaluating its array, never from grepping it
+
+A `## Compliance and Enforcement` section that states how many checks hold a Discipline makes a
+claim a reader will trust and nothing will verify. The configs here build those arrays from a list —
+`['TSInterfaceDeclaration', ...].map(...).concat([...])` — so the `selector:` key appears once inside
+the map callback and generates one entry per node type. Grepping counts that callback as a single
+selector and undercounts the group: this is how six selectors shipped as four. Extract the
+expression, run it, and print `.length` before writing the number down.
+
+## 5. A boundary check reports green while cruising nothing
+
+`dependency-cruiser` sees only post-compilation edges unless `tsPreCompilationDeps: true` is set, so
+every `import type` and `export type … from` is erased before the rules run. A Package whose edges
+are all type-only — `config-contract` holds nothing but type declarations — therefore satisfies all
+six of `ARCH-004`'s boundary rules by presenting no visible edges at all, and
+`npm run lint:boundaries` still prints `✔ no dependency violations found`. The counts in that same
+line are the only signal that distinguishes the two cases: `7 modules, 3 dependencies` with the flag
+off and `7 modules, 7 dependencies` with it on describe the identical tree. Read the dependency
+count, not the checkmark — and expect it to fall to near zero exactly when the last file holding a
+runtime import leaves `src/`.
+
+**Archgate erases types for the same reason**: it transpiles TypeScript before parsing, so a rule
+calling `ctx.ast()` on a file holding only type declarations gets an empty ESTree body, and
+type-only declarations are unreachable from every archgate rule
+([#16](https://github.com/hancrafted/markdown-harness/issues/16)).
+
+## 6. `archgate check`'s `briefingWarnings` is empty now, so a warning there is signal
+
+It used to be non-empty on every invocation — four records carried a `Decision` section over the
+2,000-character briefing cap — and the standing instruction was to ignore it. That is no longer
+true: the compression commits took all four under the cap and `briefingWarnings` measures `[]`
+against every base. [#28](https://github.com/hancrafted/markdown-harness/issues/28) and
+[#27](https://github.com/hancrafted/markdown-harness/issues/27) are both closed now, so read the
+tree rather than either ticket — the two have already disagreed with the measurement in both
+directions. Two of the four sit close to the line, `ARCH-003` at 1,999 characters and `ARCH-004` at
+1,928, so **one added sentence in either `Decision` reopens the warning** — which is why this trap is
+now the opposite of what it was. Do not carry forward the habit of dismissing the array; a warning
+in it today names something your change did.
+
+**The cap is per capped section, and `Decision` is not the only one.** Measured 2026-09-09, adding
+one Discipline to `ARCH-002`: five new items under `## Do's and Don'ts` produced
+`{"section": "Do's and Don'ts", "length": 2372, "cap": 2000}`. So a record can sit comfortably under
+the cap in `Decision` and breach it in the section below, and adding a Discipline pays for itself
+twice — once in each. Both halves of `ARCH-002` now sit within about thirty characters of the line.
+**Only the figure `archgate check` prints is authoritative**: a shell character count over a
+`## Decision`-to-`## Do's and Don'ts` slice includes the heading and over-reports, which is trap 3's
+problem in a second costume.
+
+## 7. A repo-wide formatter can brick pinned trees, and the refusal will not say so
+
+The stamped assets are pinned by content hash against `assets/assets.sha256` in
+`prepare-ablation-run`, and `preflight.sh` refuses to mint a run when a pin and its tree disagree.
+`prettier --write .` over that tree therefore produces a refusal that reads as tampering, over a
+reformat nobody chose, and the message names the drift rather than the cause. It is in
+`.prettierignore` with that reason attached, and the same care is owed to anything pinned later:
+**a content pin and a repo-wide `--write` are incompatible unless the pinned path is ignored.**
+
+Malformed fixtures are ignored for a neighbouring reason — they are deliberately malformed, and
+formatting them would repair the defects they exist to present.
+`fixtures/conformance/docs/plain/broken/**` joins them on the same grounds. Scope an entry like that
+to the directory, never to the files that fail today: of the four malformed blocks there, only the
+unclosed fence moves under `prettier --write` — prettier leaves a block it cannot parse alone — so
+which shapes survive formatting is an accident of the parser rather than a property anyone chose.
+
+## 8. `vitest` never typechecks, so a per-file green proves only that the code ran
+
+Vitest transforms with esbuild, which strips types without reading them — so
+`npx vitest run <one file>`, which is exactly the inner loop §7's "work in vertical slices"
+produces, passes happily over code `tsc` rejects. Measured 2026-09-07: five units went green that
+way one after another, and `tsc --noEmit` then found 21 errors across those same five files — among
+them an `as` cast that had widened a discriminated union's `requirement` key to an index signature,
+which no test could have caught because both shapes hold identical data at run time. The full chain
+runs `tsc` **before** `vitest`, so the gate does catch this; the trap lives entirely in the inner
+loop, where the temptation is to defer the typecheck to the end. Run `tsc --noEmit` beside the
+single-file test run, not once after all of them — a green unit test is evidence about behaviour and
+says nothing whatever about types.
+
+## 9. A green process-boundary suite can be measuring the previous build
+
+`bin.mh` names a compiled artefact under `dist/`, and `src/packages/cli/tests/cli.test.ts` spawns
+exactly what it names — so `npx vitest run src/packages/cli/tests/cli.test.ts` after an edit you
+have not built runs the **old** entry. The suite's start-up guard only asks whether `dist/` exists,
+never whether it is current, and nothing anywhere checks freshness. Measured 2026-09-07: a changed
+refusal string that never reached `dist/` left all 26 tests green while the source on disk said
+something else. `npm run verify` runs `npm run build` before `vitest`, so the gate is safe; the trap
+lives entirely in the inner loop, beside trap 8 and with the same shape. Run `npm run build` next to
+the single-file test run — a green integration suite is evidence about the artefact, and only a
+build makes the artefact evidence about your source.
