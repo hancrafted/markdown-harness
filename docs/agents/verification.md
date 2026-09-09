@@ -1,4 +1,4 @@
-# Verification: the gate and its ten traps
+# Verification: the gate and its twelve traps
 
 `npm run verify` is the gate. This page holds the traps inside it — the places where a check
 reports success without having measured anything.
@@ -162,3 +162,54 @@ wired.** The guard against it is `docs/markdown-harness/activity.csv`, which the
 every invocation that finds a config root, silent ones included. A `fresh` row proves the hook ran
 and chose to say nothing; no rows at all is the finding. Verify from the log, and never from a
 step's own report — `src/packages/cli/tests/assess-hook.test.ts` is where that log is held to it.
+
+## 11. Nothing under `.agents/skills/` is reached by the gate except `prettier`
+
+Measured 2026-09-09 on a change touching only `.agents/skills/setup-local-e2e-repo/`. Two checks
+inside `verify` report green over it without looking at it, and they fail in different directions.
+
+**`archgate` has no ADR in scope.** Every `files:` glob in `.archgate/adrs/` points at `src/**`,
+`package.json`, `fixtures/conformance/**`, `.archgate/adrs/**`, `.claude/rules/**`, or
+`**/*.test.ts`. `archgate review-context --run-checks` on that change returned `"domains": []`
+alongside `"total": 0` — not one briefing applied. This is trap 1 with the scope emptied by path
+rather than by diff, so re-running with `--base` does not reach it either: no base makes an
+unwritten ADR apply.
+
+**`eslint` parses these files and configures no rule for them.** Every rule block in
+`eslint.config.mjs` is held behind `files: ['**/*.ts']` or `GOVERNED` (`src/**/*.ts`), and ESLint 9
+lints `**/*.mjs` by default — so a skill script is visited with an empty rule set. Canaried: append
+`undefinedFunctionCall(thisVarDoesNotExist)` to a script under `.agents/skills/` and `eslint` still
+exits **0**. A green `eslint .` is not evidence about any file in this subtree.
+
+So `prettier` is the only check in `verify` that measures a skill script, and it measures layout.
+On the change above, three real faults — a `git ls-remote` exit code read as a successful lookup, a
+value-taking flag swallowing the next flag and minting into a garbage path under `ok: true`, and an
+uncaught `writeFileSync` that would exit with no JSON at all — were found by review and by running
+the script. None was reachable by the gate.
+
+A test does not close this by itself: `tsconfig.json` includes only `["src", "*.ts", "*.mts"]` while
+`vitest.config.ts` includes `**/*.{test,spec}.ts` greedily, so a `.test.ts` placed here would run
+untypechecked — trap 8 by construction, and no skill script has a test today. Prove a skill script
+by executing it, and say which paths you ran.
+
+## 12. A git ref lookup reports success over nothing, twice over
+
+Both halves were measured against this repository's own remote while building a skill/package drift
+check, and both produce a confident sentence about a comparison that never happened.
+
+**`git ls-remote` exits 0 with empty output for a ref that does not exist.** So an exit-code check
+reads a missing tag as a successful lookup. `git ls-remote <url> 'refs/tags/v99.99.99^{}'` exits
+**0** and prints nothing; `''.split(/\s+/)[0]` is `''`, not `undefined`, so an `undefined` guard
+never fires and the comparison runs against an empty string. Treat empty output as "no such ref",
+and report "no such ref" apart from "remote unreachable" — they are different answers and only one
+of them is about the network.
+
+**An annotated tag resolves to the tag object, not the commit.** `refs/tags/v0.0.4` returned
+`657481b6` while `refs/tags/v0.0.4^{}` returned `d9476f8` — the release commit. Compare the
+unpeeled form against a branch head and it differs on every repository that uses annotated tags,
+including the ones with nothing wrong, so the check is a vacuous **red**: it shouts on every run and
+therefore carries no information on any of them. Peel with `^{}`.
+
+Either half alone passes a one-sided canary. The equality case has to be built to be seen: clone to
+a scratch path, `git tag -a` at `HEAD`, and prove the peeled ref equals `HEAD` while the unpeeled
+one does not.
