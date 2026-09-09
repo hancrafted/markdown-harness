@@ -43,6 +43,18 @@ describe('ruleFaults', () => {
       // ASSERT
       expect(actual).toEqual([]);
     });
+
+    it('accepts both spellings of unknownKeys', () => {
+      // ARRANGE
+      const rules = [
+        { ...sound, unknownKeys: 'allowed' },
+        { ...sound, unknownKeys: 'forbidden' },
+      ];
+      // ACT
+      const actual = rules.flatMap((rule) => ruleFaults(rule, AT));
+      // ASSERT
+      expect(actual).toEqual([]);
+    });
   });
 
   describe('failure cases', () => {
@@ -96,6 +108,28 @@ describe('ruleFaults', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('rejects an unknownKeys outside allowed and forbidden', () => {
+      // The evaluator branches on `forbidden` alone, so any other spelling
+      // silently reads as the permissive default.
+      // ARRANGE
+      const rule = { ...sound, unknownKeys: 'sometimes' };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.unknownKeys` }];
+      // ACT
+      const actual = ruleFaults(rule, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a path list holding a non-string element', () => {
+      // ARRANGE
+      const rule = { ...sound, path: ['docs/**', 3] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.path` }];
+      // ACT
+      const actual = ruleFaults(rule, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('edge cases', () => {
@@ -138,6 +172,28 @@ describe('ruleFaults', () => {
       const actual = ruleFaults(rule, AT);
       // ASSERT
       expect(actual).toEqual(expected);
+    });
+
+    it('points a wrong-typed element at the key rather than at its index', () => {
+      // §3.5 fixes the location as the key as written. One bad element makes
+      // the whole set unusable as globs, so an indexed fault would ask for the
+      // same repair once per element.
+      // ARRANGE
+      const rule = { ...sound, anyOf: [true, false] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.anyOf` }];
+      // ACT
+      const actual = ruleFaults(rule, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('accepts an empty list, which names no addresses rather than a wrong one', () => {
+      // ARRANGE
+      const rule = { ...sound, excludeFiles: [] };
+      // ACT
+      const actual = ruleFaults(rule, AT);
+      // ASSERT
+      expect(actual).toEqual([]);
     });
   });
 });

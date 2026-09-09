@@ -8,7 +8,7 @@
 // built.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -74,8 +74,47 @@ let plantedConfig = '';
 let conforming = '';
 let conformingConfig = '';
 
+/**
+ * A corpus holding one governed file the walker enumerates and the read edge
+ * cannot open.
+ *
+ * It has to be a PERMISSION. Every other way a read refuses — a directory, a
+ * dangling symlink, a socket — the walker already declines to enumerate, so
+ * mode 000 is the only arrangement that reaches this branch at the process
+ * boundary at all. That buys one dependency on ambient state, and `denied`
+ * below is what stops it turning into a test that passes without testing.
+ */
+let locked = '';
+let lockedConfig = '';
+let lockedFile = '';
+let sealed = '';
+
 /** Where the one-line Node-version stand-ins are written. See `mhOnNode`. */
 let shimmed = '';
+
+/** What a mode-000 file gives THIS uid when the arrangement worked. */
+const REFUSED = 'refused';
+
+/**
+ * What opening a mode-000 file gives THIS uid.
+ *
+ * A uid that bypasses the mode bit reads the file anyway, and the refusal under
+ * test would never fire — leaving a green assertion about a condition that was
+ * never arranged. So the one test that needs it asserts this first.
+ *
+ * Returns a SENTENCE rather than a boolean, and the difference is the failure
+ * message: `expected 'opened anyway ...' to be 'refused'` names what happened,
+ * where `expected false to be true` would leave the reader to guess whether the
+ * chmod failed, the uid is privileged, or the file was never planted.
+ */
+function openingGives(path: string): string {
+  try {
+    readFileSync(path, 'utf8');
+    return 'opened anyway — this uid bypasses the mode bit';
+  } catch {
+    return REFUSED;
+  }
+}
 
 beforeAll(() => {
   planted = mkdtempSync(join(tmpdir(), 'mh-cli-audit-'));
@@ -107,6 +146,30 @@ beforeAll(() => {
     ].join('\n'),
   );
 
+  locked = mkdtempSync(join(tmpdir(), 'mh-check-locked-'));
+  writeFileSync(join(locked, 'readable.md'), '---\ntype: note\n---\n');
+  lockedFile = join(locked, 'sealed.md');
+  writeFileSync(lockedFile, '---\ntype: note\n---\n');
+  chmodSync(lockedFile, 0o000);
+  // Recorded, not thrown. A throw here would abort every test in this file over
+  // a condition only one of them needs; the test that needs it asserts it.
+  sealed = openingGives(lockedFile);
+  lockedConfig = join(locked, 'locked.config.yaml');
+  writeFileSync(
+    lockedConfig,
+    [
+      'frontmatter:',
+      '  rules:',
+      '    - ruleId: every-markdown-file',
+      "      path: ['**/*.md']",
+      '      intent: Governs every markdown file the walker enumerates',
+      '      fields:',
+      '        type:',
+      '          presence: required',
+      '',
+    ].join('\n'),
+  );
+
   plantedConfig = join(planted, 'walker.config.yaml');
   writeFileSync(
     plantedConfig,
@@ -125,6 +188,8 @@ beforeAll(() => {
 });
 
 afterAll(() => {
+  if (lockedFile !== '') chmodSync(lockedFile, 0o644);
+  rmSync(locked, { recursive: true, force: true });
   rmSync(planted, { recursive: true, force: true });
   rmSync(conforming, { recursive: true, force: true });
   rmSync(shimmed, { recursive: true, force: true });
@@ -369,7 +434,7 @@ describe('mh --check', () => {
   describe('success cases', () => {
     it('reproduces the expected conformance verdict and exits 1', () => {
       // ARRANGE
-      const summary = { governedFiles: 33, invalidFiles: 23, totalViolations: 27 };
+      const summary = { governedFiles: 36, invalidFiles: 24, totalViolations: 28 };
       const corpusIsWrong = 1;
       const empty = '';
       // ACT
@@ -396,6 +461,7 @@ describe('mh --check', () => {
         'docs/plain/untyped.md',
         'docs/reference/draft-page.md',
         'docs/reference/legacy.md',
+        'docs/research/blank-description.md',
         'docs/research/index.md',
         'docs/research/long-tag.md',
         'docs/research/overtagged.md',
@@ -470,6 +536,25 @@ describe('mh --check', () => {
       const actual = files.find((file) => file.path === row.path);
       // ASSERT
       expect(actual).toEqual(row);
+    });
+
+    it('names a governed file it cannot open, rather than printing the usage text', () => {
+      // Exit 2 was already right — "could not report at all". The CHANNEL was
+      // not: the invocation was well formed and the walker accepted the root, so
+      // a synopsis sent the Operator to check flags that were never wrong, and
+      // nothing anywhere named the file. §2 rule 3 tells the two exit-2 flavours
+      // apart by what the channel says, and this said the other one's line.
+      // ARRANGE
+      const cannotReport = 2;
+      const empty = '';
+      // ACT
+      const run = mh('--check', '--root', locked, '--config', lockedConfig);
+      // ASSERT
+      expect(sealed).toBe(REFUSED);
+      expect(run.code).toBe(cannotReport);
+      expect(run.stdout).toBe(empty);
+      expect(run.stderr).toContain(lockedFile);
+      expect(run.stderr).not.toContain(USAGE_LEAD);
     });
   });
 

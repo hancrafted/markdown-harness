@@ -19,6 +19,7 @@ import type { Invocation } from '../argv/argv.types.ts';
 import { parseArgv } from '../argv/parse-argv.pure.ts';
 import { HELP, USAGE } from '../argv/usage.pure.ts';
 import { unsupportedRuntime } from '../runtime/node-support.pure.ts';
+import { unreadableGovernedFile } from './unreadable-file.pure.ts';
 
 /**
  * What the process should emit and exit with.
@@ -127,6 +128,13 @@ function auditRun({ root, config }: Invocation): Termination {
  * could not finish reading exits 2 instead — "could not report at all" — because
  * a governed file silently missing from the report would make an incomplete
  * verdict look like a clean one.
+ *
+ * That refusal is NOT a usage error, though it answered as one until #43. The
+ * invocation was well formed and the walker accepted the root; a file went
+ * unreadable after enumeration, which §2 rule 3's two flavours do not cover.
+ * Answering with the synopsis sent an Operator to check flags that were already
+ * right, and dropped the one fact worth having. It joins the runtime floor as a
+ * refusal that states its own cause on stderr.
  */
 function checkRun({ root, config }: Invocation): Termination {
   const files = listMarkdownFiles(root);
@@ -138,9 +146,12 @@ function checkRun({ root, config }: Invocation): Termination {
     return emit({ command: 'check', root, config, result: rejection(load.faults) }, CANNOT_REPORT);
   }
 
-  const result = checkCorpus(root, files, load.config);
-  if (result === undefined) return USAGE_ERROR;
+  const checked = checkCorpus(root, files, load.config);
+  if (checked.kind === 'unreadable') {
+    return { stdout: '', stderr: unreadableGovernedFile(checked.path), code: CANNOT_REPORT };
+  }
 
+  const result = checked.result;
   const wrong = result.summary.invalidFiles > 0;
   return emit({ command: 'check', root, config, result }, wrong ? CORPUS_IS_WRONG : NOTHING_WRONG);
 }

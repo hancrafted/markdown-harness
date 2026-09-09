@@ -5,7 +5,6 @@
 // there IS a mapping, both validating layers run and their faults merge, so a
 // config fails whole rather than one fault at a time.
 
-import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
 import { validateFrontmatterSection } from '../frontmatter-harness/validate-config.ts';
 import { parseConfigDocument } from './lib/config-document.pure.ts';
 import type { ConfigLoad } from './lib/config-load.types.ts';
@@ -24,11 +23,13 @@ export function loadConfig(location: string): ConfigLoad {
   const parsed = parseConfigDocument(source.text, location);
   if (parsed.document === undefined) return { faults: parsed.faults };
 
-  const faults = [
-    ...findUnrecognisedTopLevelKeys(parsed.document),
-    ...validateFrontmatterSection(parsed.document.frontmatter),
-  ];
-  if (faults.length > 0) return { faults };
+  const validated = validateFrontmatterSection(parsed.document.frontmatter);
+  const faults = [...findUnrecognisedTopLevelKeys(parsed.document), ...validated.faults];
+  if (validated.section === undefined || faults.length > 0) return { faults };
 
-  return { config: parsed.document as unknown as MarkdownHarnessConfig, faults: [] };
+  // ASSEMBLED, never asserted. The config is built from the one section that
+  // earned its type, so the only key this file names is the one it already
+  // recognises as a top-level key — it still learns nothing of the rule
+  // language below it.
+  return { config: { frontmatter: validated.section }, faults: [] };
 }
