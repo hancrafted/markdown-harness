@@ -58,7 +58,7 @@ See §2.
 
 **Q3 — No special treatment found anywhere, and CommonMark's own emphasis rules make the
 "looks like bold" worry structurally impossible for this exact naming shape.** A `__` run that
-is flanked by an alphanumeric character on *both* sides — exactly what `<category>__<slug>`
+is flanked by an alphanumeric character on _both_ sides — exactly what `<category>__<slug>`
 always produces, since category and slug are non-empty kebab-case tokens — fails CommonMark
 Rules 6 and 8 (`spec.commonmark.org/0.31.2/#emphasis-and-strong-emphasis`): it can neither open
 nor close strong emphasis. **[executed]** against `commonmark@0.31.2` (the JS reference
@@ -66,9 +66,9 @@ implementation): `aikb__llm-wiki.md` in a bare paragraph, in an ATX heading, rep
 one paragraph, inside a link destination, and inside a code span all render with **zero**
 `<strong>`/`<em>` tags. GFM's own spec (v0.29, `github/cmark-gfm:test/spec.txt`) carries the
 identical rules 5–8 wording — this is GitHub's actual rendering engine, not an inference from
-"GFM resembles CommonMark." The one real trap is a *leading* dunder like `__init__.py`
+"GFM resembles CommonMark." The one real trap is a _leading_ dunder like `__init__.py`
 (underscore run flanked by whitespace, not a letter, on the outer side) — **[executed]**: that
-one *does* render as `<strong>init</strong>.py` — but the harness's convention never produces
+one _does_ render as `<strong>init</strong>.py` — but the harness's convention never produces
 that shape, because the delimiter always sits strictly inside a longer name. Obsidian's official
 docs (`obsidianmd/obsidian-help`) list exactly seven invalid link characters/sequences — `#`,
 `|`, `^`, `:`, `%%`, `[[`, `]]` — `_` is not among them, and note titles render as plain UI text,
@@ -117,12 +117,12 @@ Starlight's docs live in a **content collection**, not the classic pages router.
 
 ```ts
 function isPublicRoute(file: URL, config: AstroConfig): boolean {
-	// ...normalize to the path under pagesDir/rootDir...
-	const parts = normalizedDir.replace(pagesDir.toString(), '').split('/').slice(1);
-	for (const part of parts) {
-		if (part.startsWith('_')) return false;
-	}
-	return true;
+  // ...normalize to the path under pagesDir/rootDir...
+  const parts = normalizedDir.replace(pagesDir.toString(), '').split('/').slice(1);
+  for (const part of parts) {
+    if (part.startsWith('_')) return false;
+  }
+  return true;
 }
 ```
 
@@ -132,15 +132,12 @@ function isPublicRoute(file: URL, config: AstroConfig): boolean {
 `hasUnderscoreBelowContentDirectoryPath()`:
 
 ```ts
-function hasUnderscoreBelowContentDirectoryPath(
-	fileUrl: URL,
-	contentDir: ContentPaths['contentDir'],
-): boolean {
-	const parts = fileUrl.pathname.replace(contentDir.pathname, '').split('/');
-	for (const part of parts) {
-		if (part.startsWith('_')) return true;
-	}
-	return false;
+function hasUnderscoreBelowContentDirectoryPath(fileUrl: URL, contentDir: ContentPaths['contentDir']): boolean {
+  const parts = fileUrl.pathname.replace(contentDir.pathname, '').split('/');
+  for (const part of parts) {
+    if (part.startsWith('_')) return true;
+  }
+  return false;
 }
 ```
 
@@ -194,7 +191,7 @@ export const GlobExcludeDefault = [
 basename's first character. `**/_*/**` is the directory equivalent. `**/__tests__/**` matches a
 literal directory named exactly `__tests__` (a whole-segment match against a fixed string, not
 "any segment containing `__`"). None of these four patterns match a file whose basename simply
-*contains* `__` partway through. **Tag: normative** — this is the actual array the docs/blog/
+_contains_ `__` partway through. **Tag: normative** — this is the actual array the docs/blog/
 pages plugins compose their `exclude` option from (`docusaurus-plugin-content-docs/src/options.ts`
 references `GlobExcludeDefault`).
 
@@ -202,11 +199,13 @@ references `GlobExcludeDefault`).
 
 > "the following are always implicitly prepended [to `exclude_docs`] to exclude dot-files (and
 > directories) as well as the top-level `templates` directory":
+>
 > ```
 > exclude_docs: |
 >   .*
 >   /templates/
 > ```
+>
 > — <https://www.mkdocs.org/user-guide/configuration/#exclude_docs>
 
 There is no leading-underscore default anywhere in MkDocs. A project would have to add `_*`
@@ -221,14 +220,14 @@ one).
 
 ```ts
 export function getContentEntryIdAndSlug({ entry, contentDir, collection }): { id: string; slug: string } {
-	const relativePath = getRelativeEntryPath(entry, collection, contentDir);
-	const withoutFileExt = relativePath.replace(new RegExp(path.extname(relativePath) + '$'), '');
-	const rawSlugSegments = withoutFileExt.split(path.sep);
-	const slug = rawSlugSegments
-		.map((segment) => githubSlug(segment)) // import { slug as githubSlug } from 'github-slugger'
-		.join('/')
-		.replace(/\/index$/, '');
-	return { id: normalizePath(relativePath), slug };
+  const relativePath = getRelativeEntryPath(entry, collection, contentDir);
+  const withoutFileExt = relativePath.replace(new RegExp(path.extname(relativePath) + '$'), '');
+  const rawSlugSegments = withoutFileExt.split(path.sep);
+  const slug = rawSlugSegments
+    .map((segment) => githubSlug(segment)) // import { slug as githubSlug } from 'github-slugger'
+    .join('/')
+    .replace(/\/index$/, '');
+  return { id: normalizePath(relativePath), slug };
 }
 ```
 
@@ -304,7 +303,7 @@ The mechanism is delimiter-run flanking. Rule 6 (opening `__`) and Rule 8 (closi
 
 For `<category>__<slug>` (e.g. `aikb__llm-wiki`), the `__` run is preceded by a letter and
 followed by a letter — so it is **simultaneously** left-flanking and right-flanking (the
-technical definition of "intraword"). Rule 6's (a) fails (it *is* right-flanking) and (b) fails
+technical definition of "intraword"). Rule 6's (a) fails (it _is_ right-flanking) and (b) fails
 (preceded by a letter, not punctuation) — so it cannot open. Rule 8 fails symmetrically — so it
 cannot close either. This holds regardless of how many other `__` occurrences sit elsewhere in
 the same document; each delimiter run is judged only by its own immediate neighbors.
@@ -312,15 +311,15 @@ the same document; each delimiter run is judged only by its own immediate neighb
 **[executed]**, `commonmark@0.31.2` (the JS reference implementation cited by the spec's own
 test tooling), Node v26.5.0:
 
-| input | rendered HTML | bold/em produced |
-|---|---|---|
-| `The file aikb__llm-wiki.md holds the content.` | unchanged, literal | no |
-| `Compare aikb__llm-wiki.md against help__setup.md for reference.` (two separate `__`) | unchanged, literal | no |
-| `# aikb__llm-wiki` (ATX heading) | `<h1>aikb__llm-wiki</h1>` | no |
-| `` `aikb__llm-wiki.md` `` (code span) | `<code>aikb__llm-wiki.md</code>` | no |
-| `[the wiki page](aikb__llm-wiki.md)` (link destination) | `<a href="aikb__llm-wiki.md">the wiki page</a>` | no |
-| `aikb_llm_wiki.md` (single underscore, spec's own `foo_bar_baz` shape) | unchanged, literal | no |
-| `See __init__.py for the entry point.` (**leading** dunder — the different shape) | `See <strong>init</strong>.py for the entry point.` | **yes** |
+| input                                                                                 | rendered HTML                                       | bold/em produced |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------- | ---------------- |
+| `The file aikb__llm-wiki.md holds the content.`                                       | unchanged, literal                                  | no               |
+| `Compare aikb__llm-wiki.md against help__setup.md for reference.` (two separate `__`) | unchanged, literal                                  | no               |
+| `# aikb__llm-wiki` (ATX heading)                                                      | `<h1>aikb__llm-wiki</h1>`                           | no               |
+| `` `aikb__llm-wiki.md` `` (code span)                                                 | `<code>aikb__llm-wiki.md</code>`                    | no               |
+| `[the wiki page](aikb__llm-wiki.md)` (link destination)                               | `<a href="aikb__llm-wiki.md">the wiki page</a>`     | no               |
+| `aikb_llm_wiki.md` (single underscore, spec's own `foo_bar_baz` shape)                | unchanged, literal                                  | no               |
+| `See __init__.py for the entry point.` (**leading** dunder — the different shape)     | `See <strong>init</strong>.py for the entry point.` | **yes**          |
 
 The last row is the real trap, and it is instructive by contrast: `__init__` has its opening `__`
 preceded by a **space**, not a letter, so it's left-flanking-only and Rule 6(a) is satisfied —
@@ -350,7 +349,7 @@ READMEs. **Tag: normative.**
 `_` is not on that list, singly or doubled. There is no other Obsidian doc found stating any
 underscore-specific filename behavior. Note titles and the file explorer render the filename as
 plain UI text — they are not passed through Obsidian's markdown pipeline — so the emphasis
-question in §3.1 doesn't even arise for a note's *own* title; it would only apply if the
+question in §3.1 doesn't even arise for a note's _own_ title; it would only apply if the
 filename were typed as bare inline text inside another note's body, where §3.1's conclusion
 already covers it. **Tag: normative** for the invalid-character list (doc-sourced); not executed
 against the Obsidian app itself (unavailable in this environment).
@@ -359,21 +358,21 @@ against the Obsidian app itself (unavailable in this environment).
 
 ```ts
 function scoreSeparatorAtPos(charCode: number): number {
-	switch (charCode) {
-		case CharCode.Slash:
-		case CharCode.Backslash:
-			return 5; // prefer path separators...
-		case CharCode.Underline:
-		case CharCode.Dash:
-		case CharCode.Period:
-		case CharCode.Space:
-		case CharCode.SingleQuote:
-		case CharCode.DoubleQuote:
-		case CharCode.Colon:
-			return 4; // ...over other separators
-		default:
-			return 0;
-	}
+  switch (charCode) {
+    case CharCode.Slash:
+    case CharCode.Backslash:
+      return 5; // prefer path separators...
+    case CharCode.Underline:
+    case CharCode.Dash:
+    case CharCode.Period:
+    case CharCode.Space:
+    case CharCode.SingleQuote:
+    case CharCode.DoubleQuote:
+    case CharCode.Colon:
+      return 4; // ...over other separators
+    default:
+      return 0;
+  }
 }
 ```
 
@@ -394,7 +393,7 @@ spec's stated scope; not independently executed against github.com's rendering p
 
 For code/file search, the current official docs state the search's own restriction directly:
 
-> Characters ignored by the search: `` . , : ; / \ ` ' " = * ! ? # $ & + ^ | ~ < > ( ) { } [ ] @ ``
+> Characters ignored by the search: ``. , : ; / \ ` ' " = * ! ? # $ & + ^ | ~ < > ( ) { } [ ] @``
 > — <https://docs.github.com/en/search-github/searching-on-github/searching-code>
 
 `_` is absent from that list — a doubled underscore survives as a literal, matchable character
