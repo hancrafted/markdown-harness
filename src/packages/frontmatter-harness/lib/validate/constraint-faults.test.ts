@@ -27,6 +27,24 @@ describe('constraintFaults', () => {
       // ASSERT
       expect(actual).toEqual([]);
     });
+
+    it('accepts every named presence state', () => {
+      // ARRANGE
+      const constraints = [{ presence: 'required' }, { presence: 'optional' }, { presence: 'forbidden' }];
+      // ACT
+      const actual = constraints.flatMap((constraint) => constraintFaults(constraint, AT));
+      // ASSERT
+      expect(actual).toEqual([]);
+    });
+
+    it('accepts every named format', () => {
+      // ARRANGE
+      const constraints = [{ format: 'datetime' }, { format: 'uri' }, { format: 'actor' }];
+      // ACT
+      const actual = constraints.flatMap((constraint) => constraintFaults(constraint, AT));
+      // ASSERT
+      expect(actual).toEqual([]);
+    });
   });
 
   describe('failure cases', () => {
@@ -91,6 +109,40 @@ describe('constraintFaults', () => {
       // ARRANGE
       const constraint = { presence: 'required', maxLenght: 3 };
       const expected = [{ code: 'CONFIG_UNRECOGNISED_KEY', location: `${AT}.maxLenght` }];
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a presence outside the three named states', () => {
+      // §3.5 gives this exact example. Recognising the key and never reading
+      // its value leaves the field silently ungoverned.
+      // ARRANGE
+      const constraint = { presence: 'maybe' };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.presence` }];
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a format the vocabulary does not name', () => {
+      // ARRANGE
+      const constraint = { format: 'email' };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.format` }];
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a length bound holding a string that looks like a number', () => {
+      // The quoted form is the plausible slip, and it is the one a check on
+      // presence alone would wave through.
+      // ARRANGE
+      const constraint = { minLength: '3' };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.minLength` }];
       // ACT
       const actual = constraintFaults(constraint, AT);
       // ASSERT
@@ -172,6 +224,72 @@ describe('constraintFaults', () => {
         { code: 'CONFIG_UNRECOGNISED_KEY', location: `${AT}.nope` },
         { code: 'CONFIG_EMPTY_INTENT', location: `${AT}.intent` },
       ];
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a presence key written and left blank', () => {
+      // PRESENCE, not truthiness. A bare `presence:` parses to null, which is
+      // outside the vocabulary and so is the Operator saying something wrong,
+      // not saying nothing.
+      // ARRANGE
+      const constraint = { presence: null };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.presence` }];
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports every out-of-type bound rather than the first', () => {
+      // ARRANGE
+      const constraint = { minItems: 'one', maxItems: true, itemMaxLength: [] };
+      const expected = [
+        { code: 'CONFIG_INVALID_VALUE', location: `${AT}.minItems` },
+        { code: 'CONFIG_INVALID_VALUE', location: `${AT}.maxItems` },
+        { code: 'CONFIG_INVALID_VALUE', location: `${AT}.itemMaxLength` },
+      ];
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('accepts a bound of zero, which is a finite number like any other', () => {
+      // No floor and no ceiling: `maxItems: 0` is a coherent thing to write, and
+      // a truthiness test would have called it absent.
+      // ARRANGE
+      const constraint = { maxItems: 0 };
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual([]);
+    });
+
+    it('rejects a bound of NaN, which a type check alone would admit', () => {
+      // `typeof NaN === 'number'`, so a check on type alone accepts `.nan` and
+      // the config governs its files. Every comparison against NaN is false, so
+      // the bound then cannot fire: `'ab'.length < NaN` is false, and
+      // VALUE_TOO_SHORT never reports. That is this ticket's opening sentence —
+      // a config the spec names invalid, accepted, and quietly doing nothing.
+      // ARRANGE
+      const constraint = { minLength: NaN };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.minLength` }];
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects an infinite bound, which fails in the same silent direction', () => {
+      // `.inf` parses to a real Infinity. A ceiling nothing can exceed is not a
+      // ceiling, and the spec gives no spelling for `maxItems: no limit`:
+      // omitting the key is how the config language already says that.
+      // ARRANGE
+      const constraint = { maxItems: Infinity };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.maxItems` }];
       // ACT
       const actual = constraintFaults(constraint, AT);
       // ASSERT

@@ -54,8 +54,12 @@ function asks(constraints: FieldConstraints, keys: readonly (keyof FieldConstrai
  * One finding per address rather than one per collided constraint: a violation
  * carries the whole config fragment verbatim, so three list constraints over a
  * string would print the same fragment three times and ask for one repair.
+ *
+ * The collision tier must not speak about a value that is absent in substance.
+ * An unwritten value (`null` or `undefined`) is owned by presence alone.
  */
 function collides(constraints: FieldConstraints, value: unknown): boolean {
+  if (value === null || value === undefined) return false;
   if (typeof value === 'string') return asks(constraints, LIST_KEYS);
   if (Array.isArray(value)) return asks(constraints, STRING_KEYS);
   return asks(constraints, STRING_KEYS) || asks(constraints, LIST_KEYS);
@@ -174,6 +178,12 @@ function siteViolations(site: AddressSite, constraints: FieldConstraints): Field
   }
 
   const presence = presenceViolations(site, constraints);
+
+  // The presence tier owns emptiness. Downstream tiers must not speak about a
+  // value that is absent in substance.
+  if (site.value === null || site.value === undefined) {
+    return presence;
+  }
 
   // A collision stops the tiers below it: neither the shape checks nor
   // membership can answer against a value of the wrong kind.

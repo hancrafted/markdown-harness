@@ -360,7 +360,8 @@ const cases = corpus.map((path) => ({ path, verdict: verdictOf(path) }));
 const stated = (verdict: string): string[] => cases.filter((one) => one.verdict === verdict).map((one) => one.path);
 
 const checked = checkCorpus(CORPUS_ROOT, corpus, config);
-const reported = new Set((checked?.files ?? []).map((file) => file.path));
+const verdict = checked.kind === 'checked' ? checked.result : undefined;
+const reported = new Set((verdict?.files ?? []).map((file) => file.path));
 
 /**
  * The verdict the IMPLEMENTATION reaches for one case.
@@ -447,7 +448,8 @@ describe('the harness reports the verdict each Conformance case states', () => {
         invalidFiles: stated(FAILS).length,
       };
       // ACT
-      const actual = { governedFiles: checked?.summary.governedFiles, invalidFiles: checked?.summary.invalidFiles };
+      const summary = verdict?.summary;
+      const actual = { governedFiles: summary?.governedFiles, invalidFiles: summary?.invalidFiles };
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -459,7 +461,7 @@ describe('the harness reports the verdict each Conformance case states', () => {
       // whatever the tree now holds — and `corpus.length` compared against
       // anything derived from `corpus` could not fail at all.
       // ARRANGE
-      const declaredCases = 37;
+      const declaredCases = 40;
       // ACT
       const enumerated = corpus.length;
       // ASSERT

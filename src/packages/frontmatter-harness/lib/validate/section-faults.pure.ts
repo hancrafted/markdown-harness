@@ -8,6 +8,7 @@
  * Module.
  */
 
+import type { FrontmatterConfig } from '../../../config-contract/index.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
 import { assessBlockFaults } from './assess-faults.pure.ts';
 import { ruleFaults } from './rule-faults.pure.ts';
@@ -18,12 +19,24 @@ const RULES = `${SECTION}.rules`;
 const ASSESS = `${SECTION}.assess`;
 
 /**
- * The Module's own vocabulary: `rules:` for what varies by path, and the
- * Module-wide keys for what does not. A key added here is a deliberate
- * amendment — the growth rule is that the top level stays one key per Module,
- * so anything that is not per-path lands at this tier instead.
+ * Every key the section defines, keyed by the type that defines them.
+ *
+ * `Record<keyof T, true>` rather than a list of strings, because the narrowing
+ * in `./section-narrowing.pure` claims that a section carrying no fault is a
+ * section of this type — and that claim is worth exactly what this vocabulary
+ * covers. Keyed, a key added to `FrontmatterConfig` and forgotten here leaves a
+ * missing entry and will not compile, so the claim cannot quietly decay into a
+ * cast wearing a predicate's clothes.
+ *
+ * `assess` is the Module-wide tier, and it earns the keying twice over: `rules:`
+ * carries what varies by path and a Module-wide key carries what does not, so
+ * the growth rule is that the top level stays one key per Module and anything
+ * not per-path lands here instead.
+ *
+ * Membership is `Object.hasOwn` and never `in`, which walks the prototype chain
+ * and would answer true for `toString`.
  */
-const SECTION_KEYS: readonly string[] = ['rules', 'assess'];
+const SECTION_KEYS: Record<keyof FrontmatterConfig, true> = { rules: true, assess: true };
 
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -62,7 +75,7 @@ export function sectionFaults(section: unknown): readonly ConfigFault[] {
   if (!isMapping(section)) return [{ code: 'CONFIG_INVALID_VALUE', location: SECTION }];
 
   const unrecognised = Object.keys(section)
-    .filter((key) => !SECTION_KEYS.includes(key))
+    .filter((key) => !Object.hasOwn(SECTION_KEYS, key))
     .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${SECTION}.${key}` }));
 
   const assess = assessBlockFaults(section.assess, ASSESS);
