@@ -20,13 +20,37 @@
 // would fire on every read of every governed file in a corpus that has not
 // adopted `stale_after` yet, and a governance tool that talks that much gets
 // switched off.
+//
+// BUT IT LEAVES A ROW EITHER WAY. Because silence is indistinguishable from
+// death from outside, every invocation that finds a config root appends one line
+// to `docs/markdown-harness/activity.csv` — the silent ones included, which is
+// the point. A `fresh` row proves this ran and chose to say nothing. Nothing is
+// written where the tool was never invited: no config above the file means no
+// root, and no `docs/markdown-harness/` means the repository never ran `init`.
+// `activity-log.mjs` carries the format, the retention and the atomicity trade.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
+import { recordActivity } from './activity-log.mjs';
 
 /** The one thing this hook has to say, and the only state that carries a sentence. */
 const SPEAKS_ON = 'REVIEW';
+
+/** What this hook calls itself in the activity log. The setup scripts write their own. */
+const COMMAND = 'assess';
+
+/**
+ * The three results that are this hook's own words rather than the CLI's `state`.
+ *
+ * Each one names a point at which the tool was never reached or never answered,
+ * so there is no `state` to copy. Keeping them distinct is the whole value of the
+ * log: an install problem and a corpus that is entirely fresh produce identical
+ * silence, and collapsing them here would put that ambiguity back.
+ */
+const NOT_INSTALLED = 'not-installed';
+const CONFIG_REJECTED = 'config-rejected';
+const NO_ANSWER = 'no-answer';
 
 /** Where `--assess` looks when no `--config` is given, and so where the root is. */
 const CONFIG_NAME = 'markdown-harness.config.yaml';
@@ -113,6 +137,31 @@ function reviewNotice(answer) {
   return lines.join('\n');
 }
 
+/**
+ * What happened: one shape, assembled at every exit `main()` has past the root.
+ *
+ * Named because the four `return`s below would otherwise be four object
+ * literals a reader has to diff to confirm they agree, and because `notice`
+ * being the ONLY optional key is the contract worth stating once — a row is
+ * owed for every outcome, a sentence for almost none of them.
+ *
+ * @typedef  {object} Outcome
+ * @property {string} root   Absolute path to the directory holding the config.
+ * @property {string} file   Repo-relative, forward-slashed — what the log records.
+ * @property {string} result The CLI's own `state`, or one of this hook's refusals.
+ * @property {string} [notice] The sentence for the agent. Present on `REVIEW` alone.
+ */
+
+/**
+ * What happened, for the log and for the agent.
+ *
+ * `undefined` means this invocation is outside the tool's remit entirely — not
+ * markdown, or no config anywhere above the file — and those leave no trace,
+ * because there is no root and so nowhere the tool was invited to write.
+ * Everything past the root is recorded, silences included.
+ *
+ * @returns {Outcome | undefined}
+ */
 function main() {
   const payload = JSON.parse(readFileSync(0, 'utf8'));
   const read = payload?.tool_input?.file_path;
@@ -126,44 +175,68 @@ function main() {
   const root = rootHolding(file);
   if (root === undefined) return undefined;
 
-  const entry = installedEntry(root);
-  if (entry === undefined) return undefined;
-
   // THE PATH MUST BE RELATIVE TO THE ROOT. `--assess` anchors the config's globs
   // at the working directory and refuses `--root`, so the absolute path Claude
   // Code sends answers `ungoverned` on a corpus that is fully governed — silence
-  // that looks identical to a hook working correctly. Measured 2026-09-09.
+  // that looks identical to a hook working correctly. Measured 2026-09-09. It is
+  // also what the log records, so a row names a path the config could match.
   const asked = relative(root, file).split(sep).join('/');
+
+  const entry = installedEntry(root);
+  if (entry === undefined) return { root, file: asked, result: NOT_INSTALLED };
+
   const run = spawnSync(process.execPath, [entry, '--assess', asked], {
     cwd: root,
     encoding: 'utf8',
     timeout: GIVE_UP_AFTER_MS,
   });
 
-  // ONE GATE, AND IT IS THE SHAPE RATHER THAN THE EXIT CODE. A check on
-  // `run.status` reads like diligence and measures nothing: `--assess` never
-  // exits 1, and its exit 2 answers either a rejection envelope carrying no
-  // `agentAction` at all, or an empty stdout that does not parse. Both already
-  // land where they should. Measured by deleting the status check and watching
-  // every test stay green — the one mutation of six that survived.
-  const answer = JSON.parse(run.stdout);
-  if (answer?.result?.agentAction !== SPEAKS_ON) return undefined;
+  // NO EXIT-CODE CHECK, AND THAT IS DELIBERATE. A check on `run.status` reads
+  // like diligence and measures nothing: `--assess` never exits 1, and its exit 2
+  // answers either a rejection envelope or an empty stdout that does not parse.
+  // Both are told apart below by shape, which is what the log needs anyway —
+  // `config-rejected` and `no-answer` are different problems. Measured by
+  // deleting the status check and watching every test stay green.
+  let answer;
+  try {
+    answer = JSON.parse(run.stdout);
+  } catch {
+    return { root, file: asked, result: NO_ANSWER };
+  }
 
-  return reviewNotice(answer);
+  if (answer?.result?.error !== undefined) return { root, file: asked, result: CONFIG_REJECTED };
+
+  const state = answer?.result?.state;
+  if (typeof state !== 'string') return { root, file: asked, result: NO_ANSWER };
+
+  const notice = answer.result.agentAction === SPEAKS_ON ? reviewNotice(answer) : undefined;
+  return { root, file: asked, result: state, notice };
 }
 
-let notice;
+let outcome;
 try {
-  notice = main();
+  outcome = main();
 } catch {
   // Every throw lands here on purpose: a malformed payload, a config that moved
   // mid-run, output that is not JSON. None of them are the agent's problem.
-  notice = undefined;
+  outcome = undefined;
 }
 
-if (notice !== undefined) {
+if (outcome !== undefined) {
+  try {
+    recordActivity(outcome.root, COMMAND, outcome.file, outcome.result);
+  } catch {
+    // THE LOG IS EVIDENCE, NEVER A GATE. A read-only checkout, a full disk or a
+    // permissions problem must not turn a read the agent already completed into
+    // an error in front of it — the same reasoning that makes every branch above
+    // exit 0. A hook that failed loudly about its own bookkeeping would be worse
+    // than one that kept none.
+  }
+}
+
+if (outcome?.notice !== undefined) {
   process.stdout.write(
-    `${JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: notice } })}\n`,
+    `${JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: outcome.notice } })}\n`,
   );
 }
 

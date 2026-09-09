@@ -1,6 +1,6 @@
 # Putting `mh --check` in the gate
 
-Reference for the `Make a green build mean something` row of `SKILL.md`.
+Reference for the "Put `mh --check` in the gate on its own" row of `SKILL.md`.
 
 `mh --check` reports every governed file's violations and sets its exit code from the result. Putting
 it in the command CI already runs is what turns "the build is green" into a claim about the corpus

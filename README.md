@@ -181,7 +181,10 @@ a sentence that could never be printed is worth telling you about.
 file the agent reads and hands your sentence back when that file is past its date. It ships with the
 skill rather than in this package, because a host-shaped asset inside a portable artefact works
 against the floor this tool stands on — and because hooks change far more often than built output.
-Install it with the skill, then follow the `Make a stale file say so` row of its `SKILL.md`.
+Install it with the skill, then follow the `Wire the freshness hook on its own, on Claude Code` row
+of its `SKILL.md`. It records every invocation — the silent ones included — to
+`docs/markdown-harness/activity.csv`, because a hook that ran and had nothing to say is otherwise
+indistinguishable from one that never fired.
 
 ## Why not an existing tool
 

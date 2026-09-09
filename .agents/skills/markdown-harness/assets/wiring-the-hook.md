@@ -1,6 +1,6 @@
 # Wiring the freshness hook into Claude Code
 
-Reference for the `Make a stale file say so` row of `SKILL.md`.
+Reference for the `Wire the freshness hook on its own, on Claude Code` row of `SKILL.md`.
 
 A rule's `assess.stale` sentence is only ever heard by something that asks. This hook asks, once per
 file the agent opens: after every `Read`, it runs `mh --assess` on that path, and when the file is
@@ -53,8 +53,16 @@ A JSON object comes back if it would speak, and nothing at all if it would not. 
 mistyped path in `settings.json` leaves the hook silently disabled, and a hook that never fires is
 indistinguishable from a corpus that is entirely fresh.
 
-Edits to settings are picked up by a file watcher, so no restart is needed. `/hooks` shows what is
-registered, but it is a read-only viewer — it cannot add or change anything.
+**4. Confirm the session picked it up, which is a separate question from step 3.** A file watcher
+normally reads settings edits without a restart, but the official guide names the failure mode
+itself: if the entry has not appeared after a few seconds, the watcher may have missed the change and
+the session must be restarted to force a reload. Open `/hooks` and look for the entry under
+`PostToolUse`. It is a read-only viewer — it cannot add or change anything — but it answers the only
+question that matters here, which is whether **this** session will run the hook.
+
+Measured 2026-09-09 in a throwaway repository: `init.mjs` reported `{"step":"hook","done":"wired"}`,
+and every `PostToolUse:Read` afterwards resolved to an unrelated plugin hook instead. The entry was
+in the file. It was not in the session. **Written is not wired, and wired is not running.**
 
 ## What it needs
 
@@ -67,6 +75,45 @@ registered, but it is a read-only viewer — it cannot add or change anything.
 The root is found from the **file**, never from the working directory. That is what makes it work in
 a git worktree, where `${CLAUDE_PROJECT_DIR}` stays pinned to wherever the session started, and in a
 session opened inside a subdirectory.
+
+## It sees the `Read` tool and nothing else
+
+`matcher: "Read"` is an exact tool-name match. The docs are explicit that a matcher of bare letters
+matches that tool only — an `"Edit|Write"` matcher "fires only when Claude uses the `Edit` or `Write`
+tool, not when it uses `Bash`, `Read`, or any other tool" — and the same holds in reverse here.
+
+**So an agent that opens files with `Bash cat`, `grep`, `head` or `Glob` will never fire this hook,
+however correctly it is wired.** Measured 2026-09-09: a session made zero `Read` calls, routed every
+file through `Bash`, and then explained confidently how the hook works. The hook could not have run
+once.
+
+That is a property of the host harness's tool choice, not something this hook can fix. It is also
+why the demo asks the user to say "read this file" in a fresh session rather than leaving the tool
+choice open, and why the activity log exists — a hook that could not fire leaves no row, and no row
+is a finding.
+
+## It records that it ran, even when it says nothing
+
+Every invocation that finds a config root appends one line to
+`docs/markdown-harness/activity.csv`, silent ones included:
+
+```text
+time,command,file,result
+2026-09-09T15:51:22.118Z,assess,"docs/runbooks/deploy.md",stale
+2026-09-09T15:51:40.882Z,assess,"docs/notes/idea.md",fresh
+```
+
+`result` is `mh --assess`'s own state — `stale`, `fresh`, `unassessable`, `ungoverned`, `absent` — or
+one of this hook's three refusals: `not-installed`, `config-rejected`, `no-answer`. Never a bare
+boolean, because "ran and found nothing" and "ran" are different facts.
+
+A `fresh` row is the useful one: it proves the hook ran and chose to stay quiet, which is the one
+thing stdout can never show you. **Nothing is written where the tool was not invited** — no config
+above the file means no root, and no `docs/markdown-harness/` means the repository never ran init.
+
+It is gitignored by `init.mjs`, capped at 1000 lines and 30 days
+(`MARKDOWN_HARNESS_LOG_MAX_LINES`, `MARKDOWN_HARNESS_LOG_MAX_DAYS`; `0` for unbounded). The log does
+not log itself: `.csv` fails the hook's own `.md` filter.
 
 ## When it speaks, and when it does not
 
@@ -113,6 +160,13 @@ gap.
 The text arrives beside the tool result as context the agent reads on its next turn. It is not a
 chat message, and the user does not see it.
 
+One claim worth keeping honest: the published docs we could reach confirm `additionalContext` for
+`UserPromptSubmit`, and were truncated before the `PostToolUse` schema. Its use here rests on
+measurement rather than on a cited spec — the transcripts show it arriving, and
+`src/packages/cli/tests/assess-hook.test.ts` asserts the envelope. If a future release changes it,
+the log will still record that the hook ran while the agent stops hearing anything, which is exactly
+the pair of facts needed to tell that apart from a fresh corpus.
+
 ## It cannot block, and never fails the read
 
 The hook runs on `PostToolUse` — after the read has already happened. There is nothing left to block,
@@ -122,8 +176,16 @@ malformed payload, a missing install or a rejected config all land there.
 
 ## Troubleshooting
 
+**Read `docs/markdown-harness/activity.csv` first.** No rows and a working step 3 narrows this to two
+causes in one look, and both are near the top of the table.
+
 | Symptom                                | Cause                                                                                                                                                                 |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No rows in the log at all              | The hook never ran. Either the session has not picked up the settings edit — check `/hooks`, restart if absent — or the agent never used the `Read` tool              |
+| No rows, and `/hooks` lists the entry  | The agent is opening files with `Bash cat`, `grep` or `Glob`. A `Read` matcher never sees those. Ask for a `Read` explicitly                                          |
+| Rows say `not-installed`               | It ran and found no local `@hancrafted/markdown-harness`. A global-only install is not found, by design                                                               |
+| Rows say `config-rejected`             | It ran and the config does not load. `mh --check` reports the faults and their locations                                                                              |
+| Rows say `fresh` or `ungoverned`       | It ran and correctly had nothing to say. The corpus is the answer, not the wiring                                                                                     |
 | Never says anything                    | Run step 3 by hand. If that speaks, the wiring is wrong; if it is silent, the corpus is                                                                               |
 | Silent, and step 3 is silent too       | No config above the file, no local install, or the file is not `.md`                                                                                                  |
 | Silent on a file you know is stale     | `mh --query <path>` — check a rule actually selects it, and `mh --audit` for a rule reporting `won: 0`                                                                |
