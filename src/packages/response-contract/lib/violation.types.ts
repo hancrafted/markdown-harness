@@ -8,6 +8,7 @@
  */
 
 import type { FieldConstraints } from '../../config-contract/index.ts';
+import type { FIELD_VIOLATION_CODES } from './violation.pure.ts';
 
 /**
  * The eighteen codes (§4.7), discriminated on the OUTCOME rather than the
@@ -18,57 +19,19 @@ import type { FieldConstraints } from '../../config-contract/index.ts';
  * One code per constraint, and more than one wherever a single constraint fails
  * in opposite directions.
  *
- * A union of string literals rather than an `enum`: `enum` is the one
- * TypeScript construct with no type-erasure, so it emits runtime code Node
- * cannot strip, and the entry path is executed by Node directly. The sibling
- * `ConfigFaultCode` is spelled the same way for the same reason.
+ * DERIVED FROM THE CATALOG, never written out twice. The codes ship as a
+ * `const` object so that something can enumerate them at run time, and a `types`
+ * file may hold no runtime value (ARCH-005) — so the object lives in the `pure`
+ * sibling and this union reads its values. Restating the eighteen here would
+ * give the contract two authors and let them disagree.
  *
- * These carry no `CONFIG_` prefix by design: the audience is the Contributor's
- * agent, and every one of them is fixable by editing markdown.
+ * A union of string literals rather than an `enum`, so that a consumer can
+ * compare against a plain string read out of JSON; `violation.pure.ts` records
+ * why at length. The sibling `ConfigFaultCode` is spelled the same way.
+ *
+ * Each code's own meaning is documented beside it in `violation.pure.ts`.
  */
-export type FieldViolationCode =
-  /** `presence: required`, and the address named nothing at all. */
-  | 'MISSING_REQUIRED_FIELD'
-  /** `presence: required`, key written but empty — the classic YAML trap. */
-  | 'EMPTY_REQUIRED_FIELD'
-  /** `presence: forbidden`, and the field is there. The fix is deletion. */
-  | 'FORBIDDEN_FIELD_PRESENT'
-  /** `allowed` — the value sits outside the closed set. */
-  | 'VALUE_NOT_ALLOWED'
-  /** `format` — not the named shape. Form only, no clock. */
-  | 'FORMAT_MISMATCH'
-  /** `pattern` — no match. The mandatory `intent` travels in `requirement`. */
-  | 'PATTERN_MISMATCH'
-  /** `minLength`, strings only. */
-  | 'VALUE_TOO_SHORT'
-  /** `maxLength`, strings only. */
-  | 'VALUE_TOO_LONG'
-  /** `minItems`, lists only. */
-  | 'TOO_FEW_ITEMS'
-  /** `maxItems`, lists only. */
-  | 'TOO_MANY_ITEMS'
-  /** `itemMaxLength` — the address carries the index. */
-  | 'ITEM_TOO_LONG'
-  /**
-   * A shape-specific constraint met the wrong shape (`maxLength` on a list).
-   *
-   * THE ONE CODE ADDRESSED TO THE OPERATOR — no markdown edit can fix a
-   * misapplied config. `VALUE_TOO_LONG` is never reported on a list: an agent
-   * would shorten it by characters.
-   */
-  | 'CONSTRAINT_SHAPE_MISMATCH'
-  /** `unknownKeys: forbidden` — a top-level key the rule does not name. */
-  | 'UNKNOWN_KEY_FORBIDDEN'
-  /** `frontmatter: forbidden` — and the file has frontmatter. */
-  | 'FRONTMATTER_FORBIDDEN'
-  /** `exactlyOneOf`, failing because none of the named addresses is satisfied. */
-  | 'EXACTLY_ONE_OF_NONE_PRESENT'
-  /** `exactlyOneOf`, failing because more than one is. */
-  | 'EXACTLY_ONE_OF_MULTIPLE_PRESENT'
-  /** `anyOf`, none satisfied. */
-  | 'ANY_OF_UNSATISFIED'
-  /** `allOf`, at least one missing or empty (§3.3). */
-  | 'ALL_OF_UNSATISFIED';
+export type FieldViolationCode = (typeof FIELD_VIOLATION_CODES)[keyof typeof FIELD_VIOLATION_CODES];
 
 /**
  * The evidence a violation carries about the value it found.
