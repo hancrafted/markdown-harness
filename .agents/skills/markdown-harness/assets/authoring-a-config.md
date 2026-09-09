@@ -1,6 +1,6 @@
 # Authoring or changing a config
 
-Reference for the `Author the first config` row of `SKILL.md`.
+Reference for the `Author the first config, or add, change or debug one rule` row of `SKILL.md`.
 
 Six steps, in order. They are the same six whether the config is new or already exists — an edit is
 this workflow entered at step 2, with step 1 spent reading the config that is there instead of the
@@ -25,15 +25,18 @@ Ask only what the next rule needs, then build it. A config authored rule by rule
 config authored in one pass goes red across dozens of files at once, and the user cannot tell which
 decision caused what.
 
-Four things make a rule, and the user supplies all four:
+Four things make a rule, and the user supplies all four. Number them when you ask, so they can answer
+one at a time and point at the one they want to change:
 
-- **Which paths** — a `path:` glob list, or `fileName:` to match a basename at any depth.
-- **Why, in one sentence** — `intent:`, mandatory, in their words. It travels back with every
-  violation this rule reports, so the failure says why the rule exists rather than only which check
-  fired.
-- **Whether frontmatter belongs there at all** — `frontmatter: forbidden` for files that must carry
-  none.
-- **What the file must declare** — the fields, under `fields:`.
+1. **Which paths** — a `path:` glob list, or `fileName:` to match a basename at any depth.
+2. **Why, in one sentence** — `intent:`, mandatory, in their words. It travels back with every
+   violation this rule reports, so the failure says why the rule exists rather than only which check
+   fired.
+3. **Whether frontmatter belongs there at all** — `frontmatter: forbidden` for files that must carry
+   none. A rule with a selector, an `intent` and no payload is the other end of that: it governs the
+   path in order to ask nothing of it, which is how a reserved filename is exempted on purpose
+   rather than by falling through a gap.
+4. **What the file must declare** — the fields, under `fields:`.
 
 The shape, at its smallest:
 

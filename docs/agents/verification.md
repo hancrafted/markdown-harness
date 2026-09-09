@@ -1,4 +1,4 @@
-# Verification: the gate and its nine traps
+# Verification: the gate and its ten traps
 
 `npm run verify` is the gate. This page holds the traps inside it — the places where a check
 reports success without having measured anything.
@@ -136,3 +136,29 @@ something else. `npm run verify` runs `npm run build` before `vitest`, so the ga
 lives entirely in the inner loop, beside trap 8 and with the same shape. Run `npm run build` next to
 the single-file test run — a green integration suite is evidence about the artefact, and only a
 build makes the artefact evidence about your source.
+
+## 10. A hook reported `wired` is not a hook that will run
+
+`init.mjs` reports `{"step":"hook","done":"wired"}` once the `PostToolUse` entry is in
+`.claude/settings.json`. That is a claim about a file, and two independent things stand between it
+and the hook actually firing — both measured on 2026-09-09 across four throwaway repositories, and
+neither visible from anything the script can report.
+
+**The watcher can miss the write.** Claude Code normally picks settings edits up without a restart,
+and the official guide names the failure mode in the same breath: if the entry has not appeared
+after a few seconds, the watcher may have missed the change and the session must be restarted. In
+test-3 `init.mjs` reported `wired`, and every subsequent `PostToolUse:Read` resolved only to an
+unrelated plugin hook. The agent then reported the hook as a completed, proven step. `/hooks` is a
+read-only viewer and is the only thing that answers whether **this** session will run it.
+
+**A `Read` matcher never sees `Bash cat`.** A matcher of bare letters is an exact tool-name match —
+the docs say an `"Edit|Write"` matcher fires "only when Claude uses the `Edit` or `Write` tool, not
+when it uses `Bash`, `Read`, or any other tool". In test-4 the agent made **zero** `Read` calls,
+routing every file through `Bash` and `grep`, so the hook could not fire once — while that same
+session confidently explained how the hook works.
+
+The general shape: **a script exiting 0 is evidence about the script, never about the layer it
+wired.** The guard against it is `docs/markdown-harness/activity.csv`, which the hook appends to on
+every invocation that finds a config root, silent ones included. A `fresh` row proves the hook ran
+and chose to say nothing; no rows at all is the finding. Verify from the log, and never from a
+step's own report — `src/packages/cli/tests/assess-hook.test.ts` is where that log is held to it.

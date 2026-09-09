@@ -29,7 +29,16 @@
 // and the reproduction beside the constant they belong to.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -37,6 +46,25 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 const HOOK = resolve('.agents/skills/markdown-harness/scripts/assess-hook.mjs');
 const INSTALLED_AT = join('node_modules', '@hancrafted', 'markdown-harness');
 const CONFIG_NAME = 'markdown-harness.config.yaml';
+
+/**
+ * The activity log, which is the only artefact that survives the session.
+ *
+ * Silence and death are identical from outside this hook — every refusal exits 0
+ * with empty stdout — so a suite that only read stdout could not tell a hook that
+ * ran and chose to stay quiet from one that never ran at all. A row per
+ * invocation is what closes that gap, and it is the thing `demo.md` sends a user
+ * to read rather than asking them to trust an impression.
+ */
+const MEMORY_DIR = join('docs', 'markdown-harness');
+const LOG_NAME = 'activity.csv';
+const LOG_HEADER = 'time,command,file,result';
+
+/** The `command` column's value for every row this hook writes. */
+const ASSESS = 'assess';
+
+/** A governed path carrying the one character the row format has to survive. */
+const COMMA_PATH = 'docs/runbooks/deploy, then verify.md';
 
 /**
  * The freshness dates, chosen to bracket every clock this suite could run under.
@@ -92,7 +120,11 @@ const CONFIG = [
   '',
 ].join('\n');
 
-/** A corpus with a config, the package installed, and one file per assessment state. */
+/**
+ * A corpus with a config, the package installed, and one file per assessment
+ * state — and deliberately NO `docs/markdown-harness/`, so it is also the corpus
+ * that proves a repository which never ran `init` is never written to.
+ */
 let governed = '';
 /** The same tree with no config anywhere above it: governance is opt-in, so the hook says nothing. */
 let unconfigured = '';
@@ -100,6 +132,19 @@ let unconfigured = '';
 let uninstalled = '';
 /** A config the loader rejects, which is what an Operator mid-edit has. */
 let broken = '';
+/** `governed`, plus the folder `init` creates — so this is the one the hook logs to. */
+let logged = '';
+/** A log of its own, read once per assessment state, so the rows can be asserted whole. */
+let states = '';
+/** A log of its own, driven past a deliberately tiny cap so trimming is observable. */
+let capped = '';
+/**
+ * Governed, installed, and never `init`-ed — read by exactly ONE test.
+ *
+ * Sole ownership is the point rather than tidiness: this is the corpus that has
+ * to still be untouched at the moment the observation is taken.
+ */
+let uninvited = '';
 
 /** The built entry the hook will find, resolved the way the hook resolves it. */
 let entry = '';
@@ -112,6 +157,35 @@ function dated(instant: string): string {
 function install(root: string): void {
   mkdirSync(join(root, 'node_modules', '@hancrafted'), { recursive: true });
   symlinkSync(resolve('.'), join(root, INSTALLED_AT), 'junction');
+}
+
+/** What `init.mjs` leaves behind, which is the gate the hook checks before writing a row. */
+function ranInit(root: string): void {
+  mkdirSync(join(root, MEMORY_DIR), { recursive: true });
+  writeFileSync(join(root, MEMORY_DIR, '.gitkeep'), '');
+}
+
+/**
+ * A governed corpus with the package installed, and `init` run unless told not to.
+ *
+ * Every caller gets its OWN tree. A fixture shared with another test cannot
+ * measure a first write: whichever test ran earlier would have made it already,
+ * and a before-and-after taken afterwards compares two identical afters. Measured
+ * 2026-09-09 — an earlier draft of `never ran init` shared `governed` and stayed
+ * green against a hook that created the folder itself.
+ */
+function corpus(prefix: string, invited = true): string {
+  const root = mkdtempSync(join(tmpdir(), prefix));
+  mkdirSync(join(root, 'docs', 'runbooks'), { recursive: true });
+  mkdirSync(join(root, 'notes'), { recursive: true });
+  writeFileSync(join(root, CONFIG_NAME), CONFIG);
+  writeFileSync(join(root, 'docs', 'runbooks', 'stale.md'), dated(LONG_PAST));
+  writeFileSync(join(root, 'docs', 'runbooks', 'fresh.md'), dated(FAR_FUTURE));
+  writeFileSync(join(root, 'docs', 'runbooks', 'undated.md'), '---\ntitle: no date\n---\n\nbody\n');
+  writeFileSync(join(root, 'notes', 'loose.md'), dated(LONG_PAST));
+  install(root);
+  if (invited) ranInit(root);
+  return root;
 }
 
 beforeAll(() => {
@@ -139,6 +213,7 @@ beforeAll(() => {
   mkdirSync(join(uninstalled, 'docs', 'runbooks'), { recursive: true });
   writeFileSync(join(uninstalled, CONFIG_NAME), CONFIG);
   writeFileSync(join(uninstalled, 'docs', 'runbooks', 'stale.md'), dated(LONG_PAST));
+  ranInit(uninstalled);
 
   // A rule with no `ruleId`, which is the fault the README shipped through
   // 0.0.2 — so the rejection this arranges is one adopters have actually had.
@@ -147,6 +222,13 @@ beforeAll(() => {
   writeFileSync(join(broken, CONFIG_NAME), CONFIG.replace(/^ {4}- ruleId: runbooks$/m, '    -'));
   writeFileSync(join(broken, 'docs', 'runbooks', 'stale.md'), dated(LONG_PAST));
   install(broken);
+  ranInit(broken);
+
+  logged = corpus('mh-hook-logged-');
+  writeFileSync(join(logged, ...COMMA_PATH.split('/')), dated(LONG_PAST));
+  states = corpus('mh-hook-states-');
+  capped = corpus('mh-hook-capped-');
+  uninvited = corpus('mh-hook-uninvited-', false);
 
   // Trap 9 in docs/agents/verification.md: the hook spawns a built artefact, so
   // a suite that ran against a stale `dist/` would be measuring the last build.
@@ -160,10 +242,9 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-  rmSync(governed, { recursive: true, force: true });
-  rmSync(unconfigured, { recursive: true, force: true });
-  rmSync(uninstalled, { recursive: true, force: true });
-  rmSync(broken, { recursive: true, force: true });
+  for (const root of [governed, unconfigured, uninstalled, broken, logged, states, capped, uninvited]) {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 /**
@@ -172,7 +253,11 @@ afterAll(() => {
  * `tool_input.file_path` is documented as always absolute, which is the whole
  * reason the hook has work to do — the config's globs are anchored at the root.
  */
-function onRead(root: string, filePath: string): { stdout: string; stderr: string; code: number | null } {
+function onRead(
+  root: string,
+  filePath: string,
+  env: Record<string, string> = {},
+): { stdout: string; stderr: string; code: number | null } {
   const payload = {
     session_id: 'assess-hook-suite',
     cwd: root,
@@ -181,7 +266,11 @@ function onRead(root: string, filePath: string): { stdout: string; stderr: strin
     tool_input: { file_path: filePath },
     tool_response: { filePath, success: true },
   };
-  const run = spawnSync(process.execPath, [HOOK], { encoding: 'utf8', input: JSON.stringify(payload) });
+  const run = spawnSync(process.execPath, [HOOK], {
+    encoding: 'utf8',
+    input: JSON.stringify(payload),
+    env: { ...process.env, ...env },
+  });
   return { stdout: run.stdout, stderr: run.stderr, code: run.status };
 }
 
@@ -190,6 +279,46 @@ function contextFrom(stdout: string): string {
   if (stdout.trim() === '') return '';
   const answered = JSON.parse(stdout) as { hookSpecificOutput?: { additionalContext?: string } };
   return answered.hookSpecificOutput?.additionalContext ?? '';
+}
+
+/** Every non-empty line of the activity log, header included, or `[]` when there is none. */
+function logLines(root: string): string[] {
+  const path = join(root, MEMORY_DIR, LOG_NAME);
+  if (!existsSync(path)) return [];
+  return readFileSync(path, 'utf8')
+    .split('\n')
+    .filter((line) => line !== '');
+}
+
+/** The three columns worth asserting. The instant is deliberately not among them. */
+interface ActivityRow {
+  command: string;
+  file: string;
+  result: string;
+}
+
+/**
+ * The log's rows, oldest first, with the timestamp dropped.
+ *
+ * Parsed rather than string-matched, so a row that lost its quoting fails here
+ * by shape instead of passing on a substring. `file` is the only field that can
+ * hold a comma, and RFC 4180 doubles an internal quote — both are undone here.
+ */
+function rowsIn(root: string): ActivityRow[] {
+  return logLines(root)
+    .filter((line) => line !== LOG_HEADER)
+    .map((line) => {
+      const parsed = /^([^,]+),([^,]+),"((?:[^"]|"")*)",([^,]+)$/.exec(line);
+      if (parsed === null) throw new Error(`activity.csv holds a line that is not a row: ${line}`);
+      return { command: parsed[2], file: parsed[3].split('""').join('"'), result: parsed[4] };
+    });
+}
+
+/** Everything under one directory of a corpus, sorted — the same observation before and after. */
+function treeUnder(root: string, folder: string): string[] {
+  return readdirSync(join(root, folder), { recursive: true })
+    .map((found) => String(found))
+    .sort();
 }
 
 describe('the assess hook', () => {
@@ -245,6 +374,34 @@ describe('the assess hook', () => {
       // ASSERT
       expect(straightThrough).toBe(unseen);
       expect(throughHook).toContain(STALE_INSTRUCTION);
+    });
+
+    it('records a row naming what it was asked about and what the tool answered', () => {
+      // ARRANGE
+      const spoke = { command: ASSESS, file: 'docs/runbooks/stale.md', result: 'stale' };
+      const file = join(logged, 'docs', 'runbooks', 'stale.md');
+      // ACT
+      onRead(logged, file);
+      const written = rowsIn(logged).at(-1);
+      // ASSERT
+      expect(written).toEqual(spoke);
+    });
+
+    it('records a row when it stays silent, which is the only proof it ran at all', () => {
+      // A `PROCEED` and a hook that never fired are the same empty stdout, so
+      // this row is the whole reason the log exists. Both halves are asserted
+      // together: a log that only recorded the speaking case would leave the
+      // silence unaccounted for, which is the state feedback 2 was about.
+      // ARRANGE
+      const silent = '';
+      const stayedQuiet = { command: ASSESS, file: 'docs/runbooks/fresh.md', result: 'fresh' };
+      const file = join(logged, 'docs', 'runbooks', 'fresh.md');
+      // ACT
+      const context = contextFrom(onRead(logged, file).stdout);
+      const written = rowsIn(logged).at(-1);
+      // ASSERT
+      expect(context).toBe(silent);
+      expect(written).toEqual(stayedQuiet);
     });
   });
 
@@ -302,6 +459,31 @@ describe('the assess hook', () => {
       // ASSERT
       expect(run.stdout.trim()).toBe(silent);
       expect(run.status).toBe(nothingWrong);
+    });
+
+    it('records its own refusal when nothing is installed, rather than logging a tool state', () => {
+      // `not-installed` is the hook's word, not `--assess`'s: the tool was never
+      // reached, so there is no `state` to copy. An install problem and a fresh
+      // corpus look the same in stdout and must not look the same in the log.
+      // ARRANGE
+      const refused = { command: ASSESS, file: 'docs/runbooks/stale.md', result: 'not-installed' };
+      const file = join(uninstalled, 'docs', 'runbooks', 'stale.md');
+      // ACT
+      onRead(uninstalled, file);
+      const written = rowsIn(uninstalled).at(-1);
+      // ASSERT
+      expect(written).toEqual(refused);
+    });
+
+    it('records a rejected config as its own refusal, which is what an Operator mid-edit has', () => {
+      // ARRANGE
+      const refused = { command: ASSESS, file: 'docs/runbooks/stale.md', result: 'config-rejected' };
+      const file = join(broken, 'docs', 'runbooks', 'stale.md');
+      // ACT
+      onRead(broken, file);
+      const written = rowsIn(broken).at(-1);
+      // ASSERT
+      expect(written).toEqual(refused);
     });
   });
 
@@ -387,6 +569,107 @@ describe('the assess hook', () => {
       expect(context).toContain(LONG_PAST);
       expect(context).toContain(ruleId);
       expect(context).toContain(UNPROMPTED_INTENT);
+    });
+
+    it("carries the tool's own state into the result column, for every answer it can give", () => {
+      // Never a bare boolean. Four of these five are silences the hook cannot be
+      // distinguished by from outside, so the whole vocabulary is asserted in one
+      // go — a log that collapsed them would report an install problem and a
+      // fresh corpus identically, which is the failure the log exists to end.
+      // ARRANGE
+      const perState = [
+        { command: ASSESS, file: 'docs/runbooks/stale.md', result: 'stale' },
+        { command: ASSESS, file: 'docs/runbooks/fresh.md', result: 'fresh' },
+        { command: ASSESS, file: 'docs/runbooks/undated.md', result: 'unassessable' },
+        { command: ASSESS, file: 'docs/runbooks/never-written.md', result: 'absent' },
+        { command: ASSESS, file: 'notes/loose.md', result: 'ungoverned' },
+      ];
+      // ACT
+      for (const row of perState) onRead(states, join(states, ...row.file.split('/')));
+      const written = rowsIn(states);
+      // ASSERT
+      expect(written).toEqual(perState);
+    });
+
+    it('writes the header once, however many rows land after it', () => {
+      // ARRANGE
+      const onlyOnce = 1;
+      const file = join(logged, 'docs', 'runbooks', 'fresh.md');
+      // ACT
+      onRead(logged, file);
+      onRead(logged, file);
+      const lines = logLines(logged);
+      const headers = lines.filter((line) => line === LOG_HEADER);
+      // ASSERT
+      expect(headers).toHaveLength(onlyOnce);
+      expect(lines.at(0)).toBe(LOG_HEADER);
+    });
+
+    it('quotes a path holding a comma, so four columns stay four columns', () => {
+      // `file` is the only field that can hold a comma — the other three are
+      // closed vocabularies — so it is the only one quoted, per RFC 4180. Both
+      // halves are asserted: the raw line carries the quotes, and a parse of it
+      // gives the path back whole rather than split across two columns.
+      // ARRANGE
+      const quoted = `"${COMMA_PATH}"`;
+      const spoke = { command: ASSESS, file: COMMA_PATH, result: 'stale' };
+      const file = join(logged, ...COMMA_PATH.split('/'));
+      // ACT
+      onRead(logged, file);
+      const raw = logLines(logged).at(-1) ?? '';
+      const written = rowsIn(logged).at(-1);
+      // ASSERT
+      expect(raw).toContain(quoted);
+      expect(written).toEqual(spoke);
+    });
+
+    it('writes nothing at all to a repository that never ran init, while still speaking', () => {
+      // The gate: `docs/markdown-harness/` is what `init` creates, and without it
+      // there is nowhere the tool has been invited to write. Asserted as a
+      // before-and-after of the same observation rather than against an empty
+      // tree, per ARCH-003 Do #8 — a pristine baseline would measure this
+      // fixture's shape and fail on the commit that changed it. The speaking half
+      // keeps the silent half honest: without it this would pass over a dead hook.
+      //
+      // `uninvited` IS READ BY NOTHING ELSE, and that is load-bearing. An earlier
+      // draft used the shared `governed` tree and stayed green when the gate was
+      // deleted and the folder created on demand — the first write had already
+      // happened in an earlier test, so `before` and `after` both contained it.
+      // Measured 2026-09-09. A first write can only be observed on a tree nothing
+      // else has touched.
+      // ARRANGE
+      const file = join(uninvited, 'docs', 'runbooks', 'stale.md');
+      // ACT
+      const before = treeUnder(uninvited, 'docs');
+      const context = contextFrom(onRead(uninvited, file).stdout);
+      const after = treeUnder(uninvited, 'docs');
+      // ASSERT
+      expect(after).toEqual(before);
+      expect(context).toContain(STALE_INSTRUCTION);
+    });
+
+    it('keeps the newest rows and the header when the log outgrows its cap', () => {
+      // Retention is a cap plus a slack margin: appends are unconditional and a
+      // rewrite only happens once the file is over by the margin, because a
+      // single short append is atomic against a concurrent appender and a
+      // read-filter-rewrite is not. Two rows over a cap of two crosses it.
+      // ARRANGE
+      const cap = '2';
+      const survivors = [
+        { command: ASSESS, file: 'docs/runbooks/fresh.md', result: 'fresh' },
+        { command: ASSESS, file: 'docs/runbooks/stale.md', result: 'stale' },
+      ];
+      const order = ['docs/runbooks/undated.md', 'notes/loose.md', 'docs/runbooks/fresh.md'];
+      // ACT
+      for (const path of order) {
+        onRead(capped, join(capped, ...path.split('/')), { MARKDOWN_HARNESS_LOG_MAX_LINES: cap });
+      }
+      onRead(capped, join(capped, 'docs', 'runbooks', 'stale.md'), { MARKDOWN_HARNESS_LOG_MAX_LINES: cap });
+      const lines = logLines(capped);
+      const written = rowsIn(capped);
+      // ASSERT
+      expect(written).toEqual(survivors);
+      expect(lines.at(0)).toBe(LOG_HEADER);
     });
   });
 });

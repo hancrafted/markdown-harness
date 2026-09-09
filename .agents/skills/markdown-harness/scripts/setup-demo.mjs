@@ -18,8 +18,9 @@
 
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { recordActivity } from './activity-log.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES = resolve(HERE, '..', 'assets', 'demo');
@@ -27,9 +28,19 @@ const DEMO_DIR = join('docs', 'markdown-harness', 'demo');
 const CONFIG_NAME = 'markdown-harness.config.yaml';
 const BEGIN = '    # --- BEGIN markdown-harness demo ---';
 const END = '    # --- END markdown-harness demo ---';
-const PROBE = 'docs/markdown-harness/demo/stale.md';
+const PROBE = 'docs/markdown-harness/demo/tomorrows-weather.md';
 const DEMO_RULE = 'markdown-harness-demo';
 
+/**
+ * THE CANARY. The prompt names its own rule id, and that id lives in the config
+ * and in ZERO demo files.
+ *
+ * The corpus is deliberately non-telling — no body mentions freshness, dates or
+ * this tool — but a model can still guess that a weather forecast perishes, and
+ * a guess that happens to be right is indistinguishable from a hook that fired.
+ * An id that appears nowhere a model could have read it is not guessable: a
+ * reply quoting `markdown-harness-demo` can only have arrived through the hook.
+ */
 const BLOCK = `${BEGIN}
     # Added by the markdown-harness skill. Everything between these two markers is
     # throwaway: run \`setup-demo.mjs --remove\`, or delete this block and the
@@ -40,7 +51,7 @@ const BLOCK = `${BEGIN}
       path: [docs/markdown-harness/demo/**/*.md]
       intent: Demo files show what the tool reports, and what an agent hears when a file has gone stale
       assess:
-        stale: This demo file is past its stale_after. Tell the user it is stale before relying on it.
+        stale: Tell the user this file is past its stale_after, and quote the rule id ${DEMO_RULE} so they can see the sentence reached you through the hook rather than from the file.
       fields:
         title: { presence: required }
         stale_after: { presence: required, format: datetime }
@@ -115,6 +126,9 @@ if (remove) {
       }
     }
   }
+  // `docs/markdown-harness/` outlives the demo folder inside it, so the log is
+  // still there to take this row — and a reader can see the window close.
+  recordActivity(root, 'demo', DEMO_DIR.split(sep).join('/'), 'removed');
   report(true, { removed });
 }
 
@@ -167,10 +181,17 @@ if (won !== DEMO_RULE) {
   });
 }
 
+// 4. THE MARKER. This row timestamps the boundary, so an `assess` row LATER than
+//    it is evidence the hook fired during the demo rather than at some point
+//    before it. That comparison is what `demo.md` step 4 asks the user to make,
+//    and it is the reason no step here reports the hook as proven.
+const marker = recordActivity(root, 'demo', DEMO_DIR.split(sep).join('/'), 'installed');
+
 report(true, {
   demoDir: DEMO_DIR,
   files: copied,
   config: configAction,
   governedBy: won,
-  next: `Start a FRESH Claude Code session and ask it to read ${PROBE}. A resumed session replays saved context instead of re-running the hook.`,
+  marker: marker ? 'docs/markdown-harness/activity.csv' : 'not written — docs/markdown-harness/ is missing',
+  next: `Hand the user the runbook in demo.md and STOP. This script laying files down is not the hook firing: only an \`assess\` row later than this marker is. A resumed session replays saved context instead of re-running the hook, so the read has to happen in a FRESH one.`,
 });

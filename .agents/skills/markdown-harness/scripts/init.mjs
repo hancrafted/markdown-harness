@@ -15,11 +15,27 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { MEMORY_DIR, recordActivity } from './activity-log.mjs';
 
 const PACKAGE = '@hancrafted/markdown-harness';
 const CHECK = 'mh --check';
-const MEMORY_DIR = join('docs', 'markdown-harness');
 const HOOK_COMMAND = 'node "${CLAUDE_PROJECT_DIR}/.agents/skills/markdown-harness/scripts/assess-hook.mjs"';
+
+/** Repo-relative and forward-slashed, because a .gitignore entry is not a host path. */
+const LOG_ENTRY = 'docs/markdown-harness/activity.csv';
+
+/**
+ * What the hook's step cannot prove about itself.
+ *
+ * `wired` means an entry was written to a settings file, and that is NOT the
+ * same claim as "the hook will run". Measured 2026-09-09 in a throwaway repo:
+ * this script reported `{"step":"hook","done":"wired"}` and every subsequent
+ * `PostToolUse:Read` resolved to an unrelated plugin hook instead — the file
+ * watcher had missed the write. `/hooks` is the read-only viewer that answers
+ * the real question. Trap 10 in docs/agents/verification.md.
+ */
+const HOOK_CHECK =
+  'Wired is not running. Open /hooks and confirm this entry is listed under PostToolUse; if it is not, restart the session. The matcher is `Read`, so reading a file with `Bash cat` or `grep` will never fire it.';
 
 const argv = process.argv.slice(2);
 const flag = (name) => argv.includes(name);
@@ -123,7 +139,33 @@ const steps = [];
   }
 }
 
-// 4. THE HOOK, and only under Claude Code. `CLAUDECODE` is set in hook commands
+// 4. THE ACTIVITY LOG. One row per invocation, so that a hook which ran and
+//    chose to say nothing leaves proof it ran — outside the log, silence and
+//    death are identical. Gitignored: it is local evidence about one machine's
+//    sessions, not a shared artefact, and committing it would put a merge
+//    conflict on every branch. The `.gitkeep` above is what survives a clone.
+{
+  const ignorePath = join(root, '.gitignore');
+  const current = existsSync(ignorePath) ? readFileSync(ignorePath, 'utf8') : '';
+  const listed = current.split('\n').some((line) => line.trim() === LOG_ENTRY);
+
+  if (listed) {
+    steps.push({ step: 'log', done: 'already', detail: LOG_ENTRY });
+  } else {
+    if (!dryRun) {
+      const gap = current === '' || current.endsWith('\n') ? '' : '\n';
+      const note = "# markdown-harness's activity log: local evidence that the freshness hook ran.";
+      writeFileSync(ignorePath, `${current}${gap}\n${note}\n${LOG_ENTRY}\n`);
+    }
+    steps.push({ step: 'log', done: dryRun ? 'would-ignore' : 'ignored', detail: LOG_ENTRY });
+  }
+
+  // Written last in this block, so the header lands in a folder that exists and
+  // the first row of every adopter's log is the moment they opted in.
+  if (!dryRun) recordActivity(root, 'init', '.', 'ok');
+}
+
+// 5. THE HOOK, and only under Claude Code. `CLAUDECODE` is set in hook commands
 //    and in tool subprocesses, so it answers "is this host the one that can run
 //    the hook" without asking. Hook entries MERGE across settings levels rather
 //    than replacing each other, and identical entries dedupe to one run — so
@@ -143,7 +185,7 @@ if (!wantHook) {
   );
 
   if (already) {
-    steps.push({ step: 'hook', done: 'already', detail: settingsPath });
+    steps.push({ step: 'hook', done: 'already', detail: settingsPath, check: HOOK_CHECK });
   } else {
     settings.hooks.PostToolUse.push({
       matcher: 'Read',
@@ -151,7 +193,7 @@ if (!wantHook) {
     });
     if (!dryRun) mkdirSync(dirname(settingsPath), { recursive: true });
     writeJson(settingsPath, settings);
-    steps.push({ step: 'hook', done: dryRun ? 'would-wire' : 'wired', detail: settingsPath });
+    steps.push({ step: 'hook', done: dryRun ? 'would-wire' : 'wired', detail: settingsPath, check: HOOK_CHECK });
   }
 }
 

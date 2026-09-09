@@ -29,7 +29,26 @@ frontmatter:
       intent: An index lists what is in a directory, and carries no frontmatter of its own
       frontmatter: forbidden
 
-    # ── 2. The signal-bearing rule ────────────────────────────────────────────
+    # ── 2. A rule that governs a path in order to ask nothing of it ───────────
+    # OKF §3.1 reserves TWO filenames, not one: `index.md` above, and `log.md`
+    # here — an update history of date-grouped prose entries (§9). Neither is a
+    # concept document, so neither owes the `type` that rule 6 asks of everything
+    # under docs/. Without this rule the catch-all reaches `log.md` and demands a
+    # key OKF never asked for.
+    #
+    # A selector and an `intent` with NO payload is legal and is the point: the
+    # rule claims the path so that first-match stops here, and then asserts
+    # nothing. That is the difference between "exempt" and "ungoverned" — this
+    # exemption is written down, and `mh --audit` will show it winning.
+    #
+    # Not `frontmatter: forbidden`, which is what rule 1 can say because §8 says
+    # index files carry none. §9 says no such thing about `log.md`, so forbidding
+    # it here would be this config over-claiming on OKF's behalf.
+    - ruleId: log-files
+      fileName: log.md
+      intent: An update history is not a concept document, and OKF asks nothing of its frontmatter
+
+    # ── 3. The signal-bearing rule ────────────────────────────────────────────
     # Research is where provenance matters, so this is the rule that reaches the
     # nested addresses and the named formats.
     - ruleId: research
@@ -62,7 +81,7 @@ frontmatter:
         sources[].resource: { presence: required, format: uri }
         sources[].author: { format: actor }
 
-    # ── 3. Closing the key set, and the escape valve ──────────────────────────
+    # ── 4. Closing the key set, and the escape valve ──────────────────────────
     - ruleId: reference
       path: [docs/reference/**/*.md]
       intent: Reference pages are looked up by slug and say how far they can be trusted
@@ -87,7 +106,7 @@ frontmatter:
           pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
           intent: Slugs are lowercase words joined by single hyphens
 
-    # ── 4. Freshness — the only rule that a clock ever reads ──────────────────
+    # ── 5. Freshness — the only rule that a clock ever reads ──────────────────
     # `assess.stale` is your sentence, handed to an agent that opened the file at
     # or past its `stale_after`. Write it as an instruction, because that is how
     # it gets read.
@@ -108,7 +127,7 @@ frontmatter:
         type: { presence: required }
         stale_after: { presence: required, format: datetime }
 
-    # ── 5. The broadest rule, deliberately last ───────────────────────────────
+    # ── 6. The broadest rule, deliberately last ───────────────────────────────
     # The narrowest useful payload there is: say what you are. Governance is
     # opt-in, so anything this does not match is invisible to the harness — never
     # reported, never counted.

@@ -58,7 +58,7 @@ Packages under `src/packages/` are deep modules, and every file carries exactly 
 
 `npm run verify` is the gate, and any check inside it can go **vacuous green** — report success over nothing. Before trusting a check that passed, break what it guards and watch it go red.
 
-Nine measured traps live in [`docs/agents/verification.md`](./docs/agents/verification.md), numbered and cited by number from elsewhere in the repo. Each line below is a symptom only; the measurement behind it and the fix are in the doc.
+Ten measured traps live in [`docs/agents/verification.md`](./docs/agents/verification.md), numbered and cited by number from elsewhere in the repo. Each line below is a symptom only; the measurement behind it and the fix are in the doc.
 
 1. `archgate check` is changed-files-scoped — `total: 0` means nothing in scope changed.
 2. `verify` in an agent worktree — `knip` and `eslint` fail on the location, not the diff.
@@ -69,3 +69,4 @@ Nine measured traps live in [`docs/agents/verification.md`](./docs/agents/verifi
 7. `prettier --write .` bricks content-pinned trees, and the refusal blames drift.
 8. `vitest` never typechecks — run `tsc --noEmit` beside a single-file run.
 9. A process-boundary suite spawns `dist/`, which may be the previous build — build beside it.
+10. A hook reported `wired` is not one that will run — the watcher can miss the write, and a `Read` matcher never sees `Bash cat`.
