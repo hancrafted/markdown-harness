@@ -10,6 +10,19 @@
 // Package one public shape. `FIELD_VIOLATION_CODES` is the reason the catalog is
 // a value at all: a consumer that cannot reach it cannot enumerate the codes.
 
+export type {
+  AbsentFile,
+  AgentAction,
+  AssessEvidence,
+  AssessResult,
+  AssessState,
+  FreshFile,
+  PromptSource,
+  StaleFile,
+  UnassessableFile,
+  UngovernedFile,
+  WinningRule,
+} from './lib/assess.types.ts';
 export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';
 export type { CheckResult, CheckSummary, FileViolations } from './lib/check.types.ts';
 export { isConfigError } from './lib/config-error.pure.ts';
@@ -23,7 +36,13 @@ export type {
   QueryResult,
   Requirements,
 } from './lib/query.types.ts';
-export type { AuditResponse, CheckResponse, MarkdownHarnessResponse, QueryResponse } from './lib/response.types.ts';
+export type {
+  AssessResponse,
+  AuditResponse,
+  CheckResponse,
+  MarkdownHarnessResponse,
+  QueryResponse,
+} from './lib/response.types.ts';
 export { FIELD_VIOLATION_CODES } from './lib/violation.pure.ts';
 export type {
   CrossFieldViolation,

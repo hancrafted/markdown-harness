@@ -11,6 +11,7 @@
  * nothing.
  */
 
+import type { AssessResult } from './assess.types.ts';
 import type { AuditResult } from './audit.types.ts';
 import type { CheckResult } from './check.types.ts';
 import type { ConfigErrorResult } from './config-error.types.ts';
@@ -53,10 +54,37 @@ export interface AuditResponse {
 }
 
 /**
+ * The `--assess` envelope.
+ *
+ * Carries `now` beside `path`, and both are echoed exactly as the caller wrote
+ * them. Echoing the instant is the whole reason this command can read a clock
+ * and still be trusted: the answer names what it was compared against, so a
+ * reader can repeat the comparison by hand, and a caller can pin the same
+ * instant and get the same answer back.
+ *
+ * The envelope rather than a flat object, and the choice is deliberate: one
+ * shape whether the command answers or refuses the config, which is what keeps
+ * `isConfigError` meaningful and keeps `result` the one place an answer lives.
+ * It costs an agent reading this one hop to `result.agentAction`.
+ */
+export interface AssessResponse {
+  /** The discriminant, naming what was asked. */
+  command: 'assess';
+  /** The path asked about, echoed exactly as the caller wrote it. It need not exist. */
+  path: string;
+  /** The Assessment instant, echoed exactly as it was supplied — or as the host clock gave it. */
+  now: string;
+  /** The config path, echoed exactly as the caller wrote it — never resolved. */
+  config: string;
+  /** The answer, or the reason the config could not be trusted. */
+  result: AssessResult | ConfigErrorResult;
+}
+
+/**
  * Everything `mh` can write to stdout.
  *
- * Narrow on `command` first: the three variants answer about different kinds of
+ * Narrow on `command` first: the four variants answer about different kinds of
  * thing, and only after that is `result` worth reading — with `isConfigError`
  * to separate an answer from a rejection.
  */
-export type MarkdownHarnessResponse = CheckResponse | QueryResponse | AuditResponse;
+export type MarkdownHarnessResponse = CheckResponse | QueryResponse | AuditResponse | AssessResponse;

@@ -9,14 +9,15 @@
 
 import type { FrontmatterRule, NoFrontmatterPayload, UnknownKeys } from '../../../config-contract/index.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
+import { assessBlockFaults, unfireableAssessFaults } from './assess-faults.pure.ts';
 import { constraintFaults } from './constraint-faults.pure.ts';
 
 /**
  * Every key a rule may carry, keyed by the type that declares them.
  *
- * `keyof FrontmatterRule` reaches all eleven even though the type is an
+ * `keyof FrontmatterRule` reaches all twelve even though the type is an
  * intersection of two unions: both `RuleSelector` members declare `path` and
- * `fileName`, and both `RulePayload` members declare all five payload keys, so
+ * `fileName`, and both `RulePayload` members declare all six payload keys, so
  * the absent half of each is `never` rather than missing. That is what makes
  * the whole rule vocabulary readable from the contract in one expression.
  */
@@ -32,6 +33,7 @@ const RULE_KEYS: Record<keyof FrontmatterRule, true> = {
   exactlyOneOf: true,
   anyOf: true,
   allOf: true,
+  assess: true,
 };
 
 /**
@@ -42,6 +44,9 @@ const RULE_KEYS: Record<keyof FrontmatterRule, true> = {
  * exclusion out as `never` per key. Only `frontmatter` itself is dropped, being
  * the discriminator rather than one of the things it forbids, so a payload key
  * added to the contract joins this set without anyone remembering to add it.
+ *
+ * `assess` is one of them: assessment is answered from a frontmatter field, so
+ * a file that must carry none cannot be assessed.
  */
 const PAYLOAD_KEYS: Record<Exclude<keyof NoFrontmatterPayload, 'frontmatter'>, true> = {
   fields: true,
@@ -49,6 +54,7 @@ const PAYLOAD_KEYS: Record<Exclude<keyof NoFrontmatterPayload, 'frontmatter'>, t
   exactlyOneOf: true,
   anyOf: true,
   allOf: true,
+  assess: true,
 };
 
 /** Keys whose value must be a list of globs or addresses. */
@@ -153,10 +159,16 @@ function fieldsFaults(rule: Record<string, unknown>, at: string): readonly Confi
 /**
  * Every fault one rule carries.
  *
+ * The Module-wide `assess:` block arrives as an argument rather than being read
+ * from here, because one fault is decided against the EFFECTIVE prompt — the
+ * rule's own block if it wrote one, the Module's otherwise. A rule cannot know
+ * which of the two answered for it without being told.
+ *
  * @param rule One entry of the ordered rule list, straight off the YAML.
  * @param at The rule's address in the config's own notation, e.g. `frontmatter.rules[3]`.
+ * @param moduleAssess The value written under `frontmatter.assess:`, if any.
  */
-export function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
+export function ruleFaults(rule: unknown, at: string, moduleAssess: unknown): readonly ConfigFault[] {
   if (!isMapping(rule)) return [invalid(at)];
 
   return [
@@ -168,5 +180,7 @@ export function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
     ...shapeFaults(rule, at),
     ...payloadFaults(rule, at),
     ...fieldsFaults(rule, at),
+    ...assessBlockFaults(rule.assess, `${at}.assess`),
+    ...unfireableAssessFaults(rule, at, moduleAssess),
   ];
 }

@@ -8,6 +8,12 @@ import { describe, expect, it } from 'vitest';
 import { ruleFaults } from './rule-faults.pure';
 
 const AT = 'frontmatter.rules[0]';
+
+/**
+ * No Module-wide `assess:` block. Every case in this file is about one rule on
+ * its own, so the effective prompt is whatever the rule itself wrote.
+ */
+const NO_MODULE_ASSESS = undefined;
 const sound = { ruleId: 'research', intent: 'Research notes cite what they drew on', path: ['docs/**'] };
 
 describe('ruleFaults', () => {
@@ -16,7 +22,7 @@ describe('ruleFaults', () => {
       // ARRANGE
       const rule = sound;
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual([]);
     });
@@ -30,7 +36,7 @@ describe('ruleFaults', () => {
         frontmatter: 'forbidden',
       };
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual([]);
     });
@@ -39,7 +45,7 @@ describe('ruleFaults', () => {
       // ARRANGE
       const rule = { ruleId: 'log-files', intent: 'A log says when', fileName: 'log.md' };
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual([]);
     });
@@ -51,7 +57,7 @@ describe('ruleFaults', () => {
         { ...sound, unknownKeys: 'forbidden' },
       ];
       // ACT
-      const actual = rules.flatMap((rule) => ruleFaults(rule, AT));
+      const actual = rules.flatMap((rule) => ruleFaults(rule, AT, NO_MODULE_ASSESS));
       // ASSERT
       expect(actual).toEqual([]);
     });
@@ -64,7 +70,7 @@ describe('ruleFaults', () => {
       const rule = { ruleId: 'r', path: ['docs/**'] };
       const expected = [{ code: 'CONFIG_MISSING_RULE_INTENT', location: AT }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -74,7 +80,7 @@ describe('ruleFaults', () => {
       const rule = { ruleId: 'r', intent: 'i' };
       const expected = [{ code: 'CONFIG_SELECTOR_MISSING', location: AT }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -84,7 +90,7 @@ describe('ruleFaults', () => {
       const rule = { ruleId: 'r', intent: 'i', path: ['docs/**'], fileName: 'log.md' };
       const expected = [{ code: 'CONFIG_SELECTOR_AMBIGUOUS', location: AT }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -94,7 +100,7 @@ describe('ruleFaults', () => {
       const rule = { ruleId: 'r', intent: 'i', path: ['docs/**'], frontmatter: 'forbidden', unknownKeys: 'forbidden' };
       const expected = [{ code: 'CONFIG_FRONTMATTER_FORBIDDEN_WITH_PAYLOAD', location: AT }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -104,7 +110,7 @@ describe('ruleFaults', () => {
       const rule = { intent: 'i', path: ['docs/**'] };
       const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.ruleId` }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -116,7 +122,7 @@ describe('ruleFaults', () => {
       const rule = { ...sound, unknownKeys: 'sometimes' };
       const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.unknownKeys` }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -126,7 +132,7 @@ describe('ruleFaults', () => {
       const rule = { ...sound, path: ['docs/**', 3] };
       const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.path` }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -139,7 +145,7 @@ describe('ruleFaults', () => {
       const rule = { ruleId: 'r', intent: '', path: ['docs/**'] };
       const expected = [{ code: 'CONFIG_EMPTY_INTENT', location: `${AT}.intent` }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -149,7 +155,7 @@ describe('ruleFaults', () => {
       const rule = { ruleId: 'r', intent: 'i', path: 'docs/**' };
       const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.path` }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -159,7 +165,7 @@ describe('ruleFaults', () => {
       const rule = { ruleId: 'r', intent: 'i', path: ['docs/**'], fields: { slug: {} } };
       const expected = [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: `${AT}.fields.slug` }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -169,7 +175,7 @@ describe('ruleFaults', () => {
       const rule = { ruleId: 'r', intent: 'i', path: ['docs/**'], excludeFile: [] };
       const expected = [{ code: 'CONFIG_UNRECOGNISED_KEY', location: `${AT}.excludeFile` }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -182,7 +188,7 @@ describe('ruleFaults', () => {
       const rule = { ...sound, anyOf: [true, false] };
       const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.anyOf` }];
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -191,7 +197,7 @@ describe('ruleFaults', () => {
       // ARRANGE
       const rule = { ...sound, excludeFiles: [] };
       // ACT
-      const actual = ruleFaults(rule, AT);
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
       expect(actual).toEqual([]);
     });

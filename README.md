@@ -31,7 +31,8 @@ Write one config at the repo root, `markdown-harness.config.yaml` — the shape 
 mh --check                       # every governed file's violations, and the counts
 mh --query docs/research/new.md  # what the config asks of a path, before the file exists
 mh --audit                       # how every rule fared, so a rule that governs nothing is visible
-mh --help                        # the three commands, the flag defaults, and the exit codes
+mh --assess docs/research/x.md   # what one file is worth believing, at one instant
+mh --help                        # the four commands, the flag defaults, and the exit codes
 ```
 
 Every command answers as JSON on stdout, and `mh --help` is the one exception — it prints the list
@@ -56,7 +57,7 @@ Pre-1.0. Shapes may still change, and what is here is honest about what is not:
 
 | exists today                                     | not yet                              |
 | ------------------------------------------------ | ------------------------------------ |
-| `--check`, `--query` and `--audit`               | The OKF Preset                       |
+| `--check`, `--query`, `--audit` and `--assess`   | The OKF Preset                       |
 | The config contract and the Conformance suite    | Index generation, scheduling, any UI |
 | The pinned OKF revision (`docs/okf/`)            | An importable library surface        |
 | Product and architecture vision (`docs/vision/`) | MCP, or any second surface           |
@@ -118,6 +119,54 @@ sources:
 An agent that opens this in December sees that `stale_after` has passed — **without running
 markdown-harness, and whatever the body claims about itself.** Keeping those fields present and true
 is the job; being in the read path is not.
+
+**`--assess` amplifies that signal at run time; it is never the only way to reach it.** It reads one
+file, compares its `stale_after` to an instant you supply, and answers with your own sentence:
+
+```bash
+mh --assess docs/research/yaml.md --now 2026-12-01T00:00:00Z
+```
+
+```json
+{
+  "command": "assess",
+  "path": "docs/research/yaml.md",
+  "now": "2026-12-01T00:00:00Z",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "agentAction": "REVIEW",
+    "instruction": "Re-verify by web research before quoting this.",
+    "state": "stale",
+    "source": "rule",
+    "evidence": { "field": "stale_after", "value": "2026-11-24T00:00:00Z" },
+    "rule": { "ruleId": "research", "intent": "Research is indexed, so it names its sources." }
+  }
+}
+```
+
+`agentAction` is one of `REVIEW`, `PROCEED` or `FIX_FILE`, and it is derivable from `state` on
+purpose — five states onto three actions is a mapping worth doing for the reader rather than by them.
+The instant is the whole of why this stays trustworthy: `--now` is echoed back, so the comparison can
+be repeated by hand, and `--check` is left clock-free so a corpus cannot go red overnight on a tree
+nobody touched. Configure the sentence beside the rules:
+
+```yaml
+frontmatter:
+  assess:
+    stale: This file is past its freshness date. Tell the user and offer to re-verify it.
+  rules:
+    - ruleId: research
+      path: [docs/research/**/*.md]
+      intent: Research is indexed, so it names its sources.
+      assess:
+        stale: Re-verify by web research before quoting this.
+      fields:
+        stale_after: { presence: required, format: datetime }
+```
+
+A rule's block replaces the module-wide one **whole**, never key by key, so deleting it is one
+visible act. A prompt with no `stale_after: { presence: required }` beside it is a config error —
+a sentence that could never be printed is worth telling you about.
 
 ## Why not an existing tool
 

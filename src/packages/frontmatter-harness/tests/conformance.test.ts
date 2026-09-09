@@ -20,6 +20,7 @@ import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import type { AllowedValue, FieldConstraints, Format, MarkdownHarnessConfig } from '../../config-contract/index.ts';
 import { listMarkdownFiles } from '../../markdown-file-tree/list-markdown-files.ts';
+import { assessPath } from '../assess.ts';
 import { checkCorpus } from '../check.ts';
 import { queryPath } from '../query.ts';
 
@@ -40,6 +41,7 @@ const RULE_KEYS = [
   'exactlyOneOf',
   'anyOf',
   'allOf',
+  'assess',
 ] as const;
 
 /** Every key a field constraint may carry. */
@@ -123,6 +125,19 @@ describe('valid-test-config.yaml is a complete test surface', () => {
       expect(seen).toContain(key);
     });
 
+    it.each(ALLOWED_ENTRY_KEYS)('exercises the allowed-entry key %s', (key) => {
+      // The allowed-entry tier had a closure assertion and no coverage loop, so
+      // an entry key could have gone unreached while the suite still called
+      // itself complete. ARCH-002 §1.2 names this tier alongside the other
+      // three; §3.1 requires every one of them be reached.
+      // ARRANGE
+      const entries = everyAllowedValue();
+      // ACT
+      const seen = entries.flatMap((entry) => Object.keys(entry));
+      // ASSERT
+      expect(seen).toContain(key);
+    });
+
     it.each(FORMATS)('exercises the named format %s', (format) => {
       // ARRANGE
       const constraints = everyConstraint();
@@ -153,6 +168,21 @@ describe('valid-test-config.yaml is a complete test surface', () => {
       const known = ALLOWED_ENTRY_KEYS;
       // ACT
       const unknown = everyAllowedValue().flatMap((entry) => Object.keys(entry).filter((key) => !known.includes(key)));
+      // ASSERT
+      expect(unknown).toEqual([]);
+    });
+
+    it('names no format outside the vocabulary', () => {
+      // The named-format tier had a coverage loop and no closure assertion, so
+      // `format: datetiem` would have failed nothing here — the constraint-key
+      // closure test sees the KEY `format`, never its value. Only three formats
+      // exist, and a fourth is a deliberate amendment.
+      // ARRANGE
+      const known: readonly string[] = FORMATS;
+      // ACT
+      const unknown = everyConstraint()
+        .flatMap((constraint) => constraint.format ?? [])
+        .filter((format) => !known.includes(format));
       // ASSERT
       expect(unknown).toEqual([]);
     });
@@ -431,11 +461,154 @@ describe('the harness reports the verdict each Conformance case states', () => {
       // whatever the tree now holds — and `corpus.length` compared against
       // anything derived from `corpus` could not fail at all.
       // ARRANGE
-      const declaredCases = 37;
+      const declaredCases = 40;
       // ACT
       const enumerated = corpus.length;
       // ASSERT
       expect(enumerated).toBe(declaredCases);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The Assessment half: each case's stated agent action, against what runs.
+// ---------------------------------------------------------------------------
+
+/**
+ * The instant this suite is judged against, PINNED.
+ *
+ * Not in `valid-test-config.yaml`, and the placement is the decision: the
+ * config is the subject under test, so the instant belongs beside the runner
+ * that judges it. Left to a real clock, `fresh.md` would turn `REVIEW` on the
+ * day its `stale_after` passed and this suite would go red on an unchanged tree
+ * — on a date nobody wrote down. Moving this constant is a contract change on
+ * the same terms as moving a marker.
+ */
+const ASSESSMENT_INSTANT = '2026-12-01T00:00:00Z';
+
+/** The three agent actions a Conformance case may state (ARCH-002 §4). */
+const REVIEW = 'REVIEW';
+const PROCEED = 'PROCEED';
+const FIX_FILE = 'FIX_FILE';
+
+const ASSESS_MARKER = /<!-- assess: (\w+) -->/g;
+
+/**
+ * The agent action one case states, or nothing if it states none.
+ *
+ * Absence is legal here and is not legal for `expect:`: the Assessment markers
+ * cover the five states deliberately rather than exhaustively, because a
+ * freshness answer is meaningless for most of this corpus. Two markers is a
+ * broken contract on the same terms as two `expect:` markers, so it throws.
+ */
+function assessMarkerOf(path: string): string | undefined {
+  const body = readFileSync(new URL(`../../../../fixtures/conformance/${path}`, import.meta.url), 'utf8');
+  const found = [...body.matchAll(ASSESS_MARKER)].map((match) => match[1]);
+  if (found.length > 1) throw new Error(`${path} must carry at most one assess marker, found ${found.length}`);
+  return found[0];
+}
+
+const assessCases = corpus
+  .map((path) => ({ path, action: assessMarkerOf(path) }))
+  .filter((one): one is { path: string; action: string } => one.action !== undefined);
+
+const marked = (action: string): string[] => assessCases.filter((one) => one.action === action).map((one) => one.path);
+
+/** What the IMPLEMENTATION answers for one case, at the pinned instant. */
+function actionFrom(path: string): string {
+  return assessPath({ root: CORPUS_ROOT, path: path }, config, ASSESSMENT_INSTANT).agentAction;
+}
+
+describe('the harness reports the agent action each Conformance case states', () => {
+  describe('success cases', () => {
+    it.each(marked(PROCEED))('tells an agent to proceed on %s', (path) => {
+      // ARRANGE
+      const expected = PROCEED;
+      // ACT
+      const actual = actionFrom(path);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+
+    it("carries the Operator's own sentence on a stale file, verbatim, and names the block it came from", () => {
+      // The one case where this tool emits prose, and it is never its own. The
+      // sentence below is the `freshness` rule's `assess.stale` value, copied
+      // from the config rather than reworded — if the two ever disagree, the
+      // config is right and this is the contract change.
+      // ARRANGE
+      const verbatim = 'Re-verify this against the source before quoting it, then move stale_after.';
+      const expected = { instruction: verbatim, source: 'rule' };
+      // ACT
+      const answered = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness/stale.md' }, config, ASSESSMENT_INSTANT);
+      const actual = { instruction: answered.instruction, source: answered.source };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it.each(marked(REVIEW))('tells an agent to review %s', (path) => {
+      // ARRANGE
+      const expected = REVIEW;
+      // ACT
+      const actual = actionFrom(path);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+
+    it.each(marked(FIX_FILE))('tells an agent to repair %s', (path) => {
+      // ARRANGE
+      const expected = FIX_FILE;
+      // ACT
+      const actual = actionFrom(path);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('answers every marked case at once, so a disagreement names them together', () => {
+      // ARRANGE
+      const expected = Object.fromEntries(assessCases.map((one) => [one.path, one.action]));
+      // ACT
+      const actual = Object.fromEntries(assessCases.map((one) => [one.path, actionFrom(one.path)]));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('exercises all three agent actions, so no branch of this suite is vacuous', () => {
+      // ARRANGE
+      const everyAction = [REVIEW, PROCEED, FIX_FILE];
+      // ACT
+      const exercised = everyAction.filter((action) => marked(action).length > 0);
+      // ASSERT
+      expect(exercised).toEqual(everyAction);
+    });
+
+    it('states no agent action outside the vocabulary', () => {
+      // Closure, not coverage: the marker set proves the SUITE reaches every
+      // action, and this proves no case states one the contract does not define.
+      // ARRANGE
+      const known = [REVIEW, PROCEED, FIX_FILE];
+      // ACT
+      const unknown = assessCases.map((one) => one.action).filter((action) => !known.includes(action));
+      // ASSERT
+      expect(unknown).toEqual([]);
+    });
+
+    it('says nothing at all about a file no rule selects', () => {
+      // The UNGOVERNED case carries a second marker, and this is what the
+      // marker means beyond the action: no rule, no evidence, no sentence.
+      // ARRANGE
+      const expected = { agentAction: PROCEED, state: 'ungoverned' };
+      // ACT
+      const actual = assessPath(
+        { root: CORPUS_ROOT, path: 'docs/research/vendor/upstream.md' },
+        config,
+        ASSESSMENT_INSTANT,
+      );
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
   });
 });
