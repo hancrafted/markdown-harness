@@ -34,3 +34,7 @@
 - [Fixture bodies are the contract](feedback_fixture_bodies_are_the_contract.md) — measure a predicate change against the corpus first
 - [Two-corpus governance test](project_two_corpus_governance_test.md) — map #54: greenfield ai-coaching-hub leads, this repo's docs/ is the proof obligation
 - [Split a vision into channel and condition](feedback_split_vision_into_channel_and_condition.md) — price each half, ship the cheap one as a same-day fallback
+- [Empty result needs a subject check](feedback_empty_result_needs_a_subject_check.md) — four agreeing negatives can mean wrong file; multi-file awk reports NR, not FNR
+- [Bring evidence when Han disowns his choice](feedback_bring_evidence_when_han_disowns_his_choice.md) — he explains his reasoning instead of defending it; go measure, "no evidence either way" is valid
+- [`git checkout` restores from the index](feedback_git_checkout_restores_from_the_index.md) — with changes staged it silently eats unstaged work; use a .bak for ablations
+- [The ADR may already say it](feedback_adr_may_already_say_it.md) — read Risks and Compliance too; briefings only carry Decision and Do's/Don'ts
