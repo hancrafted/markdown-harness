@@ -28,22 +28,43 @@ _Done when_ you can say what a pass would prove and what it would not.
 ## 2. Mint the repositories
 
 ```sh
-node .agents/skills/setup-local-e2e-repo/scripts/new-repo.mjs --name wiki-a
+node .agents/skills/setup-local-e2e-repo/scripts/new-repo.mjs --name wiki-a,wiki-b
 ```
 
 | Flag             | Effect                                                               |
 | ---------------- | -------------------------------------------------------------------- |
-| `--name`         | Required. The repository's directory name                            |
-| `--under`        | Where it lands. Defaults to `~/Developer/mh-e2e`                     |
+| `--name`         | Required. Repeatable, and comma-separated — one repository per name  |
+| `--under`        | Where they land. Defaults to `~/Developer/mh-e2e`                    |
 | `--source`       | `published` (default), or a path to a local checkout to link instead |
 | `--skip-harness` | Skips `@hancrafted/typescript-ai-harness`, much the slowest step     |
+| `--dry-run`      | Reports the names and paths it would mint, and creates nothing       |
+
+Mint a comparison run's repositories in ONE invocation rather than one command each. Four hand-typed invocations
+differ in the ways a hand differs — a flag remembered for three of them and not the fourth — and that difference
+becomes a variable in the thing you are measuring.
 
 It refuses to touch a directory that already exists. That is deliberate: a half-recycled repository is the one thing
-that makes an end-to-end result untrustworthy, and reusing one has produced false passes before.
+that makes an end-to-end result untrustworthy, and reusing one has produced false passes before. The refusal is per
+name: a stale `wiki-c` is reported as its own failed entry and the other three still mint, so one leftover directory
+does not cost a whole comparison run. Use `--dry-run` to see which paths are already taken before spending the
+installs.
 
-Run it once per repository. It reports JSON, and `next` carries the exact command to continue with.
+It reports JSON — one entry per repository, each minted one carrying the `next` command to continue with. Every repository is
+minted even if an earlier one failed, and every step runs even after an earlier step failed, so the report says
+which repositories are usable and why rather than where the run stopped.
 
-_Done when_ every step reports `"ok": true`.
+**Read the `provenance` block.** Every repository carries one, so a missing block is a bug rather than a quiet pass.
+On a published run the package comes from npm at its released version while the skill comes from the default branch,
+so the two agree only while that branch sits on the release tag. When they disagree the script says so and still
+succeeds: the pairing is real, no adopter can install it, and a run measured on it looks green while proving nothing.
+Release first, or switch to `--source <checkout>` and say that is what you did.
+
+`checked` and `drift` are separate fields because "compared and equal" and "never compared" are different answers
+that a bare `drift: false` cannot tell apart. `checked: false` — an unreachable remote, or a version with no release
+tag yet — means the pairing is unverified, not that it is sound.
+
+_Done when_ every repository reports `"ok": true`, and every `provenance` block reports `"checked": true` with
+`"drift": false`. Any other combination is a result you have to explain before the run counts.
 
 ## 3. Hand over to the tool's own skill
 
