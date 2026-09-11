@@ -1,13 +1,15 @@
-// Colocated unit test for the corpus result and its arithmetic.
+// Colocated unit test for this Module's per-file outcomes.
 //
-// The three counts are stored rather than left to the consumer, so the tests
-// that matter here are the ones that would catch them disagreeing. The consumer
-// is an agent, and asking a language model to sum an array to find out whether
-// anything is wrong is asking the one thing it is least reliable at.
+// The arithmetic that used to be asserted here has moved to `corpus-verdict`,
+// which is the only tier that can see every Module and therefore the only one
+// entitled to a union count. What is left is the part this Module owns: which
+// rule won each file, what it found, and that a CONFORMING governed file is
+// still handed back — because the composer counts it and can only count what it
+// is given.
 
 import { describe, expect, it } from 'vitest';
 import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import { checkResultFor } from './check-result.pure';
+import { frontmatterOutcomes } from './check-result.pure';
 
 const PLAIN: FrontmatterRule = {
   ruleId: 'plain',
@@ -19,87 +21,85 @@ const PLAIN: FrontmatterRule = {
 const CONFORMING = '---\ntype: plain\n---\n';
 const UNTYPED = '---\ntitle: No type here\n---\n';
 
-describe('corpus check result', () => {
+describe('frontmatter outcomes', () => {
   describe('success cases', () => {
-    it('reports an all-conforming corpus as governed but clean', () => {
+    it('hands back a conforming governed file with no violations', () => {
+      // The composer counts this file in `governedFiles` and drops it from the
+      // report. Returning only the failures would make a clean governed file
+      // and an unclaimed file indistinguishable one tier up, so this is the
+      // assertion that keeps the union count honest.
       // ARRANGE
       const sources = [{ path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING }];
-      const expected = { summary: { governedFiles: 1, invalidFiles: 0, totalViolations: 0 }, files: [] };
+      const expected = [{ path: 'docs/plain/notes.md', violations: [] }];
       // ACT
-      const actual = checkResultFor(sources);
+      const actual = frontmatterOutcomes(sources).map((one) => ({
+        path: one.path,
+        violations: one.findings.violations,
+      }));
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('carries the winning rule id and its intent on the file', () => {
-      // Under first-match every violation in a file comes from the same rule, so
-      // these sit on the file rather than on each violation.
+    it('names its own config key on every block, never its Package name', () => {
+      // `frontmatter`, not `frontmatter-harness`. The config key is the word an
+      // Operator already wrote and can grep for.
+      // ARRANGE
+      const sources = [{ path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING }];
+      const expected = 'frontmatter';
+      // ACT
+      const [outcome] = frontmatterOutcomes(sources);
+      // ASSERT
+      expect(outcome.findings.module).toBe(expected);
+    });
+
+    it('carries the winning rule id and its intent on the block', () => {
+      // Under first-match every violation in a file comes from the same rule —
+      // WITHIN ONE MODULE — so these sit on the block rather than on each
+      // violation.
       // ARRANGE
       const sources = [{ path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED }];
       const expected = { ruleId: 'plain', ruleIntent: 'Everything under plain/ still has to say what it is' };
       // ACT
-      const [file] = checkResultFor(sources).files;
+      const [outcome] = frontmatterOutcomes(sources);
       // ASSERT
-      expect({ ruleId: file.ruleId, ruleIntent: file.ruleIntent }).toEqual(expected);
+      expect({ ruleId: outcome.findings.ruleId, ruleIntent: outcome.findings.ruleIntent }).toEqual(expected);
     });
   });
 
   describe('failure cases', () => {
-    it('lists only the files carrying a violation, in the order given', () => {
-      // Conforming files are absent, and the order is the walker's.
+    it('keeps every governed file, failing or not, in the order given', () => {
       // ARRANGE
       const sources = [
         { path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED },
         { path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING },
         { path: 'docs/plain/empty.md', rule: PLAIN, text: '---\ntype:\n---\n' },
       ];
-      const expected = ['docs/plain/untyped.md', 'docs/plain/empty.md'];
+      const expected = ['docs/plain/untyped.md', 'docs/plain/notes.md', 'docs/plain/empty.md'];
       // ACT
-      const actual = checkResultFor(sources).files.map((file) => file.path);
+      const actual = frontmatterOutcomes(sources).map((one) => one.path);
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('reports counts that cannot disagree with the files it listed', () => {
+    it('reports each file only the violations its own rule found', () => {
       // ARRANGE
       const sources = [
         { path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED },
         { path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING },
-        { path: 'docs/plain/empty.md', rule: PLAIN, text: '---\ntype:\n---\n' },
       ];
-      const expected = { governedFiles: 3, invalidFiles: 2, totalViolations: 2 };
+      const oneFinding = 1;
+      const expected = [oneFinding, 0];
       // ACT
-      const actual = checkResultFor(sources).summary;
+      const actual = frontmatterOutcomes(sources).map((one) => one.findings.violations.length);
       // ASSERT
       expect(actual).toEqual(expected);
     });
   });
 
   describe('edge cases', () => {
-    it('counts invalidFiles off the files it listed, not off the corpus it read', () => {
-      // The contract says `invalidFiles === files.length`, always. Reading both
-      // sides off one return would assert the implementation against itself and
-      // could not go red — and a corpus whose files are ALL invalid could not
-      // tell `files.length` from the number of files read either. So the
-      // fixture is mixed, and the number is written out by hand.
-      // ARRANGE
-      const sources = [
-        { path: 'docs/plain/a.md', rule: PLAIN, text: UNTYPED },
-        { path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING },
-        { path: 'docs/plain/b.md', rule: PLAIN, text: UNTYPED },
-      ];
-      const invalid = 2;
-      const read = 3;
-      // ACT
-      const result = checkResultFor(sources);
-      // ASSERT
-      expect(result.summary.invalidFiles).toBe(invalid);
-      expect(result.files).toHaveLength(invalid);
-      expect(result.summary.governedFiles).toBe(read);
-    });
-
-    it('sums violations across files rather than counting the files', () => {
-      // A file with three findings must not count as one.
+    it('gathers several findings from one file under one block', () => {
+      // A file with three findings is one block carrying three, never three
+      // blocks — the Module dimension groups by Module, not by violation.
       // ARRANGE
       const reference: FrontmatterRule = {
         ruleId: 'reference',
@@ -113,18 +113,19 @@ describe('corpus check result', () => {
       };
       const text = '---\nstatus: retired\nslug: Legacy_Reference\nreviewedBy: nobody\n---\n';
       const sources = [{ path: 'docs/reference/legacy.md', rule: reference, text }];
-      const expected = { governedFiles: 1, invalidFiles: 1, totalViolations: 3 };
+      const findings = 3;
       // ACT
-      const actual = checkResultFor(sources).summary;
+      const outcomes = frontmatterOutcomes(sources);
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(outcomes).toHaveLength(1);
+      expect(outcomes[0].findings.violations).toHaveLength(findings);
     });
 
-    it('reports an empty corpus as nothing governed and nothing wrong', () => {
+    it('reports an empty corpus as no outcomes at all', () => {
       // ARRANGE
-      const expected = { summary: { governedFiles: 0, invalidFiles: 0, totalViolations: 0 }, files: [] };
+      const expected: unknown[] = [];
       // ACT
-      const actual = checkResultFor([]);
+      const actual = frontmatterOutcomes([]);
       // ASSERT
       expect(actual).toEqual(expected);
     });

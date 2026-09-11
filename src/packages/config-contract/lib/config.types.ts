@@ -14,6 +14,8 @@
 
 import type { AssessConditions } from './assess.types';
 import type { FieldAddress, FieldConstraints } from './constraints.types';
+import type { FileNamesConfig } from './file-names.types';
+import type { Glob, RuleCommon } from './rule-common.types';
 
 // ---------------------------------------------------------------------------
 // The config file
@@ -26,10 +28,13 @@ import type { FieldAddress, FieldConstraints } from './constraints.types';
  * config would need a precedence rule *between* files, which is the second
  * precedence dimension this design exists to avoid.
  *
- * Modules get a section apiece. `frontmatter-harness` is the first, and the
- * only one this contract describes; a config naming no module governs nothing.
- * Unknown top-level keys are a config error, so gaining a section later is a
- * deliberate amendment rather than an accident.
+ * Modules get a section apiece, and the top level is ONE KEY PER MODULE AND
+ * NOTHING ELSE — design-ADR 0006's growth rule. A config naming no module
+ * governs nothing, and an unknown top-level key is a config error.
+ *
+ * The key order here is the DECLARED order, and reports follow it rather than
+ * whatever order a YAML mapping happened to be written in. `TOP_LEVEL_KEYS` in
+ * `config-loader` is the runtime spelling of the same list.
  */
 export interface MarkdownHarnessConfig {
   /**
@@ -42,6 +47,16 @@ export interface MarkdownHarnessConfig {
    * `NoFrontmatterPayload`.
    */
   frontmatter?: FrontmatterConfig;
+
+  /**
+   * The `file-names-harness` module's section.
+   *
+   * Quoted because the key is kebab-case, and that spelling is load-bearing:
+   * every code this Module reports is `<module>__<outcome>` with the module
+   * dimension transliterated from this key. A Module key holding an underscore
+   * would make the `__` boundary fakeable; kebab-case cannot hold one.
+   */
+  'file-names'?: FileNamesConfig;
 }
 
 /** Everything the `frontmatter-harness` module reads. */
@@ -92,48 +107,6 @@ export interface FrontmatterConfig {
  *   - `frontmatter: forbidden` carries no payload at all
  */
 export type FrontmatterRule = RuleCommon & RuleSelector & RulePayload;
-
-/** Keys every rule carries, whatever it selects and whatever it asserts. */
-export interface RuleCommon {
-  /**
-   * This rule's name, in the config author's own words. MANDATORY, and unique
-   * across the list.
-   *
-   * Reports refer to a rule by id and never by position, so that a rule
-   * reordered — which under first-match is an ordinary and expected edit —
-   * does not silently repoint every stored answer that named it. An index is
-   * the one identifier this language cannot use, because the ordering it would
-   * be drawn from is the very thing an author changes.
-   *
-   * Two rules sharing an id is a config error, and it points at the LATER
-   * occurrence: the first one to claim a name is not the mistake.
-   */
-  ruleId: string;
-
-  /**
-   * Why this rule exists, in the config author's own words. MANDATORY.
-   *
-   * Appended to every violation this rule reports — never substituted for the
-   * harness's own sentence, so an author cannot write prose that hides which
-   * constraint fired. A constraint-level `intent` wins over this one for that
-   * constraint; this is the fallback.
-   */
-  intent: string;
-
-  /**
-   * Paths this rule does NOT govern, as globs.
-   *
-   * Per rule, never global — a global exclude list could not express "exempt
-   * from *this* rule only", so an excluded file could never pick up a rule of
-   * its own. Exclusion always wins within a rule and takes no part in ordering:
-   * it answers one yes/no question before any rule is chosen.
-   *
-   * Invalid without a selector on the same rule. Its only real use under
-   * first-match is letting a file fall THROUGH to a later, broader rule without
-   * restating that rule's constraints.
-   */
-  excludeFiles?: Glob[];
-}
 
 /**
  * How a rule selects files. Exactly one of the two.
@@ -229,6 +202,3 @@ export interface NoFrontmatterPayload {
 
 /** The only legal values of `unknownKeys`. `allowed` is also the default. */
 export type UnknownKeys = 'allowed' | 'forbidden';
-
-/** A glob, matched against repo-root-relative paths. */
-export type Glob = string;

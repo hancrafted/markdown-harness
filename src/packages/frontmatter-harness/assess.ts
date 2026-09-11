@@ -15,6 +15,7 @@
 // tool that comments on everything is one that gets switched off.
 
 import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
+import { normalisePath } from '../markdown-file-tree/normalise-path.ts';
 import type { AssessResult, WinningRule } from '../response-contract/index.ts';
 import { effectivePrompt } from './lib/assess/assess-prompt.pure.ts';
 import { assessResultFor } from './lib/assess/assess-result.pure.ts';
@@ -22,7 +23,6 @@ import { readAssessedFile } from './lib/assess/assessed-file.impure.ts';
 import { freshnessOf } from './lib/assess/freshness.pure.ts';
 import { findFirstMatch } from './lib/rules/first-match.pure.ts';
 import { matchGlob } from './lib/rules/glob-match.impure.ts';
-import { normalisePath } from './lib/rules/path-shape.pure.ts';
 
 /**
  * Assess one path against the config, at one instant.

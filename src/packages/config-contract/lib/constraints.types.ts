@@ -132,6 +132,15 @@ export interface AllowedValue {
  * The named formats. Not sugar: `actor` is the clearest case for a name over a
  * regex — a three-way alternation that is unreadable written out and
  * self-evident written as `format: actor`.
+ *
+ * The bar a fourth member had to clear was MEANING, never brevity. `uri` is a
+ * named format for `^\S+$`, five characters, so "a regex states it in eight"
+ * cannot disqualify a name on its own.
+ *
+ * Shared across Modules, and that is what makes this union portable surface
+ * rather than one Module's vocabulary: `frontmatter:` applies a format to a
+ * field value, `file-names:` applies the same format to one segment of a file
+ * name, and both mean the identical claim about the identical string.
  */
 export type Format =
   /** ISO 8601 with an explicit UTC offset. */
@@ -139,4 +148,17 @@ export type Format =
   /** A path or URI. */
   | 'uri'
   /** `<producer>/<version>` | `human:<id>` | `process:<id>`. */
-  | 'actor';
+  | 'actor'
+  /**
+   * Lowercase alphanumeric words joined by single hyphens: `^[a-z0-9]+(-[a-z0-9]+)*$`.
+   *
+   * PROMOTED rather than invented — `valid-test-config.yaml` already carried
+   * this exact regex as a bare `pattern` on `slug`. Writing it as a name moves
+   * the word-shape into the portable specification, where a reimplementation
+   * has something to hit; as a `pattern` it was a private string that also
+   * charged every Rule the same mandatory `intent` sentence.
+   *
+   * Leading, trailing and doubled hyphens are REJECTED; digits are accepted
+   * including in first position. The grammar is in `named-formats`.
+   */
+  | 'kebab-case';

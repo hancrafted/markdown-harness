@@ -20,19 +20,23 @@ describe('sectionFaults', () => {
       // ASSERT
       expect(actual).toEqual([]);
     });
+
+    it('says nothing about an absent section, because absence is the loader question', () => {
+      // This reading changed when a second Module arrived. While `frontmatter:`
+      // was the only section, "absent" and "this config governs nothing" were
+      // the same statement and this function reported it. A config declaring
+      // `file-names:` alone is now well formed, so absence here is ordinary and
+      // the no-Module-at-all fault moved up to `load-config.ts`.
+      // ARRANGE
+      const absent = undefined;
+      // ACT
+      const actual = sectionFaults(absent);
+      // ASSERT
+      expect(actual).toEqual([]);
+    });
   });
 
   describe('failure cases', () => {
-    it('rejects an absent section as an empty rule list', () => {
-      // Naming a module and governing nothing is a mistake, not a no-op.
-      // ARRANGE
-      const expected = [{ code: 'CONFIG_EMPTY_RULE_LIST', location: RULES_AT }];
-      // ACT
-      const actual = sectionFaults(undefined);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
     it('rejects an empty rule list', () => {
       // ARRANGE
       const section = { rules: [] };

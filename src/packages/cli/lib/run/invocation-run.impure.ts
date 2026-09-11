@@ -10,10 +10,10 @@
  */
 
 import { loadConfig } from '../../../config-loader/load-config.ts';
+import { checkCorpus } from '../../../corpus-verdict/check-corpus.ts';
+import { queryPath } from '../../../corpus-verdict/query-path.ts';
 import { assessPath } from '../../../frontmatter-harness/assess.ts';
 import { auditRules } from '../../../frontmatter-harness/audit.ts';
-import { checkCorpus } from '../../../frontmatter-harness/check.ts';
-import { queryPath } from '../../../frontmatter-harness/query.ts';
 import { listMarkdownFiles } from '../../../markdown-file-tree/list-markdown-files.ts';
 import type {
   AssessResponse,

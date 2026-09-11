@@ -49,7 +49,7 @@ const PRESENCE_STATES: Record<NonNullable<FieldConstraints['presence']>, true> =
   forbidden: true,
 };
 
-const FORMATS: Record<Format, true> = { datetime: true, uri: true, actor: true };
+const FORMATS: Record<Format, true> = { datetime: true, uri: true, actor: true, 'kebab-case': true };
 
 /** The five bounds, every one of which names a finite number (§3.3). */
 const BOUND_KEYS: readonly (keyof FieldConstraints)[] = [

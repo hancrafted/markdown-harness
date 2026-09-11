@@ -1,71 +1,83 @@
-// Integration suite for `--query`, at the grain a caller sees.
+// Integration suite for this Module's half of `--query`, at the grain a caller sees.
 //
 // Every case runs against the committed conformance config rather than a rule
 // written for the occasion, so the ordering assertions are made about the same
 // file the rest of the suite calls a complete surface.
+//
+// `undefined` here means "no rule of THIS Module", never "invisible". Deciding
+// a path is invisible is a claim about every Module at once, so it is asserted
+// in `corpus-verdict/tests/` and deliberately not here.
 
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../config-loader/load-config.ts';
-import { queryPath } from '../query.ts';
+import { queryFrontmatter } from '../query.ts';
 
 const loaded = loadConfig('fixtures/conformance/valid-test-config.yaml');
 if (loaded.config === undefined) throw new Error('the conformance config must load for this suite to mean anything');
 const config = loaded.config;
 
-const GOVERNED = 'governed';
-const INVISIBLE = 'invisible';
-
-describe('queryPath', () => {
+describe('queryFrontmatter', () => {
   describe('success cases', () => {
     it('resolves a reference page to the reference rule, intent verbatim', () => {
       // ARRANGE
       const verbatim = 'Reference pages are looked up by slug and say how far they can be trusted';
       const expected = { ruleId: 'reference', intent: verbatim };
       // ACT
-      const actual = queryPath('docs/reference/api-limits.md', config);
+      const actual = queryFrontmatter('docs/reference/api-limits.md', config);
       // ASSERT
-      expect(actual.governance).toBe(GOVERNED);
-      expect(actual.governance === GOVERNED ? actual.rule : undefined).toEqual(expected);
+      expect(actual?.rule).toEqual(expected);
+    });
+
+    it('names its own config key, never its Package name', () => {
+      // ARRANGE
+      const expected = 'frontmatter';
+      // ACT
+      const actual = queryFrontmatter('docs/reference/api-limits.md', config);
+      // ASSERT
+      expect(actual?.module).toBe(expected);
     });
 
     it('answers a frontmatter-forbidden rule with nothing else to ask', () => {
       // ARRANGE
       const expected = { frontmatter: 'forbidden' };
       // ACT
-      const actual = queryPath('index.md', config);
+      const actual = queryFrontmatter('index.md', config);
       // ASSERT
-      expect(actual.governance === GOVERNED ? actual.requirements : undefined).toEqual(expected);
+      expect(actual?.requirements).toEqual(expected);
     });
 
     it('matches the fileName sugar against a deeply nested file', () => {
+      // The sugar this Module offers and the naming Module deliberately
+      // withholds — selecting by an exact name is safe here because this Module
+      // constrains the file's CONTENTS rather than its name.
       // ARRANGE
       const expected = 'log-files';
       // ACT
-      const actual = queryPath('docs/datasets/log.md', config);
+      const actual = queryFrontmatter('docs/datasets/log.md', config);
       // ASSERT
-      expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
+      expect(actual?.rule.ruleId).toBe(expected);
     });
   });
 
   describe('failure cases', () => {
-    it('answers invisible for a path no rule selects', () => {
+    it('answers nothing for a path no rule of this Module selects', () => {
       // ARRANGE
-      const expected = INVISIBLE;
+      const unclaimed = undefined;
       // ACT
-      const actual = queryPath('README.md', config);
+      const actual = queryFrontmatter('README.md', config);
       // ASSERT
-      expect(actual.governance).toBe(expected);
+      expect(actual).toBe(unclaimed);
     });
 
-    it('answers invisible for a path excluded with no later rule to catch it', () => {
+    it('answers nothing for a path excluded with no later rule to catch it', () => {
       // `excludeFiles` removes a file from ONE rule. Nothing below claims it,
-      // so the file ends up ungoverned rather than falling through.
+      // so this Module ends up with no answer rather than falling through.
       // ARRANGE
-      const expected = INVISIBLE;
+      const unclaimed = undefined;
       // ACT
-      const actual = queryPath('docs/research/vendor/imported.md', config);
+      const actual = queryFrontmatter('docs/research/vendor/imported.md', config);
       // ASSERT
-      expect(actual.governance).toBe(expected);
+      expect(actual).toBe(unclaimed);
     });
   });
 
@@ -76,24 +88,19 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = 'provenance-exemplar';
       // ACT
-      const actual = queryPath('docs/research/provenance.md', config);
+      const actual = queryFrontmatter('docs/research/provenance.md', config);
       // ASSERT
-      expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
+      expect(actual?.rule.ruleId).toBe(expected);
     });
 
     it('strips leading decoration and still selects the same rule', () => {
-      // The expected values are written out by hand rather than taken from a
-      // second `queryPath` call: comparing two outputs of the subject would
-      // pass just as happily if both were wrong in the same way.
       // ARRANGE
       const decorated = './docs/reference/api-limits.md';
-      const normalised = 'docs/reference/api-limits.md';
       const expected = 'reference';
       // ACT
-      const actual = queryPath(decorated, config);
+      const actual = queryFrontmatter(decorated, config);
       // ASSERT
-      expect(actual.path).toBe(normalised);
-      expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
+      expect(actual?.rule.ruleId).toBe(expected);
     });
 
     it('answers about a path that does not exist', () => {
@@ -102,9 +109,9 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = 'reference';
       // ACT
-      const actual = queryPath('docs/reference/never-written.md', config);
+      const actual = queryFrontmatter('docs/reference/never-written.md', config);
       // ASSERT
-      expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
+      expect(actual?.rule.ruleId).toBe(expected);
     });
   });
 });

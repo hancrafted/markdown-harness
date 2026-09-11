@@ -434,7 +434,7 @@ describe('mh --check', () => {
   describe('success cases', () => {
     it('reproduces the expected conformance verdict and exits 1', () => {
       // ARRANGE
-      const summary = { governedFiles: 39, invalidFiles: 25, totalViolations: 29 };
+      const summary = { governedFiles: 82, invalidFiles: 52, totalViolations: 60 };
       const corpusIsWrong = 1;
       const empty = '';
       // ACT
@@ -451,6 +451,31 @@ describe('mh --check', () => {
       const paths = [
         'docs/datasets/quarterly-usage.md',
         'docs/freshness/undated.md',
+        'docs/names/archive/a-very-long-archived-document-name-that-exceeds-forty.md',
+        'docs/names/blocks/AIKB__wiki-index.md',
+        'docs/names/blocks/aikb.md',
+        'docs/names/blocks/aikb__-llm-wiki.md',
+        'docs/names/blocks/aikb__.md',
+        'docs/names/blocks/aikb__Wiki-Notes.md',
+        'docs/names/blocks/aikb__a-slug-so-long-that-it-runs-past-the-fifty-character-cap.md',
+        'docs/names/blocks/aikb__ab.md',
+        'docs/names/blocks/aikb__llm--wiki.md',
+        'docs/names/blocks/aikb__llm__wiki.md',
+        'docs/names/blocks/wiki__LLM_Wiki.md',
+        'docs/names/blocks/wiki__llm-wiki.md',
+        'docs/names/glossary/Glossary-Term.md',
+        'docs/names/glossary/a-very-long-glossary-term.md',
+        'docs/names/glossary/corpus__entry.md',
+        'docs/names/notes/diary__11-09-2026__Standup.md',
+        'docs/names/notes/note__11-09-2026__standup.md',
+        'docs/names/notes/note__2026-09-11.md',
+        'docs/names/notes/note__2026-09-11__a__b.md',
+        'docs/names/plain/Release_Notes.md',
+        'docs/names/plain/ab.md',
+        'docs/names/plain/this-name-is-much-too-long-for-the-cap.md',
+        'docs/names/reserved/changelog.md',
+        'docs/names/tickets/mh63.md',
+        'docs/names/vendor/acme-corp__q3-export.md',
         'docs/plain/blank-type.md',
         'docs/plain/broken/index.md',
         'docs/plain/broken/listed.md',
@@ -460,12 +485,14 @@ describe('mh --check', () => {
         'docs/plain/index.md',
         'docs/plain/prose-only.md',
         'docs/plain/untyped.md',
+        'docs/reference/Bad_Name.md',
         'docs/reference/draft-page.md',
         'docs/reference/legacy.md',
         'docs/research/blank-description.md',
         'docs/research/index.md',
         'docs/research/long-tag.md',
         'docs/research/overtagged.md',
+        'docs/research/provenance-broken.md',
         'docs/research/unsourced.md',
         'docs/research/untagged.md',
         'docs/skills/anonymous/SKILL.md',
@@ -482,8 +509,13 @@ describe('mh --check', () => {
       expect(actual).toEqual(paths);
     });
 
-    it('reaches all nineteen violation codes', () => {
-      // The corpus is built to reach every one.
+    it('reaches every violation code BOTH Modules define', () => {
+      // The corpus is built to reach every one: nineteen from the frontmatter
+      // Module and seven from the naming Module. The naming codes carry their
+      // Module in their spelling, so a bare `FORMAT_MISMATCH` and a
+      // `FILE_NAMES__FORMAT_MISMATCH` are different codes reaching a reader far
+      // from the envelope that scoped them — which is the whole reason the
+      // prefix exists.
       // ARRANGE
       const codes = [
         'ALL_OF_UNSATISFIED',
@@ -492,6 +524,13 @@ describe('mh --check', () => {
         'EMPTY_REQUIRED_FIELD',
         'EXACTLY_ONE_OF_MULTIPLE_PRESENT',
         'EXACTLY_ONE_OF_NONE_PRESENT',
+        'FILE_NAMES__FORMAT_MISMATCH',
+        'FILE_NAMES__PATTERN_MISMATCH',
+        'FILE_NAMES__TOO_FEW_SEGMENTS',
+        'FILE_NAMES__TOO_MANY_SEGMENTS',
+        'FILE_NAMES__VALUE_NOT_ALLOWED',
+        'FILE_NAMES__VALUE_TOO_LONG',
+        'FILE_NAMES__VALUE_TOO_SHORT',
         'FORBIDDEN_FIELD_PRESENT',
         'FORMAT_MISMATCH',
         'FRONTMATTER_FORBIDDEN',
@@ -508,8 +547,12 @@ describe('mh --check', () => {
       ];
       // ACT
       const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
-      const files = JSON.parse(run.stdout).result.files as { violations: { violation: string }[] }[];
-      const reached = files.flatMap((file) => file.violations.map((found) => found.violation));
+      const files = JSON.parse(run.stdout).result.files as {
+        modules: { violations: { violation: string }[] }[];
+      }[];
+      const reached = files.flatMap((file) =>
+        file.modules.flatMap((block) => block.violations.map((found) => found.violation)),
+      );
       // ASSERT
       expect([...new Set(reached)].sort()).toEqual(codes);
     });
@@ -520,14 +563,19 @@ describe('mh --check', () => {
       // ARRANGE
       const row = {
         path: 'docs/workflows/tagging.md',
-        ruleId: 'workflows',
-        ruleIntent: 'A workflow names itself and says when to reach for it',
-        violations: [
+        modules: [
           {
-            field: 'title',
-            value: 'Go',
-            violation: 'VALUE_TOO_SHORT',
-            requirement: { minLength: 3, maxLength: 80 },
+            module: 'frontmatter',
+            ruleId: 'workflows',
+            ruleIntent: 'A workflow names itself and says when to reach for it',
+            violations: [
+              {
+                field: 'title',
+                value: 'Go',
+                violation: 'VALUE_TOO_SHORT',
+                requirement: { minLength: 3, maxLength: 80 },
+              },
+            ],
           },
         ],
       };

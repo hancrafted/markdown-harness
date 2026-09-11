@@ -24,14 +24,27 @@ export type {
   WinningRule,
 } from './lib/assess.types.ts';
 export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';
-export type { CheckResult, CheckSummary, FileViolations } from './lib/check.types.ts';
+export type {
+  CheckResult,
+  CheckSummary,
+  FileNameFindings,
+  FileViolations,
+  FrontmatterFindings,
+  ModuleFindings,
+} from './lib/check.types.ts';
 export { isConfigError } from './lib/config-error.pure.ts';
 export type { ConfigErrorResult, ConfigFault, ConfigFaultCode } from './lib/config-error.types.ts';
+export { FILE_NAME_VIOLATION_CODES } from './lib/file-name-violation.pure.ts';
+export type { FileNameViolationCode, NameRequirement, SegmentViolation } from './lib/file-name-violation.types.ts';
 export type {
   ConstrainingRequirements,
   FieldRequirement,
+  FileNameGovernance,
+  FrontmatterGovernance,
   GovernedPath,
   InvisiblePath,
+  ModuleGovernance,
+  NameRequirements,
   NoFrontmatterRequirements,
   QueryResult,
   Requirements,

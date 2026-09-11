@@ -1,15 +1,19 @@
-// Integration suite for `--check`, at the grain a caller sees.
+// Integration suite for this Module's half of `--check`, at the grain a caller sees.
 //
 // Exercises the entry point against real files in a tmpdir, which is what makes
 // the read edge observable: the pure units above it can be handed text, but only
 // this level can show that a governed file is opened and an invisible one is not.
+//
+// The COMPOSED report — the union count, the merged per-file blocks, the
+// ordering across Modules — is asserted in `corpus-verdict/tests/`, because it
+// is that Package's answer and not this one's.
 
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { MarkdownHarnessConfig } from '../../config-contract/index.ts';
-import { checkCorpus } from '../check.ts';
+import { checkFrontmatterCorpus } from '../check.ts';
 
 /** Governs `docs/`, and deliberately nothing else, so invisibility is testable. */
 const CONFIG: MarkdownHarnessConfig = {
@@ -24,6 +28,19 @@ const CONFIG: MarkdownHarnessConfig = {
     ],
   },
 };
+
+/** The paths this Module governed, in the order it answered them. */
+function governed(root: string, files: readonly string[], config: MarkdownHarnessConfig): readonly string[] {
+  const outcome = checkFrontmatterCorpus(root, files, config);
+  return outcome.kind === 'checked' ? outcome.outcomes.map((one) => one.path) : [];
+}
+
+/** The paths this Module actually found something wrong with. */
+function failing(root: string, files: readonly string[], config: MarkdownHarnessConfig): readonly string[] {
+  const outcome = checkFrontmatterCorpus(root, files, config);
+  if (outcome.kind !== 'checked') return [];
+  return outcome.outcomes.filter((one) => one.findings.violations.length > 0).map((one) => one.path);
+}
 
 let root = '';
 
@@ -43,30 +60,29 @@ afterAll(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-describe('checkCorpus', () => {
+describe('checkFrontmatterCorpus', () => {
   describe('success cases', () => {
     it('reports the governed file that has a violation', () => {
       // ARRANGE
       const files = ['docs/typed.md', 'docs/untyped.md'];
-      const expected = { governedFiles: 2, invalidFiles: 1, totalViolations: 1 };
-      const reported = ['docs/untyped.md'];
+      const expected = ['docs/untyped.md'];
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
-      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
-      // ASSERT
-      expect(actual?.summary).toEqual(expected);
-      expect(actual?.files.map((file) => file.path)).toEqual(reported);
-    });
-
-    it('reports a conforming corpus as governed and clean', () => {
-      // ARRANGE
-      const files = ['docs/typed.md'];
-      const expected = { summary: { governedFiles: 1, invalidFiles: 0, totalViolations: 0 }, files: [] };
-      // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
-      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
+      const actual = failing(root, files, CONFIG);
       // ASSERT
       expect(actual).toEqual(expected);
+    });
+
+    it('hands back a conforming governed file too, so the composer can count it', () => {
+      // The count `--check` reports is the UNION across Modules, so this Module
+      // has to say which files it reached even where it had nothing to report.
+      // ARRANGE
+      const files = ['docs/typed.md'];
+      const reached = ['docs/typed.md'];
+      const wrong: string[] = [];
+      // ACT
+      const actual = { reached: governed(root, files, CONFIG), wrong: failing(root, files, CONFIG) };
+      // ASSERT
+      expect(actual).toEqual({ reached, wrong });
     });
   });
 
@@ -82,7 +98,7 @@ describe('checkCorpus', () => {
       const files = ['docs/typed.md', 'docs/phantom.md'];
       const refused = join(root, 'docs', 'phantom.md');
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
+      const outcome = checkFrontmatterCorpus(root, files, CONFIG);
       const actual = outcome.kind === 'unreadable' ? outcome.path : undefined;
       // ASSERT
       expect(actual).toBe(refused);
@@ -91,10 +107,9 @@ describe('checkCorpus', () => {
     it('governs nothing when the config holds no rules at all', () => {
       // ARRANGE
       const files = ['docs/untyped.md'];
-      const expected = { summary: { governedFiles: 0, invalidFiles: 0, totalViolations: 0 }, files: [] };
+      const expected: string[] = [];
       // ACT
-      const outcome = checkCorpus(root, files, {});
-      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
+      const actual = governed(root, files, {});
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -103,16 +118,15 @@ describe('checkCorpus', () => {
   describe('edge cases', () => {
     it('never opens a file no rule selects', () => {
       // `ungoverned.md` is a directory, so reading it would throw and the whole
-      // corpus would be refused. A result coming back at all is the proof that
+      // corpus would be refused. An answer coming back at all is the proof that
       // nothing read it.
       // ARRANGE
       const files = ['docs/typed.md', 'ungoverned.md'];
-      const expected = { governedFiles: 1, invalidFiles: 0, totalViolations: 0 };
+      const expected = ['docs/typed.md'];
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
-      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
+      const actual = governed(root, files, CONFIG);
       // ASSERT
-      expect(actual?.summary).toEqual(expected);
+      expect(actual).toEqual(expected);
     });
 
     it('reports paths in the shape the walker uses, not the shape it was handed', () => {
@@ -120,21 +134,19 @@ describe('checkCorpus', () => {
       const files = ['./docs/untyped.md'];
       const expected = ['docs/untyped.md'];
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
-      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
+      const actual = failing(root, files, CONFIG);
       // ASSERT
-      expect(actual?.files.map((file) => file.path)).toEqual(expected);
+      expect(actual).toEqual(expected);
     });
 
     it('keeps the order it was given rather than sorting', () => {
       // ARRANGE
-      const files = ['docs/untyped.md', 'docs/typed.md', 'docs/untyped.md'];
-      const expected = ['docs/untyped.md', 'docs/untyped.md'];
+      const files = ['docs/untyped.md', 'docs/typed.md'];
+      const expected = ['docs/untyped.md', 'docs/typed.md'];
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
-      const actual = outcome.kind === 'checked' ? outcome.result : undefined;
+      const actual = governed(root, files, CONFIG);
       // ASSERT
-      expect(actual?.files.map((file) => file.path)).toEqual(expected);
+      expect(actual).toEqual(expected);
     });
   });
 });

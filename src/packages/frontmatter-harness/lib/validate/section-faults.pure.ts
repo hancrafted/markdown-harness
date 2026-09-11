@@ -64,14 +64,20 @@ function duplicateIdFaults(rules: readonly unknown[]): readonly ConfigFault[] {
 /**
  * Every fault the `frontmatter:` section carries.
  *
- * An absent section and an empty list are the same mistake reported the same
- * way: a config naming no module governs nothing, and the Operator's fix is the
- * same sentence either way.
+ * An ABSENT section is not this Module's fault to report, and that changed when
+ * a second Module arrived. `frontmatter:` used to be the only section, so
+ * "absent" and "governs nothing" were the same statement; now a config can
+ * declare `file-names:` alone and be perfectly well formed. Whether a config
+ * declares NO Module at all is a question about the top level, so the loader
+ * asks it — this function answers only for the section it is handed.
+ *
+ * An EMPTY list is still a fault: writing the section and leaving it empty is
+ * almost always a half-finished edit.
  *
  * @param section The value written under `frontmatter:`, or `undefined` if the key was never written.
  */
 export function sectionFaults(section: unknown): readonly ConfigFault[] {
-  if (section === undefined) return [{ code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
+  if (section === undefined) return [];
   if (!isMapping(section)) return [{ code: 'CONFIG_INVALID_VALUE', location: SECTION }];
 
   const unrecognised = Object.keys(section)

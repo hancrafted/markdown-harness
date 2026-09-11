@@ -12,13 +12,23 @@ export type {
   ConstrainingPayload,
   FrontmatterConfig,
   FrontmatterRule,
-  Glob,
   MarkdownHarnessConfig,
   NoFrontmatterPayload,
-  RuleCommon,
   RulePayload,
   RuleSelector,
   UnknownKeys,
 } from './lib/config.types';
 
+export type { Glob, RuleCommon } from './lib/rule-common.types';
+
 export type { AllowedValue, FieldAddress, FieldConstraints, Format } from './lib/constraints.types';
+
+export type {
+  FileNameRule,
+  FileNamesConfig,
+  FileSubject,
+  NameAllowedValue,
+  PlainSubject,
+  SegmentConstraints,
+  SegmentedSubject,
+} from './lib/file-names.types';
