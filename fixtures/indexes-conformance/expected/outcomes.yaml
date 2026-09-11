@@ -1,0 +1,63 @@
+# The verdict for every declared directory, one entry per key in the config's
+# `directories:` mapping — the refused ones included, because those are the five
+# that have no golden file to state their outcome for them.
+#
+# This is the `indexes` half of what an `<!-- expect: VERDICT -->` marker does
+# for the frontmatter suite, and it is a separate FILE rather than a marker for
+# a measured reason: the frontmatter marker is a per-document claim about the
+# document carrying it, while an index case is a claim about what a region
+# CONTAINS, and the document causing it is never the document stating it. A
+# marker had nowhere to live. See the findings note.
+#
+# Changing a line here is a CONTRACT CHANGE, on the same terms ARCH-002 sets for
+# a changed marker: it is answered by deciding which of the two is wrong, never
+# by editing this file to agree with the code.
+#
+# `outcome` is what the generator did. `refusal` is why it did nothing at all.
+# Exactly one of the two, never both. `warnings` is a trace that changed nothing.
+
+./:
+  outcome: created # no index.md at the root, so one is made from the template
+
+docs/:
+  outcome: regenerated # both markers present; the span between them is rewritten whole
+
+docs/guides/:
+  outcome: appended # index.md exists and carries no marker, so a pair lands at end of file
+
+docs/skills/:
+  outcome: created # 0 files, 2 declared subfolders, and no index.md of its own
+
+docs/skills/legacy/:
+  outcome: created # the one-line index, taken knowingly
+
+docs/skills/anonymous/:
+  outcome: created
+
+docs/reference/:
+  outcome: healed # a lone start marker: survivor deleted, fresh pair appended
+  warnings: [REGION_MARKER_HALF_DELETED]
+
+docs/research/:
+  outcome: regenerated # four quoted markers ignored, the one real pair found
+
+docs/malformed/:
+  outcome: appended # `<!--indexes:start-->` is never recognised, so it is never a boundary
+
+docs/twice/:
+  refusal: REGION_PAIR_REPEATED # nothing is damaged, so choosing one pair would be a guess
+
+docs/unterminated/:
+  refusal: REGION_START_UNTERMINATED # never recognised, so reportable but not healable
+
+docs/refuse-bracket/:
+  refusal: ENTRY_TEXT_HOLDS_UNBALANCED_BRACKET
+  refusedAt: docs/refuse-bracket/rules.md
+
+docs/refuse-linebreak/:
+  refusal: ENTRY_TEXT_HOLDS_LINE_BREAK
+  refusedAt: docs/refuse-linebreak/multiline.md
+
+docs/refuse-marker/:
+  refusal: ENTRY_TEXT_HOLDS_REGION_MARKER
+  refusedAt: docs/refuse-marker/leaky.md

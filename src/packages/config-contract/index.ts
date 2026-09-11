@@ -12,7 +12,6 @@ export type {
   ConstrainingPayload,
   FrontmatterConfig,
   FrontmatterRule,
-  Glob,
   MarkdownHarnessConfig,
   NoFrontmatterPayload,
   RuleCommon,
@@ -22,3 +21,5 @@ export type {
 } from './lib/config.types';
 
 export type { AllowedValue, FieldAddress, FieldConstraints, Format } from './lib/constraints.types';
+export type { Glob } from './lib/glob.types';
+export type { DirectoryPath, DirectorySettings, IndexesConfig } from './lib/indexes.types';

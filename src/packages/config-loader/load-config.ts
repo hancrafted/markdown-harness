@@ -6,6 +6,7 @@
 // config fails whole rather than one fault at a time.
 
 import { validateFrontmatterSection } from '../frontmatter-harness/validate-config.ts';
+import { validateIndexesSection } from '../indexes-harness/validate-config.ts';
 import { parseConfigDocument } from './lib/config-document.pure.ts';
 import type { ConfigLoad } from './lib/config-load.types.ts';
 import { readConfigSource } from './lib/config-source.impure.ts';
@@ -23,13 +24,21 @@ export function loadConfig(location: string): ConfigLoad {
   const parsed = parseConfigDocument(source.text, location);
   if (parsed.document === undefined) return { faults: parsed.faults };
 
+  // Both Modules validate, and their faults merge with the loader's own: a
+  // config fails WHOLE rather than one fault at a time, so an Operator sees
+  // every reason at once instead of fixing the first and re-running.
   const validated = validateFrontmatterSection(parsed.document.frontmatter);
-  const faults = [...findUnrecognisedTopLevelKeys(parsed.document), ...validated.faults];
+  const indexes = validateIndexesSection(parsed.document.indexes);
+  const faults = [...findUnrecognisedTopLevelKeys(parsed.document), ...validated.faults, ...indexes.faults];
   if (validated.section === undefined || faults.length > 0) return { faults };
 
-  // ASSEMBLED, never asserted. The config is built from the one section that
-  // earned its type, so the only key this file names is the one it already
-  // recognises as a top-level key — it still learns nothing of the rule
-  // language below it.
-  return { config: { frontmatter: validated.section }, faults: [] };
+  // ASSEMBLED, never asserted. The config is built from the sections that each
+  // earned their own type, so the only keys this file names are the ones it
+  // already recognises as top-level keys — it still learns nothing of either
+  // Module's vocabulary below them.
+  //
+  // `indexes` is absent rather than empty when the key was never written, which
+  // is what lets `planIndexes` answer "governs no directory" without a second
+  // way of spelling it.
+  return { config: { frontmatter: validated.section, indexes: indexes.section }, faults: [] };
 }
