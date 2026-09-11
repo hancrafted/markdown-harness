@@ -1,50 +1,44 @@
 /**
- * One corpus's verdict, and the arithmetic over it.
+ * This Module's verdict on every governed file it read.
  *
- * The three counts are computed AT THE POINT OF RETURN, from the same array the
- * response carries, so they cannot disagree with it. They are stored rather
- * than left to the consumer because the consumer is an agent, and asking a
- * language model to sum an array to find out whether anything is wrong is
- * asking the one thing it is least reliable at.
+ * The arithmetic that used to live here has moved one tier up, to the composer
+ * that can see every Module at once. That is not a relocation of convenience:
+ * `summary.governedFiles` is the UNION across Modules, and a Module computing
+ * it from its own `sources.length` would be stating a number about a corpus it
+ * only half looked at. What is left here is the part this Module genuinely
+ * owns — which rule won each file, and what that rule found.
  *
- * There is deliberately no `invisible` count. A field holding one would be the
- * report noticing files it promised never to notice.
+ * Conforming files are kept, with an empty `violations`. The composer drops
+ * them from the report and counts them in `governedFiles`, and it can only do
+ * the second if this function hands them over.
  */
 
-import type { CheckResult, FileViolations } from '../../../response-contract/index.ts';
-import type { GovernedSource } from './check.types.ts';
+import type { FrontmatterOutcome, GovernedSource } from './check.types.ts';
 import { violationsForFile } from './file-verdict.pure.ts';
 
-/** How many findings one file contributed. */
-function countIn(file: FileViolations): number {
-  return file.violations.length;
-}
+/**
+ * This Module's own config key, carried on every block it produces.
+ *
+ * The CONFIG KEY and never the Package name: `frontmatter`, not
+ * `frontmatter-harness`. The key is the word an Operator already wrote and can
+ * grep for; the Package name is an implementation detail the response contract
+ * has no business exposing.
+ */
+const MODULE = 'frontmatter';
 
 /**
  * Judge every governed file that has been read.
  *
- * `governedFiles` is the length of the input rather than a separate tally: every
- * governed file is read, and only the ones with findings survive into `files`.
- * That makes it the one count not recoverable from `files` alone.
- *
  * @param sources Every governed file with its bytes, in walker order.
  */
-export function checkResultFor(sources: readonly GovernedSource[]): CheckResult {
-  const files = sources
-    .map((source) => ({
-      path: source.path,
+export function frontmatterOutcomes(sources: readonly GovernedSource[]): readonly FrontmatterOutcome[] {
+  return sources.map((source) => ({
+    path: source.path,
+    findings: {
+      module: MODULE,
       ruleId: source.rule.ruleId,
       ruleIntent: source.rule.intent,
       violations: violationsForFile(source.text, source.rule),
-    }))
-    .filter((file) => countIn(file) > 0);
-
-  return {
-    summary: {
-      governedFiles: sources.length,
-      invalidFiles: files.length,
-      totalViolations: files.reduce((total, file) => total + countIn(file), 0),
     },
-    files,
-  };
+  }));
 }

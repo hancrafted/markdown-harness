@@ -1,12 +1,18 @@
-// Colocated unit test for the three named formats.
+// Colocated unit test for the four named formats.
 //
 // Form only, and that means no calendar arithmetic: the datetime cases below
 // deliberately include a date that does not exist and expect it to pass. A
 // validator that reached for `Date` would fail it, and would be checking
 // something this constraint does not claim.
+//
+// Moved here from `frontmatter-harness/lib/check/value-format.test.ts` when the
+// grammars became a Package of their own, because a second Module now reads
+// them. The datetime, uri and actor cases are the same cases; `kebab-case` is
+// new, and it is the thickest block in the file on purpose — the corpus checks
+// it thinly, so every edge design-ADR work settled is stated here.
 
 import { describe, expect, it } from 'vitest';
-import { matchesFormat } from './value-format.pure';
+import { matchesFormat } from './format-grammar.pure';
 
 describe('named formats', () => {
   describe('success cases', () => {
@@ -49,6 +55,18 @@ describe('named formats', () => {
         expect(actual).toBe(wellFormed);
       },
     );
+
+    it.each(['llm-wiki', 'corpus', 'a', '0006-slug', '2026', 'aikb', 'deep-module-boundary', 'v2-migration-notes'])(
+      'accepts %s as kebab-case',
+      (value) => {
+        // ARRANGE
+        const wellFormed = true;
+        // ACT
+        const actual = matchesFormat('kebab-case', value);
+        // ASSERT
+        expect(actual).toBe(wellFormed);
+      },
+    );
   });
 
   describe('failure cases', () => {
@@ -84,6 +102,26 @@ describe('named formats', () => {
         expect(actual).toBe(wellFormed);
       },
     );
+
+    it.each([
+      'LLM-Wiki',
+      'llm_wiki',
+      'llm wiki',
+      '-llm-wiki',
+      'llm-wiki-',
+      'llm--wiki',
+      'llm.wiki',
+      'aikb__llm-wiki',
+      '',
+      '-',
+    ])('rejects %s as kebab-case', (value) => {
+      // ARRANGE
+      const wellFormed = false;
+      // ACT
+      const actual = matchesFormat('kebab-case', value);
+      // ASSERT
+      expect(actual).toBe(wellFormed);
+    });
   });
 
   describe('edge cases', () => {
@@ -125,6 +163,51 @@ describe('named formats', () => {
       expect(asSlash).toBe(reserved);
       expect(asColon).toBe(ordinary);
       expect(tool).toBe(ordinary);
+    });
+
+    it('accepts a digit in first position, because this repo would otherwise reject its own filenames', () => {
+      // The Operator's opening proposal capped and cased the slug against his
+      // own document, and was refused on measurement. This is the surviving
+      // half: `docs/design-adr/0006-module-sections-and-module-wide-defaults.md`
+      // opens with a digit run, so a kebab-case that rejected digits would
+      // reject six of this repo's own design-ADRs.
+      // ARRANGE
+      const wellFormed = true;
+      // ACT
+      const digitLed = matchesFormat('kebab-case', '0006-module-sections');
+      const digitsOnly = matchesFormat('kebab-case', '2026');
+      // ASSERT
+      expect(digitLed).toBe(wellFormed);
+      expect(digitsOnly).toBe(wellFormed);
+    });
+
+    it('rejects a doubled hyphen, so the delimiter cannot be faked by the word shape', () => {
+      // Stated because it is portable specification, and measured: 0 of 346
+      // stems in the two target corpora carry a leading, trailing or doubled
+      // hyphen, so nothing real is lost by refusing all three.
+      // ARRANGE
+      const malformed = false;
+      // ACT
+      const doubled = matchesFormat('kebab-case', 'llm--wiki');
+      const leading = matchesFormat('kebab-case', '-wiki');
+      const trailing = matchesFormat('kebab-case', 'wiki-');
+      // ASSERT
+      expect(doubled).toBe(malformed);
+      expect(leading).toBe(malformed);
+      expect(trailing).toBe(malformed);
+    });
+
+    it('rejects a name still carrying the segment delimiter, which is what keeps the two readings apart', () => {
+      // `__` is the fixed split point wherever `segments:` is declared. A
+      // segment's own value can therefore never contain one, and this is the
+      // grammar-level half of that guarantee: a segment that somehow arrived
+      // holding `__` fails its format rather than passing quietly.
+      // ARRANGE
+      const malformed = false;
+      // ACT
+      const actual = matchesFormat('kebab-case', 'aikb__llm-wiki');
+      // ASSERT
+      expect(actual).toBe(malformed);
     });
   });
 });

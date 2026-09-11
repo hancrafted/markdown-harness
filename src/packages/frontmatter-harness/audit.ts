@@ -10,10 +10,10 @@
 // than only the winner — a subset would have thrown that away upstream.
 
 import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
+import { normalisePath } from '../markdown-file-tree/normalise-path.ts';
 import type { AuditResult } from '../response-contract/index.ts';
 import { tallyRules } from './lib/audit/rule-tally.pure.ts';
 import { matchGlob } from './lib/rules/glob-match.impure.ts';
-import { normalisePath } from './lib/rules/path-shape.pure.ts';
 
 /**
  * Tally the config's ordered rule list across a corpus.

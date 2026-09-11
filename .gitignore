@@ -1,4 +1,9 @@
-node_modules/
+# No trailing slash, deliberately. `node_modules/` matches a DIRECTORY only, so a
+# `node_modules` SYMLINK — which is how an agent borrows a complete install into an
+# incompletely-installed worktree, per trap 2 — walked straight past it and was
+# committed by a `git add -A`. Without the slash this matches a file, a directory and
+# a symlink alike.
+node_modules
 .env
 coverage/
 dist/

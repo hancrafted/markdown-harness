@@ -32,5 +32,11 @@ import { sectionFaults } from './section-faults.pure.ts';
  * @param section The value written under `frontmatter:`, or `undefined` if the key was never written.
  */
 export function isFrontmatterConfig(section: unknown): section is FrontmatterConfig {
-  return sectionFaults(section).length === 0;
+  return section !== undefined && sectionFaults(section).length === 0;
+
+  // The `undefined` guard is load-bearing, not defensive. `sectionFaults` now
+  // answers `[]` for an absent section — because absence is the loader's
+  // question, not this Module's — so without the guard a config that never
+  // wrote `frontmatter:` would narrow to a `FrontmatterConfig` and every
+  // consumer would read `rules` off `undefined`.
 }

@@ -14,11 +14,11 @@
  */
 
 import type { FieldConstraints } from '../../../config-contract/index.ts';
+import { matchesFormat } from '../../../named-formats/matches-format.ts';
 import type { FieldViolation, FieldViolationCode } from '../../../response-contract/index.ts';
 import type { AddressSite, FrontmatterMapping } from './check.types.ts';
 import { resolveAddress } from './field-address.pure.ts';
 import { evidenceFor, isEmptyValue } from './field-evidence.pure.ts';
-import { matchesFormat } from './value-format.pure.ts';
 
 /** Constraints that name STRINGS, in §3.3's own table order. */
 const STRING_KEYS = ['minLength', 'maxLength', 'format', 'pattern'] as const;

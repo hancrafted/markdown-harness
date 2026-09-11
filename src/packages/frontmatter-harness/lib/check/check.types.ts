@@ -10,7 +10,7 @@
  */
 
 import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import type { CheckResult } from '../../../response-contract/index.ts';
+import type { FrontmatterFindings } from '../../../response-contract/index.ts';
 
 /** A YAML mapping, before any key of it has been read. */
 export type FrontmatterMapping = Record<string, unknown>;
@@ -115,11 +115,34 @@ export type GovernedRead =
   { kind: 'read'; sources: readonly GovernedSource[] } | UnreadableGovernedFile;
 
 /**
- * The outcome of checking one corpus.
+ * One governed file and what this Module found in it.
  *
- * `GovernedRead` one tier up: the same refusal, passed through unchanged,
- * now carrying a verdict instead of bytes.
+ * Carries the findings block even when `violations` is EMPTY, and that is the
+ * whole reason this type exists rather than the Module returning a finished
+ * `CheckResult`. A conforming governed file is invisible in a report and
+ * load-bearing in a count: `summary.governedFiles` is the union across Modules,
+ * so the composer needs to know this Module reached the file even though it had
+ * nothing to say about it. Handing back only the failures would make a clean
+ * file and an unclaimed file indistinguishable one tier up.
  */
-export type CorpusCheck =
-  /** Every governed file was read and judged. */
-  { kind: 'checked'; result: CheckResult } | UnreadableGovernedFile;
+export interface FrontmatterOutcome {
+  /** Root-relative, `/`-separated, no leading `./` or `/`. */
+  path: string;
+  /** This Module's block for the file: its winning rule, and its findings. */
+  findings: FrontmatterFindings;
+}
+
+/**
+ * The outcome of checking one corpus, for THIS MODULE ALONE.
+ *
+ * `GovernedRead` one tier up: the same refusal, passed through unchanged, now
+ * carrying verdicts instead of bytes.
+ *
+ * It stops at outcomes rather than assembling a `CheckResult`, because a
+ * `CheckResult` is a claim about every Module at once — its `summary` counts
+ * the union and its `files` merge Modules per path. A Module that built one
+ * would be answering for a Module it cannot see.
+ */
+export type FrontmatterCorpusCheck =
+  /** Every governed file read and judged. */
+  { kind: 'checked'; outcomes: readonly FrontmatterOutcome[] } | UnreadableGovernedFile;

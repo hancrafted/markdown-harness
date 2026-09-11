@@ -50,7 +50,7 @@ frontmatter:
     # is what proves first-match ordering on real files rather than asserting it.
     # Reaches every named format and both nesting depths.
     - ruleId: provenance-exemplar
-      path: [docs/research/provenance.md]
+      path: [docs/research/provenance.md, docs/research/provenance-broken.md]
       intent: The one document that records its own provenance in full
       fields:
         type:
@@ -64,7 +64,17 @@ frontmatter:
         sources: { minItems: 1 }
         # …and constraints on EVERY ENTRY of it. Different addresses, so the two
         # never share a shape.
-        sources[].id: { presence: required }
+        # `pattern` RELOCATED here from `reference.slug`, and it must land in the
+        # same change: the config-validity suite asserts every `pattern` has a
+        # sibling `intent`, and over an empty list that assertion passes while
+        # checking nothing. This regex is also better coverage than the one it
+        # replaced — no named format can express "no separators at all".
+        sources[].id:
+          presence: required
+          pattern: ^[a-z][a-z0-9]*$
+          # MANDATORY beside `pattern` — without it the regex leaks into the
+          # violation, which is the whole reason the key exists.
+          intent: A source id is one lowercase token, digits allowed, no separators
         sources[].resource: { presence: required, format: uri }
         sources[].author: { format: actor }
         sources[].last_modified: { format: datetime }
@@ -127,10 +137,11 @@ frontmatter:
             - { value: stable, intent: Safe to rely on. }
             - { value: deprecated, intent: 'Still here, no longer to be followed.' }
         slug:
-          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
-          # MANDATORY beside `pattern` — without it the regex leaks into the
-          # violation, which is the whole reason the key exists.
-          intent: Slugs are lowercase words joined by single hyphens
+          # PROMOTED from a bare `pattern` to the named format spelling the same
+          # regex. The word-shape now lives in the portable specification, where
+          # a reimplementation has something to hit, instead of in a private
+          # string that also charged this rule a mandatory sentence.
+          format: kebab-case
         draft:
           presence: forbidden
           intent: Reference material ships finished or not at all
@@ -194,3 +205,146 @@ frontmatter:
       intent: Everything under plain/ still has to say what it is
       fields:
         type: { presence: required }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# The SECOND Module. Governs file NAMES, and never opens a file.
+#
+# `file-names:` sits at the top level beside `frontmatter:` because the config's
+# top level is one key per Module and nothing else. It is not a key on a
+# frontmatter Rule: a payload key would be unreachable for frontmatter-free
+# files, and a `RuleCommon` key would make the `frontmatter:` section govern
+# what is not frontmatter.
+#
+# Precedence is PER MODULE. One file has up to one winning rule here and up to
+# one winning rule above, and neither ranks the other — there is no precedence
+# dimension between Modules, which is the refusal this whole design is built on.
+#
+# A `file:` constraint measures the STEM: the basename with its final `.md`
+# removed. `__` is the fixed delimiter and means something ONLY where
+# `segments:` is declared; under a rule with no `segments:` it is an ordinary
+# pair of characters, which `archive-stem-names` below is here to prove.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+file-names:
+  rules:
+    # ── Two segments: the worked example the whole design was priced against ───
+    # `excludeFiles` is the escape hatch for a reserved name: `index.md` falls
+    # through to the frontmatter Module's own `index-files` rule, which is how a
+    # file opts out of naming discipline without a second mechanism existing.
+    - ruleId: content-block-names
+      intent: A content block leads with its category, so a reader knows what it is before opening it
+      path: [docs/names/blocks/**/*.md]
+      excludeFiles: ['**/index.md']
+      file:
+        segments:
+          - name: category
+            intent: Which knowledge base this block belongs to
+            allowed:
+              - { value: aikb, intent: AI Knowledge Bases }
+              - { value: okf, intent: The Open Knowledge Format }
+          - name: slug
+            minLength: 3
+            maxLength: 50
+            format: kebab-case
+            # The documented home for the sentence an agent is steered by: the
+            # slug is the part a Contributor actually chooses.
+            intent: A slug is lowercase words joined by single hyphens
+
+    # ── Three segments: proves the count is not hard-coded at two ──────────────
+    - ruleId: dated-note-names
+      intent: A dated note carries its kind and its date in the name, so a directory listing sorts usefully
+      path: [docs/names/notes/**/*.md]
+      file:
+        segments:
+          - name: kind
+            allowed:
+              - { value: note }
+              - { value: memo, intent: A decision recorded for later }
+          - name: date
+            pattern: ^\d{4}-\d{2}-\d{2}$
+            intent: An ISO calendar date, no time and no offset
+          - name: slug
+            format: kebab-case
+
+    # ── One segment: the degenerate count, and where `__` must NOT appear ──────
+    - ruleId: glossary-term-names
+      intent: A glossary entry is one term and nothing else
+      path: [docs/names/glossary/**/*.md]
+      file:
+        segments:
+          - name: term
+            maxLength: 20
+            format: kebab-case
+
+    # ── No segments: the whole stem, judged as one string ──────────────────────
+    # Legal only because `segments:` is absent. Beside a segment list a
+    # whole-name cap silently disagrees with the sum of the parts', so the two
+    # are exclusive by construction rather than by convention.
+    - ruleId: plain-stem-names
+      intent: A plain page's whole name is one readable slug
+      path: [docs/names/plain/**/*.md]
+      file:
+        minLength: 3
+        maxLength: 24
+        format: kebab-case
+        intent: The whole stem is a single kebab-case slug
+
+    # ── No segments, closed set: `allowed` takes STRINGS ONLY ──────────────────
+    # A single-star glob, so it reaches direct children and no deeper. No value
+    # here may contain `__`: that is refused at load, because the check is
+    # string-only and single-spelled and therefore total.
+    - ruleId: reserved-stem-names
+      intent: Only these two documents may sit at the top of a reserved folder
+      path: [docs/names/reserved/*.md]
+      file:
+        allowed:
+          - { value: readme, intent: The folder's own introduction }
+          - { value: index, intent: The folder's enumeration }
+
+    # ── No segments, regex: the expressiveness valve ───────────────────────────
+    - ruleId: ticket-stem-names
+      intent: A ticket page is named for the ticket it tracks
+      path: [docs/names/tickets/**/*.md]
+      file:
+        pattern: ^[a-z]+-[0-9]+$
+        intent: A project prefix, a hyphen, then the ticket number
+
+    # ── No segments, length only: where `__` means NOTHING ─────────────────────
+    # The rule that proves the delimiter is scoped rather than product-wide. A
+    # stem containing `__` is unremarkable here, and so is an uppercase letter —
+    # this rule asks one question and answers only that.
+    - ruleId: archive-stem-names
+      intent: An archived page keeps whatever name it arrived with, within a length bound
+      path: [docs/names/archive/**/*.md]
+      file:
+        maxLength: 40
+
+    # ── THE DELIMITER IS DOUBLED, and this is the rule that proves it ─────────
+    # A vendor token carrying a SINGLE underscore. Under `__` the stem splits
+    # into two parts and passes; under a single `_` it would split into three and
+    # fail the count. Without this rule the two readings are indistinguishable on
+    # every other case in the suite — measured, by changing the delimiter to `_`
+    # and watching the whole suite stay green.
+    #
+    # It is also why `allowed` refuses only a DOUBLED underscore at load: a single
+    # one is an ordinary character inside a part.
+    - ruleId: vendor-export-names
+      intent: A vendor export keeps the vendor's own token, underscore and all
+      path: [docs/names/vendor/**/*.md]
+      file:
+        segments:
+          - name: vendor
+            allowed:
+              - { value: acme_corp, intent: The vendor's own spelling }
+          - name: slug
+            format: kebab-case
+
+    # ── CROSS-MODULE: paths the frontmatter Module already governs ─────────────
+    # The same file can now have a winning rule in each Module at once, which is
+    # the shape `FileViolations.modules` exists to carry. Every reference page
+    # already committed satisfies this, so adding it flips no existing verdict.
+    - ruleId: reference-page-names
+      intent: A reference page is looked up by its name, so the name is a slug
+      path: [docs/reference/**/*.md]
+      file:
+        format: kebab-case

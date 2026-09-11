@@ -11,12 +11,19 @@ import type { ConfigFault } from '../../response-contract/index.ts';
 import type { ConfigMapping } from './config-load.types.ts';
 
 /**
- * Every top-level key the config language defines.
+ * Every top-level key the config language defines, IN DECLARED ORDER.
  *
- * One entry, because one Module exists. A config naming no module governs
- * nothing, which is a fault the Module reports rather than a key this rejects.
+ * One entry per Module, and nothing else — design-ADR 0006's growth rule, which
+ * this list is the runtime spelling of. It mirrors the key order of
+ * `MarkdownHarnessConfig`, and the order is contract rather than convenience:
+ * every response that lists several Modules lists them in this sequence, so two
+ * adopters' reports cannot differ merely because they typed their configs in a
+ * different order.
+ *
+ * A config naming no module governs nothing, which is a fault the loader
+ * reports rather than a key this rejects.
  */
-const TOP_LEVEL_KEYS: readonly string[] = ['frontmatter'];
+const TOP_LEVEL_KEYS: readonly string[] = ['frontmatter', 'file-names'];
 
 /**
  * Report one fault per top-level key outside the vocabulary.
