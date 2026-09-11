@@ -21,7 +21,7 @@
  */
 
 import type { Format } from './constraints.types';
-import type { Glob, RuleCommon } from './rule-common.types';
+import type { Glob, RuleCommon } from './rule-identity.types';
 
 // ---------------------------------------------------------------------------
 // The Module's section

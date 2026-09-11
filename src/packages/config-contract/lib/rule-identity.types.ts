@@ -7,10 +7,16 @@
  * other is a cycle — one `dependency-cruiser` sees, because this repo sets
  * `tsPreCompilationDeps: true` and therefore watches type-only edges too.
  *
- * The split is honest on its own terms. A rule's identity — its name, its
+ * The split is honest on its own terms. A rule's IDENTITY — its name, its
  * reason, the paths it does not govern — is the part of the rule language that
  * belongs to no Module in particular. Each Module then adds its own selector
  * and its own payload.
+ *
+ * Named for that subject rather than for the interface it holds. `rule-common`
+ * would have read as the mechanism-grouping ARCH-004 bans by name, and the word
+ * list is there to stop exactly the drift where a file called `common` becomes
+ * wherever a shared thing was put. The interface keeps the name
+ * `RuleCommon`, which is already public surface.
  */
 
 /** A glob, matched against repo-root-relative paths. */

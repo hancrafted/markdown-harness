@@ -19,7 +19,7 @@ export type {
   UnknownKeys,
 } from './lib/config.types';
 
-export type { Glob, RuleCommon } from './lib/rule-common.types';
+export type { Glob, RuleCommon } from './lib/rule-identity.types';
 
 export type { AllowedValue, FieldAddress, FieldConstraints, Format } from './lib/constraints.types';
 

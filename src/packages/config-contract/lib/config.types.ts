@@ -15,7 +15,7 @@
 import type { AssessConditions } from './assess.types';
 import type { FieldAddress, FieldConstraints } from './constraints.types';
 import type { FileNamesConfig } from './file-names.types';
-import type { Glob, RuleCommon } from './rule-common.types';
+import type { Glob, RuleCommon } from './rule-identity.types';
 
 // ---------------------------------------------------------------------------
 // The config file
