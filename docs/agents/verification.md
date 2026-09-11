@@ -1,4 +1,4 @@
-# Verification: the gate and its twelve traps
+# Verification: the gate and its fifteen traps
 
 `npm run verify` is the gate. This page holds the traps inside it — the places where a check
 reports success without having measured anything.
@@ -40,6 +40,13 @@ empty, `knip` reported all eleven devDependency binaries unlisted, and `eslint` 
 halves of this trap do not fail together. `npm ci` inside the worktree took `node_modules/.bin` from
 absent to 32 entries and `npm run verify` to exit 0 including `knip`. An installed worktree is
 measurable; "unmeasured" is the fallback when installing is impossible, not the first move.
+
+**This trap can block a `git push`, not just confuse a diagnosis.** `.husky/pre-push` runs
+`npm run verify`, whose last step is `knip` — so an uninstalled worktree cannot push at all, and the
+refusal names five unused devDependencies rather than the install. Measured 2026-09-11: `knip` exited
+**1** in a `.worktrees/` worktree and **0** against a complete `node_modules`, on the identical tree.
+Symlinking `node_modules/.bin` alone is not enough; `knip` resolves the packages themselves, so the
+whole directory has to be there.
 
 ## 3. The ADR size budget counts characters, not bytes
 
@@ -213,3 +220,76 @@ therefore carries no information on any of them. Peel with `^{}`.
 Either half alone passes a one-sided canary. The equality case has to be built to be seen: clone to
 a scratch path, `git tag -a` at `HEAD`, and prove the peeled ref equals `HEAD` while the unpeeled
 one does not.
+
+## 13. A case-insensitive filesystem silently merges two Conformance cases
+
+macOS APFS and Windows NTFS are case-insensitive by default, so two Conformance cases whose paths
+differ **only** by case are one file. The second write wins, the first case's body is gone, and
+nothing anywhere reports it — the corpus simply enumerates fewer files than were authored, and every
+marker in it is still valid.
+
+Measured 2026-09-11 while adding the `file-names` Module's cases: 41 files written,
+**38 on disk**. `AIKB__llm-wiki.md` overwrote `aikb__llm-wiki.md`, `aikb__LLM-Wiki.md` overwrote it
+again, and `Corpus.md` overwrote `corpus.md` — so the surviving `aikb__llm-wiki.md` carried a `FAILS`
+marker and a body arguing for a name that was not its own. `touch /tmp/x-CaseProbe && ls /tmp/x-caseprobe`
+is the one-line host check.
+
+The consequence is a limit on the portable specification, not just an authoring hazard: **a
+case-only variant cannot be a Conformance case on a host the suite must check out on.** A case that
+needs to exercise case has to differ case-insensitively somewhere else in the stem, and say so in
+its own body. Related: design-ADR 0005 and issue #51, which are the same host-dependence reaching
+the glob matcher rather than the corpus.
+
+After adding or renaming cases, prove the corpus holds what was authored:
+
+```bash
+find fixtures/conformance/docs -name '*.md' | tr 'A-Z' 'a-z' | sort | uniq -d   # empty == no collisions
+find fixtures/conformance/docs -name '*.md' | wc -l                            # against the count you wrote
+```
+
+## 14. A relocated constraint takes its violation code's corpus coverage with it
+
+Moving a constraint from one field to another keeps every test green while silently emptying the set
+of documents that can fail it. The config-validity assertions still pass, the marker verdicts still
+agree, and one violation code stops being reachable by anything in the corpus.
+
+Measured 2026-09-11, promoting `kebab-case` to a named format. `pattern` moved off `reference.slug`
+and onto `sources[].id` — and both real source ids in `provenance.md` already satisfied the new
+regex, so **`PATTERN_MISMATCH` went from reachable to unreachable**: 19 frontmatter codes reached
+before the move, 18 after, `npm run verify` exiting 0 both times. The suite asserted that every
+`pattern` has a sibling `intent`, which is a claim about the config; nothing asserted that a
+`pattern` can still be **disobeyed**, which is a claim about the corpus.
+
+A relocated constraint therefore needs a document written to fail it, in the same change. The
+diagnostic is the reached-code set, never the test count:
+
+```bash
+npm run build && node dist/packages/cli/cli.js --check --root fixtures/conformance \
+  --config fixtures/conformance/valid-test-config.yaml \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); \
+      print(sorted({v['violation'] for f in d['result']['files'] for m in f['modules'] for v in m['violations']}))"
+```
+
+## 15. A corpus that cannot tell two spellings of a constant apart has not specified it
+
+A constant the implementation depends on is only pinned if some case would change verdict when it
+changes. Where every case reads the same under both spellings, the corpus says nothing about it and
+a mutation goes green.
+
+Measured 2026-09-11 on the `__` segment delimiter. Changing it to a single `_` left the **entire
+Conformance suite green**, because an empty part does not count as a part: `a__b` splits to
+`['a','b']` under `__` and to `['a','','b']` → `['a','b']` under `_`, so every two-segment name in
+the corpus read identically. The fix is one case whose parts differ between the two readings —
+`acme_corp__q3-export` is two parts under `__` and three under `_` — and it took the mutation from
+green to three failures.
+
+The general form: for each constant the specification names, ask **which case would move** if it
+changed. If the answer is none, the constant is documented and unspecified. A whole-suite mutation
+probe finds these cheaply — mutate, run, revert, and treat a green as the finding:
+
+```bash
+sed -i '' "s/const DELIMITER = '__';/const DELIMITER = '_';/" \
+  src/packages/file-names-harness/lib/check/name-stem.pure.ts
+npx vitest run src/packages/frontmatter-harness/tests/conformance.test.ts   # must go RED
+git checkout -- src/packages/file-names-harness/lib/check/name-stem.pure.ts
+```

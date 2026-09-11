@@ -58,7 +58,7 @@ Packages under `src/packages/` are deep modules, and every file carries exactly 
 
 `npm run verify` is the gate, and any check inside it can go **vacuous green** — report success over nothing. Before trusting a check that passed, break what it guards and watch it go red.
 
-Twelve measured traps live in [`docs/agents/verification.md`](./docs/agents/verification.md), numbered and cited by number from elsewhere in the repo. Each line below is a symptom only; the measurement behind it and the fix are in the doc.
+Fifteen measured traps live in [`docs/agents/verification.md`](./docs/agents/verification.md), numbered and cited by number from elsewhere in the repo. Each line below is a symptom only; the measurement behind it and the fix are in the doc.
 
 1. `archgate check` is changed-files-scoped — `total: 0` means nothing in scope changed.
 2. `verify` in an agent worktree — `knip` and `eslint` fail on the location, not the diff.
@@ -72,3 +72,6 @@ Twelve measured traps live in [`docs/agents/verification.md`](./docs/agents/veri
 10. A hook reported `wired` is not one that will run — the watcher can miss the write, and a `Read` matcher never sees `Bash cat`.
 11. Nothing under `.agents/skills/` is reached by the gate except `prettier` — no ADR glob covers it, and `eslint` configures no rule for its `.mjs`.
 12. A git ref lookup reports success over nothing — `ls-remote` exits 0 on a missing ref, and an annotated tag needs `^{}` to reach its commit.
+13. A case-insensitive filesystem merges two Conformance cases whose paths differ only by case — measured, 41 written and 38 on disk.
+14. A relocated constraint takes its violation code's corpus coverage with it, and every check stays green.
+15. A corpus that reads identically under two spellings of a constant has not specified it — mutate the constant and treat a green as the finding.
