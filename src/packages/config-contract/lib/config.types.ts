@@ -14,6 +14,8 @@
 
 import type { AssessConditions } from './assess.types';
 import type { FieldAddress, FieldConstraints } from './constraints.types';
+import type { Glob } from './glob.types';
+import type { IndexesConfig } from './indexes.types';
 
 // ---------------------------------------------------------------------------
 // The config file
@@ -42,6 +44,17 @@ export interface MarkdownHarnessConfig {
    * `NoFrontmatterPayload`.
    */
   frontmatter?: FrontmatterConfig;
+
+  /**
+   * The `indexes-harness` module's section. PROTOTYPE.
+   *
+   * The second section, and the first with no `rules:` key — see
+   * `./indexes.types`. Its arrival is what the growth rule above anticipated:
+   * the top level stays one key per Module, so gaining a section is a
+   * deliberate amendment here and in `top-level-keys.pure.ts`, never an
+   * accident.
+   */
+  indexes?: IndexesConfig;
 }
 
 /** Everything the `frontmatter-harness` module reads. */
@@ -229,6 +242,3 @@ export interface NoFrontmatterPayload {
 
 /** The only legal values of `unknownKeys`. `allowed` is also the default. */
 export type UnknownKeys = 'allowed' | 'forbidden';
-
-/** A glob, matched against repo-root-relative paths. */
-export type Glob = string;

@@ -1,0 +1,123 @@
+# indexes-test-config.yaml — the config half of the indexes Conformance suite.
+#
+# PROTOTYPE. This whole directory answers one question and is throwaway; see
+# ../../docs/workshop/prototype/index-generator/findings.md.
+#
+# A SYNTHETIC config, not this repo's. `fixtures/indexes-conformance/` IS the
+# synthetic repo root, so every path below is written relative to it. Its
+# siblings `fixtures/conformance/` (the frontmatter suite) and `fixtures/llm-wiki/`
+# (the demo tree) are separate synthetic roots and nothing here governs them.
+#
+# This config does two jobs, the same two `fixtures/conformance/` does.
+# COVERAGE: it reaches every key the `indexes:` vocabulary defines — there are
+# only three — and `src/packages/indexes-harness/tests/conformance.test.ts`
+# fails until it does. SPECIFICATION: together with `docs/` and `expected/` it
+# fixes the exact bytes the generator must write. Changing a golden file under
+# `expected/` is a contract change, not a test fix.
+#
+# There is no `rules:` key here and no first-match. Every directory is claimed
+# exactly once BY NAME, so nothing resolves. Claiming one twice is caught by
+# yaml@2.9.0 itself ("Map keys must be unique") before the harness ever loads.
+#
+# Shape reference: ../../src/packages/config-contract/lib/indexes.types.ts.
+# Decisions: https://github.com/hancrafted/markdown-harness/issues/92 and /107.
+
+# ── The frontmatter Module ───────────────────────────────────────────────────
+# Present only so this file loads through `loadConfig`, which requires a
+# `frontmatter:` section. It governs nothing this suite asserts on.
+#
+# NOTE what is NOT here: the `ruleId: index-files` / `frontmatter: forbidden`
+# rule both `fixtures/conformance/valid-test-config.yaml` and the adopter-facing
+# `starter-config.yaml` ship. Under this Module every `index.md` carries a
+# `description` its parent reads, so that rule is unsatisfiable beside this one.
+# Whether the harness should DETECT that pair is open on issue #94; this file
+# simply does not write the rule, and the prototype does not pre-empt #94.
+frontmatter:
+  rules:
+    - ruleId: documents
+      path: [docs/**/*.md]
+      intent: Every governed document says what it is for, so an index entry has something to copy
+      fields:
+        description: { presence: optional }
+
+# ── The indexes Module ───────────────────────────────────────────────────────
+indexes:
+  # Module-wide, and the ONLY Module-wide key. A scalar, so a per-directory
+  # override replaces it whole by construction — no merge semantics to design.
+  # Written explicitly even though it is the default: coverage means reaching
+  # the key, not relying on it.
+  descriptionSource: index.md
+
+  directories:
+    # ── The repo root, and the `./` spelling ─────────────────────────────────
+    # Lists README.md (the one markdown file at the root) and docs/. `expected/`
+    # holds markdown too and is absent from the list, because it is not declared.
+    ./:
+
+    # ── A bare key — null value, every default ───────────────────────────────
+    # The map of the tree. 0 files sit directly in docs/, so this index is
+    # entirely folder entries, and it lists only DECLARED children:
+    # docs/undeclared/ exists on disk with a document in it and appears nowhere.
+    docs/:
+
+    # ── A directory whose index.md exists and carries NO marker pair ─────────
+    # The pair is appended at end of file. Also the link-text chain:
+    # title -> name -> file name, and one file with no description at all.
+    docs/guides/:
+
+    # ── descriptionSource OVERRIDDEN, and the case that earns the key ────────
+    # 0 files, 2 subfolders, and those subfolders hold SKILL.md and will never
+    # hold an index.md describing themselves. Without the override every child
+    # entry here degrades to name-only.
+    docs/skills/:
+      descriptionSource: SKILL.md
+
+    # Declared children of the override. Neither declares a source of its own,
+    # so each is described by its own SKILL.md — and each publishes its own
+    # index.md, which does not exist yet and is therefore created.
+    docs/skills/legacy/: # 1 file -> a ONE-LINE index, taken knowingly
+    docs/skills/anonymous/: # SKILL.md with `name` and no `title`
+
+    # ── BOTH keys on one directory ───────────────────────────────────────────
+    # `labels.md` is a folder described by an ordinary document — not by an index
+    # and not by a SKILL.md. The folder entry still LINKS `reference/index.md`:
+    # `descriptionSource` only ever reads, and where the region is written takes
+    # no key at all.
+    #
+    # `excludeFiles` is a GLOB here rather than exact paths, and it is
+    # root-relative exactly as it is in the `frontmatter:` Module. Because the
+    # key is non-empty, the region gains one trailing disclosure comment.
+    docs/reference/:
+      descriptionSource: labels.md
+      excludeFiles: [docs/reference/draft-*.md]
+
+    # ── Markers quoted inside a fenced code block ────────────────────────────
+    # The file holds four marker literals in a fence plus one real pair. A byte
+    # scan finds six boundaries here; a block scan finds two.
+    docs/research/:
+
+    # ── A damaged marker that is not ours to delete ──────────────────────────
+    # `<!--indexes:start-->` — different bytes, so never recognised. It is left
+    # untouched and a fresh pair is appended beneath it.
+    docs/malformed/:
+
+    # ── Two well-formed pairs in one file ────────────────────────────────────
+    # Refused. Nothing is damaged, so healing does not apply, and choosing one
+    # pair would be a guess about intent.
+    docs/twice/:
+
+    # ── An unterminated `<!-- indexes:start` ─────────────────────────────────
+    # Never matches, so it can be reported but not healed.
+    docs/unterminated/:
+
+    # ── The three refusals, one directory each ───────────────────────────────
+    # Each aborts its own directory's generation and writes nothing. None of the
+    # three has an index.md, so none of them leaks into docs/index.md either.
+    docs/refuse-bracket/: # link text carrying an unbalanced `]`
+    docs/refuse-linebreak/: # a parsed description holding a line break
+    docs/refuse-marker/: # a parsed description holding a marker literal
+# ── NOT declared, deliberately ───────────────────────────────────────────────
+# docs/undeclared/ exists on disk with one document and appears NOWHERE — not in
+# docs/index.md, and with no index of its own. Nothing implicit is ever indexed.
+# This is the live proof that `Governance is opt-in by path` holds for
+# generation and not only for checking.

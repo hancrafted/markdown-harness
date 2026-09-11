@@ -39,6 +39,7 @@
     "lint:boundaries": "depcruise src",
     "test": "vitest run",
     "test:watch": "vitest watch",
+    "indexes:plan": "node src/packages/indexes-harness/prototype-cli.ts",
     "knip": "knip",
     "prepare": "husky",
     "verify": "archgate check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && npm run build && vitest run && knip",

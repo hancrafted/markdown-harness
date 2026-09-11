@@ -22,3 +22,18 @@ docs/workshop/**/raw.md
 # list. Formatting would repair the exact defects they exist to present: prettier
 # reads a lone `---` as a thematic break and inserts a blank line after it.
 fixtures/conformance/docs/plain/broken/**
+
+# The indexes suite's golden files: the exact bytes the generator must write,
+# byte-for-byte, including the one case that is deliberately NOT a Prettier
+# fixed point (the healed file keeps the blank line its deleted marker left
+# behind). Formatting these would silently move the contract they are, and the
+# suite would then assert prettier's opinion rather than the generator's output.
+# The fixed-point property is checked IN the suite instead, against prettier's
+# own API, so it is measured rather than assumed.
+fixtures/indexes-conformance/expected/**
+
+# One indexes Conformance case whose marker is deliberately unterminated. Per
+# CommonMark that opens an HTML block running to the end of the document, so
+# prettier reformats the rest of the file as raw HTML and destroys the exact
+# defect the case exists to present. Its sibling `note.md` stays governed.
+fixtures/indexes-conformance/docs/unterminated/index.md

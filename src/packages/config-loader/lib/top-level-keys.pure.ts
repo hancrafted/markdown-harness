@@ -13,10 +13,15 @@ import type { ConfigMapping } from './config-load.types.ts';
 /**
  * Every top-level key the config language defines.
  *
- * One entry, because one Module exists. A config naming no module governs
+ * Two entries, because two Modules exist. A config naming no module governs
  * nothing, which is a fault the Module reports rather than a key this rejects.
+ *
+ * `indexes` is PROTOTYPE surface and the second Module ever to claim a key. It
+ * is listed here and nowhere else in this Package: the loader learns a Module's
+ * NAME and never its vocabulary, which is what keeps a third Module from
+ * meaning a rewrite of anything below this line.
  */
-const TOP_LEVEL_KEYS: readonly string[] = ['frontmatter'];
+const TOP_LEVEL_KEYS: readonly string[] = ['frontmatter', 'indexes'];
 
 /**
  * Report one fault per top-level key outside the vocabulary.
