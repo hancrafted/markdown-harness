@@ -2,6 +2,12 @@
 
 `CLAUDE.md` is a symlink to this file. Edit `AGENTS.md`.
 
+## Reporting back
+
+Answers are notes, not prose. Drop articles, copulas and hedges; keep nouns, numbers and paths — `verify green; 3 files changed; ARCH-004 warning on render.pure.ts` beats a sentence saying the same. Grammar is the first thing to spend when an answer gets long.
+
+This governs what you say back in chat. Documents, commit messages and issue bodies stay in full sentences.
+
 ## Naming
 
 Two things in play are called harnesses, and the industry calls a Host harness a harness too. Always qualify:
@@ -40,7 +46,7 @@ The five canonical triage roles use their default label strings: `needs-triage`,
 
 ### Grilling rounds
 
-Every grilling round — `/grill-me`, `/grill-with-docs`, or the grilling Wayfinder runs while charting a map or resolving a `wayfinder:grilling` ticket — uses this repo's round format, which overrides the grilling skill's own. See `docs/agents/grilling-format.md`.
+Every grilling round — `/grill-me`, `/grill-with-docs`, or the grilling Wayfinder runs while charting a map or resolving a `wayfinder:grilling` ticket — uses this repo's round format, which overrides the grilling skill's own. See `docs/agents/grilling-format.md`. A spoken session overrides that format in turn; see `docs/agents/grilling-voice.md`.
 
 ### Domain docs
 
