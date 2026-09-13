@@ -6,12 +6,16 @@ stale_after: 2026-09-08T00:00:00Z
 # markdown-harness
 
 Reads one config, checks every governed markdown file, and answers "what governs this path?"
-for an agent about to write one. `frontmatter-harness` is the first module; OKF ships as a
-preset config rather than as behaviour.
+for an agent about to write one.
 
 Glossary only. Definitions live here; the mechanics of where each record lives and who
 writes it live in `docs/agents/domain.md`, and the promise and the tenets live in
 `docs/vision/`.
+
+An entry carries a name, a meaning and its bans — never a count, a measurement, or a claim
+about what is on disk. Those belong to the artifact that already holds them, and an entry
+reaches that artifact by pointer rather than restating it. A glossary that repeats a number
+is a glossary that will be wrong about it.
 
 Every `_Avoid_` line is scoped to the entry that carries it: it reads _don't use this word
 **for this term**_, never _don't use this word_. `check` is avoided as a name for an **ADR
@@ -53,12 +57,8 @@ means the config kind below.
 _Avoid_ as a name for this: Rule (unqualified), check, lint, validator
 
 **Briefing**:
-The per-ADR metadata `archgate review-context` emits — `id`, `title`, `domain`, `files`,
-`rules`, and no prose at all without `--verbose`. It is **not** how an ADR reaches an agent:
-Claude Code's `.claude/rules/` symlink loads the full ADR body, uncapped, on Read. Under
-`--verbose` it truncates `decision` and `dosAndDonts` at 2000 characters behind an `adr://`
-pointer nothing resolves, which makes it a reporting surface rather than a context-loading
-one.
+The per-ADR metadata `archgate review-context` emits — enough to judge whether an ADR applies,
+never the ADR's own prose. A reporting surface, **not** how an ADR reaches an agent.
 _Avoid_ as a name for this: summary, digest, condensed ADR
 
 ### The product
@@ -94,20 +94,16 @@ _Avoid_ as a name for this: LRM-wiki, wiki (unqualified), vault
 
 **config contract**:
 The shape of the config file, as type declarations only: the config language, and the Rules and
-Constraints it admits. It lives in the `config-contract` Package and exports no runtime value.
-It is the **portable** half of the product — adopters and any reimplementation receive it and never
-receive `.archgate/`, which is why an ADR must not hold it. **Core** reads a config against it.
+Constraints it admits. It is the **portable** half of the product — adopters and any
+reimplementation receive it, which is why an ADR must not hold it.
 _Avoid_ as a name for this: schema, config types, the config API, the contract (unqualified — this
 repo also has Interface-level contracts, and design-ADR 0002 turns on the distinction)
 
 **response contract**:
 The shape of everything `mh` writes to stdout: one envelope per command, discriminated on
-`command`, plus the result shapes each envelope carries. It lives in the `response-contract`
-Package. This is what `docs/vision/architecture.md` calls **the report format**; the Package is
-named for the frozen type names — `QueryResponse`, `CheckResponse`, `AuditResponse` — rather than
-for the prose, so the phrase is bound here instead of either side being renamed. Portable on the
-same terms as the config contract, and it stores no prose of ours: a code, the value found and the
-Operator's verbatim `intent`, never a sentence this repo wrote.
+`command`, plus the result shapes each envelope carries. What `docs/vision/architecture.md` calls
+**the report format** — the two names are bound here rather than either side being renamed.
+Portable on the same terms as the config contract, and it carries no sentence this repo wrote.
 _Avoid_ as a name for this: report contract (as a Package name), output schema,
 the response type (unqualified)
 
@@ -156,24 +152,11 @@ _Avoid_ as a name for this: expired, out of date, old, rotten
 ### How the code is written
 
 **Package**:
-One folder under `src/packages/`, flat — a Package may not contain another. Its **root files**
-are its entry points and are public; everything in a subfolder is private. A Package is a deep
-module in the `codebase-design` sense. It is **not** a Module: a Module is a checking domain
-and a Package is a unit of code, and neither implies the other.
-It is also **not** an npm package: no `package.json` sits below the repo root and the root
-one declares no workspaces, so no Package is installable or versioned on its own. That much is
-unchanged, but the disclaimer was cheap while nothing was published and is not any more — three
-senses of the word are now live at once, and denying one of them is no longer enough:
-
-| written                  | means                                                                         |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| **Package**, capitalised | one folder under `src/packages/`, and only ever this                          |
-| the published package    | the npm package `@hancrafted/markdown-harness`, which the whole repo produces |
-| `markdown-harness`       | the product — see its own entry above                                         |
-
-Qualify whenever more than one could be meant. The npm sense is what
-`docs/design-adr/0004-compiled-entry-and-bounded-tarball.md` calls the artefact, and it contains
-every Package at once rather than corresponding to any.
+One folder under `src/packages/`, capitalised, and a deep module in the `codebase-design` sense.
+Three senses of the word are live at once, so qualify whenever more than one could be read: this
+one; the published package `@hancrafted/markdown-harness`, which the whole repo produces; and the
+product `markdown-harness`, which has its own entry above. A Package is also **not** a Module — a
+Module is a checking domain, a Package is a unit of code, and neither implies the other.
 _Avoid_ as a name for this: module (collides in both directions), library, workspace, folder; bare
 "package" where the npm sense and this one could both be read
 
@@ -201,7 +184,7 @@ model, schema, DTO
 
 **success cases**:
 The block of a suite that exercises the subject as its Interface intends, on input a caller is
-supposed to send. One of exactly three blocks every suite under `src/` splits into.
+supposed to send.
 _Avoid_ as a name for this: happy path, golden path, main flow, positive test
 
 **failure cases**:
@@ -231,10 +214,9 @@ changes normative content in place under a fixed label and publishes no tags or 
 _Avoid_ as a name for this: the spec, the standard, OKF v0.2 (as an identifier)
 
 **Pinned revision**:
-The exact OKF text the OKF Preset's Rules were derived from, vendored byte-identical at
-`docs/okf/SPEC-v0.2.md`. That file _is_ the pin: git content-addresses it, so nothing verifies
-it at build time and the `sha256` recorded in `docs/okf/README.md` is provenance rather than a
-gate.
+The exact OKF text the OKF Preset's Rules were derived from, vendored byte-identical under
+`docs/okf/`. That vendored file _is_ the pin: git content-addresses it, so nothing has to
+verify it.
 _Avoid_ as a name for this: the spec version, v0.2, the snapshot
 
 ### What `markdown-harness` checks
@@ -266,12 +248,11 @@ _Avoid_ as a name for this: the types list, enum, taxonomy;
 `*.types.ts` or "types file" as a synonym
 
 **Floor** — _retired, defined only so the term resolves_:
-The requirements an earlier design enforced on **every** Governed file, unconditionally, with
-no config key to switch off, above a repo-wide `types:` declaration it called the ceiling.
-Nothing here implements it: all five of its check families — `type` presence, `type`
-membership, `generated.by`, `sources[].resource`, Actor form, and timestamp format — are
-ordinary per-Rule Constraints now. It appears throughout `docs/research/` and the predecessor
-repo, so a reader will meet it; treat every such mention as history.
+The requirements an earlier design enforced on **every** Governed file, unconditionally and
+with no config key to switch off, above a repo-wide `types:` declaration it called the ceiling.
+Nothing here implements it — every check it named is an ordinary per-Rule Constraint now — but
+older material still uses the word, so a reader will meet it; treat every such mention as
+history.
 _Avoid_ as a name for anything this repo currently does: Floor, the ceiling, unrelaxable
 
 **Actor**:
@@ -283,10 +264,9 @@ _Avoid_ as a name for this: author, owner, signer
 ### What is promised
 
 **Guarantee**:
-What `markdown-harness` promises, as distinct from the trust it aims at. Four tiers of
-decreasing strength — Conformance, Signal, Detection, Reviewability — set out in
-`docs/vision/product.md`. Full trust is explicitly not offered, and only the first tier is
-unconditional.
+What `markdown-harness` promises, as distinct from the trust it aims at. The tiers, their
+order and what each is worth are set out in `docs/vision/product.md`; full trust is not among
+them.
 _Avoid_ as a name for this: Floor, baseline, unrelaxable, promise, SLA
 
 **Signal**:
@@ -308,15 +288,15 @@ the Signal lives in the file.
 _Avoid_ as a name for this: read path, retrieval, query time
 
 **Loosening**:
-A config change that widens what passes. Made visible by diffing a config against its git
-base, which is why each Constraint key has to declare which direction is looser; a changed
-`pattern` is undecidable and always flags.
+A config change that widens what passes, judged against the config's own git base rather than
+against any absolute standard. What it would take to make one visible is the Detection tier's
+business in `docs/vision/product.md`.
 _Avoid_ as a name for this: relaxation, weakening, regression, tamper
 
 ### The Conformance suite
 
 **Conformance suite**:
-`fixtures/conformance/valid-test-config.yaml` plus its 14 Conformance case documents. Its
+The config under `fixtures/conformance/` together with every Conformance case it governs. Its
 coverage half — every config-vocabulary key exercised somewhere — is scaffolding a future
 config-schema validator will replace; its specification half, the config together with each
 document's stated expected outcome, is permanent: the contract for what `markdown-harness`
@@ -324,7 +304,7 @@ must report against a real-shaped file.
 _Avoid_ as a name for this: fixture corpus (retired for this artifact), test suite
 
 **Conformance case**:
-One document under `fixtures/conformance/docs/`, carrying a machine-readable
+One document in the Conformance suite, carrying a machine-readable
 `<!-- expect: -->` marker that names the verdict — PASSES, FAILS, or UNGOVERNED — its prose
 already argues.
 _Avoid_ as a name for this: fixture, test file, example doc
@@ -335,16 +315,15 @@ Conformance case is also test data, but not every fixture is a Conformance case.
 _Avoid_ as a name for this: sample data, mock, stub, dummy data
 
 **corpus**:
-An adopter's own tree of real documents, never this repo's own synthetic material.
-`fixtures/conformance/` and `fixtures/llm-wiki/` are synthetic repo roots, not corpora.
+An adopter's own tree of real documents, never this repo's own synthetic material: nothing
+under `fixtures/` is a corpus, whatever it is named.
 _Avoid_ as a name for this: fixture corpus, test corpus
 
 ### Dependency governance
 
 **Admission bar**:
-The four network signals — GitHub stars, contributor breadth, npm weekly downloads, and a
-recent release or maintainer reply — a candidate dependency is screened against before a
-human may approve adding it. It screens candidates _out_; it never admits one, and clearing
-every signal is not a substitute for the human decision. Every signal is a live network fact,
-so applying the bar is a review duty, never a mechanical check.
+The network signals a candidate dependency is screened against before a human may approve
+adding it; `ARCH-001` names them. It screens candidates _out_ and never admits one, and every
+signal is a live network fact, so applying the bar is a review duty rather than a mechanical
+check.
 _Avoid_ as a name for this: dependency policy, vetting checklist, approval gate
