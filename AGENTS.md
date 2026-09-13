@@ -48,6 +48,10 @@ The five canonical triage roles use their default label strings: `needs-triage`,
 
 Every grilling round — `/grill-me`, `/grill-with-docs`, or the grilling Wayfinder runs while charting a map or resolving a `wayfinder:grilling` ticket — uses this repo's round format, which overrides the grilling skill's own. See `docs/agents/grilling-format.md`. A spoken session overrides that format in turn; see `docs/agents/grilling-voice.md`.
 
+### Map branches
+
+Wayfinder work reaches `main` once, through a `map/<number>-<slug>` branch: the charting session cuts it and opens its draft PR, every later session bases its PR on it rather than on `main`, and a ticket closes by hand because a merge off the default branch closes nothing. See `docs/agents/wayfinder-branches.md`.
+
 ### Domain docs
 
 Single-context: one `CONTEXT.md` at the repo root, design-ADRs in `docs/design-adr/`. See `docs/agents/domain.md`.
