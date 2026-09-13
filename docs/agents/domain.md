@@ -75,7 +75,9 @@ This is a single-context repo:
 
 ## Use the glossary's vocabulary
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
+When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary avoids.
+
+**A ban is scoped to the sense that bans it.** An entry's `_Avoid_` line reads _don't use this word **for this term**_ — never _don't use this word_. `check` is avoided as a name for an **ADR rule**, so `mh --check`, `check.ts` and `CheckResponse` are untouched by it; `now` is avoided as a name for the **Assessment instant**, not in a test constant. A word collides only when it is standing in for the entry that bans it, so judge the referent, not the spelling. Two entries may avoid the same word for different senses, and neither ban reaches the other's.
 
 If the concept you need isn't in the glossary yet, that's a signal: either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/domain-modeling`).
 
