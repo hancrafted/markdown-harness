@@ -338,13 +338,3 @@ _Avoid_ as a name for this: sample data, mock, stub, dummy data
 An adopter's own tree of real documents, never this repo's own synthetic material.
 `fixtures/conformance/` and `fixtures/llm-wiki/` are synthetic repo roots, not corpora.
 _Avoid_ as a name for this: fixture corpus, test corpus
-
-### Dependency governance
-
-**Admission bar**:
-The four network signals — GitHub stars, contributor breadth, npm weekly downloads, and a
-recent release or maintainer reply — a candidate dependency is screened against before a
-human may approve adding it. It screens candidates _out_; it never admits one, and clearing
-every signal is not a substitute for the human decision. Every signal is a live network fact,
-so applying the bar is a review duty, never a mechanical check.
-_Avoid_ as a name for this: dependency policy, vetting checklist, approval gate
