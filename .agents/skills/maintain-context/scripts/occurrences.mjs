@@ -11,11 +11,11 @@
 // and a grep only sees spelling.
 //
 // Usage:
-//   node docs/wip/occurrences.mjs --list
-//   node docs/wip/occurrences.mjs --section "The product"
-//   node docs/wip/occurrences.mjs --entry Module
-//   node docs/wip/occurrences.mjs --entry Rule --pattern '\*\*Rule\*\*|`Rule`'
-//   node docs/wip/occurrences.mjs                       # every entry
+//   node <skill>/scripts/occurrences.mjs --list
+//   node <skill>/scripts/occurrences.mjs --section "The product"
+//   node <skill>/scripts/occurrences.mjs --entry Module
+//   node <skill>/scripts/occurrences.mjs --entry Rule --pattern '\*\*Rule\*\*|`Rule`'
+//   node <skill>/scripts/occurrences.mjs                       # every entry
 // Options: --root <dir> (default: repo root) · --samples <n> (default 3) · --ignore-case
 
 import { execFileSync } from 'node:child_process';

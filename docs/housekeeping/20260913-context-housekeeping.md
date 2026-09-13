@@ -7,7 +7,7 @@ type: housekeeping
 > Snapshot of the 2026-09-13 pass. Every count below was true when it was taken and is
 > **not a claim about the present**. Re-measure before relying on any number here.
 
-Ruled by: `human:han`. Measured by: `docs/wip/occurrences.mjs`.
+Ruled by: `human:han`. Measured by: `.agents/skills/maintain-context/scripts/occurrences.mjs`.
 Runs alongside `#137 Map: CONTEXT.md housekeeping — a glossary that carries no facts, bans
 by sense, and declares its own freshness`.
 
@@ -15,11 +15,12 @@ by sense, and declares its own freshness`.
 
     workflow   section read whole → dossier per entry (table + balanced cases +
                second-order questions in grilling format) → han rules in chat → row written
-    measure    node docs/wip/occurrences.mjs --section "<name>"
+    measure    node .agents/skills/maintain-context/scripts/occurrences.mjs --section "<name>"
                defaults: case-insensitive, plural-tolerant, loose prose quarantined
                overrides recorded per row; none used yet
     scope      this pass covers ~1/3 of the file by hand; the rest runs under the
-               maintain-context skill built from docs/wip/maintain-context-process.md
+               `maintain-context` skill, now installed at
+               .agents/skills/maintain-context/
     landing    edits applied per entry, staged at each section boundary, never committed
                by the agent
     stamp      blocked until every in-scope entry carries a verdict, reopens are closed,
