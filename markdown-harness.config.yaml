@@ -11,7 +11,10 @@ frontmatter:
     # ── 1. The glossary — narrowest, and one of two rules a clock reads ───────
     - ruleId: context
       path: [CONTEXT.md]
-      intent: 'Governs the central glossary document every agent reads to establish a shared taxonomy (ubiquitous language)'
+      intent: >-
+        Governs the central glossary document every agent reads to establish a shared taxonomy
+        (ubiquitous language). Every entry points at the artifact that owns a fact rather than
+        copying it, because a copy here goes stale the commit after it is written.
       assess:
         stale: >-
           Treat every term here as unverified. If a human is in the loop, ask whether to verify
