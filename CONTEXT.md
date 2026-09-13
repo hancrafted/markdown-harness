@@ -8,6 +8,12 @@ Glossary only. Definitions live here; the mechanics of where each record lives a
 writes it live in `docs/agents/domain.md`, and the promise and the tenets live in
 `docs/vision/`.
 
+Every `_Avoid_` line is scoped to the entry that carries it: it reads _don't use this word
+**for this term**_, never _don't use this word_. `check` is avoided as a name for an **ADR
+rule**, so `mh --check` and `CheckResponse` are untouched by it. Two entries may avoid the same
+spelling for different senses, and neither ban reaches the other's. Judge the referent, not the
+spelling.
+
 ## Language
 
 ### Decision records
@@ -20,25 +26,26 @@ directory, and never from the presence of `type` itself: both kinds carry it.
 **ADR**:
 A governance decision record owned by Archgate, opening `type: adr`. It constrains how
 `markdown-harness` is built, never what an adopter's files must look like.
-_Avoid_: architecture decision record; bare "decision record" when either kind could be meant
+_Avoid_ as a name for this: architecture decision record;
+bare "decision record" when either kind could be meant
 
 **ADR Discipline**:
 One universal constraint on how `markdown-harness` is written, at an altitude no future
 feature can invalidate. An ADR carries one or more, grouped **by the glob they need** rather
 than by topic. The altitude test decides membership: if the next feature could make the
 record wrong, it was written at the wrong altitude and belongs in a design-ADR.
-_Avoid_: rule, policy, standard, guideline, best practice
+_Avoid_ as a name for this: rule, policy, standard, guideline, best practice
 
 **design-ADR**:
 A design decision record owned by the Matt Pocock engineering skills, opening
 `type: design-adr`. It records reasoning; it constrains nothing.
-_Avoid_: ADR, design ADR (unhyphenated), Pocock ADR
+_Avoid_ as a name for this: ADR, design ADR (unhyphenated), Pocock ADR
 
 **ADR rule**:
 A deterministic check in an ADR's companion `.rules.ts`, tied to the numbered decision it
 enforces by a `📜 Rule:` marker in the ADR body. Always qualified, because unqualified "Rule"
 means the config kind below.
-_Avoid_: Rule (unqualified), check, lint, validator
+_Avoid_ as a name for this: Rule (unqualified), check, lint, validator
 
 **Briefing**:
 The per-ADR metadata `archgate review-context` emits — `id`, `title`, `domain`, `files`,
@@ -47,7 +54,7 @@ Claude Code's `.claude/rules/` symlink loads the full ADR body, uncapped, on Rea
 `--verbose` it truncates `decision` and `dosAndDonts` at 2000 characters behind an `adr://`
 pointer nothing resolves, which makes it a reporting surface rather than a context-loading
 one.
-_Avoid_: summary, digest, condensed ADR
+_Avoid_ as a name for this: summary, digest, condensed ADR
 
 ### The product
 
@@ -55,13 +62,13 @@ _Avoid_: summary, digest, condensed ADR
 The package an adopter installs, written in full every time. Every decision here is
 constrained by having to work against a repo it has never seen, from a dependency the adopter
 can upgrade — not by having to survive being copied.
-_Avoid_: the harness, framework, tool, plugin, template
+_Avoid_ as a name for this: the harness, framework, tool, plugin, template
 
 **Host harness**:
 The agentic CLI that runs the agent and owns the model, the tools, the permissions and the
 session — Claude Code, Codex, Antigravity. It carries governance of its own, so
 `markdown-harness` contributes steering to it rather than replacing it.
-_Avoid_: the harness, agent host, agent runtime, wrapper, IDE
+_Avoid_ as a name for this: the harness, agent host, agent runtime, wrapper, IDE
 
 **Operator**:
 The person who installs `markdown-harness`, writes the config, and decides what a corpus must
@@ -78,15 +85,15 @@ _Avoid_: user, author, end user, consumer
 A knowledge base whose primary reader is a model rather than a person, which inverts who needs
 the plain-language rendering: the model reads the precise version and the human needs the
 translation.
-_Avoid_: LRM-wiki, wiki (unqualified), vault
+_Avoid_ as a name for this: LRM-wiki, wiki (unqualified), vault
 
 **config contract**:
 The shape of the config file, as type declarations only: the config language, and the Rules and
 Constraints it admits. It lives in the `config-contract` Package and exports no runtime value.
 It is the **portable** half of the product — adopters and any reimplementation receive it and never
 receive `.archgate/`, which is why an ADR must not hold it. **Core** reads a config against it.
-_Avoid_: schema, config types, the config API, the contract (unqualified — this repo also has
-Interface-level contracts, and design-ADR 0002 turns on the distinction)
+_Avoid_ as a name for this: schema, config types, the config API, the contract (unqualified — this
+repo also has Interface-level contracts, and design-ADR 0002 turns on the distinction)
 
 **response contract**:
 The shape of everything `mh` writes to stdout: one envelope per command, discriminated on
@@ -96,7 +103,8 @@ named for the frozen type names — `QueryResponse`, `CheckResponse`, `AuditResp
 for the prose, so the phrase is bound here instead of either side being renamed. Portable on the
 same terms as the config contract, and it stores no prose of ours: a code, the value found and the
 Operator's verbatim `intent`, never a sentence this repo wrote.
-_Avoid_: report contract (as a Package name), output schema, the response type (unqualified)
+_Avoid_ as a name for this: report contract (as a Package name), output schema,
+the response type (unqualified)
 
 **Core**:
 The parts that know nothing about markdown frontmatter: config reading, path resolution, the
@@ -120,25 +128,25 @@ _Avoid_: default, built-in, profile, ruleset
 Asking the config what governs a path **before** the file is written, rather than checking it
 after. It reads the config and never opens the file, which is what separates it from an
 Assessment.
-_Avoid_: lookup, dry run, preflight
+_Avoid_ as a name for this: lookup, dry run, preflight
 
 **Assessment**:
 What one document's own frontmatter says about how much of it to believe, judged against a
 stated instant rather than against whatever the clock reads. A Steering query asks the config
 about a path; an Assessment asks the file about itself.
-_Avoid_: steer, trust check, staleness check, verification, health, score
+_Avoid_ as a name for this: steer, trust check, staleness check, verification, health, score
 
 **Assessment instant**:
 The moment an Assessment is judged against. Supplied by the caller and echoed in the answer,
 never read from a clock without being stated, so one tree and one instant always give one
 answer.
-_Avoid_: now, current time, today, the clock
+_Avoid_ as a name for this: now, current time, today, the clock
 
 **Stale**:
 A Governed file whose `stale_after` value falls at or before the Assessment instant. OKF's
 word and OKF's test, adopted rather than invented. A file carrying no `stale_after` is not
 fresh — it cannot be assessed at all.
-_Avoid_: expired, out of date, old, rotten
+_Avoid_ as a name for this: expired, out of date, old, rotten
 
 ### How the code is written
 
@@ -161,34 +169,35 @@ senses of the word are now live at once, and denying one of them is no longer en
 Qualify whenever more than one could be meant. The npm sense is what
 `docs/design-adr/0004-compiled-entry-and-bounded-tarball.md` calls the artefact, and it contains
 every Package at once rather than corresponding to any.
-_Avoid_: module (collides in both directions), library, workspace, folder; bare "package" where the
-npm sense and this one could both be read
+_Avoid_ as a name for this: module (collides in both directions), library, workspace, folder; bare
+"package" where the npm sense and this one could both be read
 
 **classifier**:
 The single token a file carries to declare its discipline — by **position** at a Package root
 (kebab-case, no suffix, no dot) or by **suffix** below one (`.pure`, `.impure`, `.types`,
 `.test`). Exactly one per file. A file that carries none and holds no entry-point position is
 ungoverned, which is the failure the vocabulary exists to close.
-_Avoid_: tag, marker, kind, category, and **type** (collides with both the frontmatter field
-and the TypeScript construct)
+_Avoid_ as a name for this: tag, marker, kind, category, and **type** (collides with both the
+frontmatter field and the TypeScript construct)
 
 **Interface**:
 Kept from `codebase-design`: everything a caller must know to use a Package correctly — the
 type signature, and also invariants, ordering constraints, error modes, required configuration
 and performance characteristics.
-_Avoid_: **API** — banned outright — and signature. Both are too narrow: they name only the
-type-level surface, which is the part an Interface is precisely not reducible to
+_Avoid_ as a name for this: API, signature. Both are too narrow: they name only the type-level
+surface, which is the part an Interface is precisely not reducible to
 
 **type declaration**:
 The TypeScript construct: an `interface`, a `type` alias, or an `enum`. Exported ones live in a
 `*.types.ts` file; a private local one beside its only consumer is better **Locality**, not a
 violation. Lowercase, because it names a language construct rather than a domain concept.
-_Avoid_: type (unqualified — collides with the frontmatter field), model, schema, DTO
+_Avoid_ as a name for this: type (unqualified — collides with the frontmatter field),
+model, schema, DTO
 
 **success cases**:
 The block of a suite that exercises the subject as its Interface intends, on input a caller is
 supposed to send. One of exactly three blocks every suite under `src/` splits into.
-_Avoid_: happy path, golden path, main flow, positive test
+_Avoid_ as a name for this: happy path, golden path, main flow, positive test
 
 **failure cases**:
 The block that **asserts what must not happen**. Two readings compete — input the caller should
@@ -196,14 +205,14 @@ not have sent, and a property that must be absent from an otherwise valid result
 is deliberately wide enough for both, because an author handed an undefined term writes whichever
 is cheaper. A subject with no error case still has failure cases; finding them is usually finding a
 decision nobody made.
-_Avoid_: sad path and unhappy path (both name a mood, not what the block asserts), negative test,
-error case (both narrow it to throwing)
+_Avoid_ as a name for this: sad path and unhappy path (both name a mood, not what the block
+asserts), negative test, error case (both narrow it to throwing)
 
 **edge cases**:
 The block that pins a boundary of the subject's domain: the first or last admissible value, an
 empty or reversed input, a value either side of a threshold. Separate from failure cases, which
 assert what must not happen rather than where the domain ends.
-_Avoid_: corner cases, boundary tests, misc
+_Avoid_ as a name for this: corner cases, boundary tests, misc
 
 ### The pinned spec
 
@@ -214,14 +223,14 @@ vocabulary: they live beside the pin in `docs/okf/README.md`.
 Google's Open Knowledge Format. A vocabulary the OKF Preset was written against, never a spec
 this repo owns or implements — and its version label is not a contract boundary, because OKF
 changes normative content in place under a fixed label and publishes no tags or releases.
-_Avoid_: the spec, the standard, OKF v0.2 (as an identifier)
+_Avoid_ as a name for this: the spec, the standard, OKF v0.2 (as an identifier)
 
 **Pinned revision**:
 The exact OKF text the OKF Preset's Rules were derived from, vendored byte-identical at
 `docs/okf/SPEC-v0.2.md`. That file _is_ the pin: git content-addresses it, so nothing verifies
 it at build time and the `sha256` recorded in `docs/okf/README.md` is provenance rather than a
 gate.
-_Avoid_: the spec version, v0.2, the snapshot
+_Avoid_ as a name for this: the spec version, v0.2, the snapshot
 
 ### What `markdown-harness` checks
 
@@ -234,13 +243,13 @@ _Avoid_: path rule, matcher, policy
 **Constraint**:
 One assertion a Rule makes about one frontmatter field, keyed by field address. Constraints
 are shape-specific by construction: `minLength` names strings, `minItems` names lists.
-_Avoid_: validation, assertion, check
+_Avoid_ as a name for this: validation, assertion, check
 
 **Governed file**:
 A file matched by at least one Rule. Files nothing matches are invisible — never reported on,
 never counted — so governance is opt-in by path, and no file carries a requirement merely by
 existing.
-_Avoid_: tracked file, included file, covered file
+_Avoid_ as a name for this: tracked file, included file, covered file
 
 **Type vocabulary**:
 The set of document kinds a repo recognises, spelled as `allowed` records on the `type` field
@@ -248,7 +257,8 @@ of the Rules that care. It is implicit: the union of those records across the co
 derivable for reporting but declared in no single place. Collides softly with the `*.types.ts`
 suffix, which holds TypeScript **type declarations** and has nothing to do with this. Both are
 kept — every alternative measured worse — so qualify whenever either could be meant.
-_Avoid_: the types list, enum, taxonomy; `*.types.ts` or "types file" as a synonym
+_Avoid_ as a name for this: the types list, enum, taxonomy;
+`*.types.ts` or "types file" as a synonym
 
 **Floor** — _retired, defined only so the term resolves_:
 The requirements an earlier design enforced on **every** Governed file, unconditionally, with
@@ -257,13 +267,13 @@ Nothing here implements it: all five of its check families — `type` presence, 
 membership, `generated.by`, `sources[].resource`, Actor form, and timestamp format — are
 ordinary per-Rule Constraints now. It appears throughout `docs/research/` and the predecessor
 repo, so a reader will meet it; treat every such mention as history.
-_Avoid_: using "Floor", "the ceiling" or "unrelaxable" for anything this repo currently does
+_Avoid_ as a name for anything this repo currently does: Floor, the ceiling, unrelaxable
 
 **Actor**:
 An identity recorded in frontmatter, written `<producer>/<version>`, `human:<id>`, or
 `process:<id>`. Consumers derive trust from the `human:` prefix, so a Constraint checks an
 Actor's form and never whether the identity it names is the true author.
-_Avoid_: author, owner, signer
+_Avoid_ as a name for this: author, owner, signer
 
 ### What is promised
 
@@ -272,31 +282,31 @@ What `markdown-harness` promises, as distinct from the trust it aims at. Four ti
 decreasing strength — Conformance, Signal, Detection, Reviewability — set out in
 `docs/vision/product.md`. Full trust is explicitly not offered, and only the first tier is
 unconditional.
-_Avoid_: Floor, baseline, unrelaxable, promise, SLA
+_Avoid_ as a name for this: Floor, baseline, unrelaxable, promise, SLA
 
 **Signal**:
 What a document states about its own trustworthiness, in the file, for a reader that may never
 run `markdown-harness` — provenance, trust tier, freshness and lifecycle, each of which OKF
 names and supplies fields for. It is separate from the body's claims about itself, and it
 outranks them.
-_Avoid_: warning, status, health, score, badge
+_Avoid_ as a name for this: warning, status, health, score, badge
 
 **Authoring path**:
 The moment a document is being written or checked. Where `markdown-harness` belongs, and where
 a Steering query happens.
-_Avoid_: write path, pre-commit, ingest
+_Avoid_ as a name for this: write path, pre-commit, ingest
 
 **Consumption path**:
 The moment a document is read in order to be used — later, and possibly by an agent that has
 never heard of `markdown-harness`. Nothing here may be required at that moment, which is why
 the Signal lives in the file.
-_Avoid_: read path, retrieval, query time
+_Avoid_ as a name for this: read path, retrieval, query time
 
 **Loosening**:
 A config change that widens what passes. Made visible by diffing a config against its git
 base, which is why each Constraint key has to declare which direction is looser; a changed
 `pattern` is undecidable and always flags.
-_Avoid_: relaxation, weakening, regression, tamper
+_Avoid_ as a name for this: relaxation, weakening, regression, tamper
 
 ### The Conformance suite
 
@@ -306,23 +316,23 @@ coverage half — every config-vocabulary key exercised somewhere — is scaffol
 config-schema validator will replace; its specification half, the config together with each
 document's stated expected outcome, is permanent: the contract for what `markdown-harness`
 must report against a real-shaped file.
-_Avoid_: fixture corpus (retired for this artifact), test suite
+_Avoid_ as a name for this: fixture corpus (retired for this artifact), test suite
 
 **Conformance case**:
 One document under `fixtures/conformance/docs/`, carrying a machine-readable
 `<!-- expect: -->` marker that names the verdict — PASSES, FAILS, or UNGOVERNED — its prose
 already argues.
-_Avoid_: fixture, test file, example doc
+_Avoid_ as a name for this: fixture, test file, example doc
 
 **fixture**:
 Ordinary test data anywhere in the repo that pins nothing — coverage, not contract. Every
 Conformance case is also test data, but not every fixture is a Conformance case.
-_Avoid_: sample data, mock, stub, dummy data
+_Avoid_ as a name for this: sample data, mock, stub, dummy data
 
 **corpus**:
 An adopter's own tree of real documents, never this repo's own synthetic material.
 `fixtures/conformance/` and `fixtures/llm-wiki/` are synthetic repo roots, not corpora.
-_Avoid_: fixture corpus, test corpus
+_Avoid_ as a name for this: fixture corpus, test corpus
 
 ### Dependency governance
 
@@ -332,4 +342,4 @@ recent release or maintainer reply — a candidate dependency is screened agains
 human may approve adding it. It screens candidates _out_; it never admits one, and clearing
 every signal is not a substitute for the human decision. Every signal is a live network fact,
 so applying the bar is a review duty, never a mechanical check.
-_Avoid_: dependency policy, vetting checklist, approval gate
+_Avoid_ as a name for this: dependency policy, vetting checklist, approval gate
