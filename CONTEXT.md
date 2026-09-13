@@ -1,3 +1,8 @@
+---
+type: glossary
+stale_after: 2026-09-08T00:00:00Z
+---
+
 # markdown-harness
 
 Reads one config, checks every governed markdown file, and answers "what governs this path?"
