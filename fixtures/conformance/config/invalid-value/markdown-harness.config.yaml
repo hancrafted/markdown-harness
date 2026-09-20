@@ -1,0 +1,5 @@
+frontmatter:
+  rules:
+    - ruleId: 123
+      folderTrees: [docs/]
+      intent: Valid rule

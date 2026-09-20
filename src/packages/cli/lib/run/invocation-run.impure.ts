@@ -9,12 +9,13 @@
  * and no other: it is the file's one ambient read.
  */
 
-import { loadConfig } from '../../../config-loader/load-config.ts';
+import { listMarkdownFiles } from '../../../foundation/list-markdown-files.ts';
+import { loadConfig } from '../../../foundation/load-config.ts';
 import { assessPath } from '../../../frontmatter-harness/assess.ts';
 import { auditRules } from '../../../frontmatter-harness/audit.ts';
 import { checkCorpus } from '../../../frontmatter-harness/check.ts';
+import { frontmatterModule } from '../../../frontmatter-harness/index.ts';
 import { queryPath } from '../../../frontmatter-harness/query.ts';
-import { listMarkdownFiles } from '../../../markdown-file-tree/list-markdown-files.ts';
 import type {
   AssessResponse,
   AuditResponse,
@@ -22,6 +23,7 @@ import type {
   ConfigFault,
   QueryResponse,
 } from '../../../response-contract/index.ts';
+import { MODULE_SET } from '../../module-set.ts';
 import type { Invocation } from '../argv/argv.types.ts';
 import { parseArgv } from '../argv/parse-argv.pure.ts';
 import { HELP, USAGE } from '../argv/usage.pure.ts';
@@ -90,13 +92,14 @@ function emit(response: CheckResponse | QueryResponse | AuditResponse | AssessRe
 
 /** What the config asks of one path, before anything exists there. */
 function queryRun({ path, config }: Invocation): Termination {
-  const load = loadConfig(config);
+  const load = loadConfig(config, MODULE_SET);
 
   if (load.config === undefined) {
     return emit({ command: 'query', path, config, result: rejection(load.faults) }, CANNOT_REPORT);
   }
 
-  return emit({ command: 'query', path, config, result: queryPath(path, load.config) }, NOTHING_WRONG);
+  const section = load.config.sectionFor(frontmatterModule);
+  return emit({ command: 'query', path, config, result: queryPath(path, section) }, NOTHING_WRONG);
 }
 
 /**
@@ -113,7 +116,7 @@ function queryRun({ path, config }: Invocation): Termination {
  */
 function assessRun({ path, config, now, root }: Invocation): Termination {
   const instant = now === '' ? hostInstant() : now;
-  const load = loadConfig(config);
+  const load = loadConfig(config, MODULE_SET);
 
   if (load.config === undefined) {
     return emit({ command: 'assess', path, now: instant, config, result: rejection(load.faults) }, CANNOT_REPORT);
@@ -123,7 +126,8 @@ function assessRun({ path, config, now, root }: Invocation): Termination {
   // conflicting input, so this is the current directory by construction. The
   // seam exists because the config's globs are anchored somewhere, and the
   // Conformance suite anchors them at its own synthetic root.
-  const result = assessPath({ root, path }, load.config, instant);
+  const section = load.config.sectionFor(frontmatterModule);
+  const result = assessPath({ root, path }, section, instant);
   return emit({ command: 'assess', path, now: instant, config, result }, NOTHING_WRONG);
 }
 
@@ -144,13 +148,14 @@ function auditRun({ root, config }: Invocation): Termination {
   const files = listMarkdownFiles(root);
   if (files === undefined) return USAGE_ERROR;
 
-  const load = loadConfig(config);
+  const load = loadConfig(config, MODULE_SET);
 
   if (load.config === undefined) {
     return emit({ command: 'audit', root, config, result: rejection(load.faults) }, CANNOT_REPORT);
   }
 
-  return emit({ command: 'audit', root, config, result: auditRules(files, load.config) }, NOTHING_WRONG);
+  const section = load.config.sectionFor(frontmatterModule);
+  return emit({ command: 'audit', root, config, result: auditRules(files, section) }, NOTHING_WRONG);
 }
 
 /**
@@ -176,13 +181,14 @@ function checkRun({ root, config }: Invocation): Termination {
   const files = listMarkdownFiles(root);
   if (files === undefined) return USAGE_ERROR;
 
-  const load = loadConfig(config);
+  const load = loadConfig(config, MODULE_SET);
 
   if (load.config === undefined) {
     return emit({ command: 'check', root, config, result: rejection(load.faults) }, CANNOT_REPORT);
   }
 
-  const checked = checkCorpus(root, files, load.config);
+  const section = load.config.sectionFor(frontmatterModule);
+  const checked = checkCorpus(root, files, section);
   if (checked.kind === 'unreadable') {
     return { stdout: '', stderr: unreadableGovernedFile(checked.path), code: CANNOT_REPORT };
   }

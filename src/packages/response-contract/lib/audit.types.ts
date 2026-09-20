@@ -8,6 +8,8 @@
  * which is why none of it rides in `--check`, whose reader can act on none of it.
  */
 
+import type { Selector } from '../../config-contract/index.ts';
+
 /** Every rule's fate across one corpus. */
 export interface AuditResult {
   /** One row per rule, in config order — including rules that governed nothing. */
@@ -40,9 +42,5 @@ export interface RuleRef {
 
 /**
  * A rule's selector, in the shape the Operator wrote it.
- *
- * Reporting `fileName` as the sugar it is, rather than the `path: ["**\/<name>"]`
- * it desugars to, is deliberate: an Operator reading a diagnostic has to
- * recognise their own config in it.
  */
-export type SelectorRef = { path: readonly string[]; fileName?: never } | { fileName: string; path?: never };
+export type SelectorRef = Selector;

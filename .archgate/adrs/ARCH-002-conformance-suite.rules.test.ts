@@ -54,7 +54,7 @@ function makeCtx(files: Record<string, string>) {
   return { ctx, violations };
 }
 
-const CASE_PATH = 'fixtures/conformance/docs/reference/labels.md';
+const CASE_PATH = 'fixtures/conformance/modules/frontmatter/docs/reference/labels.md';
 
 const rule = ruleSet.rules['expect-marker'];
 

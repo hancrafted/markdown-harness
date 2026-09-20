@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_DUPLICATE_RULE_ID",
+      "location": "frontmatter.rules[1].ruleId"
+    }
+  ]
+}

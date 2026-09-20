@@ -1,0 +1,7 @@
+frontmatter:
+  rules:
+    - ruleId: assess-without-required
+      folderTrees: [docs/]
+      intent: Assess without required stale_after
+      assess:
+        stale: Check this file

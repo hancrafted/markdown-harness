@@ -4,8 +4,8 @@
 // down to which keys the Operator did and did not write.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import { requirementsForRule } from './requirements.pure';
+import type { FrontmatterRule } from '../../section.types.ts';
+import { requirementsForRule } from './requirements.pure.ts';
 
 const UNKNOWN_KEYS = 'unknownKeys';
 const CROSS_FIELD = 'crossField';
@@ -19,7 +19,7 @@ describe('requirementsForRule', () => {
       const rule: FrontmatterRule = {
         ruleId: 'plain',
         intent: 'Plain docs carry no frontmatter',
-        path: ['docs/plain/**'],
+        folderTrees: ['docs/plain/'],
         frontmatter: 'forbidden',
       };
       const expected = { frontmatter: 'forbidden' };
@@ -36,7 +36,7 @@ describe('requirementsForRule', () => {
       const rule: FrontmatterRule = {
         ruleId: 'reference',
         intent: 'Reference pages say how far they can be trusted',
-        path: ['docs/reference/**/*.md'],
+        folderTrees: ['docs/reference/'],
         fields: {
           type: { presence: 'required' },
           draft: { presence: 'forbidden' },
@@ -56,7 +56,7 @@ describe('requirementsForRule', () => {
       const rule: FrontmatterRule = {
         ruleId: 'reference',
         intent: 'rule level',
-        path: ['docs/**'],
+        folderTrees: ['docs/'],
         fields: { slug: { pattern: '^[a-z0-9]+(-[a-z0-9]+)*$', intent: verbatim } },
       };
       const expected = [{ field: 'slug', pattern: '^[a-z0-9]+(-[a-z0-9]+)*$', intent: verbatim }];
@@ -72,7 +72,7 @@ describe('requirementsForRule', () => {
       // Absent is not `allowed` spelled differently — writing it would put a
       // word in the Operator's mouth.
       // ARRANGE
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: ['docs/**'], fields: {} };
+      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', folderTrees: ['docs/'], fields: {} };
       // ACT
       const actual = requirementsForRule(rule);
       // ASSERT
@@ -81,7 +81,7 @@ describe('requirementsForRule', () => {
 
     it('gives a forbidden rule no fields key at all', () => {
       // ARRANGE
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: ['docs/**'], frontmatter: 'forbidden' };
+      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', folderTrees: ['docs/'], frontmatter: 'forbidden' };
       // ACT
       const actual = requirementsForRule(rule);
       // ASSERT
@@ -90,7 +90,7 @@ describe('requirementsForRule', () => {
 
     it('omits crossField when the rule states no set constraint', () => {
       // ARRANGE
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: ['docs/**'] };
+      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', folderTrees: ['docs/'] };
       // ACT
       const actual = requirementsForRule(rule);
       // ASSERT
@@ -101,7 +101,7 @@ describe('requirementsForRule', () => {
   describe('edge cases', () => {
     it('always presents fields, empty when the rule names none', () => {
       // ARRANGE
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: ['docs/**'] };
+      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', folderTrees: ['docs/'] };
       const expected: unknown[] = [];
       // ACT
       const actual = requirementsForRule(rule);
@@ -112,7 +112,7 @@ describe('requirementsForRule', () => {
 
     it('carries only the set constraints the Operator wrote', () => {
       // ARRANGE
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: ['docs/**'], anyOf: ['a', 'b'] };
+      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', folderTrees: ['docs/'], anyOf: ['a', 'b'] };
       const expected = { anyOf: ['a', 'b'] };
       // ACT
       const actual = requirementsForRule(rule);
@@ -123,7 +123,7 @@ describe('requirementsForRule', () => {
     it('keeps an explicitly written unknownKeys', () => {
       // ARRANGE
       const written = 'forbidden';
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: ['docs/**'], unknownKeys: 'forbidden' };
+      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', folderTrees: ['docs/'], unknownKeys: 'forbidden' };
       // ACT
       const actual = requirementsForRule(rule);
       // ASSERT

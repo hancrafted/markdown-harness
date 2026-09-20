@@ -1,54 +1,22 @@
 /**
  * Validate the `frontmatter:` section as a whole.
- *
- * This is the Module's half of §3.5's catalog. The loader owns the four faults
- * that name the file; everything from here down names a key inside it, which is
- * why the section arrives as an opaque value rather than as a parsed config —
- * a loader that knew the rule language would have to be edited to gain a second
- * Module.
  */
 
-import type { FrontmatterConfig } from '../../../config-contract/index.ts';
-import type { ConfigFault } from '../../../response-contract/index.ts';
+import type { ConfigFault } from '../../../config-contract/index.ts';
+import type { FrontmatterConfig } from '../../section.types.ts';
 import { assessBlockFaults } from './assess-faults.pure.ts';
 import { ruleFaults } from './rule-faults.pure.ts';
 
-/** The section's own address, and the two keys it defines. */
 const SECTION = 'frontmatter';
 const RULES = `${SECTION}.rules`;
 const ASSESS = `${SECTION}.assess`;
 
-/**
- * Every key the section defines, keyed by the type that defines them.
- *
- * `Record<keyof T, true>` rather than a list of strings, because the narrowing
- * in `./section-narrowing.pure` claims that a section carrying no fault is a
- * section of this type — and that claim is worth exactly what this vocabulary
- * covers. Keyed, a key added to `FrontmatterConfig` and forgotten here leaves a
- * missing entry and will not compile, so the claim cannot quietly decay into a
- * cast wearing a predicate's clothes.
- *
- * `assess` is the Module-wide tier, and it earns the keying twice over: `rules:`
- * carries what varies by path and a Module-wide key carries what does not, so
- * the growth rule is that the top level stays one key per Module and anything
- * not per-path lands here instead.
- *
- * Membership is `Object.hasOwn` and never `in`, which walks the prototype chain
- * and would answer true for `toString`.
- */
 const SECTION_KEYS: Record<keyof FrontmatterConfig, true> = { rules: true, assess: true };
 
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/**
- * One fault per id already claimed by an earlier rule.
- *
- * The fault points at the LATER occurrence: the first rule to claim a name is
- * not the mistake, and reporting it there would send the Operator to the rule
- * they meant to keep.
- */
 function duplicateIdFaults(rules: readonly unknown[]): readonly ConfigFault[] {
   const claimed = new Set<string>();
   const faults: ConfigFault[] = [];
@@ -64,14 +32,14 @@ function duplicateIdFaults(rules: readonly unknown[]): readonly ConfigFault[] {
 /**
  * Every fault the `frontmatter:` section carries.
  *
- * An absent section and an empty list are the same mistake reported the same
- * way: a config naming no module governs nothing, and the Operator's fix is the
- * same sentence either way.
+ * An absent section produces no faults for this module (the loader raises
+ * CONFIG_NO_MODULE_SECTION if all modules are absent).
+ * An empty rules list raises CONFIG_EMPTY_RULE_LIST.
  *
  * @param section The value written under `frontmatter:`, or `undefined` if the key was never written.
  */
 export function sectionFaults(section: unknown): readonly ConfigFault[] {
-  if (section === undefined) return [{ code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
+  if (section === undefined) return [];
   if (!isMapping(section)) return [{ code: 'CONFIG_INVALID_VALUE', location: SECTION }];
 
   const unrecognised = Object.keys(section)

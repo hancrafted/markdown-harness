@@ -1,0 +1,4 @@
+frontmatter:
+  rules:
+    - ruleId: no-selector
+      intent: Rule without a selector

@@ -9,25 +9,31 @@
 
 import type { FieldConstraints } from '../../config-contract/index.ts';
 
-/** Either a rule claimed the path, or the whole config passed it by. */
+/** Either at least one module claimed the path, or no module claims it. */
 export type QueryResult = GovernedPath | InvisiblePath;
 
-/** A path some rule selects, and everything that rule asks of it. */
-export interface GovernedPath {
-  /** The discriminant. */
-  governance: 'governed';
-  /** Normalised: `/`-separated, no leading `./` or `/`. */
-  path: string;
+/** Requirements from one Module governing a path. */
+export interface ModuleRequirements {
+  /** The config key the Operator typed, never the Package name. */
+  module: string;
   /** The rule that won under first-match, and its intent verbatim (§3.4). */
   rule: { ruleId: string; intent: string };
   /** Everything the winning rule asks of this path. */
   requirements: Requirements;
 }
 
+/** A path at least one Module selects, and everything each Module asks of it. */
+export interface GovernedPath {
+  /** The discriminant. */
+  governance: 'governed';
+  /** Normalised: `/`-separated, no leading `./` or `/`. */
+  path: string;
+  /** Every Module that governs this path, in declared Module order. */
+  modules: readonly ModuleRequirements[];
+}
+
 /**
- * Nothing will ever be reported about this path, by any rule — a claim about the whole config,
- * not a null rule. Note what this is *not*: it does not mean a rule excluded the path. It means
- * no rule selected it in the first place (a rule's own `excludeFiles` can be one reason why).
+ * Nothing will ever be reported about this path, by any Module — no Module claims it.
  */
 export interface InvisiblePath {
   /** The discriminant. */

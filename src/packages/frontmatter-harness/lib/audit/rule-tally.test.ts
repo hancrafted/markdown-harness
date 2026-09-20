@@ -3,55 +3,36 @@
 // Every expected number below is worked out by hand against the file list and
 // the rule list in the same block, because the whole value of `--audit` is that
 // a reader can disagree with it.
-//
-// The matcher is hand-written, as it is for the resolver: what is under test is
-// the bookkeeping across rules, not whether the platform agrees about a glob.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { RuleAudit } from '../../../response-contract/index.ts';
-import { tallyRules } from './rule-tally.pure';
-
-/**
- * A hand-written stand-in covering the four glob shapes these cases use:
- * `**\/<name>` sugar, a `<dir>/**\/*.md` subtree, a `<dir>/**` prefix, and an
- * exact path.
- */
-function matches(glob: string, path: string): boolean {
-  if (glob.startsWith('**/')) {
-    const tail = glob.slice(3);
-    return path === tail || path.endsWith(`/${tail}`);
-  }
-  if (glob.endsWith('/**/*.md')) {
-    return path.startsWith(glob.slice(0, -7)) && path.endsWith('.md');
-  }
-  if (glob.endsWith('/**')) return path.startsWith(glob.slice(0, -2));
-  return glob === path;
-}
+import type { FrontmatterRule } from '../../section.types.ts';
+import { tallyRules } from './rule-tally.pure.ts';
 
 const indexFiles: FrontmatterRule = {
   ruleId: 'index-files',
   intent: 'An index enumerates a directory',
-  fileName: 'index.md',
+  fileNames: ['index.md'],
 };
 
 const exemplar: FrontmatterRule = {
   ruleId: 'exemplar',
   intent: 'The exemplar carries full provenance',
-  path: ['docs/research/provenance.md'],
+  folders: ['docs/research/'],
+  fileNames: ['provenance.md'],
 };
 
 const research: FrontmatterRule = {
   ruleId: 'research',
   intent: 'Research cites what it drew on',
-  path: ['docs/research/**/*.md'],
-  excludeFiles: ['docs/research/vendor/**'],
+  folderTrees: ['docs/research/'],
+  excludeFiles: [{ folderTrees: ['docs/research/vendor/'] }],
 };
 
 const inert: FrontmatterRule = {
   ruleId: 'inert',
   intent: 'A rule whose glob reaches nothing in this corpus',
-  path: ['docs/nothing/**/*.md'],
+  folderTrees: ['docs/nothing/'],
 };
 
 const RULES: readonly FrontmatterRule[] = [indexFiles, exemplar, research, inert];
@@ -59,7 +40,7 @@ const RULES: readonly FrontmatterRule[] = [indexFiles, exemplar, research, inert
 /**
  * The corpus, in walker order.
  *
- * `docs/research/vendor/upstream.md` is reached by `research`'s glob and taken
+ * `docs/research/vendor/upstream.md` is reached by `research`'s selector and taken
  * back by its own `excludeFiles`, so it is governed by nothing at all.
  * `docs/plain/notes.md` is reached by no rule.
  */
@@ -97,7 +78,7 @@ describe('tallyRules', () => {
         { ruleId: 'inert', won: 0, shadowed: 0, shadowedBy: [], excluded: 0 },
       ];
       // ACT
-      const actual = tallyRules(FILES, RULES, matches).map(countsOf);
+      const actual = tallyRules(FILES, RULES).map(countsOf);
       // ASSERT
       expect(actual).toEqual(table);
     });
@@ -105,14 +86,18 @@ describe('tallyRules', () => {
     it('carries each rule id, selector and intent onto its own row', () => {
       // ARRANGE
       const expected = {
-        rule: { ruleId: 'index-files', selector: { fileName: 'index.md' }, intent: 'An index enumerates a directory' },
+        rule: {
+          ruleId: 'index-files',
+          selector: { fileNames: ['index.md'] },
+          intent: 'An index enumerates a directory',
+        },
         won: 2,
         shadowed: 0,
         shadowedBy: [],
         excluded: 0,
       };
       // ACT
-      const actual = tallyRules(FILES, RULES, matches);
+      const actual = tallyRules(FILES, RULES);
       // ASSERT
       expect(actual[0]).toEqual(expected);
     });
@@ -120,12 +105,12 @@ describe('tallyRules', () => {
 
   describe('failure cases', () => {
     it('still reports a rule that governed nothing, which is the point', () => {
-      // A rule that wins no file reports nothing anywhere else, so a glob typo
+      // A rule that wins no file reports nothing anywhere else, so a typo
       // is invisible in exactly the direction a trust tool cannot afford.
       // ARRANGE
       const governedNothing = { ruleId: 'inert', won: 0, shadowed: 0, shadowedBy: [], excluded: 0 };
       // ACT
-      const actual = tallyRules(FILES, RULES, matches).map(countsOf);
+      const actual = tallyRules(FILES, RULES).map(countsOf);
       // ASSERT
       expect(actual).toContainEqual(governedNothing);
     });
@@ -134,14 +119,19 @@ describe('tallyRules', () => {
       // The broad rule written FIRST takes everything, and the narrow rule
       // below it wins zero files while reporting what shadowed it.
       // ARRANGE
-      const broad: FrontmatterRule = { ruleId: 'broad', intent: 'Everything', path: ['docs/**/*.md'] };
-      const narrow: FrontmatterRule = { ruleId: 'narrow', intent: 'One file', path: ['docs/a.md'] };
+      const broad: FrontmatterRule = { ruleId: 'broad', intent: 'Everything', folderTrees: ['docs/'] };
+      const narrow: FrontmatterRule = {
+        ruleId: 'narrow',
+        intent: 'One file',
+        folders: ['docs/'],
+        fileNames: ['a.md'],
+      };
       const reversed = [
         { ruleId: 'broad', won: 1, shadowed: 0, shadowedBy: [], excluded: 0 },
         { ruleId: 'narrow', won: 0, shadowed: 1, shadowedBy: ['broad'], excluded: 0 },
       ];
       // ACT
-      const actual = tallyRules(['docs/a.md'], [broad, narrow], matches).map(countsOf);
+      const actual = tallyRules(['docs/a.md'], [broad, narrow]).map(countsOf);
       // ASSERT
       expect(actual).toEqual(reversed);
     });
@@ -150,7 +140,7 @@ describe('tallyRules', () => {
       // ARRANGE
       const onlyExcluded = { ruleId: 'research', won: 0, shadowed: 0, shadowedBy: [], excluded: 1 };
       // ACT
-      const actual = tallyRules(['docs/research/vendor/upstream.md'], [research], matches).map(countsOf);
+      const actual = tallyRules(['docs/research/vendor/upstream.md'], [research]).map(countsOf);
       // ASSERT
       expect(actual).toEqual([onlyExcluded]);
     });
@@ -164,7 +154,7 @@ describe('tallyRules', () => {
       const named = ['index-files', 'exemplar'];
       const researchRow = RULES.findIndex((rule) => rule.ruleId === 'research');
       // ACT
-      const actual = tallyRules(FILES, RULES, matches);
+      const actual = tallyRules(FILES, RULES);
       // ASSERT
       expect(actual[researchRow].shadowedBy).toEqual(named);
     });
@@ -178,7 +168,7 @@ describe('tallyRules', () => {
       const byConfigPosition = ['index-files', 'exemplar'];
       const researchRow = RULES.findIndex((rule) => rule.ruleId === 'research');
       // ACT
-      const actual = tallyRules(metExemplarFirst, RULES, matches);
+      const actual = tallyRules(metExemplarFirst, RULES);
       // ASSERT
       expect(actual[researchRow].shadowedBy).toEqual(byConfigPosition);
     });
@@ -191,7 +181,7 @@ describe('tallyRules', () => {
       const ruleCount = RULES.length;
       const noRuleWon = [0, 0, 0, 0];
       // ACT
-      const actual = tallyRules(noFiles, RULES, matches);
+      const actual = tallyRules(noFiles, RULES);
       // ASSERT
       expect(actual).toHaveLength(ruleCount);
       expect(actual.map((row) => row.won)).toEqual(noRuleWon);
@@ -201,7 +191,7 @@ describe('tallyRules', () => {
       // ARRANGE
       const noRules: readonly FrontmatterRule[] = [];
       // ACT
-      const actual = tallyRules(FILES, noRules, matches);
+      const actual = tallyRules(FILES, noRules);
       // ASSERT
       expect(actual).toEqual([]);
     });

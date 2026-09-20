@@ -14,8 +14,8 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-const CONFIG = 'fixtures/conformance/valid-test-config.yaml';
-const CORPUS_ROOT = 'fixtures/conformance';
+const CONFIG = 'fixtures/conformance/modules/frontmatter/valid-test-config.yaml';
+const CORPUS_ROOT = 'fixtures/conformance/modules/frontmatter';
 const USAGE_LEAD = 'usage: mh';
 const REJECTED = 'CONFIG_REJECTED';
 const GOVERNED = 'governed';
@@ -151,7 +151,7 @@ beforeAll(() => {
       'frontmatter:',
       '  rules:',
       '    - ruleId: every-markdown-file',
-      "      path: ['**/*.md']",
+      "      folderTrees: ['./']",
       '      intent: Every markdown file says what it is',
       '      fields:',
       '        type:',
@@ -175,7 +175,7 @@ beforeAll(() => {
       'frontmatter:',
       '  rules:',
       '    - ruleId: every-markdown-file',
-      "      path: ['**/*.md']",
+      "      folderTrees: ['./']",
       '      intent: Governs every markdown file the walker enumerates',
       '      fields:',
       '        type:',
@@ -191,7 +191,7 @@ beforeAll(() => {
       'frontmatter:',
       '  rules:',
       '    - ruleId: every-markdown-file',
-      "      path: ['**/*.md']",
+      "      folderTrees: ['./']",
       '      intent: Governs every markdown file the walker enumerates',
       '      fields:',
       '        type:',
@@ -523,8 +523,12 @@ describe('mh --check', () => {
       ];
       // ACT
       const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
-      const files = JSON.parse(run.stdout).result.files as { violations: { violation: string }[] }[];
-      const reached = files.flatMap((file) => file.violations.map((found) => found.violation));
+      const files = JSON.parse(run.stdout).result.files as {
+        modules: { module: string; violations: { violation: string }[] }[];
+      }[];
+      const reached = files.flatMap((file) =>
+        file.modules.flatMap((mod) => mod.violations.map((found) => found.violation)),
+      );
       // ASSERT
       expect([...new Set(reached)].sort()).toEqual(codes);
     });
@@ -535,14 +539,19 @@ describe('mh --check', () => {
       // ARRANGE
       const row = {
         path: 'docs/workflows/tagging.md',
-        ruleId: 'workflows',
-        ruleIntent: 'A workflow names itself and says when to reach for it',
-        violations: [
+        modules: [
           {
-            field: 'title',
-            value: 'Go',
-            violation: 'VALUE_TOO_SHORT',
-            requirement: { minLength: 3, maxLength: 80 },
+            module: 'frontmatter',
+            ruleId: 'workflows',
+            ruleIntent: 'A workflow names itself and says when to reach for it',
+            violations: [
+              {
+                field: 'title',
+                value: 'Go',
+                violation: 'VALUE_TOO_SHORT',
+                requirement: { minLength: 3, maxLength: 80 },
+              },
+            ],
           },
         ],
       };

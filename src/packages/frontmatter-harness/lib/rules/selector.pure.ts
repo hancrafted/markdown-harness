@@ -1,66 +1,81 @@
 /**
  * Which files a single rule claims.
  *
- * Everything is a path glob underneath, so precedence stays one-dimensional and
- * the resolver keeps one code path. The matcher arrives as an argument: a
- * builtin import would make this file reach the platform, and the question it
- * answers — does this rule claim this path — is a rule of the config language
- * rather than a property of the host.
+ * A selector is two literal axes: folders and file names.
+ * Overlap and selection are decided with no tree read (design-ADR 0007).
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import type { GlobMatcher, RuleSelection } from './rules.types.ts';
+import type { Selector } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.types.ts';
+import type { RuleSelection } from './rules.types.ts';
 
 /**
- * The globs a rule selects by, with `fileName` desugared.
+ * Split a repo-root-relative path into its folder token and file name token.
+ * A folder token carries a mandatory trailing `/`, and the root is `./`.
  *
- * `fileName: "log.md"` becomes `**\/log.md` — a file of that name anywhere,
- * including the repo root.
- *
- * @param rule The rule to read a selector off.
+ * @param path A normalised, repo-root-relative path.
  */
-export function globsForRule(rule: FrontmatterRule): readonly string[] {
-  return 'fileName' in rule && rule.fileName !== undefined ? [`**/${rule.fileName}`] : (rule.path ?? []);
+export function splitPath(path: string): { folder: string; fileName: string } {
+  const slashIndex = path.lastIndexOf('/');
+  if (slashIndex === -1) {
+    return { folder: './', fileName: path };
+  }
+  return {
+    folder: path.slice(0, slashIndex + 1),
+    fileName: path.slice(slashIndex + 1),
+  };
+}
+
+function matchesFolderAxis(selector: Selector, folder: string): boolean {
+  const folders = selector.folders ?? [];
+  const trees = selector.folderTrees ?? [];
+  if (folders.length === 0 && trees.length === 0) return true;
+  return folders.includes(folder) || trees.some((tree) => folder.startsWith(tree));
+}
+
+function matchesNameAxis(selector: Selector, fileName: string): boolean {
+  const names = selector.fileNames ?? [];
+  if (names.length === 0) return true;
+  return names.includes(fileName);
+}
+
+/**
+ * Whether a selector matches a given file path.
+ *
+ * @param selector The Selector to match against.
+ * @param path The normalised, repo-root-relative path.
+ */
+export function selectorMatchesPath(selector: Selector, path: string): boolean {
+  const { folder, fileName } = splitPath(path);
+  return matchesFolderAxis(selector, folder) && matchesNameAxis(selector, fileName);
 }
 
 /**
  * What this rule did with this path.
  *
- * Exclusion still wins outright, but the globs are asked FIRST so that the two
- * ways of not selecting stay distinguishable: `excluded` means this rule's own
- * globs reached the file and its own `excludeFiles` took it back, while
- * `unselected` means the rule never reached it at all. `--audit` reports the
- * two differently, and only this function knows which is which.
- *
- * Exclusion takes no part in ordering — it answers one yes/no question before
- * any rule is chosen, which is what lets a file fall THROUGH to a later,
- * broader rule without restating that rule's constraints. That is also why an
- * `excluded` verdict is a fact about one rule alone and never about the list.
- *
  * @param rule The rule under test.
  * @param path A normalised, repo-root-relative path.
- * @param matches The glob matcher to decide with.
  */
-export function selectionFor(rule: FrontmatterRule, path: string, matches: GlobMatcher): RuleSelection {
-  const matched = globsForRule(rule).some((glob) => matches(glob, path));
+export function selectionFor(rule: FrontmatterRule, path: string): RuleSelection {
+  const ruleSelector: Selector = {
+    folders: rule.folders,
+    folderTrees: rule.folderTrees,
+    fileNames: rule.fileNames,
+  };
+
+  const matched = selectorMatchesPath(ruleSelector, path);
   if (!matched) return 'unselected';
 
-  const excluded = (rule.excludeFiles ?? []).some((glob) => matches(glob, path));
+  const excluded = (rule.excludeFiles ?? []).some((sel) => selectorMatchesPath(sel, path));
   return excluded ? 'excluded' : 'selected';
 }
 
 /**
  * Whether this rule claims this path.
  *
- * Defined in terms of `selectionFor` rather than beside it, so that the
- * resolver `--query` and `--check` run on and the tallies `--audit` reports
- * cannot drift apart about what selecting means. A diagnostic that explained
- * first-match using its own second opinion would be worse than none.
- *
  * @param rule The rule under test.
  * @param path A normalised, repo-root-relative path.
- * @param matches The glob matcher to decide with.
  */
-export function ruleSelects(rule: FrontmatterRule, path: string, matches: GlobMatcher): boolean {
-  return selectionFor(rule, path, matches) === 'selected';
+export function ruleSelects(rule: FrontmatterRule, path: string): boolean {
+  return selectionFor(rule, path) === 'selected';
 }

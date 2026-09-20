@@ -11,15 +11,16 @@
 
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../../config-loader/load-config.ts';
+import { loadConfig } from '../../foundation/load-config.ts';
 import { assessPath } from '../assess.ts';
+import { frontmatterModule } from '../frontmatter-module.ts';
 
-const loaded = loadConfig('fixtures/conformance/valid-test-config.yaml');
+const loaded = loadConfig('fixtures/conformance/modules/frontmatter/valid-test-config.yaml', [frontmatterModule]);
 if (loaded.config === undefined) throw new Error('the conformance config must load for this suite to mean anything');
-const config = loaded.config;
+const config = loaded.config.sectionFor(frontmatterModule);
 
 /** The synthetic repo root the config's paths are written relative to. */
-const CORPUS_ROOT = fileURLToPath(new URL('../../../../fixtures/conformance', import.meta.url));
+const CORPUS_ROOT = fileURLToPath(new URL('../../../../fixtures/conformance/modules/frontmatter', import.meta.url));
 
 /** Written by hand, never read from a clock. */
 const NOW = '2026-12-01T00:00:00Z';

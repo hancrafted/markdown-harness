@@ -8,21 +8,19 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { MarkdownHarnessConfig } from '../../config-contract/index.ts';
 import { checkCorpus } from '../check.ts';
+import type { FrontmatterConfig } from '../section.types.ts';
 
 /** Governs `docs/`, and deliberately nothing else, so invisibility is testable. */
-const CONFIG: MarkdownHarnessConfig = {
-  frontmatter: {
-    rules: [
-      {
-        ruleId: 'docs',
-        intent: 'Everything under docs/ says what it is',
-        path: ['docs/**/*.md'],
-        fields: { type: { presence: 'required' } },
-      },
-    ],
-  },
+const CONFIG: FrontmatterConfig = {
+  rules: [
+    {
+      ruleId: 'docs',
+      intent: 'Everything under docs/ says what it is',
+      folderTrees: ['docs/'],
+      fields: { type: { presence: 'required' } },
+    },
+  ],
 };
 
 let root = '';
@@ -93,7 +91,7 @@ describe('checkCorpus', () => {
       const files = ['docs/untyped.md'];
       const expected = { summary: { governedFiles: 0, invalidFiles: 0, totalViolations: 0 }, files: [] };
       // ACT
-      const outcome = checkCorpus(root, files, {});
+      const outcome = checkCorpus(root, files, undefined);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual).toEqual(expected);

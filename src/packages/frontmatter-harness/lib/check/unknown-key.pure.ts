@@ -7,8 +7,8 @@
  * contract is the config fragment exactly as written.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { UnknownKeyViolation } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.types.ts';
 import type { FrontmatterMapping } from './check.types.ts';
 import { evidenceFor } from './field-evidence.pure.ts';
 
@@ -34,7 +34,7 @@ function topLevelSegment(address: string): string {
  * cannot coherently forbid it as unknown, and a derived list that omitted it
  * would tell a Contributor to delete the key the same rule demands.
  */
-function allowedKeysFor(rule: FrontmatterRule): readonly string[] {
+export function allowedKeysFor(rule: FrontmatterRule): readonly string[] {
   const addresses = [...Object.keys(rule.fields ?? {}), ...SET_KEYS.flatMap((key) => rule[key] ?? [])];
   return [...new Set(addresses.map(topLevelSegment))];
 }

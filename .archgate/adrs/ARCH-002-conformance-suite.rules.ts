@@ -15,7 +15,7 @@
 // the second marker needed no change to the first rule.
 //
 // Self-contained by design: archgate forbids imports between rules files.
-const CASE_GLOB = 'fixtures/conformance/docs/**/*.md';
+const CASE_GLOB = 'fixtures/conformance/**/docs/**/*.md';
 const MARKER_RE = /<!--\s*expect:\s*(\S+?)\s*-->/g;
 const KNOWN_VERDICTS = new Set(['PASSES', 'FAILS', 'UNGOVERNED']);
 const ASSESS_RE = /<!--\s*assess:\s*(\S+?)\s*-->/g;
@@ -25,7 +25,7 @@ export default {
   rules: {
     'expect-marker': {
       description:
-        'Every Conformance case under fixtures/conformance/docs/ carries exactly one `<!-- expect: VERDICT -->` marker, VERDICT one of PASSES, FAILS, or UNGOVERNED.',
+        'Every Conformance case under fixtures/conformance/**/docs/ carries exactly one `<!-- expect: VERDICT -->` marker, VERDICT one of PASSES, FAILS, or UNGOVERNED.',
       severity: 'error',
       async check(ctx) {
         const files = await ctx.glob(CASE_GLOB);

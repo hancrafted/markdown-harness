@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_NOT_FOUND",
+      "location": "markdown-harness.config.yaml"
+    }
+  ]
+}

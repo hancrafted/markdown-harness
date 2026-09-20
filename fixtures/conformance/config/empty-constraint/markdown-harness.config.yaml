@@ -1,0 +1,7 @@
+frontmatter:
+  rules:
+    - ruleId: blank-constraint
+      folderTrees: [docs/]
+      intent: Rule with empty constraint
+      fields:
+        type: {}

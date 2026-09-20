@@ -2,29 +2,23 @@
  * Validate one rule.
  *
  * Every rule is a selector plus a reason plus a payload, and this file states
- * what each of those three owes. The two exclusivity rules the config language
- * models in its types are re-checked here, because a config arrives as YAML and
- * a type guarantees nothing about what was actually written.
+ * what each of those three owes.
  */
 
-import type { FrontmatterRule, NoFrontmatterPayload, UnknownKeys } from '../../../config-contract/index.ts';
-import type { ConfigFault } from '../../../response-contract/index.ts';
+import type { ConfigFault } from '../../../config-contract/index.ts';
+import type { FrontmatterRule, NoFrontmatterPayload, UnknownKeys } from '../../section.types.ts';
 import { assessBlockFaults, unfireableAssessFaults } from './assess-faults.pure.ts';
 import { constraintFaults } from './constraint-faults.pure.ts';
+import { validateRuleSelector } from './selector-faults.pure.ts';
 
 /**
  * Every key a rule may carry, keyed by the type that declares them.
- *
- * `keyof FrontmatterRule` reaches all twelve even though the type is an
- * intersection of two unions: both `RuleSelector` members declare `path` and
- * `fileName`, and both `RulePayload` members declare all six payload keys, so
- * the absent half of each is `never` rather than missing. That is what makes
- * the whole rule vocabulary readable from the contract in one expression.
  */
 const RULE_KEYS: Record<keyof FrontmatterRule, true> = {
   ruleId: true,
-  path: true,
-  fileName: true,
+  folders: true,
+  folderTrees: true,
+  fileNames: true,
   excludeFiles: true,
   intent: true,
   frontmatter: true,
@@ -39,14 +33,6 @@ const RULE_KEYS: Record<keyof FrontmatterRule, true> = {
 /**
  * What `frontmatter: forbidden` excludes — each asserts something about
  * frontmatter that must not exist.
- *
- * Read off `NoFrontmatterPayload`, which is the type that already spells the
- * exclusion out as `never` per key. Only `frontmatter` itself is dropped, being
- * the discriminator rather than one of the things it forbids, so a payload key
- * added to the contract joins this set without anyone remembering to add it.
- *
- * `assess` is one of them: assessment is answered from a frontmatter field, so
- * a file that must carry none cannot be assessed.
  */
 const PAYLOAD_KEYS: Record<Exclude<keyof NoFrontmatterPayload, 'frontmatter'>, true> = {
   fields: true,
@@ -57,15 +43,11 @@ const PAYLOAD_KEYS: Record<Exclude<keyof NoFrontmatterPayload, 'frontmatter'>, t
   assess: true,
 };
 
-/** Keys whose value must be a list of globs or addresses. */
-const LIST_KEYS: readonly string[] = ['path', 'excludeFiles', 'exactlyOneOf', 'anyOf', 'allOf'];
+/** Keys whose value must be a list of addresses. */
+const LIST_KEYS: readonly string[] = ['exactlyOneOf', 'anyOf', 'allOf'];
 
 /**
  * The two spellings of `unknownKeys` (§3.3), of which `allowed` is the default.
- *
- * Keyed by the union it shadows, so widening `UnknownKeys` and forgetting this
- * file cannot compile. A type union is erased before this runs, so a runtime
- * check needs a shadow, and keying it is what stops the two drifting apart.
  */
 const UNKNOWN_KEYS_STATES: Record<UnknownKeys, true> = { allowed: true, forbidden: true };
 
@@ -86,37 +68,10 @@ function identityFaults(rule: Record<string, unknown>, at: string): readonly Con
   return faults;
 }
 
-/** Exactly one of `path` / `fileName`. Neither and both are separate mistakes. */
-function selectorFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
-  const count = ['path', 'fileName'].filter((key) => key in rule).length;
-  if (count === 1) return [];
-  return [{ code: count === 0 ? 'CONFIG_SELECTOR_MISSING' : 'CONFIG_SELECTOR_AMBIGUOUS', location: at }];
-}
-
-/**
- * A list of strings, which is what every list-valued key holds.
- *
- * The elements are checked and not merely the container: a non-string glob
- * reaches the matcher as something it cannot match, and §3.5 line 271 puts a
- * cross-field set of the wrong shape under `CONFIG_INVALID_VALUE`.
- *
- * An empty list is a list of strings. It names no addresses, which is a
- * different thing from naming a wrong one.
- */
 function isStringList(value: unknown): boolean {
   return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 }
 
-/**
- * Whether a written `unknownKeys` names neither of its two spellings.
- *
- * The evaluator branches on `forbidden` alone, so every other spelling would
- * otherwise read as the permissive default rather than as the mistake it is.
- *
- * Membership is `Object.hasOwn` and never `in`: `in` walks the prototype chain,
- * so `unknownKeys: toString` would answer true and pass straight through the
- * check that exists to stop it.
- */
 function misnamesUnknownKeys(rule: Record<string, unknown>): boolean {
   if (!('unknownKeys' in rule)) return false;
   const written = rule.unknownKeys;
@@ -125,19 +80,14 @@ function misnamesUnknownKeys(rule: Record<string, unknown>): boolean {
 
 /**
  * Keys whose written shape is wrong, reported at the key as written.
- *
- * The location is the key and never the offending index, which §3.5 fixes: one
- * bad element makes the whole list unusable, so an indexed fault would ask for
- * the same repair once per element.
  */
 function shapeFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
   const lists = LIST_KEYS.filter((key) => key in rule && !isStringList(rule[key])).map((key) =>
     invalid(`${at}.${key}`),
   );
-  const fileName = 'fileName' in rule && typeof rule.fileName !== 'string' ? [invalid(`${at}.fileName`)] : [];
   const frontmatter = 'frontmatter' in rule && rule.frontmatter !== 'forbidden' ? [invalid(`${at}.frontmatter`)] : [];
   const unknownKeys = misnamesUnknownKeys(rule) ? [invalid(`${at}.unknownKeys`)] : [];
-  return [...lists, ...fileName, ...frontmatter, ...unknownKeys];
+  return [...lists, ...frontmatter, ...unknownKeys];
 }
 
 /** `frontmatter: forbidden` is exclusive of every payload key. */
@@ -159,11 +109,6 @@ function fieldsFaults(rule: Record<string, unknown>, at: string): readonly Confi
 /**
  * Every fault one rule carries.
  *
- * The Module-wide `assess:` block arrives as an argument rather than being read
- * from here, because one fault is decided against the EFFECTIVE prompt — the
- * rule's own block if it wrote one, the Module's otherwise. A rule cannot know
- * which of the two answered for it without being told.
- *
  * @param rule One entry of the ordered rule list, straight off the YAML.
  * @param at The rule's address in the config's own notation, e.g. `frontmatter.rules[3]`.
  * @param moduleAssess The value written under `frontmatter.assess:`, if any.
@@ -176,7 +121,7 @@ export function ruleFaults(rule: unknown, at: string, moduleAssess: unknown): re
       .filter((key) => !Object.hasOwn(RULE_KEYS, key))
       .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${at}.${key}` })),
     ...identityFaults(rule, at),
-    ...selectorFaults(rule, at),
+    ...validateRuleSelector(rule, at),
     ...shapeFaults(rule, at),
     ...payloadFaults(rule, at),
     ...fieldsFaults(rule, at),

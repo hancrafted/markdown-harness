@@ -12,9 +12,8 @@
  * explain first-match cannot end up explaining a second opinion.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { RuleAudit } from '../../../response-contract/index.ts';
-import type { GlobMatcher } from '../rules/rules.types.ts';
+import type { FrontmatterRule } from '../../section.types.ts';
 import { selectionFor } from '../rules/selector.pure.ts';
 import { selectorRefFor } from './selector-ref.pure.ts';
 
@@ -59,13 +58,13 @@ function emptyTallies(count: number): readonly Tally[] {
  * apart and takes no part in the contest, which is what keeps exclusion out of
  * ordering entirely.
  */
-function attributionFor(file: string, rules: readonly FrontmatterRule[], matches: GlobMatcher): Attribution {
+function attributionFor(file: string, rules: readonly FrontmatterRule[]): Attribution {
   const shadowed: number[] = [];
   const excluded: number[] = [];
   let winner = -1;
 
   rules.forEach((rule, position) => {
-    const selection = selectionFor(rule, file, matches);
+    const selection = selectionFor(rule, file);
 
     if (selection === 'excluded') {
       excluded.push(position);
@@ -95,17 +94,12 @@ function shadowedByIds(shadowedBy: Set<number>, rules: readonly FrontmatterRule[
  *
  * @param files The corpus, as root-relative paths.
  * @param rules The ordered rule list, in the order the Operator wrote it.
- * @param matches The glob matcher to decide with.
  */
-export function tallyRules(
-  files: readonly string[],
-  rules: readonly FrontmatterRule[],
-  matches: GlobMatcher,
-): readonly RuleAudit[] {
+export function tallyRules(files: readonly string[], rules: readonly FrontmatterRule[]): readonly RuleAudit[] {
   const tallies = emptyTallies(rules.length);
 
   for (const file of files) {
-    const attribution = attributionFor(file, rules, matches);
+    const attribution = attributionFor(file, rules);
 
     if (attribution.winner !== -1) tallies[attribution.winner].won += 1;
 

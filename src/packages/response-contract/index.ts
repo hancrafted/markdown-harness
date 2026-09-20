@@ -24,7 +24,7 @@ export type {
   WinningRule,
 } from './lib/assess.types.ts';
 export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';
-export type { CheckResult, CheckSummary, FileViolations } from './lib/check.types.ts';
+export type { CheckResult, CheckSummary, FileViolations, ModuleViolations } from './lib/check.types.ts';
 export { isConfigError } from './lib/config-error.pure.ts';
 export type { ConfigErrorResult, ConfigFault, ConfigFaultCode } from './lib/config-error.types.ts';
 export type {
@@ -32,6 +32,7 @@ export type {
   FieldRequirement,
   GovernedPath,
   InvisiblePath,
+  ModuleRequirements,
   NoFrontmatterRequirements,
   QueryResult,
   Requirements,

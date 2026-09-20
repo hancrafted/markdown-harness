@@ -5,12 +5,13 @@
 // file the rest of the suite calls a complete surface.
 
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../../config-loader/load-config.ts';
+import { loadConfig } from '../../foundation/load-config.ts';
+import { frontmatterModule } from '../frontmatter-module.ts';
 import { queryPath } from '../query.ts';
 
-const loaded = loadConfig('fixtures/conformance/valid-test-config.yaml');
+const loaded = loadConfig('fixtures/conformance/modules/frontmatter/valid-test-config.yaml', [frontmatterModule]);
 if (loaded.config === undefined) throw new Error('the conformance config must load for this suite to mean anything');
-const config = loaded.config;
+const section = loaded.config.sectionFor(frontmatterModule);
 
 const GOVERNED = 'governed';
 const INVISIBLE = 'invisible';
@@ -22,28 +23,28 @@ describe('queryPath', () => {
       const verbatim = 'Reference pages are looked up by slug and say how far they can be trusted';
       const expected = { ruleId: 'reference', intent: verbatim };
       // ACT
-      const actual = queryPath('docs/reference/api-limits.md', config);
+      const actual = queryPath('docs/reference/api-limits.md', section);
       // ASSERT
       expect(actual.governance).toBe(GOVERNED);
-      expect(actual.governance === GOVERNED ? actual.rule : undefined).toEqual(expected);
+      expect(actual.governance === GOVERNED ? actual.modules[0].rule : undefined).toEqual(expected);
     });
 
     it('answers a frontmatter-forbidden rule with nothing else to ask', () => {
       // ARRANGE
       const expected = { frontmatter: 'forbidden' };
       // ACT
-      const actual = queryPath('index.md', config);
+      const actual = queryPath('index.md', section);
       // ASSERT
-      expect(actual.governance === GOVERNED ? actual.requirements : undefined).toEqual(expected);
+      expect(actual.governance === GOVERNED ? actual.modules[0].requirements : undefined).toEqual(expected);
     });
 
     it('matches the fileName sugar against a deeply nested file', () => {
       // ARRANGE
       const expected = 'log-files';
       // ACT
-      const actual = queryPath('docs/datasets/log.md', config);
+      const actual = queryPath('docs/datasets/log.md', section);
       // ASSERT
-      expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
+      expect(actual.governance === GOVERNED ? actual.modules[0].rule.ruleId : undefined).toBe(expected);
     });
   });
 
@@ -52,7 +53,7 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = INVISIBLE;
       // ACT
-      const actual = queryPath('README.md', config);
+      const actual = queryPath('README.md', section);
       // ASSERT
       expect(actual.governance).toBe(expected);
     });
@@ -63,7 +64,7 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = INVISIBLE;
       // ACT
-      const actual = queryPath('docs/research/vendor/imported.md', config);
+      const actual = queryPath('docs/research/vendor/imported.md', section);
       // ASSERT
       expect(actual.governance).toBe(expected);
     });
@@ -76,9 +77,9 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = 'provenance-exemplar';
       // ACT
-      const actual = queryPath('docs/research/provenance.md', config);
+      const actual = queryPath('docs/research/provenance.md', section);
       // ASSERT
-      expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
+      expect(actual.governance === GOVERNED ? actual.modules[0].rule.ruleId : undefined).toBe(expected);
     });
 
     it('strips leading decoration and still selects the same rule', () => {
@@ -90,10 +91,10 @@ describe('queryPath', () => {
       const normalised = 'docs/reference/api-limits.md';
       const expected = 'reference';
       // ACT
-      const actual = queryPath(decorated, config);
+      const actual = queryPath(decorated, section);
       // ASSERT
       expect(actual.path).toBe(normalised);
-      expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
+      expect(actual.governance === GOVERNED ? actual.modules[0].rule.ruleId : undefined).toBe(expected);
     });
 
     it('answers about a path that does not exist', () => {
@@ -102,9 +103,9 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = 'reference';
       // ACT
-      const actual = queryPath('docs/reference/never-written.md', config);
+      const actual = queryPath('docs/reference/never-written.md', section);
       // ASSERT
-      expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
+      expect(actual.governance === GOVERNED ? actual.modules[0].rule.ruleId : undefined).toBe(expected);
     });
   });
 });

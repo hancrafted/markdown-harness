@@ -1,0 +1,6 @@
+extra: key
+frontmatter:
+  rules:
+    - ruleId: valid
+      folderTrees: [docs/]
+      intent: Valid rule

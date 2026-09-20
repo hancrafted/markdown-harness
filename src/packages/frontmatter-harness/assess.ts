@@ -14,18 +14,17 @@
 // this command stay silent about files the config never claimed — a governance
 // tool that comments on everything is one that gets switched off.
 
-import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
 import type { AssessResult, WinningRule } from '../response-contract/index.ts';
 import { effectivePrompt } from './lib/assess/assess-prompt.pure.ts';
 import { assessResultFor } from './lib/assess/assess-result.pure.ts';
 import { readAssessedFile } from './lib/assess/assessed-file.impure.ts';
 import { freshnessOf } from './lib/assess/freshness.pure.ts';
 import { findFirstMatch } from './lib/rules/first-match.pure.ts';
-import { matchGlob } from './lib/rules/glob-match.impure.ts';
 import { normalisePath } from './lib/rules/path-shape.pure.ts';
+import type { FrontmatterConfig } from './section.types.ts';
 
 /**
- * Assess one path against the config, at one instant.
+ * Assess one path against the frontmatter section, at one instant.
  *
  * `root` and `path` arrive together because they are one fact in two halves:
  * where the config's globs are anchored, and which file inside that tree was
@@ -35,16 +34,16 @@ import { normalisePath } from './lib/rules/path-shape.pure.ts';
  * because `--assess` names one file rather than a corpus.
  *
  * @param file The corpus root, and the root-relative path asked about. It need not exist.
- * @param config A config that has already been validated.
+ * @param section A frontmatter section that has already been validated, or undefined.
  * @param now The Assessment instant, already known to name a moment.
  */
 export function assessPath(
   file: { root: string; path: string },
-  config: MarkdownHarnessConfig,
+  section: FrontmatterConfig | undefined,
   now: string,
 ): AssessResult {
   const path = normalisePath(file.path);
-  const winner = findFirstMatch(path, config.frontmatter?.rules ?? [], matchGlob);
+  const winner = findFirstMatch(path, section?.rules ?? []);
 
   if (winner === undefined) return { agentAction: 'PROCEED', state: 'ungoverned' };
 
@@ -56,6 +55,6 @@ export function assessPath(
     rule,
     file: found,
     freshness,
-    prompt: effectivePrompt(winner, config.frontmatter?.assess),
+    prompt: effectivePrompt(winner, section?.assess),
   });
 }

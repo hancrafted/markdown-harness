@@ -5,33 +5,34 @@
 // `path: ["**/log.md"]` is not what they wrote.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import { selectorRefFor } from './selector-ref.pure';
+import type { FrontmatterRule } from '../../section.types.ts';
+import { selectorRefFor } from './selector-ref.pure.ts';
 
 describe('selectorRefFor', () => {
   describe('success cases', () => {
-    it('reports a path selector as written', () => {
+    it('reports folderTrees and folders selector as written', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ruleId: 'research',
         intent: 'Research cites what it drew on',
-        path: ['docs/research/**/*.md'],
+        folderTrees: ['docs/research/'],
+        folders: ['docs/legacy/'],
       };
-      const expected = { path: ['docs/research/**/*.md'] };
+      const expected = { folderTrees: ['docs/research/'], folders: ['docs/legacy/'] };
       // ACT
       const actual = selectorRefFor(rule);
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('reports a fileName selector as the sugar the Operator wrote', () => {
+    it('reports a fileNames selector as written', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ruleId: 'log-files',
         intent: 'A log says when it was written',
-        fileName: 'log.md',
+        fileNames: ['log.md'],
       };
-      const expected = { fileName: 'log.md' };
+      const expected = { fileNames: ['log.md'] };
       // ACT
       const actual = selectorRefFor(rule);
       // ASSERT
@@ -40,42 +41,44 @@ describe('selectorRefFor', () => {
   });
 
   describe('failure cases', () => {
-    it('never expands fileName into the glob it desugars to', () => {
-      // This is the assertion that fails if the report is ever built from the
-      // resolver's desugared globs instead of from the rule.
+    it('never invents keys that were not present on the rule', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ruleId: 'log-files',
         intent: 'A log says when it was written',
-        fileName: 'log.md',
+        fileNames: ['log.md'],
       };
-      const desugared = '**/log.md';
+      const missingKey = 'folderTrees';
       // ACT
       const actual = selectorRefFor(rule);
       // ASSERT
-      expect(JSON.stringify(actual)).not.toContain(desugared);
+      expect(actual).not.toHaveProperty(missingKey);
     });
   });
 
   describe('edge cases', () => {
-    it('reports every glob of a multi-glob path selector, in order', () => {
+    it('reports combined folderTrees and fileNames axes together', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ruleId: 'provenance-exemplar',
         intent: 'The two exemplars carry full provenance',
-        path: ['docs/research/provenance.md', 'docs/research/provenance-broken.md'],
+        folderTrees: ['docs/research/'],
+        fileNames: ['provenance.md', 'provenance-broken.md'],
       };
-      const expected = { path: ['docs/research/provenance.md', 'docs/research/provenance-broken.md'] };
+      const expected = {
+        folderTrees: ['docs/research/'],
+        fileNames: ['provenance.md', 'provenance-broken.md'],
+      };
       // ACT
       const actual = selectorRefFor(rule);
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('reports an empty path list as an empty list rather than as sugar', () => {
+    it('reports an empty object when no selector axes were defined', () => {
       // ARRANGE
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: [] };
-      const expected = { path: [] };
+      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i' };
+      const expected = {};
       // ACT
       const actual = selectorRefFor(rule);
       // ASSERT

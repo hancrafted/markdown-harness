@@ -1,0 +1,9 @@
+frontmatter:
+  rules:
+    - ruleId: forbidden-with-fields
+      fileNames: [index.md]
+      intent: Forbidden with fields
+      frontmatter: forbidden
+      fields:
+        type:
+          presence: required

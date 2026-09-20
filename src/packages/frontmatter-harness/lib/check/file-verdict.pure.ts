@@ -17,8 +17,9 @@
  * arbitrary; being written down is not.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FieldConstraints } from '../../../config-contract/index.ts';
 import type { Violation } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.types.ts';
 import { crossFieldViolations } from './cross-field.pure.ts';
 import { fieldViolations } from './field-constraint.pure.ts';
 import { evidenceFor } from './field-evidence.pure.ts';
@@ -58,7 +59,7 @@ export function violationsForFile(text: string, rule: FrontmatterRule): readonly
   // `presence: required` fire on a file that never opened a block.
   const mapping = data.kind === 'absent' ? {} : data.data;
 
-  const fields = Object.entries(rule.fields ?? {}).flatMap(([address, constraints]) =>
+  const fields = (Object.entries(rule.fields ?? {}) as [string, FieldConstraints][]).flatMap(([address, constraints]) =>
     fieldViolations(address, constraints, mapping),
   );
 

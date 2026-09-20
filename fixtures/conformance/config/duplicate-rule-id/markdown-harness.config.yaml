@@ -1,0 +1,8 @@
+frontmatter:
+  rules:
+    - ruleId: same
+      folderTrees: [docs/a/]
+      intent: First rule
+    - ruleId: same
+      folderTrees: [docs/b/]
+      intent: Second rule

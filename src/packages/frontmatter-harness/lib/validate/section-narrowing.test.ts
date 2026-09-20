@@ -6,9 +6,9 @@
 // of them would hand the loader a type it had not earned.
 
 import { describe, expect, it } from 'vitest';
-import { isFrontmatterConfig } from './section-narrowing.pure';
+import { isFrontmatterConfig } from './section-narrowing.pure.ts';
 
-const rule = { ruleId: 'research', intent: 'Research notes cite what they drew on', path: ['docs/**'] };
+const rule = { ruleId: 'research', intent: 'Research notes cite what they drew on', folderTrees: ['docs/'] };
 
 describe('isFrontmatterConfig', () => {
   describe('success cases', () => {
@@ -23,13 +23,12 @@ describe('isFrontmatterConfig', () => {
 
     it('accepts both payload variants, so the union is earned rather than assumed', () => {
       // A rule either forbids frontmatter or constrains it, and the type is a
-      // union of the two. Accepting only the constraining half would narrow to
-      // a type the contract does not declare.
+      // union of the two.
       // ARRANGE
       const section = {
         rules: [
           rule,
-          { ruleId: 'plain', intent: 'Plain docs carry none', path: ['docs/plain/**'], frontmatter: 'forbidden' },
+          { ruleId: 'plain', intent: 'Plain docs carry none', folderTrees: ['docs/plain/'], frontmatter: 'forbidden' },
         ],
       };
       // ACT
@@ -60,18 +59,16 @@ describe('isFrontmatterConfig', () => {
 
     it('rejects a rule missing a key the contract makes mandatory', () => {
       // ARRANGE
-      const section = { rules: [{ ruleId: 'research', path: ['docs/**'] }] };
+      const section = { rules: [{ ruleId: 'research', folderTrees: ['docs/'] }] };
       // ACT
       const actual = isFrontmatterConfig(section);
       // ASSERT
       expect(actual).toBe(false);
     });
 
-    it('rejects a rule carrying both selectors, which the type makes unrepresentable', () => {
-      // `RuleSelector` is a union with `never` on the absent half, so a rule
-      // holding both is not assignable however well-formed each half looks.
+    it('rejects a rule carrying wildcards in a selector token', () => {
       // ARRANGE
-      const section = { rules: [{ ...rule, fileName: 'log.md' }] };
+      const section = { rules: [{ ...rule, folderTrees: ['docs/**'] }] };
       // ACT
       const actual = isFrontmatterConfig(section);
       // ASSERT
@@ -98,12 +95,9 @@ describe('isFrontmatterConfig', () => {
       expect(actual).toBe(false);
     });
 
-    it('rejects a list-valued key holding a non-string, the shape this narrowing was opened for', () => {
-      // The ticket names exactly this: a non-string glob is typed as a string
-      // by the contract, so the old assertion carried it to the matcher as
-      // something that could never match.
+    it('rejects a list-valued key holding a non-string', () => {
       // ARRANGE
-      const section = { rules: [{ ...rule, path: ['docs/**', 3] }] };
+      const section = { rules: [{ ...rule, folderTrees: ['docs/', 3] }] };
       // ACT
       const actual = isFrontmatterConfig(section);
       // ASSERT

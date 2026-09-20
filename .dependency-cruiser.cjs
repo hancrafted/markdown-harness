@@ -110,17 +110,38 @@ module.exports = {
       to: { circular: true },
     },
 
-    // --- Layering (optional, off by default) ----------------------------------
-    // Interface-hiding controls HOW you import (through the entry points).
-    // Layering controls WHICH packages may depend on which. Add your own rules
-    // here, e.g.:
-    //
-    // {
-    //   name: "ui-may-not-depend-on-billing",
-    //   severity: "error",
-    //   from: { path: `^${R}/ui/` },
-    //   to:   { path: `^${R}/billing/` },
-    // },
+    // --- Module Boundaries (ARCH-008) ----------------------------------------
+    {
+      name: 'modules-never-import-modules',
+      comment: 'A Module Package MUST NOT import another Module Package, at any depth, through any entry point.',
+      severity: 'error',
+      from: { path: `^${R}/(frontmatter-harness|indexes-harness)/` },
+      to: {
+        path: `^${R}/(frontmatter-harness|indexes-harness)/`,
+        pathNot: `^${R}/$1/`,
+      },
+    },
+    {
+      name: 'only-the-gate-imports-a-builtin',
+      comment:
+        'Only foundation may import a platform builtin; every other Package must reach the filesystem through it. Test files are exempt.',
+      severity: 'error',
+      from: {
+        path: `^${R}/`,
+        pathNot: `(^${R}/foundation/|/tests/|\\.test\\.ts$)`,
+      },
+      to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'gate-builtins-sit-in-platform',
+      comment: 'Inside foundation, platform builtin imports must sit in lib/platform/. Test files are exempt.',
+      severity: 'error',
+      from: {
+        path: `^${R}/foundation/`,
+        pathNot: `(^${R}/foundation/lib/platform/|/tests/|\\.test\\.ts$)`,
+      },
+      to: { dependencyTypes: ['core'] },
+    },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },

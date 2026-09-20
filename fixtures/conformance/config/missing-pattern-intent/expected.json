@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_MISSING_PATTERN_INTENT",
+      "location": "frontmatter.rules[0].fields.slug"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+frontmatter:
+  rules:
+    - ruleId: blank-intent
+      folderTrees: [docs/]
+      intent: ""

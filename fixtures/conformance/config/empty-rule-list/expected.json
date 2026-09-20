@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_EMPTY_RULE_LIST",
+      "location": "frontmatter.rules"
+    }
+  ]
+}

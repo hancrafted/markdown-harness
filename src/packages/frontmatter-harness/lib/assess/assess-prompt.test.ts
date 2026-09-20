@@ -6,7 +6,7 @@
 // and an empty one answers with nothing.
 
 import { describe, expect, it } from 'vitest';
-import type { AssessConditions, FrontmatterRule } from '../../../config-contract/index.ts';
+import type { AssessConditions, FrontmatterRule } from '../../section.types.ts';
 import { effectivePrompt } from './assess-prompt.pure';
 
 const MODULE_SENTENCE = 'This file is past its freshness date. Tell the user and offer to re-verify it.';
@@ -15,7 +15,7 @@ const RULE_SENTENCE = 'Re-verify by web research before quoting this.';
 const moduleBlock: AssessConditions = { stale: MODULE_SENTENCE };
 
 /** A rule with no `assess:` block of its own. */
-const bare: FrontmatterRule = { ruleId: 'research', intent: 'Research is indexed', path: ['docs/research/**'] };
+const bare: FrontmatterRule = { ruleId: 'research', intent: 'Research is indexed', folderTrees: ['docs/research/'] };
 
 /** The same rule, answering for itself. */
 const speaking: FrontmatterRule = { ...bare, assess: { stale: RULE_SENTENCE } };

@@ -1,0 +1,8 @@
+frontmatter:
+  rules:
+    - ruleId: pattern-without-intent
+      folderTrees: [docs/]
+      intent: Rule with pattern
+      fields:
+        slug:
+          pattern: "^[a-z]+$"

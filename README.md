@@ -163,7 +163,7 @@ match is the complete set of constraints, and a file no rule names is invisible.
 frontmatter:
   rules:
     - ruleId: research
-      path: [docs/research/**/*.md]
+      folderTrees: [docs/research/]
       intent: Research is indexed, and an index entry copies the description
       fields:
         type: { presence: required, allowed: [{ value: research }] }
@@ -231,7 +231,7 @@ frontmatter:
     stale: This file is past its freshness date. Tell the user and offer to re-verify it.
   rules:
     - ruleId: research
-      path: [docs/research/**/*.md]
+      folderTrees: [docs/research/]
       intent: Research is indexed, so it names its sources.
       assess:
         stale: Re-verify by web research before quoting this.

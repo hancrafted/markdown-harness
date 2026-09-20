@@ -21,4 +21,5 @@ docs/workshop/**/raw.md
 # sequence that never closes, a fence that never closes, a block that parses to a
 # list. Formatting would repair the exact defects they exist to present: prettier
 # reads a lone `---` as a thematic break and inserts a blank line after it.
-fixtures/conformance/docs/plain/broken/**
+fixtures/conformance/modules/frontmatter/docs/plain/broken/**
+fixtures/conformance/config/**

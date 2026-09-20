@@ -1,18 +1,13 @@
 // Colocated unit test for the corpus result and its arithmetic.
-//
-// The three counts are stored rather than left to the consumer, so the tests
-// that matter here are the ones that would catch them disagreeing. The consumer
-// is an agent, and asking a language model to sum an array to find out whether
-// anything is wrong is asking the one thing it is least reliable at.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import { checkResultFor } from './check-result.pure';
+import type { FrontmatterRule } from '../../section.types.ts';
+import { checkResultFor } from './check-result.pure.ts';
 
 const PLAIN: FrontmatterRule = {
   ruleId: 'plain',
   intent: 'Everything under plain/ still has to say what it is',
-  path: ['docs/plain/**/*.md'],
+  folderTrees: ['docs/plain/'],
   fields: { type: { presence: 'required' } },
 };
 
@@ -31,22 +26,26 @@ describe('corpus check result', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('carries the winning rule id and its intent on the file', () => {
-      // Under first-match every violation in a file comes from the same rule, so
-      // these sit on the file rather than on each violation.
+    it('carries the winning rule id, intent, and module name nested under modules', () => {
       // ARRANGE
       const sources = [{ path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED }];
-      const expected = { ruleId: 'plain', ruleIntent: 'Everything under plain/ still has to say what it is' };
+      const expected = {
+        module: 'frontmatter',
+        ruleId: 'plain',
+        ruleIntent: 'Everything under plain/ still has to say what it is',
+      };
       // ACT
       const [file] = checkResultFor(sources).files;
+      const mod = file?.modules[0];
       // ASSERT
-      expect({ ruleId: file.ruleId, ruleIntent: file.ruleIntent }).toEqual(expected);
+      expect(mod ? { module: mod.module, ruleId: mod.ruleId, ruleIntent: mod.ruleIntent } : undefined).toEqual(
+        expected,
+      );
     });
   });
 
   describe('failure cases', () => {
     it('lists only the files carrying a violation, in the order given', () => {
-      // Conforming files are absent, and the order is the walker's.
       // ARRANGE
       const sources = [
         { path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED },
@@ -77,11 +76,6 @@ describe('corpus check result', () => {
 
   describe('edge cases', () => {
     it('counts invalidFiles off the files it listed, not off the corpus it read', () => {
-      // The contract says `invalidFiles === files.length`, always. Reading both
-      // sides off one return would assert the implementation against itself and
-      // could not go red — and a corpus whose files are ALL invalid could not
-      // tell `files.length` from the number of files read either. So the
-      // fixture is mixed, and the number is written out by hand.
       // ARRANGE
       const sources = [
         { path: 'docs/plain/a.md', rule: PLAIN, text: UNTYPED },
@@ -99,12 +93,11 @@ describe('corpus check result', () => {
     });
 
     it('sums violations across files rather than counting the files', () => {
-      // A file with three findings must not count as one.
       // ARRANGE
       const reference: FrontmatterRule = {
         ruleId: 'reference',
         intent: 'Reference pages say how far they can be trusted',
-        path: ['docs/reference/**/*.md'],
+        folderTrees: ['docs/reference/'],
         unknownKeys: 'forbidden',
         fields: {
           status: { allowed: [{ value: 'stable' }] },

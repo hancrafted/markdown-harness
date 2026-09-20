@@ -1,0 +1,4 @@
+frontmatter:
+  rules:
+    - ruleId: no-intent
+      folderTrees: [docs/]

@@ -8,8 +8,8 @@
  * the rule rather than the resolver.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { SelectorRef } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.types.ts';
 
 /**
  * The selector this rule was written with.
@@ -17,6 +17,9 @@ import type { SelectorRef } from '../../../response-contract/index.ts';
  * @param rule The rule to read a selector off.
  */
 export function selectorRefFor(rule: FrontmatterRule): SelectorRef {
-  if ('fileName' in rule && rule.fileName !== undefined) return { fileName: rule.fileName };
-  return { path: rule.path ?? [] };
+  const ref: SelectorRef = {};
+  if (rule.folders !== undefined) ref.folders = rule.folders;
+  if (rule.folderTrees !== undefined) ref.folderTrees = rule.folderTrees;
+  if (rule.fileNames !== undefined) ref.fileNames = rule.fileNames;
+  return ref;
 }

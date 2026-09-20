@@ -19,13 +19,12 @@ frontmatter:
   # silently governs zero files — `mh --audit` is what makes that visible.
   rules:
     # ── 1. A rule that forbids frontmatter outright ───────────────────────────
-    # `fileName` matches the basename at any depth, so it needs no glob. It is
-    # sugar for `path: ["**/index.md"]`.
+    # `fileNames` matches the basename at any depth.
     #
     # `frontmatter: forbidden` is the one payload that takes no other payload
     # key — there is nothing to constrain on a file that must carry none.
     - ruleId: index-files
-      fileName: index.md
+      fileNames: [index.md]
       intent: An index lists what is in a directory, and carries no frontmatter of its own
       frontmatter: forbidden
 
@@ -45,17 +44,18 @@ frontmatter:
     # index files carry none. §9 says no such thing about `log.md`, so forbidding
     # it here would be this config over-claiming on OKF's behalf.
     - ruleId: log-files
-      fileName: log.md
+      fileNames: [log.md]
       intent: An update history is not a concept document, and OKF asks nothing of its frontmatter
 
     # ── 3. The signal-bearing rule ────────────────────────────────────────────
     # Research is where provenance matters, so this is the rule that reaches the
     # nested addresses and the named formats.
     - ruleId: research
-      path: [docs/research/**/*.md]
+      folderTrees: [docs/research/]
       # Excluded paths fall THROUGH to a later, broader rule rather than being
       # exempted from governance altogether. Per rule, never global.
-      excludeFiles: [docs/research/vendor/**]
+      excludeFiles:
+        - { folderTrees: [docs/research/vendor/] }
       intent: Research is only worth as much as the sources behind it, so it names them
       # At least one of these must be present. `allOf` and `exactlyOneOf` are the
       # other two spellings.
@@ -83,7 +83,7 @@ frontmatter:
 
     # ── 4. Closing the key set, and the escape valve ──────────────────────────
     - ruleId: reference
-      path: [docs/reference/**/*.md]
+      folderTrees: [docs/reference/]
       intent: Reference pages are looked up by slug and say how far they can be trusted
       # Defaults to `allowed` when absent. `forbidden` is the only rule-level way
       # to catch a typo'd frontmatter key.
@@ -119,7 +119,7 @@ frontmatter:
     # `stale_after` onto EVERY constraining rule in the list, which is rarely
     # what anyone means.
     - ruleId: runbooks
-      path: [docs/runbooks/**/*.md]
+      folderTrees: [docs/runbooks/]
       intent: A runbook that has drifted from the system it describes is worse than none
       assess:
         stale: Re-run these steps against the live system before following them, then move stale_after.
@@ -132,7 +132,7 @@ frontmatter:
     # opt-in, so anything this does not match is invisible to the harness — never
     # reported, never counted.
     - ruleId: everything-else
-      path: [docs/**/*.md]
+      folderTrees: [docs/]
       intent: Every document under docs/ still has to say what it is
       fields:
         type: { presence: required }

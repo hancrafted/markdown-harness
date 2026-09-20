@@ -359,7 +359,7 @@ export default tseslint.config(
     rules: {
       'check-file/filename-naming-convention': [
         'error',
-        { [ENTRY_POINTS]: 'KEBAB_CASE', [INTERNALS]: ONE_SUFFIX },
+        { [ENTRY_POINTS]: '@(+([a-z0-9-])|section.types)', [INTERNALS]: ONE_SUFFIX },
         {
           errorMessage:
             'stop: "{{ target }}" does not match "{{ pattern }}". A package root file is kebab-case with no suffix; every file below it carries exactly one of .pure .impure .types .test.',

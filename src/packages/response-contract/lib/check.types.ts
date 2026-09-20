@@ -36,23 +36,30 @@ export interface CheckSummary {
   governedFiles: number;
   /** Governed files carrying at least one violation. Always `=== files.length`. */
   invalidFiles: number;
-  /** Sum of `violations.length` across `files`. */
+  /** Sum of violations across files. */
   totalViolations: number;
 }
 
 /**
- * One file's findings.
- *
- * `ruleId` and `ruleIntent` sit on the file rather than on each violation:
- * under first-match, every violation in a file comes from the same rule.
+ * One module's findings on a file.
+ */
+export interface ModuleViolations {
+  /** The config key the Operator typed, never the Package name. */
+  module: string;
+  /** The rule that won this file under first-match within this Module. */
+  ruleId: string;
+  /** That rule's intent verbatim. */
+  ruleIntent: string;
+  /** Everything wrong with this file from this module. */
+  violations: readonly Violation[];
+}
+
+/**
+ * One file's findings, grouped by Module.
  */
 export interface FileViolations {
   /** Root-relative, `/`-separated, no leading `./` or `/`. */
   path: string;
-  /** The rule that won this file under first-match (§3.1). */
-  ruleId: string;
-  /** That rule's `intent`, verbatim — the instruction every fix here is made against (§3.4). */
-  ruleIntent: string;
-  /** Everything wrong with this file, in the order §4.6 fixes. */
-  violations: readonly Violation[];
+  /** Findings grouped by the Module that made them. */
+  modules: readonly ModuleViolations[];
 }

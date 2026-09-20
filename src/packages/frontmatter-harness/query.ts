@@ -5,29 +5,33 @@
 // that does are answered identically — an agent about to author a file cannot
 // be asked to write it first and be told afterwards.
 
-import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
 import type { QueryResult } from '../response-contract/index.ts';
 import { requirementsForRule } from './lib/query/requirements.pure.ts';
 import { findFirstMatch } from './lib/rules/first-match.pure.ts';
-import { matchGlob } from './lib/rules/glob-match.impure.ts';
 import { normalisePath } from './lib/rules/path-shape.pure.ts';
+import type { FrontmatterConfig } from './section.types.ts';
 
 /**
- * Resolve one path against the config's ordered rule list.
+ * Resolve one path against the frontmatter module's ordered rule list.
  *
  * @param path The path asked about, exactly as the caller wrote it.
- * @param config A config that has already been validated.
+ * @param section A frontmatter section that has already been validated, or undefined.
  */
-export function queryPath(path: string, config: MarkdownHarnessConfig): QueryResult {
+export function queryPath(path: string, section: FrontmatterConfig | undefined): QueryResult {
   const normalised = normalisePath(path);
-  const winner = findFirstMatch(normalised, config.frontmatter?.rules ?? [], matchGlob);
+  const winner = findFirstMatch(normalised, section?.rules ?? []);
 
   if (winner === undefined) return { governance: 'invisible', path: normalised };
 
   return {
     governance: 'governed',
     path: normalised,
-    rule: { ruleId: winner.ruleId, intent: winner.intent },
-    requirements: requirementsForRule(winner),
+    modules: [
+      {
+        module: 'frontmatter',
+        rule: { ruleId: winner.ruleId, intent: winner.intent },
+        requirements: requirementsForRule(winner),
+      },
+    ],
   };
 }
