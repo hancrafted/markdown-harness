@@ -9,8 +9,8 @@
  * broken block means.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { CheckResult } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 
 /** A YAML mapping, before any key of it has been read. */
 export type FrontmatterMapping = Record<string, unknown>;

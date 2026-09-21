@@ -6,7 +6,7 @@
 // alone, and both reach the same file.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { findFirstMatch } from './first-match.pure';
 
 const specific: FrontmatterRule = {

@@ -6,7 +6,8 @@
 // platform function — which is the whole point of the grammar it covers.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule, Selector } from '../../../config-contract/index.ts';
+import type { Selector } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { folderOf, ruleSelects, selectionFor, selectorMatches } from './selector.pure';
 
 const folderRule: FrontmatterRule = {

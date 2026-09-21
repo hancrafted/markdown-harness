@@ -8,21 +8,19 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { MarkdownHarnessConfig } from '../../config-contract/index.ts';
 import { checkCorpus } from '../check.ts';
+import type { FrontmatterConfig } from '../section.ts';
 
 /** Governs `docs/` alone, and deliberately nothing else, so invisibility is testable. */
-const CONFIG: MarkdownHarnessConfig = {
-  frontmatter: {
-    rules: [
-      {
-        ruleId: 'docs',
-        intent: 'Everything in docs/ says what it is',
-        folders: ['docs/'],
-        fields: { type: { presence: 'required' } },
-      },
-    ],
-  },
+const SECTION: FrontmatterConfig = {
+  rules: [
+    {
+      ruleId: 'docs',
+      intent: 'Everything in docs/ says what it is',
+      folders: ['docs/'],
+      fields: { type: { presence: 'required' } },
+    },
+  ],
 };
 
 let root = '';
@@ -51,7 +49,7 @@ describe('checkCorpus', () => {
       const expected = { governedFiles: 2, invalidFiles: 1, totalViolations: 1 };
       const reported = ['docs/untyped.md'];
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual?.summary).toEqual(expected);
@@ -63,7 +61,7 @@ describe('checkCorpus', () => {
       const files = ['docs/typed.md'];
       const expected = { summary: { governedFiles: 1, invalidFiles: 0, totalViolations: 0 }, files: [] };
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual).toEqual(expected);
@@ -82,18 +80,22 @@ describe('checkCorpus', () => {
       const files = ['docs/typed.md', 'docs/phantom.md'];
       const refused = join(root, 'docs', 'phantom.md');
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'unreadable' ? outcome.path : undefined;
       // ASSERT
       expect(actual).toBe(refused);
     });
 
-    it('governs nothing when the config holds no rules at all', () => {
+    it('governs nothing when this Module has no section of its own', () => {
+      // Reachable whenever another Module's key carries the config on its own:
+      // the loader rejects a config naming no Module at all, so `undefined` here
+      // never means "nothing governs" — it means "not this Module".
       // ARRANGE
       const files = ['docs/untyped.md'];
+      const noSection = undefined;
       const expected = { summary: { governedFiles: 0, invalidFiles: 0, totalViolations: 0 }, files: [] };
       // ACT
-      const outcome = checkCorpus(root, files, {});
+      const outcome = checkCorpus(root, files, noSection);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual).toEqual(expected);
@@ -109,7 +111,7 @@ describe('checkCorpus', () => {
       const files = ['docs/typed.md', 'ungoverned.md'];
       const expected = { governedFiles: 1, invalidFiles: 0, totalViolations: 0 };
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual?.summary).toEqual(expected);
@@ -120,7 +122,7 @@ describe('checkCorpus', () => {
       const files = ['./docs/untyped.md'];
       const expected = ['docs/untyped.md'];
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual?.files.map((file) => file.path)).toEqual(expected);
@@ -131,7 +133,7 @@ describe('checkCorpus', () => {
       const files = ['docs/untyped.md', 'docs/typed.md', 'docs/untyped.md'];
       const expected = ['docs/untyped.md', 'docs/untyped.md'];
       // ACT
-      const outcome = checkCorpus(root, files, CONFIG);
+      const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
       expect(actual?.files.map((file) => file.path)).toEqual(expected);

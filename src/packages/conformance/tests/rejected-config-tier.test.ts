@@ -25,7 +25,8 @@
 // with the code.
 
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../../config-loader/load-config.ts';
+import { MODULE_SET } from '../../cli/module-set.ts';
+import { loadConfig } from '../../foundation/load-config.ts';
 import type { ConfigErrorResult } from '../../response-contract/index.ts';
 import { casesIn } from '../case-corpus.ts';
 import { DECLARED_CODES } from '../config-fault-catalog.ts';
@@ -48,10 +49,14 @@ const REJECTED = 'CONFIG_REJECTED';
  *
  * Built from the Core loader rather than spawned through the CLI: the payload is
  * what every command reports identically, and the envelope around it is each
- * command's own business.
+ * command's own business. Driven by the DECLARED Module set rather than a set
+ * assembled here, because two of the codes below are now facts about the
+ * composition — which keys are claimed at all, and whether any Module was named
+ * — so a tier running against its own Module list would specify a tool nobody
+ * ships.
  */
 function rejectionFor(caseName: string): ConfigErrorResult {
-  return { error: REJECTED, faults: loadConfig(configPathOf(caseName)).faults };
+  return { error: REJECTED, faults: loadConfig(configPathOf(caseName), MODULE_SET).faults };
 }
 
 /** Every code the frozen files name, across the tier, with repeats. */
@@ -95,7 +100,7 @@ describe('the rejected-config tier', () => {
       // ARRANGE
       const noConfig = undefined;
       // ACT
-      const actual = loadConfig(configPathOf(caseName)).config;
+      const actual = loadConfig(configPathOf(caseName), MODULE_SET).config;
       // ASSERT
       expect(actual).toBe(noConfig);
     });
@@ -148,7 +153,7 @@ describe('the rejected-config tier', () => {
       // number belongs in review — and `cases.length` compared against anything
       // derived from `cases` could not fail at all.
       // ARRANGE
-      const declaredCases = 15;
+      const declaredCases = 16;
       // ACT
       const enumerated = cases.length;
       // ASSERT

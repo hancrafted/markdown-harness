@@ -9,12 +9,20 @@
 // The README blocks have no committed file of their own, so they are extracted
 // and written to an explicit path named in the test. The starter config is a
 // real committed file and is read where it lives.
+//
+// It lives in `cli` rather than beside the loader because it is a claim about
+// the SHIPPED tool: an example must load against the Module set this package
+// actually declares, and `cli` is the only Package that composes one (ARCH-008
+// §4.1). Driven from a Module set assembled here it would prove that some
+// arrangement accepts these bytes, which is not what an adopter copies.
 
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { loadConfig } from '../load-config.ts';
+import { loadConfig } from '../../foundation/load-config.ts';
+import { frontmatterModule } from '../../frontmatter-harness/module.ts';
+import { MODULE_SET } from '../module-set.ts';
 
 const README = 'README.md';
 const STARTER_CONFIG = '.agents/skills/markdown-harness/assets/starter-config.yaml';
@@ -49,7 +57,7 @@ function configBlocks(markdown: string): string[] {
 function loadFromText(yaml: string, name: string) {
   const path = join(scratch, name);
   writeFileSync(path, yaml);
-  return loadConfig(path);
+  return loadConfig(path, MODULE_SET);
 }
 
 describe('shipped config examples', () => {
@@ -59,10 +67,10 @@ describe('shipped config examples', () => {
       const noFaults = 0;
       const atLeastOneRule = 0;
       // ACT
-      const actual = loadConfig(STARTER_CONFIG);
+      const actual = loadConfig(STARTER_CONFIG, MODULE_SET);
       // ASSERT
       expect(actual.faults).toHaveLength(noFaults);
-      expect(actual.config?.frontmatter?.rules.length).toBeGreaterThan(atLeastOneRule);
+      expect(actual.config?.sectionFor(frontmatterModule)?.rules.length).toBeGreaterThan(atLeastOneRule);
     });
 
     it('loads every config example in the README, with no faults', () => {

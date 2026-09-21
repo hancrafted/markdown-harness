@@ -32,7 +32,6 @@
 // selector carries no extension any more, so without it this command would
 // start assessing a `.txt` file the corpus walk would never have collected.
 
-import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
 import { readTextIn } from '../foundation/read-text.ts';
 import type { AssessResult, WinningRule } from '../response-contract/index.ts';
 import { effectivePrompt } from './lib/assess/assess-prompt.pure.ts';
@@ -42,9 +41,10 @@ import { freshnessOf } from './lib/assess/freshness.pure.ts';
 import { isCorpusPath } from './lib/rules/corpus-path.pure.ts';
 import { findFirstMatch } from './lib/rules/first-match.pure.ts';
 import { normalisePath } from './lib/rules/path-shape.pure.ts';
+import type { FrontmatterConfig } from './section.ts';
 
 /**
- * Assess one path against the config, at one instant.
+ * Assess one path against this Module's section, at one instant.
  *
  * `root` and `path` arrive together because they are one fact in two halves:
  * where the config's globs are anchored, and which file inside that tree was
@@ -54,16 +54,16 @@ import { normalisePath } from './lib/rules/path-shape.pure.ts';
  * because `--assess` names one file rather than a corpus.
  *
  * @param file The corpus root, and the root-relative path asked about. It need not exist.
- * @param config A config that has already been validated.
+ * @param section This Module's validated section, or `undefined` when its key was not written — a Module governing nothing tells the agent to PROCEED.
  * @param now The Assessment instant, already known to name a moment.
  */
 export function assessPath(
   file: { root: string; path: string },
-  config: MarkdownHarnessConfig,
+  section: FrontmatterConfig | undefined,
   now: string,
 ): AssessResult {
   const path = normalisePath(file.path);
-  const winner = isCorpusPath(path) ? findFirstMatch(path, config.frontmatter?.rules ?? []) : undefined;
+  const winner = isCorpusPath(path) ? findFirstMatch(path, section?.rules ?? []) : undefined;
 
   if (winner === undefined) return { agentAction: 'PROCEED', state: 'ungoverned' };
 
@@ -75,6 +75,6 @@ export function assessPath(
     rule,
     file: found,
     freshness,
-    prompt: effectivePrompt(winner, config.frontmatter?.assess),
+    prompt: effectivePrompt(winner, section?.assess),
   });
 }

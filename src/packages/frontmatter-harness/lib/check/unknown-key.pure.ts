@@ -7,8 +7,8 @@
  * contract is the config fragment exactly as written.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { UnknownKeyViolation } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import type { FrontmatterMapping } from './check.types.ts';
 import { evidenceFor } from './field-evidence.pure.ts';
 

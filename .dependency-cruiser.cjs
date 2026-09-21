@@ -45,6 +45,28 @@ const GATE = 'foundation';
  */
 const TEST_HOMES = `^${R}/[^/]+/.+/[^/]+\\.test\\.ts$`;
 
+/**
+ * Every Module Package, written out.
+ *
+ * A Module owns one top-level key of the config and the grammar below it;
+ * everything else in the tree is Core. ARCH-008 §1.1 forbids one Module
+ * importing another, and this literal is what the rule is written against.
+ *
+ * NOT DERIVED, and not a naming convention: `-harness` is a suffix on the
+ * product's own name, so a Core Package could wear it and a Module could stop
+ * wearing it, and either would move a Package in or out of the rule with nobody
+ * deciding. A rule derived from the thing it checks cannot fail. Written out,
+ * adding a Module is a reviewed edit inside the file that enforces the
+ * boundary — the cost the record accepts, and the mitigation it names.
+ *
+ * `cli/module-set.ts` is the other list, and the two are deliberately separate:
+ * one composes Modules with the Core, this one holds them apart.
+ */
+const MODULES = ['frontmatter-harness'];
+
+/** The alternation the Module rule matches with, on both ends of the edge. */
+const ANY_MODULE = `^${R}/(${MODULES.join('|')})/`;
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -139,6 +161,17 @@ module.exports = {
       severity: 'error',
       from: { path: `^${R}/${GATE}/`, pathNot: [`^${R}/${GATE}/lib/platform/`, TEST_HOMES] },
       to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'modules-never-import-modules',
+      comment:
+        "ARCH-008 §1.1: a Module Package may not import another Module Package, at any depth, through any entry point. A Module declares what it needs in the Core's vocabulary and takes it as given; an edge between two Modules is a translation layer starting, and it is also how one Module ends up naming another's section type. Written against the explicit MODULES literal above rather than a naming convention, so adding a Module is a reviewed edit here. A Module's own files import each other freely — that is what `pathNot` excludes. Type-only edges are the ones that matter most here and they exist only while `tsPreCompilationDeps: true` (trap 5), so canary this rule BY NAME and read the dependency count, never the checkmark.",
+      severity: 'error',
+      from: { path: ANY_MODULE },
+      to: {
+        path: ANY_MODULE,
+        pathNot: `^${R}/$1/`, // same Module → intra-package freedom
+      },
     },
     {
       name: 'no-circular',

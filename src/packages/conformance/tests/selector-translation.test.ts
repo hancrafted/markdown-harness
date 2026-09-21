@@ -24,8 +24,10 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../../config-loader/load-config.ts';
+import { MODULE_SET } from '../../cli/module-set.ts';
 import { listMarkdownFiles } from '../../foundation/list-markdown-files.ts';
+import { loadConfig } from '../../foundation/load-config.ts';
+import { frontmatterModule } from '../../frontmatter-harness/module.ts';
 import { queryPath } from '../../frontmatter-harness/query.ts';
 import { corpusComparisons, translationTierRoot, witnessComparisons } from '../selector-translation.ts';
 
@@ -42,13 +44,15 @@ const witnesses = witnessComparisons();
  * longer validates fails here rather than silently resolving against a config
  * the tool would refuse.
  */
-function tierConfig() {
-  const load = loadConfig(CONFIG);
+function tierSection() {
+  const load = loadConfig(CONFIG, MODULE_SET);
   if (load.config === undefined) throw new Error(`the tier config was refused: ${JSON.stringify(load.faults)}`);
-  return load.config;
+  const section = load.config.sectionFor(frontmatterModule);
+  if (section === undefined) throw new Error('the tier config must name the frontmatter Module');
+  return section;
 }
 
-const config = tierConfig();
+const section = tierSection();
 
 /** The folder token a tier-relative path sits in, root included. */
 function folderOf(path: string): string {
@@ -73,7 +77,7 @@ function tierFolders(directory: string, prefix: string): readonly string[] {
 
 /** What the steering command answers for one path, reduced to what the halves compare. */
 function answerFor(path: string): { path: string; governance: string; ruleId: string | null } {
-  const answer = queryPath(path, config);
+  const answer = queryPath(path, section);
   return {
     path,
     governance: answer.governance,

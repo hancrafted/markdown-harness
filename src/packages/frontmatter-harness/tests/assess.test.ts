@@ -11,12 +11,18 @@
 
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../../config-loader/load-config.ts';
+import { loadConfig } from '../../foundation/load-config.ts';
 import { assessPath } from '../assess.ts';
+import { frontmatterModule } from '../module.ts';
 
-const loaded = loadConfig('fixtures/conformance/frontmatter/valid-test-config.yaml');
+// Loaded through this Module's own descriptor, which is also what makes the
+// section below typed: `sectionFor` keys on the descriptor, so what comes back
+// is the section this Module's own validation earned and nothing else.
+const loaded = loadConfig('fixtures/conformance/frontmatter/valid-test-config.yaml', [frontmatterModule]);
 if (loaded.config === undefined) throw new Error('the conformance config must load for this suite to mean anything');
-const config = loaded.config;
+const section = loaded.config.sectionFor(frontmatterModule);
+if (section === undefined)
+  throw new Error('the conformance config must name this Module for this suite to mean anything');
 
 /** The synthetic repo root the config's paths are written relative to: the tier. */
 const CORPUS_ROOT = fileURLToPath(new URL('../../../../fixtures/conformance/frontmatter', import.meta.url));
@@ -40,7 +46,7 @@ describe('assessPath', () => {
         rule: { ruleId: 'freshness', intent: 'A page that goes out of date says when to stop trusting it' },
       };
       // ACT
-      const actual = assessPath({ root: CORPUS_ROOT, path: STALE }, config, NOW);
+      const actual = assessPath({ root: CORPUS_ROOT, path: STALE }, section, NOW);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -57,7 +63,7 @@ describe('assessPath', () => {
         rule: { ruleId: 'freshness', intent: 'A page that goes out of date says when to stop trusting it' },
       };
       // ACT
-      const actual = assessPath({ root: CORPUS_ROOT, path: FRESH }, config, NOW);
+      const actual = assessPath({ root: CORPUS_ROOT, path: FRESH }, section, NOW);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -72,7 +78,7 @@ describe('assessPath', () => {
         rule: { ruleId: 'freshness', intent: 'A page that goes out of date says when to stop trusting it' },
       };
       // ACT
-      const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness/undated.md' }, config, NOW);
+      const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness/undated.md' }, section, NOW);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -88,7 +94,7 @@ describe('assessPath', () => {
         rule: { ruleId: 'freshness', intent: 'A page that goes out of date says when to stop trusting it' },
       };
       // ACT
-      const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness/not-written-yet.md' }, config, NOW);
+      const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness/not-written-yet.md' }, section, NOW);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -99,7 +105,7 @@ describe('assessPath', () => {
       // ARRANGE
       const expected = { agentAction: 'PROCEED', state: 'ungoverned' };
       // ACT
-      const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/research/vendor/upstream.md' }, config, NOW);
+      const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/research/vendor/upstream.md' }, section, NOW);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -114,8 +120,8 @@ describe('assessPath', () => {
       const expected = ['PROCEED', 'REVIEW'];
       // ACT
       const actual = [
-        assessPath({ root: CORPUS_ROOT, path: STALE }, config, beforeExpiry).agentAction,
-        assessPath({ root: CORPUS_ROOT, path: STALE }, config, afterExpiry).agentAction,
+        assessPath({ root: CORPUS_ROOT, path: STALE }, section, beforeExpiry).agentAction,
+        assessPath({ root: CORPUS_ROOT, path: STALE }, section, afterExpiry).agentAction,
       ];
       // ASSERT
       expect(actual).toEqual(expected);
@@ -133,7 +139,7 @@ describe('assessPath', () => {
       // ARRANGE
       const expected = { agentAction: 'PROCEED', state: 'ungoverned' };
       // ACT
-      const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness' }, config, NOW);
+      const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness' }, section, NOW);
       // ASSERT
       expect(actual).toEqual(expected);
     });

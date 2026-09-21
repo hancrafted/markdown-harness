@@ -12,8 +12,8 @@
  * explain first-match cannot end up explaining a second opinion.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { RuleAudit } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { selectionFor } from '../rules/selector.pure.ts';
 import { selectorRefFor } from './selector-ref.pure.ts';
 

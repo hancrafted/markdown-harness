@@ -12,8 +12,8 @@
  * conditionally rather than building one object literal.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { SelectorRef } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 
 /**
  * The selector this rule was written with.

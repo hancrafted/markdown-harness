@@ -11,8 +11,8 @@
 // be checked against it by eye.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { RuleAudit } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { tallyRules } from './rule-tally.pure';
 
 const indexFiles: FrontmatterRule = {

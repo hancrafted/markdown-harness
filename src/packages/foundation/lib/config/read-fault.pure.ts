@@ -6,13 +6,15 @@
  * line is a decision this repo makes, not something the filesystem hands back.
  *
  * It maps the GATE's two failures rather than an errno, which it used to. The
- * errno is now read once, in `foundation`, so the "only ENOENT proves absence"
- * rule is stated in one place for every caller instead of once per Package —
- * and this file is left with the half that is about the CONFIG catalog.
+ * errno is read once, in `lib/platform/`, so the "only ENOENT proves absence"
+ * rule is stated in one place for every caller — and this file is left with the
+ * half that is about the CONFIG catalog. Both halves now sit in this Package:
+ * the loader was absorbed here once the descriptor removed its one import of a
+ * Module.
  */
 
-import type { FileRead } from '../../foundation/read-text.ts';
-import type { ConfigFault } from '../../response-contract/index.ts';
+import type { ConfigFault } from '../../../config-contract/index.ts';
+import type { FileRead } from '../read/file-read.types.ts';
 
 /**
  * Turn a read that produced no bytes into the fault it deserves.

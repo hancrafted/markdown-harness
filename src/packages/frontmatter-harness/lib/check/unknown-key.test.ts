@@ -6,7 +6,7 @@
 // a nested shape still permits only its own top-level key.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { unknownKeyViolations } from './unknown-key.pure';
 
 const REFERENCE = { ruleId: 'reference', intent: 'Reference pages are looked up by slug' };

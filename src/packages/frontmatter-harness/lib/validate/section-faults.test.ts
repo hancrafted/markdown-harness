@@ -23,10 +23,16 @@ describe('sectionFaults', () => {
   });
 
   describe('failure cases', () => {
-    it('rejects an absent section as an empty rule list', () => {
-      // Naming a module and governing nothing is a mistake, not a no-op.
+    it('rejects a value that is not a mapping at all', () => {
+      // `undefined` no longer has a branch of its own. It used to answer
+      // CONFIG_EMPTY_RULE_LIST on the reasoning that an absent section and an
+      // empty list are one mistake — sound while one Module existed, and unsound
+      // the moment a second does, because each would then answer for the other's
+      // config. The loader owns the absent case now, as CONFIG_NO_MODULE_SECTION
+      // against the file, and never calls here for a key that was not written.
+      // What is left is the ordinary "written, and not a section" answer.
       // ARRANGE
-      const expected = [{ code: 'CONFIG_EMPTY_RULE_LIST', location: RULES_AT }];
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: 'frontmatter' }];
       // ACT
       const actual = sectionFaults(undefined);
       // ASSERT

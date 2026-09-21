@@ -6,7 +6,7 @@
 // anything is wrong is asking the one thing it is least reliable at.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { checkResultFor } from './check-result.pure';
 
 const PLAIN: FrontmatterRule = {

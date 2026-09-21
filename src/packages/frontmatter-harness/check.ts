@@ -13,15 +13,18 @@
 // file is what lets them be proven before frontmatter parsing can confuse a
 // failure.
 
-import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
 import { checkResultFor } from './lib/check/check-result.pure.ts';
 import type { CorpusCheck } from './lib/check/check.types.ts';
 import { governedFiles } from './lib/check/corpus-governance.pure.ts';
 import { readGovernedSources } from './lib/check/file-source.impure.ts';
 import { normalisePath } from './lib/rules/path-shape.pure.ts';
+import type { FrontmatterConfig } from './section.ts';
 
 /**
- * Check one corpus against the config's ordered rule list.
+ * Check one corpus against this Module's ordered rule list.
+ *
+ * Takes THIS MODULE'S SECTION rather than the whole config, and no longer
+ * reaches for its own key inside one.
  *
  * No verdict when a governed file could not be read — the caller owes exit 2
  * for it, because a report that quietly omitted the file would look complete.
@@ -30,10 +33,14 @@ import { normalisePath } from './lib/rules/path-shape.pure.ts';
  *
  * @param root The corpus directory exactly as the caller wrote it — never resolved.
  * @param files The corpus, as root-relative paths in walker order.
- * @param config A config that has already been validated.
+ * @param section This Module's validated section, or `undefined` when its key was not written — a Module governing nothing governs no file here either.
  */
-export function checkCorpus(root: string, files: readonly string[], config: MarkdownHarnessConfig): CorpusCheck {
-  const governed = governedFiles(files.map(normalisePath), config.frontmatter?.rules ?? []);
+export function checkCorpus(
+  root: string,
+  files: readonly string[],
+  section: FrontmatterConfig | undefined,
+): CorpusCheck {
+  const governed = governedFiles(files.map(normalisePath), section?.rules ?? []);
 
   const read = readGovernedSources(root, governed);
   if (read.kind === 'unreadable') return read;

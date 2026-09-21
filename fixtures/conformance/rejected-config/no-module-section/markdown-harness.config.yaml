@@ -1,0 +1,22 @@
+# A config in which no declared Module's key appears at all.
+#
+# The recognised top-level key set is computed from the Module set the tool
+# ships, so a section addressed to nobody is two facts at once and both are
+# reported: `frontmater:` is a key no declared Module claims, and the config that
+# is left over governs nothing. A config fails whole, so the Operator sees the
+# typo and its consequence in one run.
+#
+# The misspelling is deliberate and it is the realistic shape of this mistake.
+# Before the key set was derived, a whole-file config type named its one Module
+# by hand and a section name one letter wrong was ignored in silence — the
+# harness governed nothing and said nothing, which is the failure this code
+# exists to end.
+#
+# The rules below are sound. Nothing in them is reported, which is the point:
+# the Operator wrote governance the tool cannot see, rather than governance the
+# tool disagrees with.
+frontmater:
+  rules:
+    - ruleId: every-document
+      folders: ['docs/']
+      intent: Sound governance, addressed to a Module that does not exist.

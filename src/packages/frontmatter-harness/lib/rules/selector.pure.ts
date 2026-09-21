@@ -13,7 +13,8 @@
  * written; the cross-Module check that would have needed one is out of scope.
  */
 
-import type { FrontmatterRule, Selector } from '../../../config-contract/index.ts';
+import type { Selector } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import type { RuleSelection } from './rules.types.ts';
 
 /** The one separator a normalised path is spelled with. */

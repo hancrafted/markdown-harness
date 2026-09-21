@@ -9,7 +9,7 @@
  * Nothing here sorts: the walker's order is the report's order.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { findFirstMatch } from '../rules/first-match.pure.ts';
 import type { GovernedFile } from './check.types.ts';
 

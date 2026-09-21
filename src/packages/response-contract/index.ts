@@ -26,7 +26,13 @@ export type {
 export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';
 export type { CheckResult, CheckSummary, FileViolations } from './lib/check.types.ts';
 export { isConfigError } from './lib/config-error.pure.ts';
-export type { ConfigErrorResult, ConfigFault, ConfigFaultCode } from './lib/config-error.types.ts';
+// `ConfigFault` and `ConfigFaultCode` are re-exported from `config-contract`
+// rather than declared here. They moved to repair a cycle — the Module port
+// names a validation result, which names a fault, while this Package names
+// `FieldConstraints` back out of `config-contract` — and they are re-exported so
+// that every consumer that already reached for them at this address still can.
+export type { ConfigFault, ConfigFaultCode } from '../config-contract/index.ts';
+export type { ConfigErrorResult } from './lib/config-error.types.ts';
 export type {
   ConstrainingRequirements,
   FieldRequirement,

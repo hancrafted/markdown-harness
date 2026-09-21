@@ -11,8 +11,8 @@
  * what was actually written.
  */
 
-import type { FrontmatterRule, NoFrontmatterPayload, UnknownKeys } from '../../../config-contract/index.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
+import type { FrontmatterRule, NoFrontmatterPayload, UnknownKeys } from '../../section.ts';
 import { assessBlockFaults, unfireableAssessFaults } from './assess-faults.pure.ts';
 import { constraintFaults } from './constraint-faults.pure.ts';
 import { exclusionFaults, selectorFaults, tokenFaults } from './selector-faults.pure.ts';

@@ -6,7 +6,7 @@
 // work out which way to move.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { crossFieldViolations } from './cross-field.pure';
 
 const SKILLS = { ruleId: 'skills', intent: 'A skill is addressed by exactly one of its two names' };
