@@ -2,7 +2,7 @@
 type: agent-guide
 ---
 
-# Verification: the gate and its fourteen traps
+# Verification: the gate and its fifteen traps
 
 `npm run verify` is the gate. This page holds the traps inside it — the places where a check
 reports success without having measured anything.
@@ -258,7 +258,7 @@ way as anything else here — break what it guards, push, and watch the PR go re
 ## 14. A read of a file can come back short, and nothing reports that it did
 
 Every other trap here is a check reporting success over nothing. This one is worse, because it
-corrupts the evidence the other thirteen are read with: **a read in this environment can silently
+corrupts the evidence the other fourteen are read with: **a read in this environment can silently
 return less than the file holds, and succeed while doing it.**
 
 Two channels, both measured:
@@ -299,3 +299,25 @@ not, and a resolution written against the clipped text drops a decision nobody w
 The trap has no canary, because a short read cannot be planted. What it has is a habit: assume every
 read is partial until an anchor, a re-read at a different window, or a tool's own output agrees with
 it.
+
+## 15. A refusal upstream can leave a guard that cannot be reached
+
+A guard goes permanently green when something earlier refuses to produce the case it checks. Its
+logic may be perfectly correct. It is simply never reached, so it re-proves nothing on any run — and
+the reachable sibling nobody guarded is free to crash.
+
+Measured in #160. The walk refuses to descend into a symlinked directory, so a corpus cycle _through
+directories_ is never entered. Handling for that cycle therefore reads as held: plant the cycle, the
+walk answers a report, the assertion passes. It passes with the handling deleted, too. The cycle that
+was actually reachable ran through **files** — `knot-a.md → knot-b.md → knot-a.md` — and it raised
+`ELOOP` out of `statSync` and killed the walk with a stack trace. `throwIfNoEntry: false` suppresses
+`ENOENT` and nothing else, so the one shape the code appeared to cover was the one shape it could not
+meet.
+
+Two symptoms read as this trap. A planted violation that cannot be constructed without first
+disabling something else is one. A pair of cases where one is structurally impossible and its sibling
+is untested is the other. Ask which refusal upstream makes the case unreachable, then ask what that
+same refusal does **not** cover — the residue is where the crash lives.
+
+The repair is not a second guard. Delete the unreachable handling and test the reachable sibling: a
+ledger for a case that cannot occur is one more check that can never go red.
