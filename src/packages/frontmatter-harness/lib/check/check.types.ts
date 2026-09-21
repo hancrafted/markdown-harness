@@ -103,7 +103,7 @@ export interface UnreadableGovernedFile {
  * The outcome of opening every governed file.
  *
  * A tagged union and not an optional field beside a sentinel, which is what
- * `config-loader`'s stages use: those pair an optional value with a fault LIST,
+ * `foundation`'s config-loading stages use: those pair an optional value with a fault LIST,
  * where empty is a real count and carries no second meaning. There is no
  * equivalent here — a path is one string or no string, and `''` would be a
  * value nobody reads standing in for a state nobody can test. The two unions
