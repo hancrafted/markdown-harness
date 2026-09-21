@@ -402,7 +402,7 @@ const reported = new Set((verdict?.files ?? []).map((file) => file.path));
  * not true, the same message for every possible cause.
  */
 function verdictFrom(path: string): string {
-  if (queryPath(path, section).governance === 'invisible') return UNGOVERNED;
+  if (queryPath(path, section) === undefined) return UNGOVERNED;
   return reported.has(path) ? FAILS : PASSES;
 }
 
@@ -468,18 +468,23 @@ describe('the harness reports the verdict each Conformance case states', () => {
     });
 
     it('agrees with the marker tally on how many files are governed and invalid', () => {
-      // The counts and the per-file verdicts come from the same run, so this
-      // catches the summary drifting from `files` — and it is stated against the
-      // MARKERS rather than against the corpus size, so adding a case with no
-      // marker cannot quietly satisfy it.
+      // The extent and the per-file verdicts come from the same run, so this
+      // catches the two drifting apart — and it is stated against the MARKERS
+      // rather than against the corpus size, so adding a case with no marker
+      // cannot quietly satisfy it.
+      //
+      // This Module's own tally rather than the response summary: `--check`
+      // counts governed files as a UNION across Modules, and a tier with one
+      // Module in it cannot tell a union from a sum. The summary itself is
+      // asserted at the process boundary, where the composition it comes from
+      // has actually run.
       // ARRANGE
       const expected = {
         governedFiles: stated(PASSES).length + stated(FAILS).length,
         invalidFiles: stated(FAILS).length,
       };
       // ACT
-      const summary = verdict?.summary;
-      const actual = { governedFiles: summary?.governedFiles, invalidFiles: summary?.invalidFiles };
+      const actual = { governedFiles: verdict?.governed.length, invalidFiles: verdict?.files.length };
       // ASSERT
       expect(actual).toEqual(expected);
     });

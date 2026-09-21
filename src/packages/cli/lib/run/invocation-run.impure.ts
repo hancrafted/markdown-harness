@@ -11,6 +11,7 @@
 
 import { listMarkdownFiles } from '../../../foundation/list-markdown-files.ts';
 import { loadConfig } from '../../../foundation/load-config.ts';
+import { normalisePath } from '../../../foundation/path-shape.ts';
 import { assessPath } from '../../../frontmatter-harness/assess.ts';
 import { auditRules } from '../../../frontmatter-harness/audit.ts';
 import { checkCorpus } from '../../../frontmatter-harness/check.ts';
@@ -28,7 +29,9 @@ import type { Invocation } from '../argv/argv.types.ts';
 import { parseArgv } from '../argv/parse-argv.pure.ts';
 import { HELP, USAGE } from '../argv/usage.pure.ts';
 import { unsupportedRuntime } from '../runtime/node-support.pure.ts';
+import { corpusVerdict } from './corpus-verdict.pure.ts';
 import { hostInstant } from './host-instant.impure.ts';
+import { pathGovernance } from './path-governance.pure.ts';
 import { unreadableGovernedFile } from './unreadable-file.pure.ts';
 
 /**
@@ -90,7 +93,15 @@ function emit(response: CheckResponse | QueryResponse | AuditResponse | AssessRe
   return { stdout: `${JSON.stringify(response, null, 2)}\n`, stderr: '', code };
 }
 
-/** What the config asks of one path, before anything exists there. */
+/**
+ * What the config asks of one path, before anything exists there.
+ *
+ * Every declared Module is asked, and each answer is named by the key on ITS
+ * OWN DESCRIPTOR rather than by a string written here. The answers are listed
+ * in the declared Module set's order, which is the response's: a YAML mapping
+ * carries no guaranteed key order, so taking it from the document would reorder
+ * a stored answer for a reason nobody wrote down.
+ */
 function queryRun({ path, config }: Invocation): Termination {
   const load = loadConfig(config, MODULE_SET);
 
@@ -99,7 +110,9 @@ function queryRun({ path, config }: Invocation): Termination {
   }
 
   const section = load.config.sectionFor(frontmatterModule);
-  return emit({ command: 'query', path, config, result: queryPath(path, section) }, NOTHING_WRONG);
+  const answers = [{ module: frontmatterModule.key, claim: queryPath(path, section) }];
+  const result = pathGovernance(normalisePath(path), answers);
+  return emit({ command: 'query', path, config, result }, NOTHING_WRONG);
 }
 
 /**
@@ -191,7 +204,10 @@ function checkRun({ root, config }: Invocation): Termination {
     return { stdout: '', stderr: unreadableGovernedFile(checked.path), code: CANNOT_REPORT };
   }
 
-  const result = checked.result;
+  // Composed on the same terms as the steering command, and the counts with it:
+  // `governedFiles` is a union over Modules, which no Module can see to take.
+  const answers = [{ module: frontmatterModule.key, check: checked.result }];
+  const result = corpusVerdict(files.map(normalisePath), answers);
   const wrong = result.summary.invalidFiles > 0;
   return emit({ command: 'check', root, config, result }, wrong ? CORPUS_IS_WRONG : NOTHING_WRONG);
 }

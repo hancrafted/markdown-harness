@@ -75,13 +75,21 @@ function tierFolders(directory: string, prefix: string): readonly string[] {
   return [here, ...below];
 }
 
-/** What the steering command answers for one path, reduced to what the halves compare. */
+/**
+ * What the steering command answers for one path, reduced to what the halves compare.
+ *
+ * The Module answers with a CLAIM or with nothing, and `governance` is the
+ * composed word for it — a path is invisible when NO declared Module claims it.
+ * This is a per-Module tier, so the two coincide here and the translation is
+ * written out rather than assumed: the frozen witnesses state the response's
+ * word, and this says which Module fact stands behind it.
+ */
 function answerFor(path: string): { path: string; governance: string; ruleId: string | null } {
-  const answer = queryPath(path, section);
+  const claim = queryPath(path, section);
   return {
     path,
-    governance: answer.governance,
-    ruleId: answer.governance === 'governed' ? answer.rule.ruleId : null,
+    governance: claim === undefined ? 'invisible' : 'governed',
+    ruleId: claim?.rule.ruleId ?? null,
   };
 }
 

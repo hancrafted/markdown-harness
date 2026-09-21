@@ -9,9 +9,9 @@
 // per-Module, and `shadowed` needs every rule that selected each file rather
 // than only the winner — a subset would have thrown that away upstream.
 
+import { normalisePath } from '../foundation/path-shape.ts';
 import type { AuditResult } from '../response-contract/index.ts';
 import { tallyRules } from './lib/audit/rule-tally.pure.ts';
-import { normalisePath } from './lib/rules/path-shape.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
 
 /**

@@ -46,20 +46,20 @@ describe('checkCorpus', () => {
     it('reports the governed file that has a violation', () => {
       // ARRANGE
       const files = ['docs/typed.md', 'docs/untyped.md'];
-      const expected = { governedFiles: 2, invalidFiles: 1, totalViolations: 1 };
+      const governed = ['docs/typed.md', 'docs/untyped.md'];
       const reported = ['docs/untyped.md'];
       // ACT
       const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
-      expect(actual?.summary).toEqual(expected);
-      expect(actual?.files.map((file) => file.path)).toEqual(reported);
+      expect(actual?.governed).toEqual(governed);
+      expect(actual?.files.map((finding) => finding.path)).toEqual(reported);
     });
 
     it('reports a conforming corpus as governed and clean', () => {
       // ARRANGE
       const files = ['docs/typed.md'];
-      const expected = { summary: { governedFiles: 1, invalidFiles: 0, totalViolations: 0 }, files: [] };
+      const expected = { governed: ['docs/typed.md'], files: [] };
       // ACT
       const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
@@ -93,7 +93,7 @@ describe('checkCorpus', () => {
       // ARRANGE
       const files = ['docs/untyped.md'];
       const noSection = undefined;
-      const expected = { summary: { governedFiles: 0, invalidFiles: 0, totalViolations: 0 }, files: [] };
+      const expected = { governed: [], files: [] };
       // ACT
       const outcome = checkCorpus(root, files, noSection);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
@@ -109,12 +109,12 @@ describe('checkCorpus', () => {
       // nothing read it.
       // ARRANGE
       const files = ['docs/typed.md', 'ungoverned.md'];
-      const expected = { governedFiles: 1, invalidFiles: 0, totalViolations: 0 };
+      const expected = { governed: ['docs/typed.md'], files: [] };
       // ACT
       const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
-      expect(actual?.summary).toEqual(expected);
+      expect(actual).toEqual(expected);
     });
 
     it('reports paths in the shape the walker uses, not the shape it was handed', () => {
@@ -125,7 +125,7 @@ describe('checkCorpus', () => {
       const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
-      expect(actual?.files.map((file) => file.path)).toEqual(expected);
+      expect(actual?.files.map((finding) => finding.path)).toEqual(expected);
     });
 
     it('keeps the order it was given rather than sorting', () => {
@@ -136,7 +136,7 @@ describe('checkCorpus', () => {
       const outcome = checkCorpus(root, files, SECTION);
       const actual = outcome.kind === 'checked' ? outcome.result : undefined;
       // ASSERT
-      expect(actual?.files.map((file) => file.path)).toEqual(expected);
+      expect(actual?.files.map((finding) => finding.path)).toEqual(expected);
     });
   });
 });

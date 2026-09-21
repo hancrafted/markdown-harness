@@ -290,14 +290,31 @@ describe('mh', () => {
       expect(Object.keys(rows[0])).toEqual(rowShape);
     });
 
+    it('nests what the config asks of a path under the Module asking it', () => {
+      // The steering answer mirrors the checking answer's shape: one block per
+      // governing Module, named by the top-level config key the Operator typed.
+      // ARRANGE
+      const expected = [{ module: 'frontmatter', ruleId: 'reference' }];
+      // ACT
+      const run = mh('--query', 'docs/reference/api-limits.md', '--config', CONFIG);
+      const result = JSON.parse(run.stdout).result as { modules: { module: string; rule: { ruleId: string } }[] };
+      const actual = result.modules.map((block) => ({ module: block.module, ruleId: block.rule.ruleId }));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('answers an ungoverned path as invisible and still exits 0', () => {
       // ARRANGE
       const success = 0;
+      // No declared Module claims it, which is what `invisible` says — a claim
+      // about the whole config rather than about a null rule.
       // ACT
       const run = mh('--query', 'README.md', '--config', CONFIG);
+      const body = JSON.parse(run.stdout);
       // ASSERT
       expect(run.code).toBe(success);
-      expect(JSON.parse(run.stdout).result.governance).toBe(INVISIBLE);
+      expect(body.result.governance).toBe(INVISIBLE);
+      expect(body.result.modules).toBe(undefined);
     });
   });
 
@@ -397,14 +414,22 @@ describe('mh', () => {
       expect(run.stdout.slice(-trailing.length)).toBe(trailing);
     });
 
-    it('echoes path and config exactly as written, never resolved', () => {
+    it('echoes path and config exactly as written, and normalises only inside the result', () => {
+      // Two spellings, deliberately. The envelope repeats the invocation so a
+      // stored response says what was asked; the result carries the normalised
+      // path so a caller can key on what it gets back. Neither is resolved
+      // against this machine, which is what lets a stored response compare
+      // equal on another one.
       // ARRANGE
       const written = './docs/reference/api-limits.md';
+      const normalised = 'docs/reference/api-limits.md';
       // ACT
       const run = mh('--query', written, '--config', CONFIG);
+      const body = JSON.parse(run.stdout);
       // ASSERT
-      expect(JSON.parse(run.stdout).path).toBe(written);
-      expect(JSON.parse(run.stdout).config).toBe(CONFIG);
+      expect(body.path).toBe(written);
+      expect(body.config).toBe(CONFIG);
+      expect(body.result.path).toBe(normalised);
     });
 
     it('never lets a refused directory into the corpus it audits', () => {
@@ -524,26 +549,37 @@ describe('mh --check', () => {
       ];
       // ACT
       const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
-      const files = JSON.parse(run.stdout).result.files as { violations: { violation: string }[] }[];
-      const reached = files.flatMap((file) => file.violations.map((found) => found.violation));
+      const files = JSON.parse(run.stdout).result.files as { modules: { violations: { violation: string }[] }[] }[];
+      const reached = files.flatMap((file) =>
+        file.modules.flatMap((block) => block.violations.map((found) => found.violation)),
+      );
       // ASSERT
       expect([...new Set(reached)].sort()).toEqual(codes);
     });
   });
 
   describe('failure cases', () => {
-    it('reports a too-short title with the rule that won the file and its intent', () => {
+    it('reports a too-short title under the Module whose rule won the file, with its intent', () => {
+      // The findings nest one level down. The Module is named by the top-level
+      // config key the Operator typed — never a Package name and never a short
+      // name minted for the report — because the point of naming it is to say
+      // which section of their own config to open.
       // ARRANGE
       const row = {
         path: 'docs/workflows/tagging.md',
-        ruleId: 'workflows',
-        ruleIntent: 'A workflow names itself and says when to reach for it',
-        violations: [
+        modules: [
           {
-            field: 'title',
-            value: 'Go',
-            violation: 'VALUE_TOO_SHORT',
-            requirement: { minLength: 3, maxLength: 80 },
+            module: 'frontmatter',
+            ruleId: 'workflows',
+            ruleIntent: 'A workflow names itself and says when to reach for it',
+            violations: [
+              {
+                field: 'title',
+                value: 'Go',
+                violation: 'VALUE_TOO_SHORT',
+                requirement: { minLength: 3, maxLength: 80 },
+              },
+            ],
           },
         ],
       };

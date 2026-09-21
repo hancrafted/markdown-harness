@@ -24,7 +24,15 @@ export type {
   WinningRule,
 } from './lib/assess.types.ts';
 export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';
-export type { CheckResult, CheckSummary, FileViolations } from './lib/check.types.ts';
+export type {
+  CheckResult,
+  CheckSummary,
+  FileViolations,
+  ModuleCheck,
+  ModuleFinding,
+  ModuleViolations,
+  RuleFindings,
+} from './lib/check.types.ts';
 export { isConfigError } from './lib/config-error.pure.ts';
 // `ConfigFault` and `ConfigFaultCode` are re-exported from `config-contract`
 // rather than declared here. They moved to repair a cycle — the Module port
@@ -38,6 +46,8 @@ export type {
   FieldRequirement,
   GovernedPath,
   InvisiblePath,
+  ModuleClaim,
+  ModuleRequirements,
   NoFrontmatterRequirements,
   QueryResult,
   Requirements,
