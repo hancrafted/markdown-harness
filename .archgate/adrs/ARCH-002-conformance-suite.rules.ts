@@ -1,11 +1,11 @@
 /// <reference path="../rules.d.ts" />
 
-// ARCH-002 — Conformance Suite: every Conformance case under
-// fixtures/conformance/docs/ carries exactly one machine-readable
-// `<!-- expect: VERDICT -->` marker, VERDICT one of PASSES, FAILS or
-// UNGOVERNED (ARCH-002 §2, a review duty covers whether the verdict is
-// actually correct — this rule only checks presence, singularity and
-// vocabulary). Runs at error (ARCH-002 Compliance and Enforcement).
+// ARCH-002 — Conformance Suite: every Conformance case under a tier's
+// `docs/` carries exactly one machine-readable `<!-- expect: VERDICT -->`
+// marker, VERDICT one of PASSES, FAILS or UNGOVERNED (ARCH-002 §2, a review
+// duty covers whether the verdict is actually correct — this rule only checks
+// presence, singularity and vocabulary). Runs at error (ARCH-002 Compliance and
+// Enforcement).
 //
 // ARCH-002 §4 adds a SECOND marker, `<!-- assess: ACTION -->`, held by its own
 // rule below. The two are deliberately separate: `expect:` is required exactly
@@ -14,8 +14,18 @@
 // The regexes cannot collide — each names its own keyword — which is why adding
 // the second marker needed no change to the first rule.
 //
+// THE GLOB CARRIES A TIER SEGMENT. `fixtures/conformance/` holds tiers, one
+// directory per Module plus one for rejected config, and only a Module tier
+// holds documents — a rejected-config case is config bytes and a frozen
+// expectation, never markdown. `*/docs/**` is what reaches the cases without
+// reaching the tier next door.
+//
+// A GLOB THAT MATCHES NOTHING IS A VIOLATION, held by `expect-marker` below.
+// Both rules loop over this one glob, so one guard proves its reach for both
+// and a second would report the same fact twice.
+//
 // Self-contained by design: archgate forbids imports between rules files.
-const CASE_GLOB = 'fixtures/conformance/docs/**/*.md';
+const CASE_GLOB = 'fixtures/conformance/*/docs/**/*.md';
 const MARKER_RE = /<!--\s*expect:\s*(\S+?)\s*-->/g;
 const KNOWN_VERDICTS = new Set(['PASSES', 'FAILS', 'UNGOVERNED']);
 const ASSESS_RE = /<!--\s*assess:\s*(\S+?)\s*-->/g;
@@ -25,10 +35,24 @@ export default {
   rules: {
     'expect-marker': {
       description:
-        'Every Conformance case under fixtures/conformance/docs/ carries exactly one `<!-- expect: VERDICT -->` marker, VERDICT one of PASSES, FAILS, or UNGOVERNED.',
+        "Every Conformance case under a tier's docs/ carries exactly one `<!-- expect: VERDICT -->` marker, VERDICT one of PASSES, FAILS, or UNGOVERNED — and the case glob matching nothing is itself a violation.",
       severity: 'error',
       async check(ctx) {
         const files = await ctx.glob(CASE_GLOB);
+
+        // THE REACH GUARD. A loop over zero files reports success over
+        // nothing, so a corpus that moved out from under this glob would leave
+        // the gate green while governing not one case. The sibling test can
+        // prove what this rule DECIDES and can never prove what it REACHES;
+        // reach is only provable against the real tree, by moving the fixtures
+        // without moving the glob and watching this fire.
+        if (files.length === 0) {
+          ctx.report.violation({
+            message: `The Conformance case glob '${CASE_GLOB}' matched no files — the corpus moved, or a tier was renamed, and nothing is being governed (ARCH-002 [expect-marker]).`,
+          });
+          return;
+        }
+
         for (const file of files) {
           const content = await ctx.readFile(file);
           const matches = [...content.matchAll(MARKER_RE)];
@@ -62,7 +86,7 @@ export default {
 
     'assess-marker': {
       description:
-        'A Conformance case carries at most one `<!-- assess: ACTION -->` marker, ACTION one of REVIEW, PROCEED, or FIX_FILE. Absence is legal; a second marker is not.',
+        'A Conformance case carries at most one `<!-- assess: ACTION -->` marker, ACTION one of REVIEW, PROCEED, or FIX_FILE. Absence is legal; a second marker is not. It loops the same case glob as `expect-marker`, whose empty-match guard proves that glob reaches the tree for both.',
       severity: 'error',
       async check(ctx) {
         const files = await ctx.glob(CASE_GLOB);

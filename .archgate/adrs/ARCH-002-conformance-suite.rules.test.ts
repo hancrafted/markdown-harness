@@ -8,6 +8,16 @@
 // `expect-marker` has none of: a file with NO marker at all. Absence is legal
 // there and illegal here, which is the one difference between the two rules and
 // the one thing a test of them both has to state.
+//
+// WHAT THIS FILE CANNOT PROVE. Every context below is hand-built, so its glob
+// is matched against a `files` map this file wrote. That proves what the rule
+// DECIDES about the files it is handed and says nothing whatever about whether
+// the glob reaches the committed corpus — a glob pointed at a directory that
+// no longer exists passes every test here. The reach proof is a probe against
+// the real tree: move the fixtures without moving the glob, run
+// `archgate check`, and read the violation. The empty-match guard tested below
+// is what makes that probe produce a violation rather than a green run, and
+// running it is a stated obligation of any change that moves the corpus.
 
 import { describe, expect, it } from 'vitest';
 import ruleSet from './ARCH-002-conformance-suite.rules';
@@ -54,7 +64,7 @@ function makeCtx(files: Record<string, string>) {
   return { ctx, violations };
 }
 
-const CASE_PATH = 'fixtures/conformance/docs/reference/labels.md';
+const CASE_PATH = 'fixtures/conformance/frontmatter/docs/reference/labels.md';
 
 const rule = ruleSet.rules['expect-marker'];
 
@@ -121,16 +131,66 @@ describe('expect-marker', () => {
     expect(untagged).toEqual([]);
   });
 
-  it('ignores files outside fixtures/conformance/docs/', async () => {
+  it("ignores a tier's config, which sits beside its docs/ rather than inside it", async () => {
     // ARRANGE
     const files = {
-      'fixtures/conformance/valid-test-config.yaml': 'frontmatter:\n  rules: []\n',
+      'fixtures/conformance/frontmatter/valid-test-config.yaml': 'frontmatter:\n  rules: []\n',
     };
     const { ctx, violations } = makeCtx(files);
     // ACT
     await rule.check(ctx);
     // ASSERT
-    expect(violations).toEqual([]);
+    expect(violations.some((v) => /has no expect marker/.test(v.message))).toBe(false);
+  });
+
+  it('reports a violation when the case glob matches nothing at all', async () => {
+    // The hole this closes: the loop above runs over zero files and reports
+    // success, so a corpus that moved out from under the glob left the gate
+    // green while governing not one case. The message names the glob, because
+    // the glob is what has to be corrected.
+    // ARRANGE
+    const files = {
+      'fixtures/conformance/frontmatter/valid-test-config.yaml': 'frontmatter:\n  rules: []\n',
+    };
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await rule.check(ctx);
+    // ASSERT
+    expect(violations.some((v) => /matched no files/.test(v.message))).toBe(true);
+  });
+
+  it('names the tier segment in the glob it reports, so the fix is the diff', async () => {
+    // ARRANGE
+    const tieredGlob = 'fixtures/conformance/*/docs/**/*.md';
+    const { ctx, violations } = makeCtx({});
+    // ACT
+    await rule.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.message).join('')).toContain(tieredGlob);
+  });
+
+  it('reports the empty glob exactly once rather than once per missing tier', async () => {
+    // ARRANGE
+    const onlyTheReachGuard = 1;
+    const { ctx, violations } = makeCtx({});
+    // ACT
+    await rule.check(ctx);
+    // ASSERT
+    expect(violations).toHaveLength(onlyTheReachGuard);
+  });
+
+  it('does not reach a case filed one directory too high', async () => {
+    // The old, tierless layout. A glob that still matched it would make the
+    // split invisible: cases could be filed outside every tier and stay
+    // governed, and the enrolment check would never see them.
+    // ARRANGE
+    const oldLayout = 'fixtures/conformance/docs/reference/labels.md';
+    const files = { [oldLayout]: '---\ntype: reference\n---\n\nNo marker.\n' };
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await rule.check(ctx);
+    // ASSERT
+    expect(violations.some((v) => v.file === oldLayout)).toBe(false);
   });
 });
 
@@ -202,7 +262,10 @@ describe('assess-marker', () => {
     expect(untagged).toEqual([]);
   });
 
-  it('ignores files outside fixtures/conformance/docs/', async () => {
+  it('ignores files outside a tier docs/ folder', async () => {
+    // `assess-marker` carries no empty-match guard: it loops the same case
+    // glob as `expect-marker`, so one guard proves that glob's reach for both
+    // and a second would report the same fact twice.
     // ARRANGE
     const files = {
       'fixtures/llm-wiki/demo.md': `<!-- assess: MAYBE -->\n`,

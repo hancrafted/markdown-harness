@@ -8,10 +8,10 @@
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../load-config.ts';
 
-const VALID = 'fixtures/conformance/valid-test-config.yaml';
-const A_DIRECTORY = 'fixtures/conformance';
-const NOT_YAML = 'fixtures/conformance/docs/log.md';
-const MISSING = 'fixtures/conformance/no-such-config.yaml';
+const VALID = 'fixtures/conformance/frontmatter/valid-test-config.yaml';
+const A_DIRECTORY = 'fixtures/conformance/frontmatter';
+const NOT_YAML = 'fixtures/conformance/frontmatter/docs/log.md';
+const MISSING = 'fixtures/conformance/frontmatter/no-such-config.yaml';
 
 describe('loadConfig', () => {
   describe('success cases', () => {
@@ -63,7 +63,7 @@ describe('loadConfig', () => {
       // A stored response must compare equal on another machine, so an absolute
       // path must never appear in a fault the caller wrote relatively.
       // ARRANGE
-      const relative = './fixtures/conformance/no-such-config.yaml';
+      const relative = './fixtures/conformance/frontmatter/no-such-config.yaml';
       // ACT
       const actual = loadConfig(relative);
       // ASSERT

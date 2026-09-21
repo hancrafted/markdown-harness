@@ -111,10 +111,17 @@ reformat nobody chose, and the message names the drift rather than the cause. It
 
 Malformed fixtures are ignored for a neighbouring reason — they are deliberately malformed, and
 formatting them would repair the defects they exist to present.
-`fixtures/conformance/docs/plain/broken/**` joins them on the same grounds. Scope an entry like that
+`fixtures/conformance/frontmatter/docs/plain/broken/**` joins them on the same grounds, as does
+`fixtures/conformance/rejected-config/**`. Scope an entry like that
 to the directory, never to the files that fail today: of the four malformed blocks there, only the
 unclosed fence moves under `prettier --write` — prettier leaves a block it cannot parse alone — so
 which shapes survive formatting is an accident of the parser rather than a property anyone chose.
+
+**An ignore entry is a path, so moving the tree breaks it silently.** The corpus moved into tiers on
+the same commit that moved these two entries, and the entry left behind would not have errored: it
+would have matched nothing, prettier would have reformatted the malformed blocks, and `format:check`
+would have failed naming the reformatted case rather than the stale entry. Move the entry in the
+same commit as the tree, and prove it by removing one and reading the exit.
 
 ## 8. `vitest` never typechecks, so a per-file green proves only that the code ran
 

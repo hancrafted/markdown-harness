@@ -36,6 +36,13 @@
     "sourceMap": false
   },
   // `src` alone. The type-check config also reaches the root scripts; neither ships.
+  //
+  // `conformance/` is excluded for the same reason the tests are: it exists to
+  // read this repository's own fixture tree, its entry points resolve paths
+  // relative to the repo root, and an adopter installing the tarball receives a
+  // bin and nothing else. Excluding it here does not exempt it from checking —
+  // `tsc --noEmit` reaches it through `tsconfig.json`, which includes all of
+  // `src` and excludes nothing.
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/*.test.ts", "src/packages/conformance/**"]
 }

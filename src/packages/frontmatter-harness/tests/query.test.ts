@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../config-loader/load-config.ts';
 import { queryPath } from '../query.ts';
 
-const loaded = loadConfig('fixtures/conformance/valid-test-config.yaml');
+const loaded = loadConfig('fixtures/conformance/frontmatter/valid-test-config.yaml');
 if (loaded.config === undefined) throw new Error('the conformance config must load for this suite to mean anything');
 const config = loaded.config;
 

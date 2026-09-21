@@ -21,4 +21,12 @@ docs/workshop/**/raw.md
 # sequence that never closes, a fence that never closes, a block that parses to a
 # list. Formatting would repair the exact defects they exist to present: prettier
 # reads a lone `---` as a thematic break and inserts a blank line after it.
-fixtures/conformance/docs/plain/broken/**
+fixtures/conformance/frontmatter/docs/plain/broken/**
+
+# The rejected-config tier: config bytes a load must refuse, and some of them
+# are refused precisely because they are not YAML. Formatting one would repair
+# the fault the case exists to state, on the same grounds as the broken
+# frontmatter blocks above. Scoped to the tier directory rather than to the
+# files that fail today, because which malformed shapes survive `--write` is an
+# accident of the parser rather than a property anyone chose.
+fixtures/conformance/rejected-config/**

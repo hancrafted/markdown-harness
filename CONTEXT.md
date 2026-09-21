@@ -301,17 +301,30 @@ _Avoid_: relaxation, weakening, regression, tamper
 ### The Conformance suite
 
 **Conformance suite**:
-`fixtures/conformance/valid-test-config.yaml` plus its 14 Conformance case documents. Its
-coverage half — every config-vocabulary key exercised somewhere — is scaffolding a future
-config-schema validator will replace; its specification half, the config together with each
-document's stated expected outcome, is permanent: the contract for what `markdown-harness`
+Every tier under `fixtures/conformance/`, plus the runners in `src/packages/conformance/` that
+check them. Its coverage half — every config-vocabulary key exercised somewhere — is scaffolding a
+future config-schema validator will replace; its specification half, each tier's config together
+with each case's stated expected outcome, is permanent: the contract for what `markdown-harness`
 must report against a real-shaped file.
 _Avoid_: fixture corpus (retired for this artifact), test suite
 
+**corpus tier**:
+One directory under `fixtures/conformance/`, holding what one runner checks: a Module tier holds
+that Module's config and its Conformance cases, and the rejected-config tier holds config bytes a
+load must refuse and no markdown at all. A tier root is a synthetic repo root — the directory a
+tier's own selectors are written relative to — which is why a tier moves whole or not at all. One
+runner per tier, named `<tier>-tier.test.ts`, with both sets derived from the tree and asserted
+equal, so a tier added without a runner fails rather than sitting unnoticed. Say **corpus tier** in
+full wherever ARCH-002 is also in view: that record calls the config vocabulary's four levels
+(rule, constraint, `allowed` entry, named format) **vocabulary tiers**, and a bare "tier" there
+reads as either.
+_Avoid_: suite, corpus, fixture group, category
+
 **Conformance case**:
-One document under `fixtures/conformance/docs/`, carrying a machine-readable
+One document under a Module tier's `docs/`, carrying a machine-readable
 `<!-- expect: -->` marker that names the verdict — PASSES, FAILS, or UNGOVERNED — its prose
-already argues.
+already argues. A rejected-config case is the one kind that is not a document: a directory of
+config bytes and one frozen expectation.
 _Avoid_: fixture, test file, example doc
 
 **fixture**:
@@ -321,7 +334,8 @@ _Avoid_: sample data, mock, stub, dummy data
 
 **corpus**:
 An adopter's own tree of real documents, never this repo's own synthetic material.
-`fixtures/conformance/` and `fixtures/llm-wiki/` are synthetic repo roots, not corpora.
+A tier root under `fixtures/conformance/`, and `fixtures/llm-wiki/`, are synthetic repo roots, not
+corpora. `fixtures/conformance/` itself is neither: it holds tiers.
 _Avoid_: fixture corpus, test corpus
 
 ### Dependency governance

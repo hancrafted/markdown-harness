@@ -1,4 +1,5 @@
-// The Conformance suite, under `fixtures/conformance/`, doing both of its jobs.
+// The `frontmatter` tier's runner, under `fixtures/conformance/frontmatter/`,
+// doing both of its jobs.
 //
 // COVERAGE: every key in the config vocabulary is exercised somewhere, and the
 // config obeys the config-validity rules the validator enforces. When the
@@ -13,19 +14,30 @@
 // a failure here is answered by reading the case's reasoning paragraph and
 // deciding which of the two is wrong — never by editing the marker to agree
 // with the code.
+//
+// One tier, one runner. The corpus root is the TIER directory rather than
+// `fixtures/conformance/`, which holds tiers and is not a corpus: the config
+// below sits inside the tier and its selectors are written relative to it, so
+// the split moved the tier whole and changed no byte of it.
 
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import type { AllowedValue, FieldConstraints, Format, MarkdownHarnessConfig } from '../../config-contract/index.ts';
-import { listMarkdownFiles } from '../../markdown-file-tree/list-markdown-files.ts';
-import { assessPath } from '../assess.ts';
-import { checkCorpus } from '../check.ts';
-import { queryPath } from '../query.ts';
+import { assessPath } from '../../frontmatter-harness/assess.ts';
+import { checkCorpus } from '../../frontmatter-harness/check.ts';
+import { queryPath } from '../../frontmatter-harness/query.ts';
+import { casesIn, tierRoot } from '../case-corpus.ts';
+import { agentActionOf, FAILS, FIX_FILE, PASSES, PROCEED, REVIEW, UNGOVERNED, verdictOf } from '../case-marker.ts';
 
-const CONFIG_URL = new URL('../../../../fixtures/conformance/valid-test-config.yaml', import.meta.url);
-const config = parse(readFileSync(CONFIG_URL, 'utf8')) as MarkdownHarnessConfig;
+/** The per-Module tier this runner checks. */
+const FRONTMATTER = 'frontmatter';
+
+/** The synthetic repo root the tier's config is written relative to. */
+const CORPUS_ROOT = tierRoot(FRONTMATTER);
+
+const config = parse(readFileSync(join(CORPUS_ROOT, 'valid-test-config.yaml'), 'utf8')) as MarkdownHarnessConfig;
 const rules = config.frontmatter?.rules ?? [];
 
 /** Every key a rule may carry. Grows only by deliberate amendment. */
@@ -331,32 +343,12 @@ describe('valid-test-config.yaml obeys the config-validity rules', () => {
 // The specification half: each case's stated verdict, against what runs.
 // ---------------------------------------------------------------------------
 
-/** The synthetic repo root the config's paths are written relative to. */
-const CORPUS_ROOT = fileURLToPath(new URL('../../../../fixtures/conformance', import.meta.url));
+// The verdict vocabulary and the marker reading both come from the Package's
+// own entry points now, so the runner and ARCH-002's enforcer name the same
+// three words in one place and a tier move stays a rename.
 
-/** The three verdicts a Conformance case may state (ARCH-002 §2.1). */
-const PASSES = 'PASSES';
-const FAILS = 'FAILS';
-const UNGOVERNED = 'UNGOVERNED';
-
-const MARKER = /<!-- expect: (\w+) -->/g;
-
-/**
- * The verdict one case states.
- *
- * Throws rather than defaulting: a case with no marker, or with two, is a
- * broken contract and not a file to quietly skip. `expect-marker` already
- * rejects both, so reaching here means the rule did not run.
- */
-function verdictOf(path: string): string {
-  const body = readFileSync(new URL(`../../../../fixtures/conformance/${path}`, import.meta.url), 'utf8');
-  const found = [...body.matchAll(MARKER)].map((match) => match[1]);
-  if (found.length !== 1) throw new Error(`${path} must carry exactly one expect marker, found ${found.length}`);
-  return found[0];
-}
-
-const corpus = listMarkdownFiles(CORPUS_ROOT) ?? [];
-const cases = corpus.map((path) => ({ path, verdict: verdictOf(path) }));
+const corpus = casesIn(FRONTMATTER);
+const cases = corpus.map((path) => ({ path, verdict: verdictOf(CORPUS_ROOT, path) }));
 const stated = (verdict: string): string[] => cases.filter((one) => one.verdict === verdict).map((one) => one.path);
 
 const checked = checkCorpus(CORPUS_ROOT, corpus, config);
@@ -486,30 +478,8 @@ describe('the harness reports the verdict each Conformance case states', () => {
  */
 const ASSESSMENT_INSTANT = '2026-12-01T00:00:00Z';
 
-/** The three agent actions a Conformance case may state (ARCH-002 §4). */
-const REVIEW = 'REVIEW';
-const PROCEED = 'PROCEED';
-const FIX_FILE = 'FIX_FILE';
-
-const ASSESS_MARKER = /<!-- assess: (\w+) -->/g;
-
-/**
- * The agent action one case states, or nothing if it states none.
- *
- * Absence is legal here and is not legal for `expect:`: the Assessment markers
- * cover the five states deliberately rather than exhaustively, because a
- * freshness answer is meaningless for most of this corpus. Two markers is a
- * broken contract on the same terms as two `expect:` markers, so it throws.
- */
-function assessMarkerOf(path: string): string | undefined {
-  const body = readFileSync(new URL(`../../../../fixtures/conformance/${path}`, import.meta.url), 'utf8');
-  const found = [...body.matchAll(ASSESS_MARKER)].map((match) => match[1]);
-  if (found.length > 1) throw new Error(`${path} must carry at most one assess marker, found ${found.length}`);
-  return found[0];
-}
-
 const assessCases = corpus
-  .map((path) => ({ path, action: assessMarkerOf(path) }))
+  .map((path) => ({ path, action: agentActionOf(CORPUS_ROOT, path) }))
   .filter((one): one is { path: string; action: string } => one.action !== undefined);
 
 const marked = (action: string): string[] => assessCases.filter((one) => one.action === action).map((one) => one.path);

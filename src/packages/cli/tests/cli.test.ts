@@ -14,8 +14,8 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-const CONFIG = 'fixtures/conformance/valid-test-config.yaml';
-const CORPUS_ROOT = 'fixtures/conformance';
+const CONFIG = 'fixtures/conformance/frontmatter/valid-test-config.yaml';
+const CORPUS_ROOT = 'fixtures/conformance/frontmatter';
 const USAGE_LEAD = 'usage: mh';
 const REJECTED = 'CONFIG_REJECTED';
 const GOVERNED = 'governed';
@@ -68,7 +68,7 @@ let plantedConfig = '';
 /**
  * A corpus with nothing wrong with it, so exit 0 can be proven.
  *
- * `fixtures/conformance/` is built to fail, and a `--check` that always exited
+ * The `frontmatter` tier is built to fail, and a `--check` that always exited
  * 1 would satisfy every other assertion in this file.
  */
 let conforming = '';
@@ -275,7 +275,7 @@ describe('mh', () => {
       // A rule that wins no file reports nothing anywhere else, so its row is
       // the only place an ordering mistake or a glob typo becomes visible.
       //
-      // The count tracks `fixtures/conformance/valid-test-config.yaml`. ARCH-002
+      // The count tracks the `frontmatter` tier's own config. ARCH-002
       // makes growing that config a reviewed act, so stating the number here
       // rather than counting it back off the file keeps this test part of that
       // review instead of silently agreeing with whatever the config now says.
@@ -422,7 +422,7 @@ describe('mh', () => {
 
     it('echoes an audit root and config exactly as written, never resolved', () => {
       // ARRANGE
-      const written = './fixtures/conformance';
+      const written = './fixtures/conformance/frontmatter';
       // ACT
       const run = mh('--audit', '--root', written, '--config', CONFIG);
       // ASSERT
@@ -582,7 +582,7 @@ describe('mh --check', () => {
       // nothing uncommitted" — and only the first is this test's subject.
       //
       // It also made the suite unrunnable during any change to the corpus: a
-      // staged edit under `fixtures/conformance/` shows in `--porcelain` too, so
+      // staged edit under the tier shows in `--porcelain` too, so
       // the pre-commit hook failed on the very commit that added a Conformance
       // case. Measured 2026-09-09, on the first commit to touch the corpus since
       // the assertion took that form. Proven still able to fail by writing a
@@ -622,7 +622,7 @@ describe('mh --check', () => {
  *
  * `--assess` anchors the config's globs at the current directory, because it
  * names one file rather than a corpus and refuses `--root`. The Conformance
- * config's globs are written relative to `fixtures/conformance/`, so the only
+ * config's globs are written relative to its own tier directory, so the only
  * honest way to exercise it at the process boundary is to stand where an
  * Operator running that config would stand.
  *
