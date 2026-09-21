@@ -14,15 +14,30 @@
 // this command stay silent about files the config never claimed — a governance
 // tool that comments on everything is one that gets switched off.
 //
+// The READ is `foundation`'s. Absence is an ordinary answer here rather than a
+// failure — the same reading that lets `--query` answer about a path that does
+// not exist — while `--check`, reading through the same gate, refuses a corpus
+// on it. That difference is policy and it lives at these two call sites, which
+// is the whole point of a gate that answers rather than throws.
+//
+// `unreadable` is UNCOVERED BY TEST, deliberately and not by oversight. Its
+// only reachable causes are a file with no read permission and a directory
+// named `*.md`, and neither is committable as a fixture — a directory whose
+// name has no `.md` never reaches here at all, because every rule names `*.md`
+// and governance is decided before the read. The branch stays because a
+// permissions failure must not crash the process. The assess integration suite
+// states the same measurement.
+//
 // Corpus membership is asked first, for the same reason `--query` asks it: a
 // selector carries no extension any more, so without it this command would
 // start assessing a `.txt` file the corpus walk would never have collected.
 
 import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
+import { readTextIn } from '../foundation/read-text.ts';
 import type { AssessResult, WinningRule } from '../response-contract/index.ts';
 import { effectivePrompt } from './lib/assess/assess-prompt.pure.ts';
 import { assessResultFor } from './lib/assess/assess-result.pure.ts';
-import { readAssessedFile } from './lib/assess/assessed-file.impure.ts';
+
 import { freshnessOf } from './lib/assess/freshness.pure.ts';
 import { isCorpusPath } from './lib/rules/corpus-path.pure.ts';
 import { findFirstMatch } from './lib/rules/first-match.pure.ts';
@@ -53,7 +68,7 @@ export function assessPath(
   if (winner === undefined) return { agentAction: 'PROCEED', state: 'ungoverned' };
 
   const rule: WinningRule = { ruleId: winner.ruleId, intent: winner.intent };
-  const found = readAssessedFile(file.root, path);
+  const found = readTextIn(file.root, path);
   const freshness = found.kind === 'text' ? freshnessOf(found.text, now) : undefined;
 
   return assessResultFor({

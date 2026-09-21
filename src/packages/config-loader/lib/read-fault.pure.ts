@@ -1,33 +1,32 @@
 /**
- * Which catalog entry a failed read earns.
+ * Which catalog entry a read that produced no bytes earns.
  *
- * Extracted from the read adapter because it is a rule rather than a step: the
+ * Extracted from the loader because it is a rule rather than a step: the
  * catalog draws a line between "no such thing" and "cannot serve it", and that
  * line is a decision this repo makes, not something the filesystem hands back.
+ *
+ * It maps the GATE's two failures rather than an errno, which it used to. The
+ * errno is now read once, in `foundation`, so the "only ENOENT proves absence"
+ * rule is stated in one place for every caller instead of once per Package —
+ * and this file is left with the half that is about the CONFIG catalog.
  */
 
+import type { FileRead } from '../../foundation/read-text.ts';
 import type { ConfigFault } from '../../response-contract/index.ts';
 
 /**
- * The one errno that proves absence.
+ * Turn a read that produced no bytes into the fault it deserves.
  *
- * Everything else means the entry is there and unusable — a directory, a
- * permission refusal, a broken symlink target, a name too long.
- */
-const ABSENT = 'ENOENT';
-
-/**
- * Turn a failed read into the fault it deserves.
+ * A DIRECTORY standing where the config should be reaches here as `unreadable`
+ * and therefore as `CONFIG_UNREADABLE`, never `CONFIG_NOT_FOUND`: reporting a
+ * file missing when something is demonstrably there is the false negative the
+ * catalog exists to prevent. The rejected-config tier holds both cases, and
+ * they stay two cases because of this line.
  *
- * Anything the platform declines to name resolves to `CONFIG_UNREADABLE`, never
- * `CONFIG_NOT_FOUND`: reporting a file missing when it exists is the false
- * negative the catalog exists to prevent, and the two are told apart by
- * evidence rather than by default.
- *
- * @param errorCode The platform's `errno` string, if it supplied one.
+ * @param found What the gate answered — anything but bytes.
  * @param location The config path exactly as the caller wrote it — never resolved.
  */
-export function faultForReadFailure(errorCode: string | undefined, location: string): ConfigFault {
-  const code = errorCode === ABSENT ? 'CONFIG_NOT_FOUND' : 'CONFIG_UNREADABLE';
+export function faultForUnread(found: Exclude<FileRead, { kind: 'text' }>, location: string): ConfigFault {
+  const code = found.kind === 'absent' ? 'CONFIG_NOT_FOUND' : 'CONFIG_UNREADABLE';
   return { code, location };
 }

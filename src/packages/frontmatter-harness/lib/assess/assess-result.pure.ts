@@ -10,8 +10,9 @@
  * each earlier state makes the later question unanswerable rather than false.
  */
 
+import type { FileRead } from '../../../foundation/read-text.ts';
 import type { AssessEvidence, AssessResult, WinningRule } from '../../../response-contract/index.ts';
-import type { AssessedFile, Freshness } from './assess.types.ts';
+import type { Freshness } from './assess.types.ts';
 
 /** The Operator's sentence and its provenance, when one applied. */
 interface Prompt {
@@ -24,7 +25,7 @@ interface Findings {
   /** The rule that won under first-match, reduced to what the response carries. */
   rule: WinningRule;
   /** What the filesystem found at the path. */
-  file: AssessedFile;
+  file: FileRead;
   /** The judgement, if the bytes were read and could answer. */
   freshness: Freshness | undefined;
   /** The effective `assess.stale` prompt, if the config carried one. */

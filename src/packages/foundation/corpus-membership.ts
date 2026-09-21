@@ -14,4 +14,4 @@
 // the walk already uses is published here and the commands that never walk ask
 // it directly. See `docs/design-adr/0007-selector-is-two-literal-axes.md`.
 
-export { isMarkdownFile } from './lib/corpus-entry.pure.ts';
+export { isMarkdownFile } from './lib/tree/corpus-entry.pure.ts';

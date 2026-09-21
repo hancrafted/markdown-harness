@@ -8,12 +8,20 @@
  * in `translation.types.ts`, where a reader will find it.
  */
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readTextIn } from '../../../foundation/read-text.ts';
 import type { FrozenAttribution, FrozenWitness } from './translation.types.ts';
 
+/**
+ * One frozen half, read through the gate and parsed.
+ *
+ * The gate's refusal becomes a throw: a half that is absent is a guard with one
+ * side missing, and an empty list in its place would compare equal to whatever
+ * the other side produced.
+ */
 function readJson(tierRoot: string, fileName: string): unknown {
-  return JSON.parse(readFileSync(join(tierRoot, fileName), 'utf8'));
+  const found = readTextIn(tierRoot, fileName);
+  if (found.kind !== 'text') throw new Error(`the frozen ${fileName} is ${found.kind} under ${tierRoot}`);
+  return JSON.parse(found.text);
 }
 
 /**

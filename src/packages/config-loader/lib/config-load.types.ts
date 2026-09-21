@@ -4,6 +4,10 @@
  * Every stage returns faults alongside its value rather than throwing, because
  * a config fails whole (§3.5): the loader concatenates what each stage found
  * and rejects once, carrying every fault it could reach.
+ *
+ * The READ has no shape here any more. It is `foundation`'s, and its answer is
+ * a `FileRead` like every other read in this repository; what this Package
+ * still owns is the fault that answer earns.
  */
 
 import type { MarkdownHarnessConfig } from '../../config-contract/index.ts';
@@ -11,14 +15,6 @@ import type { ConfigFault } from '../../response-contract/index.ts';
 
 /** A YAML mapping, before any key of it has been recognised. */
 export type ConfigMapping = Record<string, unknown>;
-
-/** The outcome of reading bytes off disk. */
-export interface ConfigSource {
-  /** The file's contents, absent when reading failed. */
-  text?: string;
-  /** Why reading failed; empty when it did not. */
-  faults: readonly ConfigFault[];
-}
 
 /** The outcome of parsing those bytes and checking they form a mapping. */
 export interface ConfigParse {

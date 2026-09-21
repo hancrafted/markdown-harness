@@ -1,70 +1,51 @@
-// Colocated unit test for the errno-to-catalog mapping.
+// Colocated unit test for the gate-answer-to-catalog mapping.
 //
-// Extracted from the read adapter so the mapping can be asserted without a
+// Extracted from the loader so the mapping can be asserted without a
 // filesystem: planting an unreadable file is a permission-dependent setup that
-// says nothing about the rule being tested.
+// says nothing about the rule being tested. What the PLATFORM calls each
+// failure is no longer this Package's question — `foundation` answers that
+// once, and its own unit test holds it.
 
 import { describe, expect, it } from 'vitest';
-import { faultForReadFailure } from './read-fault.pure';
+import { faultForUnread } from './read-fault.pure';
 
 const LOCATION = 'markdown-harness.config.yaml';
 
-describe('faultForReadFailure', () => {
+describe('faultForUnread', () => {
   describe('success cases', () => {
     it('maps a missing entry to CONFIG_NOT_FOUND', () => {
       // ARRANGE
-      const missing = 'ENOENT';
+      const missing = { kind: 'absent' } as const;
       const expected = { code: 'CONFIG_NOT_FOUND', location: LOCATION };
       // ACT
-      const actual = faultForReadFailure(missing, LOCATION);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('maps a permission refusal to CONFIG_UNREADABLE', () => {
-      // ARRANGE
-      const refused = 'EACCES';
-      const expected = { code: 'CONFIG_UNREADABLE', location: LOCATION };
-      // ACT
-      const actual = faultForReadFailure(refused, LOCATION);
+      const actual = faultForUnread(missing, LOCATION);
       // ASSERT
       expect(actual).toEqual(expected);
     });
   });
 
   describe('failure cases', () => {
-    it('maps a directory read to CONFIG_UNREADABLE', () => {
-      // "Something is there but cannot be read as a file" is exactly this case.
+    it('maps anything that is there and will not open to CONFIG_UNREADABLE', () => {
+      // A directory standing where the file should be, and a permission
+      // refusal, arrive as the same answer from the gate and earn the same
+      // code: something is there, and it cannot be served.
       // ARRANGE
-      const directory = 'EISDIR';
+      const present = { kind: 'unreadable' } as const;
       const expected = { code: 'CONFIG_UNREADABLE', location: LOCATION };
       // ACT
-      const actual = faultForReadFailure(directory, LOCATION);
+      const actual = faultForUnread(present, LOCATION);
       // ASSERT
       expect(actual).toEqual(expected);
     });
   });
 
   describe('edge cases', () => {
-    it('treats an absent errno as unreadable rather than missing', () => {
-      // Only ENOENT proves absence. Anything the platform declines to name is
-      // "there but unusable", because claiming CONFIG_NOT_FOUND about a file
-      // that exists is the false negative the catalog exists to prevent.
-      // ARRANGE
-      const unnamed = undefined;
-      const expected = { code: 'CONFIG_UNREADABLE', location: LOCATION };
-      // ACT
-      const actual = faultForReadFailure(unnamed, LOCATION);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
     it('echoes the location it was given rather than resolving it', () => {
       // ARRANGE
       const relative = '../shared/mh.yaml';
-      const missing = 'ENOENT';
+      const missing = { kind: 'absent' } as const;
       // ACT
-      const actual = faultForReadFailure(missing, relative);
+      const actual = faultForUnread(missing, relative);
       // ASSERT
       expect(actual.location).toBe(relative);
     });

@@ -25,10 +25,10 @@
  * `--check` would never have reported the file at all. That is narrower than
  * the extension gap and is left open deliberately: it is a fact about the walk
  * rather than about a file name, and reproducing it here would be a second
- * copy of the refusals `markdown-file-tree` exists to own.
+ * copy of the refusals the corpus walk in `foundation` exists to own.
  */
 
-import { isMarkdownFile } from '../../../markdown-file-tree/corpus-membership.ts';
+import { isMarkdownFile } from '../../../foundation/corpus-membership.ts';
 import { fileNameOf } from './selector.pure.ts';
 
 /**

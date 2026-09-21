@@ -25,12 +25,12 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../config-loader/load-config.ts';
+import { listMarkdownFiles } from '../../foundation/list-markdown-files.ts';
 import { queryPath } from '../../frontmatter-harness/query.ts';
-import { listMarkdownFiles } from '../../markdown-file-tree/list-markdown-files.ts';
 import { corpusComparisons, translationTierRoot, witnessComparisons } from '../selector-translation.ts';
 
 const TIER_ROOT = translationTierRoot();
-const CONFIG = `${TIER_ROOT}valid-test-config.yaml`;
+const CONFIG = join(TIER_ROOT, 'valid-test-config.yaml');
 
 const corpus = corpusComparisons();
 const witnesses = witnessComparisons();

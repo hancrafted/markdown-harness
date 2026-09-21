@@ -9,8 +9,8 @@
 // per-Module, and `--audit` needs every rule that selected each file rather
 // than only the winner.
 
-import { inTreeOrder } from './lib/tree-path.pure.ts';
-import { walkTree } from './lib/tree-walk.impure.ts';
+import { inTreeOrder } from './lib/tree/tree-path.pure.ts';
+import { walkTree } from './lib/tree/tree-walk.impure.ts';
 
 /**
  * Every markdown file under `root`, root-relative and lexicographically sorted.
@@ -19,9 +19,15 @@ import { walkTree } from './lib/tree-walk.impure.ts';
  * another machine. `**\/node_modules/**` and `**\/.git/**` are refused
  * unconditionally and no config can ask for them back — nothing here takes one.
  *
- * `undefined` means the tree could not be read, which its caller must turn into
- * a usage error rather than an empty corpus. An empty array is a real answer: a
- * root that exists and holds no markdown.
+ * `undefined` means the tree could not be read OR could not be trusted, which
+ * its caller must turn into a usage error rather than an empty corpus. An empty
+ * array is a real answer: a root that exists and holds no markdown.
+ *
+ * A symlink inside the root whose target resolves OUTSIDE it refuses the tree
+ * on the second of those grounds. A symlinked document is still collected — the
+ * refusal is about where it points, not about what it is — so a repository that
+ * symlinks `CLAUDE.md` to `AGENTS.md` keeps working and one that reaches into
+ * another repository does not.
  *
  * @param root The corpus directory, exactly as the caller wrote it.
  */
