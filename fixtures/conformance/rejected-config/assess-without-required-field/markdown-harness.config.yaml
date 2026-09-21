@@ -1,0 +1,21 @@
+# An assessment prompt that can never fire.
+#
+# The `stale` prompt is answered from the `stale_after` frontmatter field, so a
+# rule carrying the prompt without requiring that field has written a sentence
+# nothing can ever print. `presence: optional` would not satisfy it either —
+# that is precisely the accidental case.
+#
+# The fault is reported at the RULE rather than at the prompt, and against the
+# EFFECTIVE prompt: a Module-wide default would force this discipline onto every
+# constraining rule, which is what makes one expensive to adopt and worth
+# knowing before writing it.
+frontmatter:
+  rules:
+    - ruleId: research-notes
+      path: ['docs/research/**/*.md']
+      intent: A sound rule, so the only fault reported is the unfireable prompt below.
+      fields:
+        source:
+          presence: required
+      assess:
+        stale: Re-verify against the source before quoting, or move stale_after.

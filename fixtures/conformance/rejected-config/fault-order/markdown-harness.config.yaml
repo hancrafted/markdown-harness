@@ -1,0 +1,31 @@
+# Fault ORDER is a contract, and this is the case that states it.
+#
+# A config fails whole rather than one fault at a time, so a rejection carries
+# every fault the loader could reach — and the sequence they arrive in is part
+# of what an Operator reads. Frozen here rather than left silent, on the same
+# terms violation order already is.
+#
+# The order is neither alphabetical by code nor grouped by rule, and the second
+# and third faults below are why: the duplicate id on the SECOND rule is
+# reported before the empty intent on the FIRST, because ids are checked across
+# the whole list before any rule is walked. An implementation that sorted, or
+# that walked rule by rule, would agree on the set and disagree here.
+#
+# Five codes are reached twice over by the single-code cases beside this one.
+# That redundancy is the point: this case exists for the order, not the coverage.
+not-a-module:
+  anything: at all
+
+frontmatter:
+  not-a-section-key: true
+  rules:
+    - ruleId: first-rule
+      path: ['docs/**/*.md']
+      intent: ''
+    - ruleId: first-rule
+      path: ['docs/log.md']
+      fileName: log.md
+      intent: The second rule, claiming a name the first already took.
+      fields:
+        slug:
+          pattern: '^[a-z0-9-]+$'

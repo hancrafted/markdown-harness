@@ -1,0 +1,12 @@
+# A rule with no `intent` at all.
+#
+# The intent is appended to every violation the rule reports, in the config
+# author's own words. Without one the harness can say what failed and never why,
+# and the Contributor reading the report has no one to ask.
+#
+# Absence is a different mistake from an intent written and left blank, which is
+# `empty-intent/` next door: the catalog gives each condition exactly one code.
+frontmatter:
+  rules:
+    - ruleId: unexplained
+      path: ['docs/**/*.md']

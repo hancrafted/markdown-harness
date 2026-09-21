@@ -5,7 +5,7 @@ type: research
 # Selector migration: both grammars, rule by rule
 
 This note writes the two configs this repository commits — its own `markdown-harness.config.yaml` and the
-Conformance suite's `fixtures/conformance/valid-test-config.yaml` — twice each. Once in the glob grammar they are
+Conformance suite's `fixtures/conformance/frontmatter/valid-test-config.yaml` — twice each. Once in the glob grammar they are
 written in today, and once in the two literal axes that [#154](https://github.com/hancrafted/markdown-harness/issues/154)
 adopts. Every rule appears in both, side by side, exclusions included.
 
@@ -160,7 +160,7 @@ excluded file is the real price and it is paid deliberately.
 
 ---
 
-## Config B — `fixtures/conformance/valid-test-config.yaml`
+## Config B — `fixtures/conformance/frontmatter/valid-test-config.yaml`
 
 Ten Rules. One of them carries one exclusion. Eleven translation units in total. Paths are relative to the synthetic
 corpus root `fixtures/conformance/`.
@@ -364,7 +364,7 @@ Token counts under the definition given above.
 
 **4 → 21 tokens, a 5.25× growth.** Two Rules carry the whole cost, and both are the recursive ones.
 
-### `fixtures/conformance/valid-test-config.yaml`
+### `fixtures/conformance/frontmatter/valid-test-config.yaml`
 
 | Unit                     | Today  | Proposed | Δ      |
 | ------------------------ | ------ | -------- | ------ |
