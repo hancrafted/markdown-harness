@@ -2,7 +2,7 @@
 type: agent-guide
 ---
 
-# Verification: the gate and its thirteen traps
+# Verification: the gate and its fourteen traps
 
 `npm run verify` is the gate. This page holds the traps inside it — the places where a check
 reports success without having measured anything.
@@ -122,6 +122,17 @@ the same commit that moved these two entries, and the entry left behind would no
 would have matched nothing, prettier would have reformatted the malformed blocks, and `format:check`
 would have failed naming the reformatted case rather than the stale entry. Move the entry in the
 same commit as the tree, and prove it by removing one and reading the exit.
+
+**The rejected-config tier fails louder than that, so it earns its own entry.** A malformed markdown
+case is silently reformatted; an unparseable **YAML** case is not. Measured over the candidate tier,
+then named `fixtures/conformance/config/`, of fifteen case directories — it landed as
+`fixtures/conformance/rejected-config/` — with the tier unignored,
+`npx prettier --check .` exits **2** with `SyntaxError: A block sequence may not be used as an
+implicit map key`, so `npm run verify` dies at the format step and never reaches `vitest`, `tsc` or
+`knip`; with the directory ignored it exits 0. The parseable-but-invalid configs and their goldens
+take the softer half of the same trap — both measured `[warn]`, so `prettier --write .` would rewrite
+the bytes under test. `fixtures/conformance/rejected-config/**` therefore belongs in
+`.prettierignore`, scoped to the directory on the same grounds as the entry above.
 
 ## 8. `vitest` never typechecks, so a per-file green proves only that the code ran
 
@@ -243,3 +254,48 @@ every run while `ci.yml` had no step for it at all.
 **The gate is whichever command CI actually runs, which is not reliably the one named `verify`.**
 Read the workflow before appending to a script, and add the step in both places. Prove it the same
 way as anything else here — break what it guards, push, and watch the PR go red, not the tag.
+
+## 14. A read of a file can come back short, and nothing reports that it did
+
+Every other trap here is a check reporting success over nothing. This one is worse, because it
+corrupts the evidence the other thirteen are read with: **a read in this environment can silently
+return less than the file holds, and succeed while doing it.**
+
+Two channels, both measured:
+
+- **The shell proxy drops tokens.** `cat`, `grep` and `find` return prose with words missing and
+  exit 0. Nothing is truncated at a boundary you can see — words vanish mid-sentence, so the output
+  still parses as English and still looks complete. A `grep -n` hit count can be right while the
+  matched lines come back clipped.
+- **The file-reading tool drops content on whole-file reads.** The same file read in one call loses
+  material that the same file read in windows of thirty lines or fewer returns intact. One agent
+  measured a whole-file read losing roughly a quarter of the file's content, with no error and no
+  marker where the loss occurred.
+
+Three agents confirmed this independently across three separate tickets. Two of them separately
+reported an instruction present in the environment telling them to prefer `cat` and `grep` over the
+file-reading tool, and correctly ignored it: that instruction points at the channel that drops the
+most.
+
+The failure mode is what makes it dangerous. A short read of prose reads as prose. A short read of a
+**conflict region** reads as a resolvable conflict — the markers survive, the text between them does
+not, and a resolution written against the clipped text drops a decision nobody will see missing.
+
+**The technique that works, in the order it costs least:**
+
+1. **Read in narrow windows.** Thirty lines is the measured ceiling; fourteen has held across every
+   file tried here. Windows overlap at their edges, so a boundary is read twice.
+2. **Cross-check through edit anchors.** An `Edit` whose `old_string` is copied from what you read
+   fails loudly on mismatch. That is the cheapest available proof that what you read is what the
+   file holds — a failed anchor is a short read confessing. Prefer an anchored edit over a
+   whole-file rewrite for exactly this reason: a rewrite cannot fail this way.
+3. **Verify behaviour by running the tool, never by reading the source that implements it.** Counts,
+   sizes and rule sets come from executing the thing — `archgate check`'s own report for a record's
+   size, an evaluated rule array for its length (trap 4), a real run for a glob's reach. Source read
+   for a number is source that may have arrived short.
+4. **Take numbers from a program, not from a terminal.** Where a count decides something, compute it
+   in a script that writes its own answer, rather than eyeballing piped output.
+
+The trap has no canary, because a short read cannot be planted. What it has is a habit: assume every
+read is partial until an anchor, a re-read at a different window, or a tool's own output agrees with
+it.

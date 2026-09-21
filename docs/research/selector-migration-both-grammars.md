@@ -74,7 +74,7 @@ column is a measurement rather than a reading of the glob.
 
 The repository's own corpus holds **33 markdown files across 12 folders** (32 before this note was added to
 `docs/research/`). The Conformance corpus holds **40 markdown files across 13 folders**, rooted at
-`fixtures/conformance/`.
+`fixtures/conformance/frontmatter/`.
 
 ---
 
@@ -163,7 +163,7 @@ excluded file is the real price and it is paid deliberately.
 ## Config B — `fixtures/conformance/frontmatter/valid-test-config.yaml`
 
 Ten Rules. One of them carries one exclusion. Eleven translation units in total. Paths are relative to the synthetic
-corpus root `fixtures/conformance/`.
+corpus root `fixtures/conformance/frontmatter/`, one directory deeper than before the suite got its own Package.
 
 ### B1 · `index-files`
 

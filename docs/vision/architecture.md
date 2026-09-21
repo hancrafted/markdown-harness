@@ -1,6 +1,6 @@
 ---
 type: vision
-stale_after: 2026-09-16T00:00:00Z
+stale_after: 2026-09-27T00:00:00Z
 ---
 
 # Architecture vision
@@ -30,8 +30,10 @@ Run all five. A "no" on 3 or 4 is a stop, not a trade-off.
 5. **Which record does the outcome belong in, and is it at an altitude the next feature cannot
    invalidate?** An ADR holds only what stays true whatever ships next; anything a future feature
    could falsify is a design-ADR, and the portable contract is neither — it lives in
-   `src/packages/config-contract/` and the corpus. The test and its worked cases are in
-   `docs/agents/domain.md`.
+   `src/packages/config-contract/` and the corpus. Within that, one more test separates this
+   document from an ADR: **a sentence belongs in an ADR only if a reviewer could fail a pull request
+   with it.** A tenet is the standing reason and fails nothing; its failable form, if it has one, is
+   the Decision. The test and its worked cases are in `docs/agents/domain.md`.
 
 ## Tenets
 
@@ -52,6 +54,11 @@ it opens the document. A signal only visible by running our command is not a sig
 No network, no model, no external service, no git call. The same tree in gives the same result out.
 That single property is what lets one implementation be correct on a laptop with no connection and in
 a pipeline, without a second code path for either.
+
+A corpus member whose target resolves outside the root makes the verdict a function of bytes the
+caller never named, so it is refused rather than read. And the cross-Module check is decided from
+config text alone, so `--query` on a path that does not exist reports what `--check` reports over the
+whole tree.
 
 ### 4. The contract is the portable artifact
 
@@ -124,10 +131,22 @@ The floor asks a host harness for nothing but the ability to read a file. Every 
 absence leaves the floor intact. This is what keeps a Claude Desktop user and a Claude Code user
 inside the same product, and it is why no single integration mechanism gets to be load-bearing.
 
+### 12. No Module knows another Module exists
+
+A Module is a bounded context, and its relationship to the Core is conformist: it declares what it
+needs of a file in the Core's vocabulary and takes that vocabulary as given, with no translation
+layer of its own. It never reads another Module's config section and never imports its code, so a
+contradiction between two declarations is the Core's to find — which is why it is found at all.
+Whatever the shared vocabulary cannot express stays hand-writable by the Core, permanently.
+
+Its failable form is
+[`ARCH-008-module-boundaries`](../../.archgate/adrs/ARCH-008-module-boundaries.md).
+
 ## Four decisions that are cheap now and expensive later
 
 Each is cheap because the surface is small today, and expensive later because retrofitting means
-re-deriving intent from code, or changing something adopters already depend on.
+re-deriving intent from code, or changing something adopters already depend on. The fourth has since
+been taken; it stays here, answered, rather than being removed.
 
 ### Every constraint key needs a declared loosening direction
 
@@ -163,31 +182,42 @@ contract change.
 Cheap now: a statement plus a convention. Expensive later: recovering intent from assertions written
 for a different purpose.
 
-### Glob semantics are written into the specification
+### Selection semantics are written into the specification
 
-Under tenet 4 the config language is public, so path matching is public behaviour. Delegating to a
-library or a runtime built-in is fine; inheriting undocumented semantics from one is not, because a
-future port has nothing to hit.
+Under tenet 4 the config language is public, so path selection is public behaviour. There are no
+glob semantics left to write down: the selector carries no wildcard. What a reimplementation has to
+hit instead is four sentences. A selector is two axes of **literal** tokens — folders and file names
+— and an absent axis means every. A folder token carries a **mandatory trailing slash**, and the
+corpus root is `./`. A tree token matches on **segment boundaries**, which the slash makes free:
+`docs/vision/` does not reach `docs/visionary/`, the Jekyll defect in tenet 5. Every comparison is
+**case-sensitive**, on every host.
 
-Measured, and relevant: Node 26's `path.matchesGlob` is segment-aware — `docs/logging/x.md` against
-`docs/log/**` is `false`, which is exactly the Jekyll defect in tenet 5. Good behaviour to adopt,
-and still behaviour that must be written down rather than assumed.
-
-Coming due, and the reason this section is not merely a caution: the same builtin makes matching
-case-insensitive on a case-insensitive host, in wildcard-bearing pattern segments only, which
-contradicts tenet 3.
-[`0005-host-dependent-glob-case-matching.md`](../design-adr/0005-host-dependent-glob-case-matching.md)
-records the measurement, why the obvious fix was rejected, and that the fix itself is deferred to its
-own ticket. The behaviour is written down; it is not yet chosen.
+That last sentence used to be a caution rather than a rule.
+[`0007-selector-is-two-literal-axes.md`](../design-adr/0007-selector-is-two-literal-axes.md) records
+the translation and the two-sided guard that proved it exact; the host-dependent case behaviour it
+supersedes is measured in
+[`0005-host-dependent-glob-case-matching.md`](../design-adr/0005-host-dependent-glob-case-matching.md),
+which is now unreachable because the builtin turns case-insensitive only inside a wildcard-bearing
+segment. The behaviour is written down, and it is now chosen.
 
 ## Deliberately open
 
 Named here so their absence reads as a choice rather than an oversight: the steering channel and
 whether MCP ships; what happens when a document goes stale, as opposed to how staleness is detected;
-severity tiers, which are contested rather than merely undecided; suppression; and the shape of the
-second Module, which is aimed at reviewability.
+severity tiers, which are contested rather than merely undecided; and suppression.
 
 The report format and the config filename sat on this list until building `--query` settled both.
 They are struck rather than deleted quietly:
 [`0003-response-envelope-and-config-filename.md`](../design-adr/0003-response-envelope-and-config-filename.md)
 records what closed them and what was rejected on the way.
+
+**The shape of the second Module** is struck on the same terms, and for the same reason: what a
+Module _is_ — one top-level config key, one `ModuleDescriptor` on a declared Module set, its own
+section type in its own Package, claims projected into a vocabulary the Core owns, and a Conformance
+tier of its own — is now decided.
+[`ARCH-008-module-boundaries`](../../.archgate/adrs/ARCH-008-module-boundaries.md),
+[`0008-claim-vocabulary-and-extent.md`](../design-adr/0008-claim-vocabulary-and-extent.md) and
+[`0009-retiring-the-whole-config-type.md`](../design-adr/0009-retiring-the-whole-config-type.md)
+record what closed it. What stays open is narrower than the old sentence and belongs to whichever
+Module ships second: its own config vocabulary and what it asserts about a file — not its shape, and
+not whether reviewability is the aim.

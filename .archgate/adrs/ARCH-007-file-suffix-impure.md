@@ -28,7 +28,7 @@ A file suffix classifier was created to allow ADR's to glob effectively. This on
 
 ### 2. Function structure
 
-1. Structure calls as an impure–pure–impure sandwich (Functional Core, Imperative Shell): gather all impure inputs first, invoke the deterministic function, and apply side effects last.
+1. Structure calls as an impure–pure–impure sandwich (Functional Core, Imperative Shell): gather all impure inputs first, invoke the deterministic function, and apply side effects last. "Functional Core" names the deterministic middle of one call and nothing larger — not **Core**, the role in `CONTEXT.md`, and not the `foundation` Package, both of which are where effects are allowed.
 2. An effect MUST NOT be interleaved between computations if the read can be hoisted or the write
    deferred.
 3. A file that orchestrates MUST take the shape in Implementation Pattern below. An Adapter
@@ -127,9 +127,12 @@ export async function processTask(rawId: unknown): Promise<Result | undefined> {
 `pure-imports-no-impure` forbids an edge from a file carrying the deterministic classifier to one
 carrying this classifier, which holds §3.3. `pure-imports-no-builtin` forbids an edge from that same
 set to a platform builtin, which holds §3.4. Both run at `error`. eslint holds nothing here, because
-neither constraint is visible inside a single file. Read the **dependency count** in that tool's
-output rather than its checkmark: it reports success over an empty graph, and a run that cruised no
-edges proves nothing.
+neither constraint is visible inside a single file. `pure-imports-no-builtin` now has siblings in
+`ARCH-008-module-boundaries` — `only-the-gate-imports-a-builtin` and `gate-builtins-sit-in-platform`
+— forbidding the same edge on wider grounds, so a red run must be read by **rule name**: which rule
+fired says whether §3.4 or a Package boundary was the constraint broken. Read the **dependency
+count** in that tool's output rather than its checkmark: it reports success over an empty graph, and
+a run that cruised no edges proves nothing.
 
 **Not mechanically enforced — review duty:** Decisions 1, 2 and 4 in full. Decision 4 carries **no
 number** by choice. `complexity: ['error', 7]` is already configured for every TypeScript file in
