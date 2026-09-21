@@ -5,12 +5,18 @@
 // file the rest of the suite calls a complete surface.
 
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../../config-loader/load-config.ts';
+import { loadConfig } from '../../foundation/load-config.ts';
+import { frontmatterModule } from '../module.ts';
 import { queryPath } from '../query.ts';
 
-const loaded = loadConfig('fixtures/conformance/frontmatter/valid-test-config.yaml');
+// Loaded through this Module's own descriptor, which is also what makes the
+// section below typed: `sectionFor` keys on the descriptor, so what comes back
+// is the section this Module's own validation earned and nothing else.
+const loaded = loadConfig('fixtures/conformance/frontmatter/valid-test-config.yaml', [frontmatterModule]);
 if (loaded.config === undefined) throw new Error('the conformance config must load for this suite to mean anything');
-const config = loaded.config;
+const section = loaded.config.sectionFor(frontmatterModule);
+if (section === undefined)
+  throw new Error('the conformance config must name this Module for this suite to mean anything');
 
 const GOVERNED = 'governed';
 const INVISIBLE = 'invisible';
@@ -22,7 +28,7 @@ describe('queryPath', () => {
       const verbatim = 'Reference pages are looked up by slug and say how far they can be trusted';
       const expected = { ruleId: 'reference', intent: verbatim };
       // ACT
-      const actual = queryPath('docs/reference/api-limits.md', config);
+      const actual = queryPath('docs/reference/api-limits.md', section);
       // ASSERT
       expect(actual.governance).toBe(GOVERNED);
       expect(actual.governance === GOVERNED ? actual.rule : undefined).toEqual(expected);
@@ -32,7 +38,7 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = { frontmatter: 'forbidden' };
       // ACT
-      const actual = queryPath('index.md', config);
+      const actual = queryPath('index.md', section);
       // ASSERT
       expect(actual.governance === GOVERNED ? actual.requirements : undefined).toEqual(expected);
     });
@@ -41,7 +47,7 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = 'log-files';
       // ACT
-      const actual = queryPath('docs/datasets/log.md', config);
+      const actual = queryPath('docs/datasets/log.md', section);
       // ASSERT
       expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
     });
@@ -52,7 +58,7 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = INVISIBLE;
       // ACT
-      const actual = queryPath('README.md', config);
+      const actual = queryPath('README.md', section);
       // ASSERT
       expect(actual.governance).toBe(expected);
     });
@@ -63,7 +69,7 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = INVISIBLE;
       // ACT
-      const actual = queryPath('docs/research/vendor/imported.md', config);
+      const actual = queryPath('docs/research/vendor/imported.md', section);
       // ASSERT
       expect(actual.governance).toBe(expected);
     });
@@ -76,7 +82,7 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = 'provenance-exemplar';
       // ACT
-      const actual = queryPath('docs/research/provenance.md', config);
+      const actual = queryPath('docs/research/provenance.md', section);
       // ASSERT
       expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
     });
@@ -90,7 +96,7 @@ describe('queryPath', () => {
       const normalised = 'docs/reference/api-limits.md';
       const expected = 'reference';
       // ACT
-      const actual = queryPath(decorated, config);
+      const actual = queryPath(decorated, section);
       // ASSERT
       expect(actual.path).toBe(normalised);
       expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
@@ -102,7 +108,7 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = 'reference';
       // ACT
-      const actual = queryPath('docs/reference/never-written.md', config);
+      const actual = queryPath('docs/reference/never-written.md', section);
       // ASSERT
       expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
     });
@@ -117,7 +123,7 @@ describe('queryPath', () => {
       // ARRANGE
       const expected = INVISIBLE;
       // ACT
-      const actual = queryPath('docs/reference/never-written.txt', config);
+      const actual = queryPath('docs/reference/never-written.txt', section);
       // ASSERT
       expect(actual.governance).toBe(expected);
     });

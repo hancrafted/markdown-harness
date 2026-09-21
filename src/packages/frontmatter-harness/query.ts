@@ -9,15 +9,15 @@
 // corpus file is once selectors stopped spelling `.md` inside a glob: there is
 // no walk here to have filtered one out.
 
-import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
 import type { QueryResult } from '../response-contract/index.ts';
 import { requirementsForRule } from './lib/query/requirements.pure.ts';
 import { isCorpusPath } from './lib/rules/corpus-path.pure.ts';
 import { findFirstMatch } from './lib/rules/first-match.pure.ts';
 import { normalisePath } from './lib/rules/path-shape.pure.ts';
+import type { FrontmatterConfig } from './section.ts';
 
 /**
- * Resolve one path against the config's ordered rule list.
+ * Resolve one path against this Module's ordered rule list.
  *
  * Corpus membership is asked BEFORE the rule list, and a path the walk would
  * never have collected is `invisible` whatever the config says. A selector
@@ -27,13 +27,13 @@ import { normalisePath } from './lib/rules/path-shape.pure.ts';
  * to create one.
  *
  * @param path The path asked about, exactly as the caller wrote it.
- * @param config A config that has already been validated.
+ * @param section This Module's validated section, or `undefined` when its key was not written — a Module governing nothing answers `invisible` for every path.
  */
-export function queryPath(path: string, config: MarkdownHarnessConfig): QueryResult {
+export function queryPath(path: string, section: FrontmatterConfig | undefined): QueryResult {
   const normalised = normalisePath(path);
   if (!isCorpusPath(normalised)) return { governance: 'invisible', path: normalised };
 
-  const winner = findFirstMatch(normalised, config.frontmatter?.rules ?? []);
+  const winner = findFirstMatch(normalised, section?.rules ?? []);
 
   if (winner === undefined) return { governance: 'invisible', path: normalised };
 

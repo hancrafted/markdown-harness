@@ -5,7 +5,7 @@
 // result for the stronger reason that nothing ever read it.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { governedFiles } from './corpus-governance.pure';
 
 const INDEX: FrontmatterRule = {

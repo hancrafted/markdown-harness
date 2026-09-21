@@ -20,13 +20,14 @@
 // below sits inside the tier and its selectors are written relative to it, so
 // the split moved the tier whole and changed no byte of it.
 
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parse } from 'yaml';
-import type { AllowedValue, FieldConstraints, Format, MarkdownHarnessConfig } from '../../config-contract/index.ts';
+import { MODULE_SET } from '../../cli/module-set.ts';
+import type { AllowedValue, FieldConstraints, Format } from '../../config-contract/index.ts';
+import { loadConfig } from '../../foundation/load-config.ts';
 import { assessPath } from '../../frontmatter-harness/assess.ts';
 import { checkCorpus } from '../../frontmatter-harness/check.ts';
+import { frontmatterModule } from '../../frontmatter-harness/module.ts';
 import { queryPath } from '../../frontmatter-harness/query.ts';
 import { casesIn, tierRoot } from '../case-corpus.ts';
 import { agentActionOf, FAILS, FIX_FILE, PASSES, PROCEED, REVIEW, UNGOVERNED, verdictOf } from '../case-marker.ts';
@@ -37,8 +38,16 @@ const FRONTMATTER = 'frontmatter';
 /** The synthetic repo root the tier's config is written relative to. */
 const CORPUS_ROOT = tierRoot(FRONTMATTER);
 
-const config = parse(readFileSync(join(CORPUS_ROOT, 'valid-test-config.yaml'), 'utf8')) as MarkdownHarnessConfig;
-const rules = config.frontmatter?.rules ?? [];
+// Through the real loader against the DECLARED Module set, rather than a YAML
+// parse plus a cast. The cast was the only thing typing this file, and it typed
+// it as a config type that no longer exists: with the whole-file type retired,
+// the largest thing anybody may claim is one Module's section, and the only way
+// to hold one is to have the Module that owns it validate it.
+const loaded = loadConfig(join(CORPUS_ROOT, 'valid-test-config.yaml'), MODULE_SET);
+if (loaded.config === undefined) throw new Error(`the tier config was refused: ${JSON.stringify(loaded.faults)}`);
+const section = loaded.config.sectionFor(frontmatterModule);
+if (section === undefined) throw new Error('the tier config must name the frontmatter Module');
+const rules = section.rules;
 
 /** Every key a rule may carry. Grows only by deliberate amendment. */
 const RULE_KEYS = [
@@ -109,11 +118,17 @@ function everyFieldAddress(): string[] {
 
 describe('valid-test-config.yaml is a complete test surface', () => {
   describe('success cases', () => {
-    it('parses into exactly one module section', () => {
+    it('names exactly one Module of the declared set', () => {
+      // Asked of the declared Module set rather than of the file's own keys,
+      // which is what the derived key list made possible: a key nobody claims is
+      // no longer in the config language at all, so "one section" is a statement
+      // about which Modules this tier exercises rather than about YAML.
       // ARRANGE
       const expected = ['frontmatter'];
       // ACT
-      const actual = Object.keys(config);
+      const actual = MODULE_SET.filter((module) => loaded.config?.sectionFor(module) !== undefined).map(
+        (module) => module.key,
+      );
       // ASSERT
       expect(actual).toEqual(expected);
       expect(rules.length).toBeGreaterThan(0);
@@ -374,7 +389,7 @@ const corpus = casesIn(FRONTMATTER);
 const cases = corpus.map((path) => ({ path, verdict: verdictOf(CORPUS_ROOT, path) }));
 const stated = (verdict: string): string[] => cases.filter((one) => one.verdict === verdict).map((one) => one.path);
 
-const checked = checkCorpus(CORPUS_ROOT, corpus, config);
+const checked = checkCorpus(CORPUS_ROOT, corpus, section);
 const verdict = checked.kind === 'checked' ? checked.result : undefined;
 const reported = new Set((verdict?.files ?? []).map((file) => file.path));
 
@@ -387,7 +402,7 @@ const reported = new Set((verdict?.files ?? []).map((file) => file.path));
  * not true, the same message for every possible cause.
  */
 function verdictFrom(path: string): string {
-  if (queryPath(path, config).governance === 'invisible') return UNGOVERNED;
+  if (queryPath(path, section).governance === 'invisible') return UNGOVERNED;
   return reported.has(path) ? FAILS : PASSES;
 }
 
@@ -509,7 +524,7 @@ const marked = (action: string): string[] => assessCases.filter((one) => one.act
 
 /** What the IMPLEMENTATION answers for one case, at the pinned instant. */
 function actionFrom(path: string): string {
-  return assessPath({ root: CORPUS_ROOT, path: path }, config, ASSESSMENT_INSTANT).agentAction;
+  return assessPath({ root: CORPUS_ROOT, path: path }, section, ASSESSMENT_INSTANT).agentAction;
 }
 
 describe('the harness reports the agent action each Conformance case states', () => {
@@ -532,7 +547,7 @@ describe('the harness reports the agent action each Conformance case states', ()
       const verbatim = 'Re-verify this against the source before quoting it, then move stale_after.';
       const expected = { instruction: verbatim, source: 'rule' };
       // ACT
-      const answered = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness/stale.md' }, config, ASSESSMENT_INSTANT);
+      const answered = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness/stale.md' }, section, ASSESSMENT_INSTANT);
       const actual = { instruction: answered.instruction, source: answered.source };
       // ASSERT
       expect(actual).toEqual(expected);
@@ -597,7 +612,7 @@ describe('the harness reports the agent action each Conformance case states', ()
       // ACT
       const actual = assessPath(
         { root: CORPUS_ROOT, path: 'docs/research/vendor/upstream.md' },
-        config,
+        section,
         ASSESSMENT_INSTANT,
       );
       // ASSERT

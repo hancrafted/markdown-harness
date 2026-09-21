@@ -8,8 +8,9 @@
  * Operator's mouth.
  */
 
-import type { FieldConstraints, FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FieldConstraints } from '../../../config-contract/index.ts';
 import type { ConstrainingRequirements, FieldRequirement, Requirements } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 
 /** The three set constraints, in the order the response declares them. */
 const CROSS_FIELD_KEYS = ['exactlyOneOf', 'anyOf', 'allOf'] as const;

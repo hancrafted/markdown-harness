@@ -1,0 +1,7 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    { "code": "CONFIG_NO_MODULE_SECTION", "location": "markdown-harness.config.yaml" },
+    { "code": "CONFIG_UNRECOGNISED_KEY", "location": "frontmater" }
+  ]
+}

@@ -7,7 +7,7 @@
  * why the config's rule list is a list and not a mapping.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { ruleSelects } from './selector.pure.ts';
 
 /**

@@ -6,7 +6,7 @@
 // what they wrote.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { selectorRefFor } from './selector-ref.pure';
 
 describe('selectorRefFor', () => {

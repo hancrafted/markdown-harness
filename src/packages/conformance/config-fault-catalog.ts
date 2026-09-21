@@ -8,27 +8,31 @@
 //
 // The cost of writing it by hand is drift, and the pin below is what pays it.
 
-import type { ConfigFaultCode } from '../response-contract/index.ts';
+import type { ConfigFaultCode } from '../config-contract/index.ts';
 
 /**
  * Every code the tier undertakes to reach, in the order §3.5's catalog declares
- * them: the three that name the config FILE first, then the eleven that name a
+ * them: the four that name the config FILE first, then the eleven that name a
  * key inside it.
  *
  * `satisfies` holds one direction — a code spelled wrong, or one the catalog
  * never had, does not compile. `unreachedProof` holds the other.
  *
- * Fourteen, down from fifteen. `CONFIG_SELECTOR_AMBIGUOUS` was retired with the
- * grammar that made it reachable: `folders:` and `fileNames:` intersect rather
+ * Fifteen. It was fourteen: `CONFIG_SELECTOR_AMBIGUOUS` was retired with the
+ * grammar that made it reachable — `folders:` and `fileNames:` intersect rather
  * than exclude, so a rule carrying both is spelling an exact path rather than
- * asking two questions at once. Its case directory was deleted in the same
- * change — halves that land apart leave the suite red, which is the machinery
- * working rather than a hole to paper over.
+ * asking two questions at once — and its case directory was deleted in the same
+ * change. `CONFIG_NO_MODULE_SECTION` arrived the other way round, with
+ * `rejected-config/no-module-section/` beside it in the same change. Halves that
+ * land apart leave the suite red in one direction or the other, which is the
+ * machinery working rather than a hole to paper over: a code with no case fails
+ * coverage, and a case with no code fails closure.
  */
 export const DECLARED_CODES = [
   'CONFIG_NOT_FOUND',
   'CONFIG_UNREADABLE',
   'CONFIG_NOT_YAML',
+  'CONFIG_NO_MODULE_SECTION',
   'CONFIG_UNRECOGNISED_KEY',
   'CONFIG_INVALID_VALUE',
   'CONFIG_EMPTY_RULE_LIST',

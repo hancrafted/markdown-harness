@@ -4,7 +4,7 @@
 // down to which keys the Operator did and did not write.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { requirementsForRule } from './requirements.pure';
 
 const UNKNOWN_KEYS = 'unknownKeys';

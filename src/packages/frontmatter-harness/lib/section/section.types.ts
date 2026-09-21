@@ -1,48 +1,57 @@
 /**
- * The contract for `markdown-harness.config.yaml` — the one configuration file.
+ * The `frontmatter-harness` Module's own section of the config file.
  *
- * An ordinary module with ordinary exports. Its ancestor in
- * `okf-frontmatter-harness` was an ambient `.d.ts` of global `declare`s for one
- * reason only: archgate's rule-file scanner permits an import allowlist of
- * exactly four `node:` modules, so a `.rules.ts` could reach types only through
- * a triple-slash reference. Nothing here is read by a rules file.
+ * It lives in this Package and no other. A section type parked behind one
+ * shared entry point makes "no Module knows another Module exists"
+ * unenforceable — the import graph passes blind over exactly the rule that
+ * exists to catch a Module reaching into another Module. Owned here, a planted
+ * violation is caught. That is measurement rather than tidiness, and it is why
+ * these declarations moved out of `config-contract`.
+ *
+ * What `config-contract` still holds is the vocabulary a section is BUILT from
+ * — `Selector`, `FieldAddress`, `FieldConstraints` — plus the port and the
+ * fault type. Those are Core's, taken as given, and this Module builds no
+ * translation layer over them.
+ *
+ * Below the root rather than at it: ARCH-004 §2.4 fails a classified file at a
+ * Package root, so the declarations sit here and `../../section.ts` re-exports
+ * them type-only. That re-export is ARCH-005 §1.3's admitted idiom, and it is
+ * the address every Package outside this one would use — except that no Package
+ * outside this one may name these types at all (ARCH-008 §1.4).
  *
  * There is no Floor. `type` is an ordinary field, so a repo's vocabulary is the
  * union of `allowed` values across its rules — derivable, no longer declared.
- * What a rule asserts about one field lives in `./constraints.types`.
+ * What a rule asserts about one field lives in `config-contract`.
  */
 
-import type { AssessConditions } from './assess.types';
-import type { FieldAddress, FieldConstraints } from './constraints.types';
-import type { Selector } from './selector.types';
-
-// ---------------------------------------------------------------------------
-// The config file
-// ---------------------------------------------------------------------------
+import type { FieldAddress, FieldConstraints, Selector } from '../../../config-contract/index.ts';
 
 /**
- * The parsed contents of `markdown-harness.config.yaml`.
+ * The conditions a file can be assessed against.
  *
- * One file, at the repo root, no nesting and no fallback filenames — a second
- * config would need a precedence rule *between* files, which is the second
- * precedence dimension this design exists to avoid.
+ * ONE condition ships. `stale` is the only one that needs a clock, and
+ * therefore the only one that needs a command of its own: `unverified`,
+ * `unsourced` and `invalid` are all answerable by `--check` today through
+ * `presence` and `minItems`, and restating them here would move work out of the
+ * tier that already covers it. Any other key under `assess:` is
+ * `CONFIG_UNRECOGNISED_KEY`.
  *
- * Modules get a section apiece. `frontmatter-harness` is the first, and the
- * only one this contract describes; a config naming no module governs nothing.
- * Unknown top-level keys are a config error, so gaining a section later is a
- * deliberate amendment rather than an accident.
+ * The value is a FLAT STRING and interpolation is deliberately absent. Every
+ * fact an Operator would interpolate — the path, the instant, the field and its
+ * value — already travels beside their sentence in the response, so a template
+ * would hold one fact twice and two representations of one fact drift. It would
+ * also become public portable surface, and an Operator writing `{{path}}` would
+ * ship literal braces to their agent with no warning.
  */
-export interface MarkdownHarnessConfig {
+export interface AssessConditions {
   /**
-   * The `frontmatter-harness` module's section.
+   * What to tell an agent that opened a file at or past its `stale_after`.
    *
-   * NOTE the key collision, which is real rather than an oversight:
-   * `frontmatter:` at the top level names this module, while
-   * `frontmatter: forbidden` *inside a rule* forbids frontmatter on the paths
-   * that rule selects. Same word, two levels, two meanings — see
-   * `NoFrontmatterPayload`.
+   * Written to be read by an agent mid-task, so it reads as an instruction
+   * rather than a description: the tool never writes prose of its own here, it
+   * only carries the Operator's.
    */
-  frontmatter?: FrontmatterConfig;
+  stale: string;
 }
 
 /** Everything the `frontmatter-harness` module reads. */

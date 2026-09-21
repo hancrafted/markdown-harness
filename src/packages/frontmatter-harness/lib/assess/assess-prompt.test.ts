@@ -6,7 +6,7 @@
 // and an empty one answers with nothing.
 
 import { describe, expect, it } from 'vitest';
-import type { AssessConditions, FrontmatterRule } from '../../../config-contract/index.ts';
+import type { AssessConditions, FrontmatterRule } from '../../section.ts';
 import { effectivePrompt } from './assess-prompt.pure';
 
 const MODULE_SENTENCE = 'This file is past its freshness date. Tell the user and offer to re-verify it.';

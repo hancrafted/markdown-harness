@@ -17,8 +17,8 @@
  * arbitrary; being written down is not.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { Violation } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { crossFieldViolations } from './cross-field.pure.ts';
 import { fieldViolations } from './field-constraint.pure.ts';
 import { evidenceFor } from './field-evidence.pure.ts';

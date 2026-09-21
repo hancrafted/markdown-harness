@@ -1,9 +1,34 @@
 ---
 type: design-adr
-status: accepted
+status: superseded
 ---
 
 # A Module declares in a closed six-variant claim vocabulary, over a recursive extent
+
+> **Superseded 2026-09-21 by [`0009-retiring-the-whole-config-type.md`](./0009-retiring-the-whole-config-type.md)
+> and #161.** The claim vocabulary is cut. `ModuleDescriptor` carries one member, `validateSection`,
+> and `claimsFor` does not exist: a second member taking a section as an argument puts the section
+> type in a parameter position, which forces method syntax for assignability and opens the variance
+> hole this record's own last paragraph names — a descriptor widened into a heterogeneous set
+> accepting a section of the wrong type. With the type in return position only, the descriptor widens
+> soundly and the hole closes rather than ships. Core therefore compares nothing: it hands each
+> Module its own validated section through the descriptor that earned it, and a cross-Module
+> comparison waits for the Module that needs one.
+>
+> Nothing here is retracted as WRONG, and that is why it is superseded rather than deleted. Every
+> measurement below still stands and none of it is reproduced anywhere else: the thirteen-row
+> contradiction table exact against a brute-force oracle twice over, `field-closure.named` sourced
+> from `allowedKeysFor`, `file-exists` universal over a mandatory name axis, the extent reaching
+> depth three on the shipped starter config, the three-way unsatisfiable set no pairwise table can
+> find, and — the finding that outlived the vocabulary — that a heterogeneous Module set cannot be
+> iterated with its element types intact, so a guard on who is handed which section is a call site
+> and its tests rather than a signature. That last one is what #161 built on: it is the reason the
+> port carries one member, and the reason the surviving guard is
+> `foundation/lib/config/module-sections.pure.ts` plus `foundation/tests/load-config.test.ts`.
+>
+> Where the cut work is preserved: this file, in full, plus the prototype it was measured in at
+> `.worktrees/test-implement-one-shot`. A Module ships its own section type and its own codes today;
+> whoever revives a cross-Module comparison starts from the measurements here, not from a blank page.
 
 Core has to decide whether two Modules' declarations contradict each other without either Module
 knowing the other exists, so a Module projects its validated section into `readonly Claim[]` — a

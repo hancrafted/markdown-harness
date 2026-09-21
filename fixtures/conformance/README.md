@@ -42,7 +42,7 @@ over the whole payload is what holds it. `fault-order/` exists for that alone: i
 neither alphabetical by code nor grouped by rule, because ids are checked across the whole list
 before any rule is walked.
 
-**Locations are case-relative.** Only the three file-level codes carry a filesystem path at all,
+**Locations are case-relative.** Only the four file-level codes carry a filesystem path at all,
 and they spell it as the bare config filename; the runner substitutes the case directory in.
 Everything else is the config's own notation, which names a key and already travels. That is what
 keeps moving this tier a rename rather than a rewrite of every case.
@@ -53,6 +53,12 @@ config file, `config-unreadable/` holds a directory where the file should be, an
 `config-not-yaml/` holds bytes the parser refuses. The directory is not a trick; it follows from
 where the line between absence and unreadability is drawn.
 
+**A config no declared Module is named in is a file-level fault.** `no-module-section/` writes
+`frontmater:` — the Module's key one letter wrong — and freezes two faults for it: the misspelling
+is a key no declared Module claims, and what is left governs nothing. Both, because a config fails
+whole. The recognised top-level key set is computed from the Module set the tool ships, so this is
+the case that proves a mistyped section name is rejected by name rather than ignored in silence.
+
 **Known gap: nothing reserves `not-a-module`.** `unrecognised-key/` and `fault-order/` key their
 top-level unrecognised-key faults on `not-a-module`, chosen so that no plausible future Module
 claims it — a case keyed on `headings` or `links` would turn red on the day a Module of that name
@@ -60,7 +66,11 @@ shipped, naming this fixture rather than the change that caused it. The same car
 `not-a-section-key` one level down. Nothing mechanically reserves either name. It is a convention,
 recorded here as a gap rather than claimed as held.
 
-**The tier lands against today's catalog and today's selector grammar**, deliberately. Later
-tickets retire one code and add another, and the coverage-and-closure loop proves itself by
-surviving two real changes in opposite directions rather than being asserted against a catalog it
-will never see move.
+**The coverage-and-closure loop has now survived a change in each direction**, which is what it
+was landed to be proven by rather than asserted about. `CONFIG_SELECTOR_AMBIGUOUS` retired with the
+selector grammar that made it reachable, and its case directory went in the same change.
+`CONFIG_NO_MODULE_SECTION` arrived with `no-module-section/` beside it. Halves that land apart leave
+the suite red: a code with no case fails coverage, and a case with no code fails closure. Measured
+both ways — removing the code from `DECLARED_CODES` fails `tsc` at the pin in
+`config-fault-catalog.ts`, and removing the case directory fails the coverage assertion and the
+declared case count.

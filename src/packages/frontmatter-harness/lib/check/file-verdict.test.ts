@@ -6,7 +6,7 @@
 // back in, which four independent implementations got three different ways.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { violationsForFile } from './file-verdict.pure';
 
 const PLAIN: FrontmatterRule = {
