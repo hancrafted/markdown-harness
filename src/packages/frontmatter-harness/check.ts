@@ -13,11 +13,11 @@
 // file is what lets them be proven before frontmatter parsing can confuse a
 // failure.
 
-import { checkResultFor } from './lib/check/check-result.pure.ts';
+import { normalisePath } from '../foundation/path-shape.ts';
+import { moduleCheckFor } from './lib/check/check-result.pure.ts';
 import type { CorpusCheck } from './lib/check/check.types.ts';
 import { governedFiles } from './lib/check/corpus-governance.pure.ts';
 import { readGovernedSources } from './lib/check/file-source.impure.ts';
-import { normalisePath } from './lib/rules/path-shape.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
 
 /**
@@ -25,6 +25,12 @@ import type { FrontmatterConfig } from './section.ts';
  *
  * Takes THIS MODULE'S SECTION rather than the whole config, and no longer
  * reaches for its own key inside one.
+ *
+ * Answers with THIS MODULE'S HALF of the report rather than the report: the
+ * extent it governed and the findings it made, with nothing naming the Module
+ * and no counts over the corpus. Both belong to the composing Package, which is
+ * the only one that can see every Module — and `governedFiles` is a union
+ * across them rather than any one Module's tally.
  *
  * No verdict when a governed file could not be read — the caller owes exit 2
  * for it, because a report that quietly omitted the file would look complete.
@@ -45,5 +51,5 @@ export function checkCorpus(
   const read = readGovernedSources(root, governed);
   if (read.kind === 'unreadable') return read;
 
-  return { kind: 'checked', result: checkResultFor(read.sources) };
+  return { kind: 'checked', result: moduleCheckFor(read.sources) };
 }

@@ -9,7 +9,7 @@
  * broken block means.
  */
 
-import type { CheckResult } from '../../../response-contract/index.ts';
+import type { ModuleCheck } from '../../../response-contract/index.ts';
 import type { FrontmatterRule } from '../../section.ts';
 
 /** A YAML mapping, before any key of it has been read. */
@@ -118,8 +118,10 @@ export type GovernedRead =
  * The outcome of checking one corpus.
  *
  * `GovernedRead` one tier up: the same refusal, passed through unchanged,
- * now carrying a verdict instead of bytes.
+ * now carrying this Module's answer instead of bytes. Its answer rather than
+ * the response: the report nests a file's findings under every Module that made
+ * one, and only the composing Package sees them all.
  */
 export type CorpusCheck =
   /** Every governed file was read and judged. */
-  { kind: 'checked'; result: CheckResult } | UnreadableGovernedFile;
+  { kind: 'checked'; result: ModuleCheck } | UnreadableGovernedFile;
