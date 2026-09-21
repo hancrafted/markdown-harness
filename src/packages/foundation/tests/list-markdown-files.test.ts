@@ -1,8 +1,18 @@
 // Integration suite for the walker, through its entry point.
 //
-// The tree is planted in a tmpdir rather than committed.
-// A tmpdir lets the suite plant the two things a repository cannot hold
-// conveniently: a symlinked directory, and a symlinked document.
+// The tree is planted in a tmpdir rather than committed. A tmpdir lets the
+// suite plant the four things a repository cannot hold conveniently: a
+// symlinked directory, a symlinked document, a symlink that reaches OUT of the
+// corpus, and a cycle.
+//
+// FOUR ROOTS, not one, and the split is load-bearing. An escaping symlink
+// refuses the whole tree, so planting one in the main root would make every
+// other case here answer `undefined` — the suite would pass over nothing while
+// reading as though it had measured a corpus.
+//
+// Nothing here is mocked. ARCH-003 Decision 1.2 forbids it, and a mocked
+// filesystem could not produce an `ELOOP` or a `realpath` that leaves the root
+// in the first place — which is the entire subject of the last two cases.
 
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,13 +24,22 @@ import { listMarkdownFiles } from '../list-markdown-files.ts';
 let root = '';
 let plainFile = '';
 
+/** A root holding one symlink whose target is outside it. */
+let escaping = '';
+
+/** A root holding a directory cycle and a symlink chain that closes on itself. */
+let looping = '';
+
+/** A tree OUTSIDE every root above, for the escaping symlink to reach. */
+let outside = '';
+
 /**
  * Plant one tree holding every case the walker has to answer for: two refused
  * directories, a dot-directory, a non-markdown file, a dotfile, a symlinked
  * directory, and a symlinked document.
  */
 beforeAll(() => {
-  root = mkdtempSync(join(tmpdir(), 'markdown-file-tree-'));
+  root = mkdtempSync(join(tmpdir(), 'foundation-walk-'));
 
   mkdirSync(join(root, 'docs', 'nested'), { recursive: true });
   mkdirSync(join(root, 'node_modules', 'pkg'), { recursive: true });
@@ -42,10 +61,31 @@ beforeAll(() => {
   symlinkSync(join(root, 'docs', 'a.md'), join(root, 'LINK.md'));
 
   plainFile = join(root, 'README.md');
+
+  // Somewhere else entirely, holding a real document. Without a containment
+  // check, its bytes would arrive in a report under a path in `escaping`.
+  outside = mkdtempSync(join(tmpdir(), 'foundation-walk-outside-'));
+  writeFileSync(join(outside, 'elsewhere.md'), '');
+
+  escaping = mkdtempSync(join(tmpdir(), 'foundation-walk-escaping-'));
+  mkdirSync(join(escaping, 'docs'), { recursive: true });
+  writeFileSync(join(escaping, 'docs', 'own.md'), '');
+  symlinkSync(join(outside, 'elsewhere.md'), join(escaping, 'docs', 'ESCAPE.md'));
+
+  looping = mkdtempSync(join(tmpdir(), 'foundation-walk-looping-'));
+  mkdirSync(join(looping, 'docs'), { recursive: true });
+  writeFileSync(join(looping, 'docs', 'real.md'), '');
+  // A directory cycle: `docs/cycle` resolves back to `docs`, its own parent.
+  symlinkSync(join(looping, 'docs'), join(looping, 'docs', 'cycle'));
+  // A symlink chain that closes on itself, which the host answers with ELOOP.
+  symlinkSync(join(looping, 'docs', 'knot-b.md'), join(looping, 'docs', 'knot-a.md'));
+  symlinkSync(join(looping, 'docs', 'knot-a.md'), join(looping, 'docs', 'knot-b.md'));
 });
 
 afterAll(() => {
-  rmSync(root, { recursive: true, force: true });
+  for (const planted of [root, escaping, looping, outside]) {
+    rmSync(planted, { recursive: true, force: true });
+  }
 });
 
 describe('listMarkdownFiles', () => {
@@ -92,6 +132,20 @@ describe('listMarkdownFiles', () => {
       expect(actual).toBeUndefined();
     });
 
+    it('refuses the whole tree when a symlink reaches outside the corpus root', () => {
+      // A verdict must never depend on bytes the caller never offered. The
+      // sibling file in the same directory is real and would have been
+      // collected, so this is a refusal of the TREE rather than a skip of the
+      // link — answering about the rest of it would be the same false clean as
+      // reporting over a directory that would not open.
+      // ARRANGE
+      const refused = undefined;
+      // ACT
+      const actual = listMarkdownFiles(escaping);
+      // ASSERT
+      expect(actual).toBe(refused);
+    });
+
     it('refuses a root that is a file rather than a directory', () => {
       // ARRANGE
       const notADirectory = plainFile;
@@ -130,6 +184,35 @@ describe('listMarkdownFiles', () => {
       const actual = listMarkdownFiles(root);
       // ASSERT
       expect(actual).not.toContain(throughLink);
+    });
+
+    it('reports a tree holding a directory cycle rather than crashing on it', () => {
+      // `docs/cycle` resolves to its own parent. The walk answers because a
+      // linked directory is never descended into, so the cycle is never
+      // entered — the same refusal that keeps a symlinked tree from being
+      // counted twice, doing a second job here.
+      // ARRANGE
+      const corpus = ['docs/real.md'];
+      // ACT
+      const actual = listMarkdownFiles(looping);
+      // ASSERT
+      expect(actual).toEqual(corpus);
+    });
+
+    it('reports a tree holding a symlink chain that closes on itself', () => {
+      // `knot-a.md` and `knot-b.md` point at each other, and the host answers
+      // ELOOP to both `stat` and `realpath`. Before the gate that error
+      // propagated out of the walk as a stack trace; it is now caught at the
+      // platform file and the pair is ignored as unresolvable, which is what
+      // makes a corpus cycle a report.
+      // ARRANGE
+      const firstKnot = 'docs/knot-a.md';
+      const secondKnot = 'docs/knot-b.md';
+      // ACT
+      const actual = listMarkdownFiles(looping);
+      // ASSERT
+      expect(actual).not.toContain(firstKnot);
+      expect(actual).not.toContain(secondKnot);
     });
 
     it('leaves a non-markdown file and a dotfile out of the corpus', () => {

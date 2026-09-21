@@ -9,7 +9,7 @@
 // leave one file silently unreported.
 //
 // Enumeration is NOT here. The corpus arrives as a list of paths, because the
-// walker's refusals belong to `markdown-file-tree` and keeping them out of this
+// walker's refusals belong to `foundation` and keeping them out of this
 // file is what lets them be proven before frontmatter parsing can confuse a
 // failure.
 

@@ -2,7 +2,7 @@
 //
 // `--audit` resolves rules against PATHS and never opens a file, which is why
 // this takes a file list rather than a root: enumeration belongs to
-// `markdown-file-tree`, and keeping it out of here is what lets the walker's
+// `foundation`, and keeping it out of here is what lets the walker's
 // refusals be proven before frontmatter parsing can confuse a failure.
 //
 // It takes the paths and deliberately not a governed subset. "Governed" is

@@ -23,6 +23,28 @@ const R = PACKAGES_ROOT;
  */
 const PACKAGE_INTERNALS = `^${R}/[^/]+/[^/]+/`;
 
+/**
+ * The shared foundation Package: the gate through which the filesystem and
+ * every other platform read is reached (ARCH-008 §2). Named here as a literal
+ * rather than derived, because "which Package is the gate" is a product
+ * decision and not a naming convention — a second Package called something
+ * foundation-ish must not inherit the exemption by spelling.
+ */
+const GATE = 'foundation';
+
+/**
+ * ARCH-003 Decision 4's two test homes — `<pkg>/tests/*.test.ts` and
+ * `<pkg>/<subfolder>/*.test.ts` — which together are every `.test.ts` BELOW a
+ * Package root. A `.test.ts` AT a Package root is not among them and is not
+ * matched: ARCH-004 §2.4 forbids a classified file there, so the carve-out
+ * covers those two homes and no wider.
+ *
+ * The carve-out exists because ARCH-003 Decision 1.2 forbids `vi.mock`, so a
+ * suite proving a symlink case has to plant one, and planting is a builtin
+ * call. It is spent on test files only, and never on a production file.
+ */
+const TEST_HOMES = `^${R}/[^/]+/.+/[^/]+\\.test\\.ts$`;
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -100,6 +122,22 @@ module.exports = {
         'A .pure.ts file may not import a platform builtin. A builtin reads the host, and a value read from the host arrives through no argument. This covers node:path deliberately: path.sep and path.join change with the host platform, so they are ambient reads like any other.',
       severity: 'error',
       from: { path: `^${R}/[^/]+/.*\\.pure\\.ts$` },
+      to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'only-the-gate-imports-a-builtin',
+      comment:
+        "ARCH-008 §2.1: only the foundation Package may import a platform builtin; every other Package reaches the filesystem, the host separator and a module's own location through it. Two copies of a read are how two Modules end up disagreeing about whether a path is readable at all. Written against `dependencyTypes: [core]`, which is dependency-cruiser's word for a Node builtin and never this repository's word for Core.",
+      severity: 'error',
+      from: { path: `^${R}/`, pathNot: [`^${R}/${GATE}/`, TEST_HOMES] },
+      to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'gate-builtins-sit-in-platform',
+      comment:
+        'ARCH-008 §2.2: inside the foundation Package, a builtin import must sit in `lib/platform/`. The gate is only reviewable if the syscalls are in one folder rather than scattered through the Package that is allowed to make them.',
+      severity: 'error',
+      from: { path: `^${R}/${GATE}/`, pathNot: [`^${R}/${GATE}/lib/platform/`, TEST_HOMES] },
       to: { dependencyTypes: ['core'] },
     },
     {

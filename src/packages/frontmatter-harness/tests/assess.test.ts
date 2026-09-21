@@ -125,7 +125,7 @@ describe('assessPath', () => {
       // Measured, not assumed: `docs/freshness` is the directory holding three
       // governed documents, and it is itself UNGOVERNED — every glob in the
       // config names `*.md`, so the directory matches nothing and no read is
-      // attempted. This is why `readAssessedFile`'s `unreadable` branch cannot
+      // attempted. This is why the gate's `unreadable` answer cannot
       // be reached from a committed fixture: the only causes left are a
       // permissionless file and a directory named `*.md`, and neither is
       // committable. The branch stays because a permissions failure must not
