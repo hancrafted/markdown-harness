@@ -1,0 +1,19 @@
+# `frontmatter: forbidden` beside a payload key.
+#
+# Every payload key asserts something about frontmatter that must not exist, so
+# the two cannot both be meant. Note the key collision, which is real rather
+# than an oversight: `frontmatter:` at the top level names the Module, while
+# `frontmatter: forbidden` inside a rule forbids frontmatter on the paths that
+# rule selects.
+#
+# The `fields` block below is itself sound — the fault is the pairing, and a
+# broken constraint here would report two things at once.
+frontmatter:
+  rules:
+    - ruleId: no-frontmatter-here
+      path: ['docs/**/*.md']
+      intent: A rule forbidding frontmatter and constraining it in the same breath.
+      frontmatter: forbidden
+      fields:
+        title:
+          presence: required

@@ -1,0 +1,8 @@
+# A config naming a Module and governing nothing.
+#
+# An empty list is a config error rather than an inert harness: the Operator
+# wrote the section, so silence is the one answer that cannot be what they
+# meant. An ABSENT `frontmatter:` section earns the same code at the same
+# location today — one mistake, one fix, one sentence.
+frontmatter:
+  rules: []

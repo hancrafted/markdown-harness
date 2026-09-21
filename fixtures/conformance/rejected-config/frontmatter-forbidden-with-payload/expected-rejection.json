@@ -1,0 +1,4 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [{ "code": "CONFIG_FRONTMATTER_FORBIDDEN_WITH_PAYLOAD", "location": "frontmatter.rules[0]" }]
+}

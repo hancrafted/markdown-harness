@@ -1,0 +1,20 @@
+# A top-level key no declared Module claims.
+#
+# The top level is one key per Module and nothing else, so an unrecognised key
+# here is a section addressed to nobody — governance the Operator wrote and the
+# harness would otherwise skip in silence.
+#
+# `not-a-module` is chosen so that no plausible FUTURE Module claims it either.
+# A case keyed on a real-sounding domain — `headings`, `links`, `links-harness`
+# — would turn red on the day a Module of that name shipped, and the failure
+# would name this fixture rather than the change that caused it. Nothing
+# mechanically reserves the name: it is a convention, recorded as a known gap in
+# fixtures/conformance/README.md rather than claimed as held.
+not-a-module:
+  anything: at all
+
+frontmatter:
+  rules:
+    - ruleId: every-document
+      path: ['docs/**/*.md']
+      intent: A sound rule, so the only fault reported is the unrecognised key above.

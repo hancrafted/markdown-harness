@@ -1,0 +1,17 @@
+# A `pattern` with no sibling `intent`.
+#
+# The same shape as a rule with no intent, one level down: one key is meaningless
+# without another beside it. The mandatory intent is what the violation reports,
+# and without it the raw regular expression leaks into a message a Contributor
+# has to act on.
+#
+# PRESENCE decides this, not truthiness: an intent written and left blank is
+# CONFIG_EMPTY_INTENT, so one authoring mistake never earns two codes.
+frontmatter:
+  rules:
+    - ruleId: every-document
+      path: ['docs/**/*.md']
+      intent: A sound rule, so the only fault reported is the pattern below.
+      fields:
+        slug:
+          pattern: '^[a-z0-9-]+$'

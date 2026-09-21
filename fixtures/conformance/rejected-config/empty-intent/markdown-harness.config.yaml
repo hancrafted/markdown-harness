@@ -1,0 +1,14 @@
+# An `intent` key written and left blank.
+#
+# The key is PRESENT, which is what separates this from `missing-rule-intent/`:
+# an author who wrote the key and then nothing is making a different mistake
+# from one who never wrote it, and reporting both under one code would give the
+# same sentence to two repairs.
+#
+# The location points at the key rather than at the rule, because the key is
+# where the edit goes.
+frontmatter:
+  rules:
+    - ruleId: explained-by-nothing
+      path: ['docs/**/*.md']
+      intent: ''

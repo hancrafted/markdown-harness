@@ -1,0 +1,9 @@
+# A rule carrying neither `path` nor `fileName`.
+#
+# A rule that selects nothing governs nothing. Without this fault the Operator
+# gets a green run over a rule that never fires, which reads as compliance and
+# is absence.
+frontmatter:
+  rules:
+    - ruleId: selects-nothing
+      intent: A rule written with no selector at all.
