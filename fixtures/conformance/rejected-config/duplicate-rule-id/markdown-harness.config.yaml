@@ -7,8 +7,8 @@
 frontmatter:
   rules:
     - ruleId: every-document
-      path: ['docs/**/*.md']
+      folders: ['docs/']
       intent: The first rule to claim this name, and not the mistake.
     - ruleId: every-document
-      fileName: log.md
+      fileNames: [log.md]
       intent: The second rule to claim the same name.

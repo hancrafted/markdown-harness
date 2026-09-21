@@ -14,6 +14,7 @@
 
 import type { AssessConditions } from './assess.types';
 import type { FieldAddress, FieldConstraints } from './constraints.types';
+import type { Selector } from './selector.types';
 
 // ---------------------------------------------------------------------------
 // The config file
@@ -84,14 +85,14 @@ export interface FrontmatterConfig {
 /**
  * One entry in the ordered rule list.
  *
- * Every rule = a selector + a reason + a payload. The two exclusivity rules the
- * config validator enforces are modelled here, so the illegal states are
- * unrepresentable rather than merely documented:
+ * Every rule = a selector + a reason + a payload. One exclusivity rule is
+ * modelled here, so that illegal state is unrepresentable rather than merely
+ * documented: `frontmatter: forbidden` carries no payload at all.
  *
- *   - exactly one of `path` / `fileName`
- *   - `frontmatter: forbidden` carries no payload at all
+ * The other rule the validator enforces — at least one selector axis — is
+ * deliberately NOT modelled. See `Selector`.
  */
-export type FrontmatterRule = RuleCommon & RuleSelector & RulePayload;
+export type FrontmatterRule = RuleCommon & Selector & RulePayload;
 
 /** Keys every rule carries, whatever it selects and whatever it asserts. */
 export interface RuleCommon {
@@ -121,7 +122,12 @@ export interface RuleCommon {
   intent: string;
 
   /**
-   * Paths this rule does NOT govern, as globs.
+   * Files this rule does NOT govern, in the selector vocabulary it includes
+   * with.
+   *
+   * One language rather than two: each entry is the same `Selector` object
+   * under the same at-least-one-axis rule, so an author who can write an
+   * include can write an exclude without learning a second grammar.
    *
    * Per rule, never global — a global exclude list could not express "exempt
    * from *this* rule only", so an excluded file could never pick up a rule of
@@ -132,17 +138,8 @@ export interface RuleCommon {
    * first-match is letting a file fall THROUGH to a later, broader rule without
    * restating that rule's constraints.
    */
-  excludeFiles?: Glob[];
+  excludeFiles?: Selector[];
 }
-
-/**
- * How a rule selects files. Exactly one of the two.
- *
- * `fileName` is defined as sugar: `fileName: "log.md"` desugars to
- * `path: ["**\/log.md"]`. Everything is a path glob underneath, so precedence
- * stays one-dimensional and the resolver keeps one code path.
- */
-export type RuleSelector = { path: Glob[]; fileName?: never } | { fileName: string; path?: never };
 
 /**
  * What a rule asserts. Either it forbids frontmatter outright, or it constrains
@@ -229,6 +226,3 @@ export interface NoFrontmatterPayload {
 
 /** The only legal values of `unknownKeys`. `allowed` is also the default. */
 export type UnknownKeys = 'allowed' | 'forbidden';
-
-/** A glob, matched against repo-root-relative paths. */
-export type Glob = string;

@@ -18,7 +18,6 @@ import { checkResultFor } from './lib/check/check-result.pure.ts';
 import type { CorpusCheck } from './lib/check/check.types.ts';
 import { governedFiles } from './lib/check/corpus-governance.pure.ts';
 import { readGovernedSources } from './lib/check/file-source.impure.ts';
-import { matchGlob } from './lib/rules/glob-match.impure.ts';
 import { normalisePath } from './lib/rules/path-shape.pure.ts';
 
 /**
@@ -34,7 +33,7 @@ import { normalisePath } from './lib/rules/path-shape.pure.ts';
  * @param config A config that has already been validated.
  */
 export function checkCorpus(root: string, files: readonly string[], config: MarkdownHarnessConfig): CorpusCheck {
-  const governed = governedFiles(files.map(normalisePath), config.frontmatter?.rules ?? [], matchGlob);
+  const governed = governedFiles(files.map(normalisePath), config.frontmatter?.rules ?? []);
 
   const read = readGovernedSources(root, governed);
   if (read.kind === 'unreadable') return read;

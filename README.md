@@ -63,10 +63,11 @@ bare name.
 <details>
 <summary>Node <code>&gt;=24.16.0 &lt;25 || &gt;=26.1.0</code> — why the range is narrow rather than tidy</summary>
 
-Path matching delegates to the platform's glob matcher, and only those releases carry the
-segment-aware behaviour the config language is specified against. Outside it the command refuses and
-names the range — a refusal is better than the same corpus reporting differently on your machine
-than on CI.
+The range was measured when path matching still delegated to the platform's glob matcher, whose
+segment-aware behaviour moved by patch rather than by major line. Selectors are two axes of literal
+tokens now and nothing reaches that matcher, so the range is narrower than the code requires — it is
+held unchanged until widening it is reviewed on its own. Outside it the command refuses and names
+the range.
 
 </details>
 
@@ -163,7 +164,7 @@ match is the complete set of constraints, and a file no rule names is invisible.
 frontmatter:
   rules:
     - ruleId: research
-      path: [docs/research/**/*.md]
+      folders: [docs/research/]
       intent: Research is indexed, and an index entry copies the description
       fields:
         type: { presence: required, allowed: [{ value: research }] }
@@ -231,7 +232,7 @@ frontmatter:
     stale: This file is past its freshness date. Tell the user and offer to re-verify it.
   rules:
     - ruleId: research
-      path: [docs/research/**/*.md]
+      folders: [docs/research/]
       intent: Research is indexed, so it names its sources.
       assess:
         stale: Re-verify by web research before quoting this.

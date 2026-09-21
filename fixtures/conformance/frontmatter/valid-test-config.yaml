@@ -1,10 +1,16 @@
 # valid-test-config.yaml — the config half of the Conformance suite.
 #
-# A SYNTHETIC config, not this repo's. This `fixtures/conformance/` directory IS the
-# synthetic repo root, so every path below is written relative to it and nothing here
-# can be confused with a real config. Its sibling `fixtures/llm-wiki/` is a SEPARATE
-# synthetic repo root with a config of its own — the seeded demo, not part of this
-# suite and governed by nothing here.
+# A SYNTHETIC config, not this repo's. This tier root IS the synthetic repo root, so
+# every token below is written relative to it and nothing here can be confused with a
+# real config. Its sibling `fixtures/llm-wiki/` is a SEPARATE synthetic repo root with
+# a config of its own — the seeded demo, not part of this suite and governed by
+# nothing here.
+#
+# A selector carries two axes of LITERAL tokens and no wildcard: `folders:`, each
+# token naming that folder alone and carrying a mandatory trailing `/`, and
+# `fileNames:`, each token one basename compared case-sensitively. At least one axis
+# is required; an absent axis means every. Nothing here carries `.md` — what counts
+# as a corpus file is the tree walk's business, and `--query` asks it too.
 #
 # This config does two jobs. COVERAGE: it reaches every key in the vocabulary,
 # including the ones no real file would exercise, and
@@ -29,15 +35,20 @@
 frontmatter:
   rules:
     # ── Reserved filenames ─────────────────────────────────────────────────────
-    # Keyed on the basename, so they match at any depth and sit above every
-    # directory rule. `fileName` is sugar for `path: ["**/<name>"]`.
+    # Keyed on the basename with NO folder axis, so they reach that name
+    # anywhere in the corpus — including the corpus root, and including folders
+    # created after this config was written. That is why they sit above every
+    # folder rule.
+    #
+    # These two are the only selectors in this config the grammar change left
+    # untouched, which is unsurprising: the name axis was modelled on them.
     - ruleId: index-files
-      fileName: index.md
+      fileNames: [index.md]
       intent: 'OKF §8 (Index files): an index enumerates a directory, and carries no frontmatter'
       frontmatter: forbidden
 
     - ruleId: log-files
-      fileName: log.md
+      fileNames: [log.md]
       intent: 'OKF §9 (Log files): a log is an update history, never a concept'
       fields:
         type:
@@ -49,8 +60,16 @@ frontmatter:
     # One exact path, deliberately ABOVE the broad research rule below: this pair
     # is what proves first-match ordering on real files rather than asserting it.
     # Reaches every named format and both nesting depths.
+    #
+    # One folder INTERSECTED with one name, which is how an exact path is
+    # spelled now. `fileNames: [provenance.md]` alone would select the same one
+    # file today and was rejected for it: this rule sits above `research` in
+    # order to prove ordering, so a second `provenance.md` appearing anywhere
+    # would be stolen from whichever rule should have had it — turning a rule
+    # about one document into a rule about a filename.
     - ruleId: provenance-exemplar
-      path: [docs/research/provenance.md]
+      folders: [docs/research/]
+      fileNames: [provenance.md]
       intent: The one document that records its own provenance in full
       fields:
         type:
@@ -76,12 +95,22 @@ frontmatter:
         stale_after: { format: datetime }
 
     # ── Research, broadly ──────────────────────────────────────────────────────
+    # `docs/research/vendor/` is listed in the INCLUDE axis even though the
+    # exclusion immediately takes it back, because that is what the old glob did
+    # and the exclusion is what makes the removal visible in `--audit`.
     - ruleId: research
-      path: [docs/research/**/*.md]
+      folders: [docs/research/, docs/research/vendor/]
       # Vendored text falls THROUGH this rule and is matched by nothing after it,
       # so it ends up ungoverned — which is the only use `excludeFiles` has under
       # first-match.
-      excludeFiles: [docs/research/vendor/**]
+      #
+      # Folders alone, with no name axis: the natural reading of a
+      # directory-contents glob, and the cheapest unit in the whole migration.
+      # `fileNames: [upstream.md]` would select the same one file today and
+      # widen the day a second `upstream.md` appears anywhere — and a widened
+      # EXCLUSION makes files ungoverned, silently, which is the outcome an
+      # exclusion exists to avoid.
+      excludeFiles: [{ folders: [docs/research/vendor/] }]
       intent: Research is indexed, and an index entry copies the description
       unknownKeys: allowed # the default, written out once for coverage
       anyOf: [sources, generated]
@@ -94,10 +123,17 @@ frontmatter:
         tags: { minItems: 1, maxItems: 5, itemMaxLength: 20 }
 
     # ── Skills ─────────────────────────────────────────────────────────────────
-    # The cross-field case. The harness has never heard of "skill": this is a path
-    # glob plus a generic constraint.
+    # The cross-field case. The harness has never heard of "skill": this is a
+    # selector plus a generic constraint.
+    #
+    # Translated by NAME rather than by the four-folder list that would have
+    # reproduced `docs/skills/**/SKILL.md` exactly today, and the divergence is
+    # accepted deliberately. This is an INCLUDE, so widening it means more files
+    # checked, not fewer: a `SKILL.md` under `docs/plain/` is now claimed here
+    # rather than by `plain`, which is visible, arguable and reportable. Nothing
+    # becomes invisible, which is the test an exclusion could not pass.
     - ruleId: skills
-      path: [docs/skills/**/SKILL.md]
+      fileNames: [SKILL.md]
       intent: A skill is addressed by exactly one of its two names
       exactlyOneOf: [name, title]
       fields:
@@ -112,7 +148,7 @@ frontmatter:
     # ── Reference ──────────────────────────────────────────────────────────────
     # The only rule that closes its key set, and the only one carrying `pattern`.
     - ruleId: reference
-      path: [docs/reference/**/*.md]
+      folders: [docs/reference/]
       intent: Reference pages are looked up by slug and say how far they can be trusted
       unknownKeys: forbidden
       fields:
@@ -137,7 +173,7 @@ frontmatter:
 
     # ── Workflows ──────────────────────────────────────────────────────────────
     - ruleId: workflows
-      path: [docs/workflows/**/*.md]
+      folders: [docs/workflows/]
       intent: A workflow names itself and says when to reach for it
       allOf: [title, description]
       fields:
@@ -153,7 +189,7 @@ frontmatter:
     # will ever govern is the one written to satisfy every format it names. A
     # format nothing can disobey is a format nothing has checked.
     - ruleId: datasets
-      path: [docs/datasets/**/*.md]
+      folders: [docs/datasets/]
       intent: A dataset card says who fetched it, when, and where it came from
       fields:
         type:
@@ -176,7 +212,7 @@ frontmatter:
     # `stale_after` is `presence: required` here because the prompt below would
     # otherwise be a sentence that can never be printed.
     - ruleId: freshness
-      path: [docs/freshness/**/*.md]
+      folders: [docs/freshness/]
       intent: A page that goes out of date says when to stop trusting it
       assess:
         stale: Re-verify this against the source before quoting it, then move stale_after.
@@ -189,8 +225,14 @@ frontmatter:
     # no payload at all, because `type` was required everywhere by construction.
     # With the Floor gone, "say what you are" is an ordinary opt-in like any other,
     # and a rule that omitted it would leave these files governed but unchecked.
+    #
+    # Two folder tokens for one subtree, and the one rule in this config that
+    # demonstrates the cost. A folder token selects THAT FOLDER ALONE, so
+    # `docs/plain/broken/` is named because `docs/plain/` does not reach it —
+    # and a third folder appearing under `plain/` is governed by nothing until
+    # this list is edited. That is the accepted, named hole.
     - ruleId: plain
-      path: [docs/plain/**/*.md]
+      folders: [docs/plain/, docs/plain/broken/]
       intent: Everything under plain/ still has to say what it is
       fields:
         type: { presence: required }

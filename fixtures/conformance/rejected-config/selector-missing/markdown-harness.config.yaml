@@ -1,8 +1,14 @@
-# A rule carrying neither `path` nor `fileName`.
+# A rule carrying neither selector axis.
 #
-# A rule that selects nothing governs nothing. Without this fault the Operator
-# gets a green run over a rule that never fires, which reads as compliance and
-# is absence.
+# The code kept its spelling and changed its meaning. It used to mean "neither
+# `path` nor `fileName`", where carrying BOTH was a second, separate mistake;
+# `folders:` and `fileNames:` intersect rather than exclude, so carrying both is
+# how an exact path is spelled and carrying neither is all that is left to
+# report.
+#
+# Such a rule selects nothing and governs nothing. Without a fault the Operator
+# gets a green run over a rule that never fires, and reads compliance out of its
+# absence.
 frontmatter:
   rules:
     - ruleId: selects-nothing

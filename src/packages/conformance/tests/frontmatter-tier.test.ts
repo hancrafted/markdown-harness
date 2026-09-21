@@ -43,8 +43,8 @@ const rules = config.frontmatter?.rules ?? [];
 /** Every key a rule may carry. Grows only by deliberate amendment. */
 const RULE_KEYS = [
   'ruleId',
-  'path',
-  'fileName',
+  'folders',
+  'fileNames',
   'excludeFiles',
   'intent',
   'frontmatter',
@@ -75,7 +75,7 @@ const CONSTRAINT_KEYS = [
  * in `RULE_KEYS` is payload, derived rather than listed again — so a payload key
  * added above is covered here without a second edit.
  */
-const NON_PAYLOAD_KEYS: readonly string[] = ['ruleId', 'path', 'fileName', 'excludeFiles', 'intent', 'frontmatter'];
+const NON_PAYLOAD_KEYS: readonly string[] = ['ruleId', 'folders', 'fileNames', 'excludeFiles', 'intent', 'frontmatter'];
 const PAYLOAD_KEYS = RULE_KEYS.filter((key) => !NON_PAYLOAD_KEYS.includes(key));
 
 /** Every key one `allowed` entry may carry. */
@@ -240,13 +240,36 @@ describe('valid-test-config.yaml is a complete test surface', () => {
 
 describe('valid-test-config.yaml obeys the config-validity rules', () => {
   describe('success cases', () => {
-    it('gives every rule exactly one selector', () => {
+    it('gives every rule at least one selector axis', () => {
+      // At least one, never exactly one: the two axes INTERSECT, so a rule
+      // carrying both is spelling an exact path rather than asking twice.
       // ARRANGE
-      const selectorKeys = ['path', 'fileName'];
+      const selectorKeys = ['folders', 'fileNames'];
+      const none = 0;
       // ACT
       const counts = rules.map((rule) => selectorKeys.filter((key) => key in rule).length);
       // ASSERT
-      for (const count of counts) expect(count).toBe(1);
+      for (const count of counts) expect(count).toBeGreaterThan(none);
+    });
+
+    it('spells every folder token with its mandatory trailing separator', () => {
+      // ARRANGE
+      const separator = '/';
+      // ACT
+      const tokens = rules.flatMap((rule) => rule.folders ?? []);
+      // ASSERT
+      expect(tokens.length).toBeGreaterThan(0);
+      for (const token of tokens) expect(token.endsWith(separator)).toBe(true);
+    });
+
+    it('spells every file-name token as a bare basename', () => {
+      // ARRANGE
+      const separator = '/';
+      // ACT
+      const tokens = rules.flatMap((rule) => rule.fileNames ?? []);
+      // ASSERT
+      expect(tokens.length).toBeGreaterThan(0);
+      for (const token of tokens) expect(token).not.toContain(separator);
     });
 
     it('gives every rule a ruleId', () => {

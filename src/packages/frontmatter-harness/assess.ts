@@ -13,6 +13,10 @@
 // path no rule selects is answered without a read at all, which is what lets
 // this command stay silent about files the config never claimed — a governance
 // tool that comments on everything is one that gets switched off.
+//
+// Corpus membership is asked first, for the same reason `--query` asks it: a
+// selector carries no extension any more, so without it this command would
+// start assessing a `.txt` file the corpus walk would never have collected.
 
 import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
 import type { AssessResult, WinningRule } from '../response-contract/index.ts';
@@ -20,8 +24,8 @@ import { effectivePrompt } from './lib/assess/assess-prompt.pure.ts';
 import { assessResultFor } from './lib/assess/assess-result.pure.ts';
 import { readAssessedFile } from './lib/assess/assessed-file.impure.ts';
 import { freshnessOf } from './lib/assess/freshness.pure.ts';
+import { isCorpusPath } from './lib/rules/corpus-path.pure.ts';
 import { findFirstMatch } from './lib/rules/first-match.pure.ts';
-import { matchGlob } from './lib/rules/glob-match.impure.ts';
 import { normalisePath } from './lib/rules/path-shape.pure.ts';
 
 /**
@@ -44,7 +48,7 @@ export function assessPath(
   now: string,
 ): AssessResult {
   const path = normalisePath(file.path);
-  const winner = findFirstMatch(path, config.frontmatter?.rules ?? [], matchGlob);
+  const winner = isCorpusPath(path) ? findFirstMatch(path, config.frontmatter?.rules ?? []) : undefined;
 
   if (winner === undefined) return { agentAction: 'PROCEED', state: 'ungoverned' };
 

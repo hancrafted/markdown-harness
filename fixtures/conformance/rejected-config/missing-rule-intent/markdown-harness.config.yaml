@@ -9,4 +9,4 @@
 frontmatter:
   rules:
     - ruleId: unexplained
-      path: ['docs/**/*.md']
+      folders: ['docs/']

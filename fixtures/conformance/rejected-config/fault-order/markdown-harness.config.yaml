@@ -11,7 +11,7 @@
 # the whole list before any rule is walked. An implementation that sorted, or
 # that walked rule by rule, would agree on the set and disagree here.
 #
-# Five codes are reached twice over by the single-code cases beside this one.
+# Four codes are reached twice over by the single-code cases beside this one.
 # That redundancy is the point: this case exists for the order, not the coverage.
 not-a-module:
   anything: at all
@@ -20,11 +20,11 @@ frontmatter:
   not-a-section-key: true
   rules:
     - ruleId: first-rule
-      path: ['docs/**/*.md']
+      folders: ['docs/']
       intent: ''
     - ruleId: first-rule
-      path: ['docs/log.md']
-      fileName: log.md
+      folders: ['docs/']
+      fileNames: [log.md]
       intent: The second rule, claiming a name the first already took.
       fields:
         slug:

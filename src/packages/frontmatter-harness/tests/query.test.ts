@@ -37,7 +37,7 @@ describe('queryPath', () => {
       expect(actual.governance === GOVERNED ? actual.requirements : undefined).toEqual(expected);
     });
 
-    it('matches the fileName sugar against a deeply nested file', () => {
+    it('matches a name-only selector against a deeply nested file', () => {
       // ARRANGE
       const expected = 'log-files';
       // ACT
@@ -105,6 +105,21 @@ describe('queryPath', () => {
       const actual = queryPath('docs/reference/never-written.md', config);
       // ASSERT
       expect(actual.governance === GOVERNED ? actual.rule.ruleId : undefined).toBe(expected);
+    });
+
+    it('answers invisible for a path the corpus walk would never have collected', () => {
+      // A selector carries no extension any more, so `folders: [docs/reference/]`
+      // reaches this path as readily as the `.md` beside it. What tells them
+      // apart is the same predicate the walk uses, asked here because there is
+      // no walk on this command to have filtered one out — and answering
+      // `governed` for a file `--check` will never report on is the one way this
+      // command can mislead an agent about to create one.
+      // ARRANGE
+      const expected = INVISIBLE;
+      // ACT
+      const actual = queryPath('docs/reference/never-written.txt', config);
+      // ASSERT
+      expect(actual.governance).toBe(expected);
     });
   });
 });

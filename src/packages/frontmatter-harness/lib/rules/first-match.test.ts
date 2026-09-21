@@ -1,28 +1,25 @@
 // Colocated unit test for first-match resolution.
 //
 // Ordering is the whole subject here, so every case is built from rules that
-// deliberately overlap. The matcher is hand-written, as it is for the selector.
+// deliberately overlap. Two literal axes make overlap easy to write down: the
+// narrow rule intersects a folder with a name, the broad one names the folder
+// alone, and both reach the same file.
 
 import { describe, expect, it } from 'vitest';
 import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import { findFirstMatch } from './first-match.pure';
 
-/** A hand-written stand-in covering exact globs and a `<dir>/**` prefix. */
-function matches(glob: string, path: string): boolean {
-  if (glob.endsWith('/**')) return path.startsWith(glob.slice(0, -2));
-  return glob === path;
-}
-
 const specific: FrontmatterRule = {
   ruleId: 'specific',
   intent: 'The narrow rule, written first',
-  path: ['docs/research/notes.md'],
+  folders: ['docs/research/'],
+  fileNames: ['notes.md'],
 };
 
 const broad: FrontmatterRule = {
   ruleId: 'broad',
   intent: 'The catch-all, written last',
-  path: ['docs/**'],
+  folders: ['docs/', 'docs/research/'],
 };
 
 describe('findFirstMatch', () => {
@@ -32,7 +29,7 @@ describe('findFirstMatch', () => {
       const rules = [specific, broad];
       const expected = 'specific';
       // ACT
-      const actual = findFirstMatch('docs/research/notes.md', rules, matches);
+      const actual = findFirstMatch('docs/research/notes.md', rules);
       // ASSERT
       expect(actual?.ruleId).toBe(expected);
     });
@@ -42,7 +39,7 @@ describe('findFirstMatch', () => {
       const rules = [specific, broad];
       const expected = 'broad';
       // ACT
-      const actual = findFirstMatch('docs/other.md', rules, matches);
+      const actual = findFirstMatch('docs/other.md', rules);
       // ASSERT
       expect(actual?.ruleId).toBe(expected);
     });
@@ -53,7 +50,7 @@ describe('findFirstMatch', () => {
       // ARRANGE
       const rules = [specific, broad];
       // ACT
-      const actual = findFirstMatch('README.md', rules, matches);
+      const actual = findFirstMatch('README.md', rules);
       // ASSERT
       expect(actual).toBeUndefined();
     });
@@ -62,7 +59,7 @@ describe('findFirstMatch', () => {
       // ARRANGE
       const rules: FrontmatterRule[] = [];
       // ACT
-      const actual = findFirstMatch('docs/a.md', rules, matches);
+      const actual = findFirstMatch('docs/a.md', rules);
       // ASSERT
       expect(actual).toBeUndefined();
     });
@@ -75,14 +72,19 @@ describe('findFirstMatch', () => {
       // ARRANGE
       const narrow: FrontmatterRule = {
         ruleId: 'narrow',
-        intent: 'Everything under docs, except the one exempt file',
-        path: ['docs/**'],
-        excludeFiles: ['docs/exempt.md'],
+        intent: 'Everything in docs, except the one exempt file',
+        folders: ['docs/'],
+        excludeFiles: [{ folders: ['docs/'], fileNames: ['exempt.md'] }],
       };
-      const fallback: FrontmatterRule = { ruleId: 'fallback', intent: 'The rest', path: ['docs/exempt.md'] };
+      const fallback: FrontmatterRule = {
+        ruleId: 'fallback',
+        intent: 'The rest',
+        folders: ['docs/'],
+        fileNames: ['exempt.md'],
+      };
       const expected = 'fallback';
       // ACT
-      const actual = findFirstMatch('docs/exempt.md', [narrow, fallback], matches);
+      const actual = findFirstMatch('docs/exempt.md', [narrow, fallback]);
       // ASSERT
       expect(actual?.ruleId).toBe(expected);
     });
@@ -94,9 +96,24 @@ describe('findFirstMatch', () => {
       const rules = [broad, specific];
       const expected = 'broad';
       // ACT
-      const actual = findFirstMatch('docs/research/notes.md', rules, matches);
+      const actual = findFirstMatch('docs/research/notes.md', rules);
       // ASSERT
       expect(actual?.ruleId).toBe(expected);
+    });
+
+    it('does not let a folder token reach a file one level below it', () => {
+      // A nested corpus, two files, one folder token: the parent's token takes
+      // the file beside it and never the one below. No recursion anywhere.
+      // ARRANGE
+      const ruleId = 'parent-only';
+      const parentOnly: FrontmatterRule = { ruleId, intent: 'i', folders: ['docs/'] };
+      const beside = 'docs/a.md';
+      const below = 'docs/sub/b.md';
+      const reachedBesideOnly = [ruleId, undefined];
+      // ACT
+      const actual = [beside, below].map((path) => findFirstMatch(path, [parentOnly])?.ruleId);
+      // ASSERT
+      expect(actual).toEqual(reachedBesideOnly);
     });
   });
 });

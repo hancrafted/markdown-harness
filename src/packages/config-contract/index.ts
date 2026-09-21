@@ -12,13 +12,13 @@ export type {
   ConstrainingPayload,
   FrontmatterConfig,
   FrontmatterRule,
-  Glob,
   MarkdownHarnessConfig,
   NoFrontmatterPayload,
   RuleCommon,
   RulePayload,
-  RuleSelector,
   UnknownKeys,
 } from './lib/config.types';
+
+export type { FileName, FolderPath, Selector } from './lib/selector.types';
 
 export type { AllowedValue, FieldAddress, FieldConstraints, Format } from './lib/constraints.types';

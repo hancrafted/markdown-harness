@@ -1,4 +1,0 @@
-{
-  "error": "CONFIG_REJECTED",
-  "faults": [{ "code": "CONFIG_SELECTOR_AMBIGUOUS", "location": "frontmatter.rules[0]" }]
-}
