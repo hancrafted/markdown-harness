@@ -122,6 +122,19 @@ own tenet 2 — act on the authoring path, never the consumption path.
    semantics, the command surface, exit codes and the report format are unaffected — they are
    contract decisions and their home is `src/packages/config-contract/`, the fixture corpus, and further
    design-ADRs. Several remain genuinely open in issue #1 and are not settled here by implication.
+9. **The glob groups; a project's own choices split.** Disciplines sharing a glob split into a second
+   ADR when one set holds what any project would do and the other records a choice this product made
+   and could have made the other way. The reasoning may be borrowed, so the shape is portable — the
+   choice is not. Without this, a future agent reading this document merges `ARCH-008-module-boundaries`
+   back into `ARCH-004-folders-and-files`, since the two share `files: ['src/**/*']` exactly as
+   `ARCH-005-file-suffix-types` and `ARCH-007-file-suffix-impure` already do.
+10. **`docs/vision/architecture.md` holds reasons; an ADR holds failable constraints.** The operative
+    test is that **a sentence belongs in an ADR only if a reviewer could fail a pull request with
+    it.** _No Module knows another Module exists_ is a reason and fails nothing, so it is a tenet; _a
+    Module Package MUST NOT import another Module Package_ is the failable form of the same fact, so
+    it is a Decision. A tenet with no failable form stays in the vision document. Step 5 of that
+    document's "Deriving a decision from this" is the operative summary, the same arrangement
+    `docs/agents/domain.md` already runs for the altitude test.
 
 The governing records derived from this live in `.archgate/adrs/`, written by `archgate:adr-author`.
 The altitude test itself belongs in `docs/agents/domain.md`, beside the two-record-systems table it

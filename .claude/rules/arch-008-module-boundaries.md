@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-008-module-boundaries.md

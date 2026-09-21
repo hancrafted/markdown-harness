@@ -1,9 +1,14 @@
 ---
 type: design-adr
-status: accepted
+status: superseded
 ---
 
 # Glob matching is case-insensitive on a case-insensitive host, but only in a segment carrying a wildcard
+
+> **Superseded 2026-09-20 by [`0007-selector-is-two-literal-axes.md`](./0007-selector-is-two-literal-axes.md).**
+> The selector carries no wildcard, and the builtin turns case-insensitive only inside a
+> wildcard-bearing segment, so this divergence is unreachable and the deferred fix has nothing left
+> to refuse. Kept for the measurement, which is still the reason the selector is literal.
 
 Path matching delegates to `node:path`'s `matchesGlob`, and that builtin configures its matcher with
 case-insensitivity keyed to the **host operating system** — read from the real machine, not from the

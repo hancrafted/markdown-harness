@@ -68,7 +68,7 @@ Packages under `src/packages/` are deep modules, and every file carries exactly 
 
 `npm run verify` is the gate, and any check inside it can go **vacuous green** — report success over nothing. Before trusting a check that passed, break what it guards and watch it go red.
 
-Thirteen measured traps live in [`docs/agents/verification.md`](./docs/agents/verification.md), numbered and cited by number from elsewhere in the repo. Each line below is a symptom only; the measurement behind it and the fix are in the doc.
+Fourteen measured traps live in [`docs/agents/verification.md`](./docs/agents/verification.md), numbered and cited by number from elsewhere in the repo. Each line below is a symptom only; the measurement behind it and the fix are in the doc.
 
 1. `archgate check` is changed-files-scoped — `total: 0` means nothing in scope changed.
 2. `verify` in an agent worktree — `knip` and `eslint` fail on the location, not the diff.
@@ -83,3 +83,4 @@ Thirteen measured traps live in [`docs/agents/verification.md`](./docs/agents/ve
 11. Nothing under `.agents/skills/` is reached by the gate except `prettier` — no ADR glob covers it, and `eslint` configures no rule for its `.mjs`.
 12. A git ref lookup reports success over nothing — `ls-remote` exits 0 on a missing ref, and an annotated tag needs `^{}` to reach its commit.
 13. A gate appended to `verify` never runs on a PR — `ci.yml` duplicates that chain instead of invoking it.
+14. A read can come back short and exit 0 — read in windows of thirty lines, anchor every edit, and take numbers from a tool's own output.
