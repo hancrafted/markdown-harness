@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { sectionFaults } from './section-faults.pure';
 
 const RULES_AT = 'frontmatter.rules';
-const one = { ruleId: 'a', intent: 'first', path: ['docs/a.md'] };
-const two = { ruleId: 'b', intent: 'second', path: ['docs/b.md'] };
+const one = { ruleId: 'a', intent: 'first', folders: ['docs/'], fileNames: ['a.md'] };
+const two = { ruleId: 'b', intent: 'second', folders: ['docs/'], fileNames: ['b.md'] };
 
 describe('sectionFaults', () => {
   describe('success cases', () => {
@@ -45,7 +45,7 @@ describe('sectionFaults', () => {
 
     it('points a duplicate ruleId at the later occurrence', () => {
       // ARRANGE
-      const twin = { ruleId: 'a', intent: 'second claim', path: ['docs/b.md'] };
+      const twin = { ruleId: 'a', intent: 'second claim', folders: ['docs/'], fileNames: ['b.md'] };
       const section = { rules: [one, twin] };
       const expected = [{ code: 'CONFIG_DUPLICATE_RULE_ID', location: `${RULES_AT}[1].ruleId` }];
       // ACT
@@ -78,7 +78,7 @@ describe('sectionFaults', () => {
 
     it('addresses each rule by its own index', () => {
       // ARRANGE
-      const nameless = { intent: 'i', path: ['docs/c.md'] };
+      const nameless = { intent: 'i', folders: ['docs/'], fileNames: ['c.md'] };
       const section = { rules: [one, two, nameless] };
       const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${RULES_AT}[2].ruleId` }];
       // ACT
@@ -89,8 +89,8 @@ describe('sectionFaults', () => {
 
     it('reports every later twin when an id is claimed three times', () => {
       // ARRANGE
-      const second = { ruleId: 'a', intent: 'second', path: ['docs/b.md'] };
-      const third = { ruleId: 'a', intent: 'third', path: ['docs/c.md'] };
+      const second = { ruleId: 'a', intent: 'second', folders: ['docs/'], fileNames: ['b.md'] };
+      const third = { ruleId: 'a', intent: 'third', folders: ['docs/'], fileNames: ['c.md'] };
       const expected = [`${RULES_AT}[1].ruleId`, `${RULES_AT}[2].ruleId`];
       // ACT
       const actual = sectionFaults({ rules: [one, second, third] });

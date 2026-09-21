@@ -1,0 +1,164 @@
+{
+  "files": [
+    {
+      "path": "docs/datasets/quarterly-usage.md",
+      "ruleId": "datasets"
+    },
+    {
+      "path": "docs/datasets/usage-events.md",
+      "ruleId": "datasets"
+    },
+    {
+      "path": "docs/freshness/fresh.md",
+      "ruleId": "freshness"
+    },
+    {
+      "path": "docs/freshness/stale.md",
+      "ruleId": "freshness"
+    },
+    {
+      "path": "docs/freshness/undated.md",
+      "ruleId": "freshness"
+    },
+    {
+      "path": "docs/index.md",
+      "ruleId": "index-files"
+    },
+    {
+      "path": "docs/log.md",
+      "ruleId": "log-files"
+    },
+    {
+      "path": "docs/plain/blank-type.md",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/plain/broken/index.md",
+      "ruleId": "index-files"
+    },
+    {
+      "path": "docs/plain/broken/listed.md",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/plain/broken/mangled.md",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/plain/broken/unterminated.md",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/plain/empty-block.md",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/plain/index.md",
+      "ruleId": "index-files"
+    },
+    {
+      "path": "docs/plain/notes.md",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/plain/prose-only.md",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/plain/untyped.md",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/reference/blank-slug.md",
+      "ruleId": "reference"
+    },
+    {
+      "path": "docs/reference/draft-page.md",
+      "ruleId": "reference"
+    },
+    {
+      "path": "docs/reference/labels.md",
+      "ruleId": "reference"
+    },
+    {
+      "path": "docs/reference/legacy.md",
+      "ruleId": "reference"
+    },
+    {
+      "path": "docs/research/bad-actor.md",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/blank-description.md",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/blank-tags.md",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/index.md",
+      "ruleId": "index-files"
+    },
+    {
+      "path": "docs/research/long-tag.md",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/overtagged.md",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/provenance.md",
+      "ruleId": "provenance-exemplar"
+    },
+    {
+      "path": "docs/research/survey.md",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/unsourced.md",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/untagged.md",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/vendor/upstream.md",
+      "ruleId": null
+    },
+    {
+      "path": "docs/skills/anonymous/SKILL.md",
+      "ruleId": "skills"
+    },
+    {
+      "path": "docs/skills/legacy/SKILL.md",
+      "ruleId": "skills"
+    },
+    {
+      "path": "docs/skills/writing/SKILL.md",
+      "ruleId": "skills"
+    },
+    {
+      "path": "docs/workflows/listed-title.md",
+      "ruleId": "workflows"
+    },
+    {
+      "path": "docs/workflows/onboarding.md",
+      "ruleId": "workflows"
+    },
+    {
+      "path": "docs/workflows/release.md",
+      "ruleId": "workflows"
+    },
+    {
+      "path": "docs/workflows/tagging.md",
+      "ruleId": "workflows"
+    },
+    {
+      "path": "docs/workflows/untitled.md",
+      "ruleId": "workflows"
+    }
+  ]
+}

@@ -12,7 +12,7 @@
 frontmatter:
   rules:
     - ruleId: research-notes
-      path: ['docs/research/**/*.md']
+      folders: ['docs/research/']
       intent: A sound rule, so the only fault reported is the unfireable prompt below.
       fields:
         source:

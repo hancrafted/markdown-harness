@@ -1,171 +1,187 @@
-// Colocated unit test for rule selection: the `fileName` sugar, and exclusion.
+// Colocated unit test for rule selection: the two literal axes, and exclusion.
 //
-// The glob matcher arrives as an argument, so this test hands in one it writes
-// itself. That keeps the file free of the platform matcher and makes the two
-// questions separable: whether a rule offers the right globs, and whether the
-// matcher agrees about them.
+// No matcher arrives as an argument any more, because there is nothing left to
+// match with. Both axes are literal tokens compared as strings, so this file
+// asserts the comparison itself rather than an agreement between a rule and a
+// platform function — which is the whole point of the grammar it covers.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import { globsForRule, ruleSelects, selectionFor } from './selector.pure';
+import type { FrontmatterRule, Selector } from '../../../config-contract/index.ts';
+import { folderOf, ruleSelects, selectionFor, selectorMatches } from './selector.pure';
 
-/** A hand-written stand-in covering exact globs and the one `**` shape the sugar emits. */
-function matches(glob: string, path: string): boolean {
-  if (!glob.startsWith('**/')) return glob === path;
-  const tail = glob.slice(3);
-  return path === tail || path.endsWith(`/${tail}`);
-}
-
-const pathRule: FrontmatterRule = {
+const folderRule: FrontmatterRule = {
   ruleId: 'research',
   intent: 'Research notes cite what they drew on',
-  path: ['docs/research/**/*.md'],
+  folders: ['docs/research/'],
 };
 
-const fileNameRule: FrontmatterRule = {
+const nameRule: FrontmatterRule = {
   ruleId: 'log-files',
   intent: 'A log says when it was written',
-  fileName: 'log.md',
+  fileNames: ['log.md'],
 };
 
 describe('rule selection', () => {
   describe('success cases', () => {
-    it('selects a path the rule lists', () => {
+    it('selects a file sitting directly in a listed folder', () => {
       // ARRANGE
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: ['docs/a.md'] };
       const selected = true;
       // ACT
-      const actual = ruleSelects(rule, 'docs/a.md', matches);
+      const actual = ruleSelects(folderRule, 'docs/research/survey.md');
       // ASSERT
       expect(actual).toBe(selected);
     });
 
-    it('desugars fileName into a repo-wide glob', () => {
+    it('reaches a named file at any depth when the rule carries no folder axis', () => {
       // ARRANGE
-      const expected = ['**/log.md'];
+      const anywhere = ['log.md', 'docs/log.md', 'docs/a/b/log.md'];
       // ACT
-      const actual = globsForRule(fileNameRule);
+      const actual = anywhere.filter((path) => ruleSelects(nameRule, path));
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(actual).toEqual(anywhere);
     });
 
-    it('passes a path rule through verbatim', () => {
+    it('intersects the two axes when a rule carries both', () => {
       // ARRANGE
-      const expected = ['docs/research/**/*.md'];
+      const rule: FrontmatterRule = {
+        ruleId: 'provenance-exemplar',
+        intent: 'One document records its own provenance in full',
+        folders: ['docs/research/'],
+        fileNames: ['provenance.md'],
+      };
+      const inBoth = 'docs/research/provenance.md';
+      const rightNameWrongFolder = 'docs/plain/provenance.md';
+      const rightFolderWrongName = 'docs/research/survey.md';
       // ACT
-      const actual = globsForRule(pathRule);
+      const actual = [rightNameWrongFolder, rightFolderWrongName, inBoth].filter((path) => ruleSelects(rule, path));
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(actual).toEqual([inBoth]);
     });
 
-    it('reports a claimed path as selected', () => {
+    it('names the corpus root with its own token', () => {
       // ARRANGE
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: ['docs/a.md'] };
-      const expected = 'selected';
+      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', folders: ['./'] };
+      const atRoot = 'README.md';
+      const oneDeep = 'docs/README.md';
       // ACT
-      const actual = selectionFor(rule, 'docs/a.md', matches);
+      const actual = [atRoot, oneDeep].filter((path) => ruleSelects(rule, path));
       // ASSERT
-      expect(actual).toBe(expected);
+      expect(actual).toEqual([atRoot]);
+    });
+
+    it('excludes a file its own exclusion selector reaches', () => {
+      // ARRANGE
+      const rule: FrontmatterRule = {
+        ...folderRule,
+        excludeFiles: [{ folders: ['docs/research/'], fileNames: ['vendored.md'] }],
+      };
+      const excluded = 'excluded';
+      // ACT
+      const actual = selectionFor(rule, 'docs/research/vendored.md');
+      // ASSERT
+      expect(actual).toBe(excluded);
     });
   });
 
   describe('failure cases', () => {
-    it('declines a path no glob matches', () => {
+    it('does not reach a subfolder of a listed folder, so no subtree is governed by accident', () => {
       // ARRANGE
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: ['docs/a.md'] };
+      const child = 'docs/research/vendor/upstream.md';
       const selected = false;
       // ACT
-      const actual = ruleSelects(rule, 'docs/b.md', matches);
+      const actual = ruleSelects(folderRule, child);
       // ASSERT
       expect(actual).toBe(selected);
     });
 
-    it('lets exclusion beat a glob that would otherwise match', () => {
-      // Exclusion answers one yes/no question before any rule is chosen, so it
-      // wins within the rule rather than competing with it.
+    it('does not reach a parent of a listed folder either', () => {
       // ARRANGE
-      const rule: FrontmatterRule = {
-        ruleId: 'r',
-        intent: 'i',
-        path: ['**/a.md'],
-        excludeFiles: ['docs/a.md'],
-      };
+      const parent = 'docs/overview.md';
       const selected = false;
       // ACT
-      const actual = ruleSelects(rule, 'docs/a.md', matches);
+      const actual = ruleSelects(folderRule, parent);
       // ASSERT
       expect(actual).toBe(selected);
     });
 
-    it('tells an excluded path apart from one no glob reached', () => {
-      // `--audit` reports these differently: a rule that never reached a file
-      // may hold a glob typo, while a rule whose own excludeFiles took the file
-      // back is working as written. A boolean cannot carry the difference.
+    it('compares a file name case-sensitively, so a case-only variant does not match', () => {
       // ARRANGE
-      const rule: FrontmatterRule = {
-        ruleId: 'r',
-        intent: 'i',
-        path: ['**/a.md'],
-        excludeFiles: ['docs/a.md'],
-      };
-      const removedByItsOwnExclude = 'excluded';
-      const neverReached = 'unselected';
+      const variant = 'docs/LOG.MD';
+      const selected = false;
       // ACT
-      const excluded = selectionFor(rule, 'docs/a.md', matches);
-      const unselected = selectionFor(rule, 'docs/b.md', matches);
+      const actual = ruleSelects(nameRule, variant);
       // ASSERT
-      expect(excluded).toBe(removedByItsOwnExclude);
-      expect(unselected).toBe(neverReached);
+      expect(actual).toBe(selected);
+    });
+
+    it('does not match a folder token that shares a prefix with the path', () => {
+      // ARRANGE
+      // The trailing separator is what closes the Jekyll defect: without it,
+      // `docs/vision` would prefix-match `docs/visionary/`.
+      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', folders: ['docs/vision/'] };
+      const neighbour = 'docs/visionary/product.md';
+      const selected = false;
+      // ACT
+      const actual = ruleSelects(rule, neighbour);
+      // ASSERT
+      expect(actual).toBe(selected);
+    });
+
+    it('reports a path no axis reaches as unselected rather than excluded', () => {
+      // ARRANGE
+      // `--audit` reports the two differently: a rule that never reached a file
+      // may hold a typo, while a rule whose own exclusion took one back is
+      // working. Collapsing them makes the diagnostic silent.
+      const rule: FrontmatterRule = { ...folderRule, excludeFiles: [{ fileNames: ['upstream.md'] }] };
+      const unselected = 'unselected';
+      // ACT
+      const actual = selectionFor(rule, 'docs/plain/upstream.md');
+      // ASSERT
+      expect(actual).toBe(unselected);
     });
   });
 
   describe('edge cases', () => {
-    it('matches a fileName rule against a file at the repo root', () => {
-      // The sugar is `**/log.md`, and a bare `log.md` has no directory to match
-      // the `**` against — the case that decides whether the sugar is usable.
+    it('answers the root token for a path carrying no separator', () => {
       // ARRANGE
-      const selected = true;
+      const root = './';
       // ACT
-      const actual = ruleSelects(fileNameRule, 'log.md', matches);
+      const actual = folderOf('README.md');
       // ASSERT
-      expect(actual).toBe(selected);
+      expect(actual).toBe(root);
     });
 
-    it('matches a fileName rule against a deeply nested file', () => {
+    it('answers everything up to and including the last separator for a nested path', () => {
       // ARRANGE
-      const selected = true;
+      const folder = 'docs/research/vendor/';
       // ACT
-      const actual = ruleSelects(fileNameRule, 'a/b/c/log.md', matches);
+      const actual = folderOf('docs/research/vendor/upstream.md');
       // ASSERT
-      expect(actual).toBe(selected);
+      expect(actual).toBe(folder);
     });
 
-    it('selects nothing for a rule whose path list is empty', () => {
+    it('reaches every path when a selector carries neither axis, which only a refused config can hold', () => {
       // ARRANGE
-      const rule: FrontmatterRule = { ruleId: 'r', intent: 'i', path: [] };
-      const selected = false;
+      // "An absent axis means every" composes, so both absent means everything.
+      // A loaded config can never hold one — `CONFIG_SELECTOR_MISSING` refuses
+      // it — and this states what the predicate does rather than leaving the
+      // composition to be guessed at.
+      const neither: Selector = {};
+      const reached = true;
       // ACT
-      const actual = ruleSelects(rule, 'docs/a.md', matches);
+      const actual = selectorMatches(neither, 'anything/at/all.md');
       // ASSERT
-      expect(actual).toBe(selected);
+      expect(actual).toBe(reached);
     });
 
-    it('does not call a path excluded when the rule never selected it anyway', () => {
-      // An excludeFiles that names a file outside the rule's own globs has
-      // removed nothing, and counting it as an exclusion would inflate the
-      // tally with work the rule never did.
+    it('takes an exclusion carrying one axis, on the same terms an include does', () => {
       // ARRANGE
-      const rule: FrontmatterRule = {
-        ruleId: 'r',
-        intent: 'i',
-        path: ['docs/a.md'],
-        excludeFiles: ['docs/b.md'],
-      };
-      const neverReached = 'unselected';
+      const rule: FrontmatterRule = { ...folderRule, excludeFiles: [{ fileNames: ['upstream.md'] }] };
+      const excluded = 'excluded';
       // ACT
-      const actual = selectionFor(rule, 'docs/b.md', matches);
+      const actual = selectionFor(rule, 'docs/research/upstream.md');
       // ASSERT
-      expect(actual).toBe(neverReached);
+      expect(actual).toBe(excluded);
     });
   });
 });

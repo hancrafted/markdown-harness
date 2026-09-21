@@ -11,7 +11,7 @@
 frontmatter:
   rules:
     - ruleId: no-frontmatter-here
-      path: ['docs/**/*.md']
+      folders: ['docs/']
       intent: A rule forbidding frontmatter and constraining it in the same breath.
       frontmatter: forbidden
       fields:

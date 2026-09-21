@@ -10,5 +10,5 @@
 frontmatter:
   rules:
     - ruleId: explained-by-nothing
-      path: ['docs/**/*.md']
+      folders: ['docs/']
       intent: ''

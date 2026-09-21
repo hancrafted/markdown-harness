@@ -1,11 +1,15 @@
 /**
- * How a rule's selector is reported.
+ * A rule's selector, as reported.
  *
  * `--audit` is the only response that carries a selector at all, and it carries
- * it AS WRITTEN. The resolver desugars `fileName` into `**\/<name>` because
- * precedence has to stay one-dimensional, but a diagnostic built from the
- * desugared form would hand an Operator a glob they never typed. So this reads
- * the rule rather than the resolver.
+ * it AS WRITTEN. Nothing is desugared on the way out and nothing is filled in:
+ * an axis the Operator never wrote is absent here too, because a report that
+ * echoed `fileNames: []` back at a folder-only rule would be telling them their
+ * rule selects no file names, when it selects every one.
+ *
+ * Absent and empty are therefore two different answers, and both reach the
+ * wire. That distinction is the whole reason this file spreads keys
+ * conditionally rather than building one object literal.
  */
 
 import type { FrontmatterRule } from '../../../config-contract/index.ts';
@@ -17,6 +21,8 @@ import type { SelectorRef } from '../../../response-contract/index.ts';
  * @param rule The rule to read a selector off.
  */
 export function selectorRefFor(rule: FrontmatterRule): SelectorRef {
-  if ('fileName' in rule && rule.fileName !== undefined) return { fileName: rule.fileName };
-  return { path: rule.path ?? [] };
+  return {
+    ...(rule.folders === undefined ? {} : { folders: rule.folders }),
+    ...(rule.fileNames === undefined ? {} : { fileNames: rule.fileNames }),
+  };
 }

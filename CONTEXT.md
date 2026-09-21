@@ -272,25 +272,29 @@ _Avoid_ as a name for this: path rule, matcher, policy
 
 **selector**:
 How a Rule says which files it is about, on two literal axes — folders and file names. A folder token
-is a literal path from the repo root carrying a mandatory trailing `/`, and the corpus root is `./`; a
-file name is one literal basename with its extension. An absent axis means every, which is the only
-spelling "all" has, because a selector carries no wildcard anywhere. Being literal is what makes it
-decidable: whether two selectors reach the same file is settled from the config text alone, with no
-tree read.
+is a literal path from the repo root carrying a mandatory trailing `/` and selecting **that folder
+alone**, and the corpus root is `./`; a file name is one literal basename with its extension,
+compared case-sensitively. An absent axis means every, which is the only spelling "all" has, because
+a selector carries no wildcard anywhere. Being literal is what makes it host-independent: literal
+names compare the same way on every filesystem, where a glob matcher turns case-insensitive inside a
+wildcard-bearing segment. Nothing compares two selectors to each other — a Rule is only ever asked
+whether it selects one file.
 _Avoid_ as a name for this: glob, pattern, path spec, matcher
 
 **folder tree**:
-A folder and every folder below it, as against the folder alone. Both are spellable on the folder
-axis of a **selector**, and a reader who has only met "directory" cannot tell which of the two a
-token means, which is why they are named apart rather than distinguished by punctuation.
+A folder and every folder below it, as against the folder alone. A **selector** can spell only the
+second: there is no recursion in the language, so a folder tree is written as an enumeration its
+author maintains. The term is kept because a reader who has only met "directory" cannot tell which
+of the two a token means.
 _Avoid_ as a name for this: recursive glob, subtree, directory (unqualified)
 
 **glob** — _retired, defined only so the term resolves_:
 A wildcard pattern matched against a path — how a **selector** was written before it became two
 literal axes. The config language admits none now. It survives in `docs/research/`, in design-ADR
-0005, and in every config an adopter has already written, so a reader will meet it; treat every such
-mention as history. Archgate's own `files:` and `paths:` keys are globs in the same sense and are not
-this repo's language to retire.
+0005, in every config an adopter has already written, and — until the new grammar ships in a release
+— in this repository's own root config, which the gate reads through the published version rather
+than the local build. So a reader will meet it; treat every such mention as history. Archgate's own
+`files:` and `paths:` keys are globs in the same sense and are not this repo's language to retire.
 _Avoid_ as a name for anything this repo's config language currently admits: glob, wildcard
 pattern
 

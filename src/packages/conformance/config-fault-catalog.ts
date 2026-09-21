@@ -12,11 +12,18 @@ import type { ConfigFaultCode } from '../response-contract/index.ts';
 
 /**
  * Every code the tier undertakes to reach, in the order §3.5's catalog declares
- * them: the three that name the config FILE first, then the twelve that name a
+ * them: the three that name the config FILE first, then the eleven that name a
  * key inside it.
  *
  * `satisfies` holds one direction — a code spelled wrong, or one the catalog
  * never had, does not compile. `unreachedProof` holds the other.
+ *
+ * Fourteen, down from fifteen. `CONFIG_SELECTOR_AMBIGUOUS` was retired with the
+ * grammar that made it reachable: `folders:` and `fileNames:` intersect rather
+ * than exclude, so a rule carrying both is spelling an exact path rather than
+ * asking two questions at once. Its case directory was deleted in the same
+ * change — halves that land apart leave the suite red, which is the machinery
+ * working rather than a hole to paper over.
  */
 export const DECLARED_CODES = [
   'CONFIG_NOT_FOUND',
@@ -27,7 +34,6 @@ export const DECLARED_CODES = [
   'CONFIG_EMPTY_RULE_LIST',
   'CONFIG_DUPLICATE_RULE_ID',
   'CONFIG_SELECTOR_MISSING',
-  'CONFIG_SELECTOR_AMBIGUOUS',
   'CONFIG_MISSING_RULE_INTENT',
   'CONFIG_MISSING_PATTERN_INTENT',
   'CONFIG_EMPTY_INTENT',

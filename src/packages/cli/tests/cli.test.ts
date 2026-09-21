@@ -151,7 +151,7 @@ beforeAll(() => {
       'frontmatter:',
       '  rules:',
       '    - ruleId: every-markdown-file',
-      "      path: ['**/*.md']",
+      "      folders: ['./']",
       '      intent: Every markdown file says what it is',
       '      fields:',
       '        type:',
@@ -175,7 +175,7 @@ beforeAll(() => {
       'frontmatter:',
       '  rules:',
       '    - ruleId: every-markdown-file',
-      "      path: ['**/*.md']",
+      "      folders: ['./']",
       '      intent: Governs every markdown file the walker enumerates',
       '      fields:',
       '        type:',
@@ -191,7 +191,7 @@ beforeAll(() => {
       'frontmatter:',
       '  rules:',
       '    - ruleId: every-markdown-file',
-      "      path: ['**/*.md']",
+      "      folders: ['./', 'node_modules/', 'node_modules/pkg/', '.git/']",
       '      intent: Governs every markdown file the walker enumerates',
       '      fields:',
       '        type:',
@@ -408,9 +408,10 @@ describe('mh', () => {
     });
 
     it('never lets a refused directory into the corpus it audits', () => {
-      // Measured, not assumed: `node_modules/x.md` DOES match `**/*.md` under
-      // the platform matcher, so this count is the only thing standing between
-      // an adopter and every dependency they ever installed.
+      // The config NAMES both refused directories on its folder axis, so this
+      // count is the only thing standing between an adopter and every
+      // dependency they ever installed. A config that simply failed to reach
+      // them would pass this test while proving nothing about the walker.
       // ARRANGE
       const onlyKeptMd = 1;
       // ACT

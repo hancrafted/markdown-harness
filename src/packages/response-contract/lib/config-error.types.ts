@@ -38,10 +38,18 @@ export type ConfigFaultCode =
   | 'CONFIG_EMPTY_RULE_LIST'
   /** Two rules share a `ruleId`. */
   | 'CONFIG_DUPLICATE_RULE_ID'
-  /** A rule with neither `path` nor `fileName`. */
+  /**
+   * A rule, or one of its exclusions, carrying neither selector axis.
+   *
+   * Redefined rather than respelled. It used to mean "neither `path` nor
+   * `fileName`" — two keys exclusive of one another, where carrying neither was
+   * one mistake and carrying both was the other. A selector is now `folders:`
+   * and `fileNames:`, which INTERSECT, so carrying both is how an exact path is
+   * spelled and only carrying neither is left to report. That is also why
+   * `CONFIG_SELECTOR_AMBIGUOUS` was retired rather than renamed: two keys that
+   * are not exclusive of one another cannot be ambiguous.
+   */
   | 'CONFIG_SELECTOR_MISSING'
-  /** A rule with both `path` and `fileName`. */
-  | 'CONFIG_SELECTOR_AMBIGUOUS'
   /** A rule with no `intent`. */
   | 'CONFIG_MISSING_RULE_INTENT'
   /** A `pattern` with no sibling `intent`. */

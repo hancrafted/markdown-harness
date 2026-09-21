@@ -1,9 +1,9 @@
 // Integration suite for `--audit`'s tallies, through the entry point.
 //
-// The unit suite hands the bookkeeping a matcher it wrote itself; this one runs
-// on the platform matcher, so what it adds is whether real globs agree about
-// the corpus. The config is built here rather than read from a file: what is
-// under test is resolution against paths, and the loader has its own suite.
+// What this adds over the unit suite is the whole entry point: normalisation,
+// the rule list off a config object, and the selector echoed back onto each
+// row. The config is built here rather than read from a file, because what is
+// under test is resolution against paths and the loader has its own suite.
 
 import { describe, expect, it } from 'vitest';
 import type { MarkdownHarnessConfig } from '../../config-contract/index.ts';
@@ -16,15 +16,19 @@ import { auditRules } from '../audit.ts';
 const CONFIG: MarkdownHarnessConfig = {
   frontmatter: {
     rules: [
-      { ruleId: 'index-files', intent: 'An index enumerates a directory', fileName: 'index.md' },
+      { ruleId: 'index-files', intent: 'An index enumerates a directory', fileNames: ['index.md'] },
       {
         ruleId: 'research',
         intent: 'Research cites what it drew on',
-        path: ['docs/research/**/*.md'],
-        excludeFiles: ['docs/research/vendor/**'],
+        folders: ['docs/research/', 'docs/research/vendor/'],
+        excludeFiles: [{ folders: ['docs/research/vendor/'] }],
       },
-      { ruleId: 'everything', intent: 'The catch-all, written last', path: ['docs/**/*.md'] },
-      { ruleId: 'inert', intent: 'Reaches nothing in this corpus', path: ['docs/nothing/**/*.md'] },
+      {
+        ruleId: 'everything',
+        intent: 'The catch-all, written last',
+        folders: ['docs/', 'docs/plain/', 'docs/research/', 'docs/research/vendor/'],
+      },
+      { ruleId: 'inert', intent: 'Reaches nothing in this corpus', folders: ['docs/nothing/'] },
     ],
   },
 };
@@ -58,7 +62,7 @@ function counts(result: {
 
 describe('auditRules', () => {
   describe('success cases', () => {
-    it('tallies the corpus against real globs, one row per rule in config order', () => {
+    it('tallies the corpus against the literal axes, one row per rule in config order', () => {
       // Worked out by hand. `index-files` wins both index files. `research`
       // wins survey.md, is shadowed once by index-files, and its own exclude
       // removes vendor/upstream.md. `everything` wins the two files left over
@@ -78,23 +82,23 @@ describe('auditRules', () => {
       expect(actual).toEqual(table);
     });
 
-    it('reports a fileName selector as sugar and a path selector as written', () => {
+    it('reports each selector with the axes it was written with and no others', () => {
       // ARRANGE
-      const sugar = {
+      const nameOnly = {
         ruleId: 'index-files',
-        selector: { fileName: 'index.md' },
+        selector: { fileNames: ['index.md'] },
         intent: 'An index enumerates a directory',
       };
-      const written = {
+      const folderOnly = {
         ruleId: 'inert',
-        selector: { path: ['docs/nothing/**/*.md'] },
+        selector: { folders: ['docs/nothing/'] },
         intent: 'Reaches nothing in this corpus',
       };
       // ACT
       const actual = auditRules(CORPUS, CONFIG).rules.map((row) => row.rule);
       // ASSERT
-      expect(actual).toContainEqual(sugar);
-      expect(actual).toContainEqual(written);
+      expect(actual).toContainEqual(nameOnly);
+      expect(actual).toContainEqual(folderOnly);
     });
   });
 

@@ -1,26 +1,32 @@
 /**
  * Which Node this command will answer under, and what it says when it will not.
  *
- * Path matching delegates to `node:path`'s `matchesGlob`, whose behaviour is
+ * The window below was measured for a reason that has since been removed. Path
+ * matching used to delegate to `node:path`'s `matchesGlob`, whose behaviour is
  * fixed by the matcher library bundled with each Node release — and that
- * bundled version moves by patch, not by major line. Outside the window below,
- * the same tree in gives a different result out, which breaks tenet 3 without
- * saying so. So the declared range is the honest one rather than the tidy one,
- * and the command refuses rather than answering differently: `engines` is
- * advisory unless an adopter opted into strictness, so the manifest cannot be
- * the only place this holds.
+ * bundled version moves by patch, not by major line. Outside the window, the
+ * same tree in gave a different result out, which breaks tenet 3 without saying
+ * so. A selector is now two axes of literal tokens compared as strings, and
+ * nothing in this command reaches that matcher any more.
  *
- * Which releases carry the behaviour is a registry fact, measured rather than
- * derived; issue #46 §5 records the measurement.
+ * THE RANGE IS HELD UNCHANGED ANYWAY, deliberately and for one change only.
+ * Widening it is a public contract change — the refusal text, the manifest's
+ * `engines`, and the platform matrix the smoke workflow runs are three places
+ * that would have to move together, and none of them is this ticket's subject.
+ * Retiring the glob matcher and re-deciding the runtime floor in one change
+ * would make the second decision unreviewable inside the first.
+ *
+ * Which releases carried the matcher behaviour is a registry fact, measured
+ * rather than derived; issue #46 §5 records the measurement.
  */
 
-/** `>=24.16.0` — the first Node 24 release whose bundled matcher carries it. */
+/** `>=24.16.0` — the first Node 24 release whose bundled matcher carried it. */
 const LOWER_FROM = [24, 16, 0];
 
-/** `<25` — no Node 25 release carries it, so the lower window closes at the line. */
+/** `<25` — no Node 25 release carried it, so the lower window closes at the line. */
 const LOWER_BELOW = [25, 0, 0];
 
-/** `>=26.1.0` — the first Node 26 release that carries it; later lines inherit it. */
+/** `>=26.1.0` — the first Node 26 release that carried it; later lines inherit it. */
 const UPPER_FROM = [26, 1, 0];
 
 /**
@@ -58,12 +64,16 @@ function precedes(version: readonly number[], boundary: readonly number[]): bool
 }
 
 /**
- * What stderr should carry when this Node cannot be trusted to match a path,
- * and nothing at all when it can.
+ * What stderr should carry when this Node is outside the declared range, and
+ * nothing at all when it is inside.
  *
- * A refusal rather than a warning, and before anything is read: a warning
- * alongside a wrong answer is still a wrong answer, and the wrong answer here
- * is a corpus verdict an Operator would act on.
+ * A refusal rather than a warning: a warning alongside a wrong answer is still
+ * a wrong answer, and the wrong answer here is a corpus verdict an Operator
+ * would act on.
+ *
+ * The sentence names the manifest rather than the matcher. It used to name the
+ * matcher, and that reason went with the glob grammar; saying it anyway would
+ * be telling an adopter something untrue about their own machine.
  *
  * @param version A bare `major.minor.patch`, as `process.versions.node` reports.
  */
@@ -76,9 +86,8 @@ export function unsupportedRuntime(version: string): string | undefined {
   return [
     `mh: Node ${version} is not supported — markdown-harness requires ${SUPPORTED_NODE}.`,
     ``,
-    `Path matching delegates to this Node's own glob matcher, and outside that`,
-    `range the same corpus reports differently. Refusing is the only answer that`,
-    `cannot be quietly wrong.`,
+    `That range is what this release is built and tested against. Refusing is the`,
+    `only answer that cannot be quietly wrong.`,
     ``,
   ].join('\n');
 }

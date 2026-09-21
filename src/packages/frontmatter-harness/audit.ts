@@ -12,7 +12,6 @@
 import type { MarkdownHarnessConfig } from '../config-contract/index.ts';
 import type { AuditResult } from '../response-contract/index.ts';
 import { tallyRules } from './lib/audit/rule-tally.pure.ts';
-import { matchGlob } from './lib/rules/glob-match.impure.ts';
 import { normalisePath } from './lib/rules/path-shape.pure.ts';
 
 /**
@@ -23,5 +22,5 @@ import { normalisePath } from './lib/rules/path-shape.pure.ts';
  */
 export function auditRules(files: readonly string[], config: MarkdownHarnessConfig): AuditResult {
   const normalised = files.map(normalisePath);
-  return { rules: tallyRules(normalised, config.frontmatter?.rules ?? [], matchGlob) };
+  return { rules: tallyRules(normalised, config.frontmatter?.rules ?? []) };
 }

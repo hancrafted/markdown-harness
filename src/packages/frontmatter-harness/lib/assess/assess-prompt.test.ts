@@ -15,7 +15,7 @@ const RULE_SENTENCE = 'Re-verify by web research before quoting this.';
 const moduleBlock: AssessConditions = { stale: MODULE_SENTENCE };
 
 /** A rule with no `assess:` block of its own. */
-const bare: FrontmatterRule = { ruleId: 'research', intent: 'Research is indexed', path: ['docs/research/**'] };
+const bare: FrontmatterRule = { ruleId: 'research', intent: 'Research is indexed', folders: ['docs/research/'] };
 
 /** The same rule, answering for itself. */
 const speaking: FrontmatterRule = { ...bare, assess: { stale: RULE_SENTENCE } };

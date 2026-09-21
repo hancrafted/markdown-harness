@@ -12,7 +12,7 @@ import { checkResultFor } from './check-result.pure';
 const PLAIN: FrontmatterRule = {
   ruleId: 'plain',
   intent: 'Everything under plain/ still has to say what it is',
-  path: ['docs/plain/**/*.md'],
+  folders: ['docs/plain/'],
   fields: { type: { presence: 'required' } },
 };
 
@@ -104,7 +104,7 @@ describe('corpus check result', () => {
       const reference: FrontmatterRule = {
         ruleId: 'reference',
         intent: 'Reference pages say how far they can be trusted',
-        path: ['docs/reference/**/*.md'],
+        folders: ['docs/reference/'],
         unknownKeys: 'forbidden',
         fields: {
           status: { allowed: [{ value: 'stable' }] },

@@ -5,7 +5,6 @@
     { "code": "CONFIG_UNRECOGNISED_KEY", "location": "frontmatter.not-a-section-key" },
     { "code": "CONFIG_DUPLICATE_RULE_ID", "location": "frontmatter.rules[1].ruleId" },
     { "code": "CONFIG_EMPTY_INTENT", "location": "frontmatter.rules[0].intent" },
-    { "code": "CONFIG_SELECTOR_AMBIGUOUS", "location": "frontmatter.rules[1]" },
     { "code": "CONFIG_MISSING_PATTERN_INTENT", "location": "frontmatter.rules[1].fields.slug" }
   ]
 }

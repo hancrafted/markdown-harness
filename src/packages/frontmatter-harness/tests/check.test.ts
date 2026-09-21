@@ -11,14 +11,14 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { MarkdownHarnessConfig } from '../../config-contract/index.ts';
 import { checkCorpus } from '../check.ts';
 
-/** Governs `docs/`, and deliberately nothing else, so invisibility is testable. */
+/** Governs `docs/` alone, and deliberately nothing else, so invisibility is testable. */
 const CONFIG: MarkdownHarnessConfig = {
   frontmatter: {
     rules: [
       {
         ruleId: 'docs',
-        intent: 'Everything under docs/ says what it is',
-        path: ['docs/**/*.md'],
+        intent: 'Everything in docs/ says what it is',
+        folders: ['docs/'],
         fields: { type: { presence: 'required' } },
       },
     ],

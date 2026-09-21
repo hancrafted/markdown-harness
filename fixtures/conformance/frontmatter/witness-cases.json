@@ -1,0 +1,146 @@
+{
+  "witnesses": [
+    {
+      "path": "index.md",
+      "governance": "governed",
+      "ruleId": "index-files"
+    },
+    {
+      "path": "log.md",
+      "governance": "governed",
+      "ruleId": "log-files"
+    },
+    {
+      "path": "notes.md",
+      "governance": "invisible",
+      "ruleId": null
+    },
+    {
+      "path": "docs/new-note.md",
+      "governance": "invisible",
+      "ruleId": null
+    },
+    {
+      "path": "docs/SKILL.md",
+      "governance": "governed",
+      "ruleId": "skills",
+      "divergesFrom": "B6"
+    },
+    {
+      "path": "docs/datasets/new.md",
+      "governance": "governed",
+      "ruleId": "datasets"
+    },
+    {
+      "path": "docs/datasets/index.md",
+      "governance": "governed",
+      "ruleId": "index-files"
+    },
+    {
+      "path": "docs/datasets/log.md",
+      "governance": "governed",
+      "ruleId": "log-files"
+    },
+    {
+      "path": "docs/datasets/INDEX.md",
+      "governance": "governed",
+      "ruleId": "datasets"
+    },
+    {
+      "path": "docs/freshness/new.md",
+      "governance": "governed",
+      "ruleId": "freshness"
+    },
+    {
+      "path": "docs/plain/new.md",
+      "governance": "governed",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/plain/provenance.md",
+      "governance": "governed",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/plain/SKILL.md",
+      "governance": "governed",
+      "ruleId": "skills",
+      "divergesFrom": "B6"
+    },
+    {
+      "path": "docs/plain/broken/new.md",
+      "governance": "governed",
+      "ruleId": "plain"
+    },
+    {
+      "path": "docs/reference/new.md",
+      "governance": "governed",
+      "ruleId": "reference"
+    },
+    {
+      "path": "docs/research/new.md",
+      "governance": "governed",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/upstream.md",
+      "governance": "governed",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/does-not-exist.md",
+      "governance": "governed",
+      "ruleId": "research"
+    },
+    {
+      "path": "docs/research/does-not-exist.txt",
+      "governance": "invisible",
+      "ruleId": null
+    },
+    {
+      "path": "docs/research/vendor/new.md",
+      "governance": "invisible",
+      "ruleId": null
+    },
+    {
+      "path": "docs/research/vendor/index.md",
+      "governance": "governed",
+      "ruleId": "index-files"
+    },
+    {
+      "path": "docs/skills/SKILL.md",
+      "governance": "governed",
+      "ruleId": "skills"
+    },
+    {
+      "path": "docs/skills/other.md",
+      "governance": "invisible",
+      "ruleId": null
+    },
+    {
+      "path": "docs/skills/anonymous/other.md",
+      "governance": "invisible",
+      "ruleId": null
+    },
+    {
+      "path": "docs/skills/writing/index.md",
+      "governance": "governed",
+      "ruleId": "index-files"
+    },
+    {
+      "path": "docs/skills/writing/skill.md",
+      "governance": "invisible",
+      "ruleId": null
+    },
+    {
+      "path": "docs/workflows/new.md",
+      "governance": "governed",
+      "ruleId": "workflows"
+    },
+    {
+      "path": "docs/workflows/provenance.md",
+      "governance": "governed",
+      "ruleId": "workflows"
+    }
+  ]
+}

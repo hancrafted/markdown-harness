@@ -7,7 +7,7 @@
 frontmatter:
   rules:
     - ruleId: every-document
-      path: ['docs/**/*.md']
+      folders: ['docs/']
       intent: A sound rule, so the only fault reported is the presence value below.
       fields:
         title:

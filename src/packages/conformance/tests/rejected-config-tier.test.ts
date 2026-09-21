@@ -148,7 +148,7 @@ describe('the rejected-config tier', () => {
       // number belongs in review — and `cases.length` compared against anything
       // derived from `cases` could not fail at all.
       // ARRANGE
-      const declaredCases = 16;
+      const declaredCases = 15;
       // ACT
       const enumerated = cases.length;
       // ASSERT

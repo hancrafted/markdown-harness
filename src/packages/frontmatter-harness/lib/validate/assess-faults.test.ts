@@ -22,12 +22,12 @@ const moduleBlock = { stale: SENTENCE };
 const requiring = {
   ruleId: 'freshness',
   intent: 'A page that goes out of date says when to stop trusting it',
-  path: ['docs/**/*.md'],
+  folders: ['docs/'],
   fields: { stale_after: { presence: 'required' } },
 };
 
 /** The same rule, requiring nothing — so a prompt reaching it could never fire. */
-const silent = { ruleId: 'notes', intent: 'Notes say what they are', path: ['docs/**/*.md'] };
+const silent = { ruleId: 'notes', intent: 'Notes say what they are', folders: ['docs/'] };
 
 describe('assessBlockFaults', () => {
   describe('success cases', () => {
@@ -174,7 +174,7 @@ describe('unfireableAssessFaults', () => {
       const rule = {
         ruleId: 'index-files',
         intent: 'An index carries no frontmatter',
-        fileName: 'index.md',
+        fileNames: ['index.md'],
         frontmatter: 'forbidden',
       };
       // ACT

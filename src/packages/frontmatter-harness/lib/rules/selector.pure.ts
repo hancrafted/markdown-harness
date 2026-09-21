@@ -1,34 +1,95 @@
 /**
  * Which files a single rule claims.
  *
- * Everything is a path glob underneath, so precedence stays one-dimensional and
- * the resolver keeps one code path. The matcher arrives as an argument: a
- * builtin import would make this file reach the platform, and the question it
- * answers — does this rule claim this path — is a rule of the config language
- * rather than a property of the host.
+ * Two axes of literal tokens and no wildcard anywhere, so this file needs no
+ * matcher and reaches no platform function: a folder token is compared to a
+ * path's folder as a string, and a file name to its basename. That is the whole
+ * of the host-independence argument the grammar exists for — the platform's
+ * glob matcher turns case-insensitive inside any segment carrying a wildcard,
+ * and string equality does not turn into anything anywhere.
+ *
+ * Nothing here compares two SELECTORS. First-match-wins only ever asks "does
+ * this rule select this file", so no overlap or containment procedure is
+ * written; the cross-Module check that would have needed one is out of scope.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import type { GlobMatcher, RuleSelection } from './rules.types.ts';
+import type { FrontmatterRule, Selector } from '../../../config-contract/index.ts';
+import type { RuleSelection } from './rules.types.ts';
+
+/** The one separator a normalised path is spelled with. */
+const SEPARATOR = '/';
+
+/** The corpus root's own token, so that every folder has a spelling. */
+const ROOT_FOLDER = './';
 
 /**
- * The globs a rule selects by, with `fileName` desugared.
+ * The folder token a path sits in.
  *
- * `fileName: "log.md"` becomes `**\/log.md` — a file of that name anywhere,
- * including the repo root.
+ * Everything up to and including the last separator, which makes the answer
+ * carry the mandatory trailing `/` a folder token is written with — so the
+ * comparison is a plain equality and never a prefix test. A path with no
+ * separator sits at the corpus root and answers `./` rather than the empty
+ * string, because the empty string is not a token anyone can write.
+ *
+ * @param path A normalised, repo-root-relative path.
+ */
+export function folderOf(path: string): string {
+  const lastSeparator = path.lastIndexOf(SEPARATOR);
+  return lastSeparator === -1 ? ROOT_FOLDER : path.slice(0, lastSeparator + 1);
+}
+
+/**
+ * The basename a path ends in.
+ *
+ * @param path A normalised, repo-root-relative path.
+ */
+export function fileNameOf(path: string): string {
+  return path.slice(path.lastIndexOf(SEPARATOR) + 1);
+}
+
+/**
+ * Whether one selector reaches one path.
+ *
+ * The product of the two axes, with an absent axis meaning every. That
+ * composition is what makes folders-alone, names-alone and both-together one
+ * rule rather than three branches — and it is also why both axes absent reaches
+ * everything. A loaded config can never hold such a selector, because
+ * `CONFIG_SELECTOR_MISSING` refuses a rule carrying neither and the same
+ * at-least-one rule covers every exclusion; stating the composition here rather
+ * than special-casing it keeps the predicate one expression and leaves the
+ * refusal in the one place that can report a location.
+ *
+ * Both comparisons are case-sensitive on every host, matching what the corpus
+ * walk already does with `.md`.
+ *
+ * @param selector The selector under test — a rule's own, or one of its exclusions.
+ * @param path A normalised, repo-root-relative path.
+ */
+export function selectorMatches(selector: Selector, path: string): boolean {
+  const byFolder = selector.folders === undefined || selector.folders.includes(folderOf(path));
+  const byName = selector.fileNames === undefined || selector.fileNames.includes(fileNameOf(path));
+  return byFolder && byName;
+}
+
+/**
+ * The selector a rule carries, lifted off the rule itself.
+ *
+ * A rule IS a selector plus a reason plus a payload, so the two axes sit
+ * directly on it; this names the selector half so that a rule's own selector
+ * and its exclusions are handed to one predicate rather than two.
  *
  * @param rule The rule to read a selector off.
  */
-export function globsForRule(rule: FrontmatterRule): readonly string[] {
-  return 'fileName' in rule && rule.fileName !== undefined ? [`**/${rule.fileName}`] : (rule.path ?? []);
+export function selectorOf(rule: FrontmatterRule): Selector {
+  return { folders: rule.folders, fileNames: rule.fileNames };
 }
 
 /**
  * What this rule did with this path.
  *
- * Exclusion still wins outright, but the globs are asked FIRST so that the two
- * ways of not selecting stay distinguishable: `excluded` means this rule's own
- * globs reached the file and its own `excludeFiles` took it back, while
+ * Exclusion still wins outright, but the rule's own selector is asked FIRST so
+ * that the two ways of not selecting stay distinguishable: `excluded` means
+ * this rule reached the file and its own `excludeFiles` took it back, while
  * `unselected` means the rule never reached it at all. `--audit` reports the
  * two differently, and only this function knows which is which.
  *
@@ -39,13 +100,12 @@ export function globsForRule(rule: FrontmatterRule): readonly string[] {
  *
  * @param rule The rule under test.
  * @param path A normalised, repo-root-relative path.
- * @param matches The glob matcher to decide with.
  */
-export function selectionFor(rule: FrontmatterRule, path: string, matches: GlobMatcher): RuleSelection {
-  const matched = globsForRule(rule).some((glob) => matches(glob, path));
+export function selectionFor(rule: FrontmatterRule, path: string): RuleSelection {
+  const matched = selectorMatches(selectorOf(rule), path);
   if (!matched) return 'unselected';
 
-  const excluded = (rule.excludeFiles ?? []).some((glob) => matches(glob, path));
+  const excluded = (rule.excludeFiles ?? []).some((exclusion) => selectorMatches(exclusion, path));
   return excluded ? 'excluded' : 'selected';
 }
 
@@ -59,8 +119,7 @@ export function selectionFor(rule: FrontmatterRule, path: string, matches: GlobM
  *
  * @param rule The rule under test.
  * @param path A normalised, repo-root-relative path.
- * @param matches The glob matcher to decide with.
  */
-export function ruleSelects(rule: FrontmatterRule, path: string, matches: GlobMatcher): boolean {
-  return selectionFor(rule, path, matches) === 'selected';
+export function ruleSelects(rule: FrontmatterRule, path: string): boolean {
+  return selectionFor(rule, path) === 'selected';
 }
