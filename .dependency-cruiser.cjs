@@ -43,7 +43,7 @@ const GATE = 'foundation';
  * suite proving a symlink case has to plant one, and planting is a builtin
  * call. It is spent on test files only, and never on a production file.
  */
-const TEST_HOMES = `^${R}/[^/]+/.+\\.test\\.ts$`;
+const TEST_HOMES = `^${R}/[^/]+/.+/[^/]+\\.test\\.ts$`;
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
