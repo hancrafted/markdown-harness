@@ -116,6 +116,16 @@ to the directory, never to the files that fail today: of the four malformed bloc
 unclosed fence moves under `prettier --write` — prettier leaves a block it cannot parse alone — so
 which shapes survive formatting is an accident of the parser rather than a property anyone chose.
 
+**The rejected-config tier fails louder than that, so it earns its own entry.** A malformed markdown
+case is silently reformatted; an unparseable **YAML** case is not. Measured over a candidate
+`fixtures/conformance/config/` of fifteen case directories: with the tier unignored,
+`npx prettier --check .` exits **2** with `SyntaxError: A block sequence may not be used as an
+implicit map key`, so `npm run verify` dies at the format step and never reaches `vitest`, `tsc` or
+`knip`; with the directory ignored it exits 0. The parseable-but-invalid configs and their goldens
+take the softer half of the same trap — both measured `[warn]`, so `prettier --write .` would rewrite
+the bytes under test. `fixtures/conformance/config/**` therefore belongs in `.prettierignore`, scoped
+to the directory on the same grounds as the entry above.
+
 ## 8. `vitest` never typechecks, so a per-file green proves only that the code ran
 
 Vitest transforms with esbuild, which strips types without reading them — so

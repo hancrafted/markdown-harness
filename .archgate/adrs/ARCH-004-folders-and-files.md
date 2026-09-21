@@ -13,7 +13,7 @@ description: 'Where a source file may sit and what it may be called: the Package
 
 ## Context
 
-This ADR serves to orient an agent on how to architect, structure, and write files within the `src/` source folder.
+This ADR serves to orient an agent on how to architect, structure, and write files within the `src/` source folder. It holds what any project with this layout would do; which way dependencies run between a Module, `foundation` and `cli` is this product's own choice, and lives in `ARCH-008-module-boundaries`.
 
 **Example Shape**:
 
