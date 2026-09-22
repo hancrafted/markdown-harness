@@ -27,8 +27,9 @@
 import { describe, expect, it } from 'vitest';
 import { MODULE_SET } from '../../cli/module-set.ts';
 import { loadConfig } from '../../foundation/load-config.ts';
-import type { ConfigErrorResult } from '../../response-contract/index.ts';
-import { casesIn } from '../case-corpus.ts';
+import { readTextIn } from '../../foundation/read-text.ts';
+import { checkResponse, configError, serializeResponse } from '../../response-contract/index.ts';
+import { casesIn, tierRoot } from '../case-corpus.ts';
 import { DECLARED_CODES } from '../config-fault-catalog.ts';
 import { coverageAndClosure } from '../coverage-closure.ts';
 import { configPathOf, expectedRejectionOf, rejectedConfigCases } from '../rejected-config-case.ts';
@@ -37,16 +38,11 @@ import { tierForRunner } from '../tier-record.ts';
 const TIER = tierForRunner(import.meta.url);
 if (TIER.caseKind !== 'rejected-config') throw new Error(`${TIER.name} is not a rejected-config tier`);
 const cases = rejectedConfigCases(TIER);
-
-/**
- * The one literal that marks the failure variant.
- *
- * Spelled here and held against the contract by `rejectionFor`'s return type,
- * so the runner and the frozen files are two independent statements of it: tsc
- * ties this to `ConfigErrorResult`, and deep equality ties the frozen files to
- * this.
- */
-const REJECTED = 'CONFIG_REJECTED';
+const CONFIG_NOT_FOUND = 'config-not-found';
+const TIER_ROOT = tierRoot(TIER.name);
+const REJECTED_CONFIG_ROOT = `fixtures/conformance/${TIER.name}`;
+const CONFIG_NOT_FOUND_PATH = `${REJECTED_CONFIG_ROOT}/${CONFIG_NOT_FOUND}/${TIER.configFile}`;
+const SERIALIZED_RESPONSE = 'expected-check-response.json';
 
 /**
  * The whole config-error response one case produces.
@@ -59,8 +55,17 @@ const REJECTED = 'CONFIG_REJECTED';
  * — so a tier running against its own Module list would specify a tool nobody
  * ships.
  */
-function rejectionFor(caseName: string): ConfigErrorResult {
-  return { error: REJECTED, faults: loadConfig(configPathOf(TIER, caseName), MODULE_SET).faults };
+function rejectionFor(caseName: string) {
+  return configError(loadConfig(configPathOf(TIER, caseName), MODULE_SET).faults);
+}
+
+/** The frozen whole-envelope bytes for the config-not-found Conformance case. */
+function expectedCheckResponse(): string {
+  const found = readTextIn(TIER_ROOT, `${CONFIG_NOT_FOUND}/${SERIALIZED_RESPONSE}`);
+  if (found.kind !== 'text') {
+    throw new Error(`${CONFIG_NOT_FOUND} must contain ${SERIALIZED_RESPONSE}`);
+  }
+  return found.text;
 }
 
 /** Every code the frozen files name, across the tier, with repeats. */
@@ -81,6 +86,16 @@ describe('the rejected-config tier', () => {
       const actual = rejectionFor(caseName);
       // ASSERT
       expect(actual).toEqual(expected);
+    });
+
+    it('freezes the serialized --check envelope for config-not-found', () => {
+      // ARRANGE
+      const expected = expectedCheckResponse();
+      // ACT
+      const faults = loadConfig(CONFIG_NOT_FOUND_PATH, MODULE_SET).faults;
+      const actual = serializeResponse(checkResponse(REJECTED_CONFIG_ROOT, CONFIG_NOT_FOUND_PATH, configError(faults)));
+      // ASSERT
+      expect(actual).toBe(expected);
     });
 
     it('points at its own tier rather than at the directory holding every tier', () => {

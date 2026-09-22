@@ -7,11 +7,11 @@
  * agent mid-task, and a command that can fail a build must not also be the one
  * that reads a clock.
  *
- * `agentAction` leads every variant, and it is FULLY DERIVABLE from `state` on
- * purpose. Five states map onto three actions, and asking a busy model to do
- * that mapping is asking for the one thing it is least reliable at — the same
- * reasoning that makes `CheckSummary` precompute its counts rather than leave
- * an array to be summed.
+ * Inside each Module block, `agentAction` leads every variant and is FULLY
+ * DERIVABLE from `state` on purpose. Five Module states map onto three actions,
+ * and asking a busy model to do that mapping is asking for the one thing it is
+ * least reliable at. The whole-config `ungoverned` result carries the fifth
+ * state and its own derived action only after every Module passed the path by.
  */
 
 /**
@@ -35,14 +35,15 @@ export type PromptSource =
   /** The winning rule's own block, which replaces the Module-wide one whole. */
   | 'rule'
   /** The Module-wide block beside `rules:`, because the winning rule wrote none. */
-  | 'module';
+  | 'module-wide';
 
 /**
  * How the file answered, at the instant supplied.
  *
- * Five values, three of which are not about freshness at all: a file can be
- * outside every rule, unable to answer, or absent, and collapsing any of those
- * into "fresh" would report an untested file as a sound one.
+ * Six values, four of which are not about freshness at all: a governed file
+ * can be unreadable, unable to answer or absent, while the composed whole-config
+ * result can be ungoverned. Collapsing any of those into "fresh" would report
+ * an untested file as a sound one. A Module answer uses five variants.
  */
 export type AssessState =
   /** The freshness date falls at or before the Assessment instant. */
@@ -51,7 +52,9 @@ export type AssessState =
   | 'fresh'
   /** A rule governs the file, and `stale_after` is missing or the frontmatter will not parse. */
   | 'unassessable'
-  /** No rule selects the path, so nothing will ever be said about it. */
+  /** A rule governs the file, but it would not open. */
+  | 'unreadable'
+  /** No declared Module selects the path. Produced only after composition. */
   | 'ungoverned'
   /** Nothing exists at the path. */
   | 'absent';
@@ -80,8 +83,20 @@ export interface AssessEvidence {
   value: string;
 }
 
-/** Either the file was judged, or something stopped it being judged. */
-export type AssessResult = StaleFile | FreshFile | UnassessableFile | UngovernedFile | AbsentFile;
+/** What one Module answers before composition names it. */
+export type ModuleAssess = StaleFile | FreshFile | UnassessableFile | UnreadableFile | AbsentFile;
+
+/** One Module's assessment, named by the top-level config key the Operator typed. */
+export type ModuleAssessment = ModuleAssess & { module: string };
+
+/** Either at least one Module assessed the file, or the whole config passed it by. */
+export type AssessResult = AssessedFile | UngovernedFile;
+
+/** Every Module that governs the file, in declared Module order. */
+export interface AssessedFile {
+  /** Per-Module answers; never empty. */
+  modules: readonly ModuleAssessment[];
+}
 
 /** Past its freshness date: the one case that carries the Operator's words. */
 export interface StaleFile {
@@ -139,19 +154,41 @@ export interface UnassessableFile {
   state: 'unassessable';
   /** Absent. */
   source?: never;
-  /** Absent: there was nothing to read, which is the finding. */
+  /** Absent: the readable frontmatter made no usable freshness claim. */
   evidence?: never;
   /** The rule that won, so the reader knows who is asking for the repair. */
   rule: WinningRule;
 }
 
 /**
- * Outside every rule.
+ * Governed, but impossible to read.
  *
- * The same claim `QueryResult` calls `invisible`, named for the file rather than
- * for the config because this command answers about the file. Silence here is
- * the contract: a governance tool that comments on files no rule names is a
- * governance tool that gets switched off.
+ * This is distinct from `unassessable`: that state reports bytes whose
+ * frontmatter made no usable freshness claim; this one reports no bytes at
+ * all. The assessment envelope already echoes the requested path, so the
+ * result keeps the rule and adds no duplicate location.
+ */
+export interface UnreadableFile {
+  /** Leads the variant, and derived from `state`. */
+  agentAction: 'FIX_FILE';
+  /** Absent by construction. */
+  instruction?: never;
+  /** The discriminant. */
+  state: 'unreadable';
+  /** Absent. */
+  source?: never;
+  /** Absent: there were no bytes to inspect. */
+  evidence?: never;
+  /** The rule that made opening this file necessary. */
+  rule: WinningRule;
+}
+
+/**
+ * Outside every declared Module's rules.
+ *
+ * The same whole-config claim `QueryResult` calls `invisible`, named for the
+ * file because this command answers about the file. One Module passing the path
+ * by cannot produce this result; only composition can see that every Module did.
  */
 export interface UngovernedFile {
   /** Leads the variant, and derived from `state`. */
@@ -166,6 +203,8 @@ export interface UngovernedFile {
   evidence?: never;
   /** Absent: no rule selected the path, which is a claim about the whole config. */
   rule?: never;
+  /** Absent: there is no governing Module block to report. */
+  modules?: never;
 }
 
 /**

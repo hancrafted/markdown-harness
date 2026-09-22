@@ -94,9 +94,9 @@ export interface GovernedSource {
  * already enough to act on.
  */
 export interface UnreadableGovernedFile {
-  kind: 'unreadable';
+  readonly kind: 'unreadable';
   /** The path the read was attempted at — the corpus root as written, joined to the file's own. */
-  path: string;
+  readonly path: string;
 }
 
 /**

@@ -16,8 +16,8 @@
 // Two shapes, because callers ask two different questions. A corpus file is a
 // root plus a root-relative path, and the join is the gate's so no caller does
 // path arithmetic of its own. A config file is one location the Operator wrote
-// on the command line, and resolving it would change what the report says about
-// where they pointed.
+// on the command line. The memo normalises either spelling without resolving a
+// target; command envelopes still echo the location their caller wrote.
 
 import { hostPathOf } from './lib/platform/node-host.impure.ts';
 import type { FileRead } from './lib/read/file-read.types.ts';

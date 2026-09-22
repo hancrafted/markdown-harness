@@ -15,10 +15,10 @@
 // can make. One Module passing a path by is not the same fact and must not be
 // reported as if it were.
 
+import { isCorpusPath } from '../foundation/corpus-membership.ts';
 import { normalisePath } from '../foundation/path-shape.ts';
 import type { ModuleClaim } from '../response-contract/index.ts';
 import { requirementsForRule } from './lib/query/requirements.pure.ts';
-import { isCorpusPath } from './lib/rules/corpus-path.pure.ts';
 import { findFirstMatch } from './lib/rules/first-match.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
 

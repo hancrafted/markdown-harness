@@ -305,7 +305,7 @@ describe('mh', () => {
       expect(JSON.parse(run.stdout).command).toBe(auditing);
     });
 
-    it('gives every rule a row, including the ones that governed nothing', () => {
+    it('nests every rule row under the Module that declared it', () => {
       // A rule that wins no file reports nothing anywhere else, so its row is
       // the only place an ordering mistake or a glob typo becomes visible.
       //
@@ -315,11 +315,14 @@ describe('mh', () => {
       // review instead of silently agreeing with whatever the config now says.
       // ARRANGE
       const declaredRules = 10;
+      const moduleName = 'frontmatter';
       const rowShape = ['rule', 'won', 'shadowed', 'shadowedBy', 'excluded'];
       // ACT
       const run = mh('--audit', '--root', CORPUS_ROOT, '--config', CONFIG);
-      const rows = JSON.parse(run.stdout).result.rules;
+      const modules = JSON.parse(run.stdout).result.modules;
+      const rows = modules[0].rules;
       // ASSERT
+      expect(modules[0].module).toBe(moduleName);
       expect(rows).toHaveLength(declaredRules);
       expect(Object.keys(rows[0])).toEqual(rowShape);
     });
@@ -475,7 +478,7 @@ describe('mh', () => {
       const onlyKeptMd = 1;
       // ACT
       const run = mh('--audit', '--root', planted, '--config', plantedConfig);
-      const rows = JSON.parse(run.stdout).result.rules;
+      const rows = JSON.parse(run.stdout).result.modules[0].rules;
       // ASSERT
       expect(rows[0].won).toBe(onlyKeptMd);
     });
@@ -750,6 +753,7 @@ describe('mh --assess', () => {
       const expected = {
         command: 'assess',
         now: PINNED,
+        module: 'frontmatter',
         agentAction: 'REVIEW',
         instruction: 'Re-verify this against the source before quoting it, then move stale_after.',
         code: 0,
@@ -759,16 +763,49 @@ describe('mh --assess', () => {
       const answered = JSON.parse(run.stdout) as {
         command: string;
         now: string;
-        result: { agentAction: string; instruction: string };
+        result: { modules: { module: string; agentAction: string; instruction: string }[] };
       };
+      const assessment = answered.result.modules[0];
       const actual = {
         command: answered.command,
         now: answered.now,
-        agentAction: answered.result.agentAction,
-        instruction: answered.result.instruction,
+        module: assessment.module,
+        agentAction: assessment.agentAction,
+        instruction: assessment.instruction,
         code: run.code,
       };
       // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('names an unreadable governed file as unreadable rather than unassessable', () => {
+      // ARRANGE
+      const expected = {
+        command: 'assess',
+        path: 'sealed.md',
+        now: PINNED,
+        config: lockedConfig,
+        result: {
+          modules: [
+            {
+              module: 'frontmatter',
+              agentAction: 'FIX_FILE',
+              state: 'unreadable',
+              rule: {
+                ruleId: 'every-markdown-file',
+                intent: 'Governs every markdown file the walker enumerates',
+              },
+            },
+          ],
+        },
+        code: 0,
+      };
+      // ACT
+      const run = mhIn(locked, '--assess', 'sealed.md', '--config', lockedConfig, '--now', PINNED);
+      const answered = JSON.parse(run.stdout);
+      const actual = { ...answered, code: run.code };
+      // ASSERT
+      expect(sealed).toBe(REFUSED);
       expect(actual).toEqual(expected);
     });
 
@@ -788,8 +825,10 @@ describe('mh --assess', () => {
       const first = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG);
       const echoed = (JSON.parse(first.stdout) as { now: string }).now;
       const again = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', echoed);
-      const firstAnswer = (JSON.parse(first.stdout) as { result: { agentAction: string } }).result.agentAction;
-      const replayed = (JSON.parse(again.stdout) as { result: { agentAction: string } }).result.agentAction;
+      const firstAnswer = (JSON.parse(first.stdout) as { result: { modules: { agentAction: string }[] } }).result
+        .modules[0].agentAction;
+      const replayed = (JSON.parse(again.stdout) as { result: { modules: { agentAction: string }[] } }).result
+        .modules[0].agentAction;
       // ASSERT
       expect(echoed).toMatch(instantShape);
       expect(replayed).toBe(firstAnswer);
@@ -824,6 +863,27 @@ describe('mh --assess', () => {
   });
 
   describe('edge cases', () => {
+    it('claims ungoverned only after every Module passes the path by', () => {
+      // The frontmatter Module returns no answer for this Conformance case.
+      // `ungoverned` appears only in the composed command response, where the
+      // declared Module set is visible.
+      // ARRANGE
+      const expected = { agentAction: 'PROCEED', state: 'ungoverned' };
+      // ACT
+      const run = mhIn(
+        CORPUS_ROOT,
+        '--assess',
+        'docs/research/vendor/upstream.md',
+        '--config',
+        LOCAL_CONFIG,
+        '--now',
+        PINNED,
+      );
+      const actual = JSON.parse(run.stdout).result;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses a root beside an assessment, which answers about one path', () => {
       // ARRANGE
       const empty = '';
@@ -950,17 +1010,15 @@ describe('mh --help', () => {
 //
 // `engines` is advisory — npm enforces it only for an adopter who opted into
 // strictness — so the command refuses for itself rather than trusting the
-// installer to have done it. What that protects is tenet 3: path matching
-// delegates to the platform's glob matcher, whose behaviour is fixed by the
-// matcher bundled with each Node release, and outside the declared range the
-// same tree gives a different result out. A refusal is the only honest answer
-// available there, and it is preferable to a quietly different one.
+// installer to have done it. The range admits currently supported release
+// lines: 24 is Active LTS, 25 is EOL, and 26 is Current before its LTS
+// transition. A refusal is the only honest answer available outside it.
 
 describe('mh under a stated Node version', () => {
   describe('success cases', () => {
-    it('answers normally on the first release of the upper window', () => {
+    it('answers normally on the first release of the upper supported line', () => {
       // ARRANGE
-      const supported = '26.1.0';
+      const supported = '26.0.0';
       const success = 0;
       const empty = '';
       // ACT
@@ -1009,23 +1067,22 @@ describe('mh under a stated Node version', () => {
   });
 
   describe('edge cases', () => {
-    it('takes each window at its first release and refuses the release below it', () => {
-      // Written out by hand, because the boundaries ARE the decision. A
-      // prerelease is read as its release: `26.1.0-rc.1` is below `26.1.0` to
-      // semver, and refusing it would be a refusal about version syntax rather
-      // than about matcher behaviour, which is the only thing at stake.
+    it('takes each supported release line and refuses the EOL line', () => {
+      // Written out by hand, because the supported lines ARE the decision. A
+      // prerelease is read as its release: this guard compares release lines,
+      // not SemVer precedence.
       // ARRANGE
       const nothingWrong = 0;
       const cannotReport = 2;
       const boundaries = [
         { version: '22.20.0', code: cannotReport },
-        { version: '24.15.9', code: cannotReport },
-        { version: '24.16.0', code: nothingWrong },
+        { version: '23.99.9', code: cannotReport },
+        { version: '24.0.0', code: nothingWrong },
         { version: '24.99.0', code: nothingWrong },
         { version: '25.0.0', code: cannotReport },
-        { version: '26.0.9', code: cannotReport },
-        { version: '26.1.0', code: nothingWrong },
-        { version: '26.1.0-rc.1', code: nothingWrong },
+        { version: '25.99.9', code: cannotReport },
+        { version: '26.0.0', code: nothingWrong },
+        { version: '26.0.0-rc.1', code: nothingWrong },
         { version: '27.0.0', code: nothingWrong },
       ];
       // ACT

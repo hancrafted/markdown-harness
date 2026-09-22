@@ -22,6 +22,7 @@
 
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { pathAssessment } from '../../cli/assessment.ts';
 import { MODULE_SET } from '../../cli/module-set.ts';
 import type { AllowedValue, FieldConstraints, Format } from '../../config-contract/index.ts';
 import { loadConfig } from '../../foundation/load-config.ts';
@@ -489,7 +490,10 @@ const marked = (action: string): string[] => assessCases.filter((one) => one.act
 
 /** What the IMPLEMENTATION answers for one case, at the pinned instant. */
 function actionFrom(path: string): string {
-  return assessPath({ root: CORPUS_ROOT, path: path }, section, ASSESSMENT_INSTANT).agentAction;
+  const assessment = assessPath({ root: CORPUS_ROOT, path: path }, section, ASSESSMENT_INSTANT);
+  const result = pathAssessment([{ module: frontmatterModule.key, assessment }]);
+  if (result.modules !== undefined) return result.modules[0].agentAction;
+  return result.agentAction;
 }
 
 describe('the harness reports the agent action each Conformance case states', () => {
@@ -513,7 +517,7 @@ describe('the harness reports the agent action each Conformance case states', ()
       const expected = { instruction: verbatim, source: 'rule' };
       // ACT
       const answered = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness/stale.md' }, section, ASSESSMENT_INSTANT);
-      const actual = { instruction: answered.instruction, source: answered.source };
+      const actual = { instruction: answered?.instruction, source: answered?.source };
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -569,11 +573,11 @@ describe('the harness reports the agent action each Conformance case states', ()
       expect(unknown).toEqual([]);
     });
 
-    it('says nothing at all about a file no rule selects', () => {
-      // The UNGOVERNED case carries a second marker, and this is what the
-      // marker means beyond the action: no rule, no evidence, no sentence.
+    it('has no Module answer for a file no rule selects', () => {
+      // The UNGOVERNED case carries a second marker. This Module passes it by;
+      // the composing Package turns every Module passing by into `ungoverned`.
       // ARRANGE
-      const expected = { agentAction: PROCEED, state: 'ungoverned' };
+      const expected = undefined;
       // ACT
       const actual = assessPath(
         { root: CORPUS_ROOT, path: 'docs/research/vendor/upstream.md' },

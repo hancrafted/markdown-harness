@@ -14,39 +14,9 @@
  */
 
 import type { Selector } from '../../../config-contract/index.ts';
+import { fileNameOf, folderOf } from '../../../foundation/selector-grammar.ts';
 import type { FrontmatterRule } from '../../section.ts';
 import type { RuleSelection } from './rules.types.ts';
-
-/** The one separator a normalised path is spelled with. */
-const SEPARATOR = '/';
-
-/** The corpus root's own token, so that every folder has a spelling. */
-const ROOT_FOLDER = './';
-
-/**
- * The folder token a path sits in.
- *
- * Everything up to and including the last separator, which makes the answer
- * carry the mandatory trailing `/` a folder token is written with — so the
- * comparison is a plain equality and never a prefix test. A path with no
- * separator sits at the corpus root and answers `./` rather than the empty
- * string, because the empty string is not a token anyone can write.
- *
- * @param path A normalised, repo-root-relative path.
- */
-export function folderOf(path: string): string {
-  const lastSeparator = path.lastIndexOf(SEPARATOR);
-  return lastSeparator === -1 ? ROOT_FOLDER : path.slice(0, lastSeparator + 1);
-}
-
-/**
- * The basename a path ends in.
- *
- * @param path A normalised, repo-root-relative path.
- */
-export function fileNameOf(path: string): string {
-  return path.slice(path.lastIndexOf(SEPARATOR) + 1);
-}
 
 /**
  * Whether one selector reaches one path.
@@ -81,7 +51,7 @@ export function selectorMatches(selector: Selector, path: string): boolean {
  *
  * @param rule The rule to read a selector off.
  */
-export function selectorOf(rule: FrontmatterRule): Selector {
+function selectorOf(rule: FrontmatterRule): Selector {
   return { folders: rule.folders, fileNames: rule.fileNames };
 }
 

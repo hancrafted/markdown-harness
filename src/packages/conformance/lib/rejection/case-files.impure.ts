@@ -20,7 +20,7 @@ import { readTextIn } from '../../../foundation/read-text.ts';
  * a YAML file whose defect is the point, so an expectation written in the same
  * language would sit one typo away from being read as the thing under test.
  */
-export const CASE_EXPECTATION_FILE = 'expected-rejection.json';
+const CASE_EXPECTATION_FILE = 'expected-rejection.json';
 
 /** Where the loader is pointed for `caseName` — the prefix its locations omit. */
 export function caseConfigPath(tierRootPath: string, caseName: string, configFile: string): string {

@@ -1,0 +1,14 @@
+{
+  "command": "check",
+  "root": "fixtures/conformance/rejected-config",
+  "config": "fixtures/conformance/rejected-config/config-not-found/markdown-harness.config.yaml",
+  "result": {
+    "error": "CONFIG_REJECTED",
+    "faults": [
+      {
+        "code": "CONFIG_NOT_FOUND",
+        "location": "fixtures/conformance/rejected-config/config-not-found/markdown-harness.config.yaml"
+      }
+    ]
+  }
+}

@@ -15,7 +15,7 @@ describe('faultForUnread', () => {
   describe('success cases', () => {
     it('maps a missing entry to CONFIG_NOT_FOUND', () => {
       // ARRANGE
-      const missing = { kind: 'absent' } as const;
+      const missing = { kind: 'absent', location: LOCATION } as const;
       const expected = { code: 'CONFIG_NOT_FOUND', location: LOCATION };
       // ACT
       const actual = faultForUnread(missing, LOCATION);
@@ -30,7 +30,7 @@ describe('faultForUnread', () => {
       // refusal, arrive as the same answer from the gate and earn the same
       // code: something is there, and it cannot be served.
       // ARRANGE
-      const present = { kind: 'unreadable' } as const;
+      const present = { kind: 'unreadable', location: LOCATION } as const;
       const expected = { code: 'CONFIG_UNREADABLE', location: LOCATION };
       // ACT
       const actual = faultForUnread(present, LOCATION);
@@ -43,7 +43,7 @@ describe('faultForUnread', () => {
     it('echoes the location it was given rather than resolving it', () => {
       // ARRANGE
       const relative = '../shared/mh.yaml';
-      const missing = { kind: 'absent' } as const;
+      const missing = { kind: 'absent', location: LOCATION } as const;
       // ACT
       const actual = faultForUnread(missing, relative);
       // ASSERT

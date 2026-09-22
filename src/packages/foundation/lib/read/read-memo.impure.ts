@@ -25,28 +25,30 @@
  * the smaller thing until then.
  */
 
-import { readHostFile } from '../platform/node-host.impure.ts';
+import { normaliseHostPath, readHostFile } from '../platform/node-host.impure.ts';
 import type { FileRead } from './file-read.types.ts';
 import { fileReadFor } from './read-outcome.pure.ts';
 
-/** Every answer already given, keyed by the exact path asked about. */
+/** Every answer already given, keyed by its normalised host-path spelling. */
 const answered = new Map<string, FileRead>();
 
 /**
  * The text at `location`, its absence, or its unreadability — asked of the
  * host at most once per process.
  *
- * Keyed by the path AS WRITTEN, never by a resolved one. Resolving would make
- * the key a second filesystem read, which is the cost this exists to avoid,
- * and two spellings of one file are two questions a caller is entitled to ask.
+ * Keyed by the path after syntactic normalisation, never by a resolved target.
+ * Normalising collapses equivalent dot-segment spellings, so every Module gets
+ * one answer about the same named file; resolving would follow symlinks and
+ * make the key a filesystem read.
  *
  * @param location A host path, exactly as the caller assembled it.
  */
 export function rememberedRead(location: string): FileRead {
-  const remembered = answered.get(location);
+  const normalised = normaliseHostPath(location);
+  const remembered = answered.get(normalised);
   if (remembered !== undefined) return remembered;
 
-  const answer = fileReadFor(readHostFile(location));
-  answered.set(location, answer);
+  const answer = fileReadFor(normalised, readHostFile(normalised));
+  answered.set(normalised, answer);
   return answer;
 }

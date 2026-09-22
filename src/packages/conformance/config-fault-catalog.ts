@@ -15,8 +15,8 @@ import type { ConfigFaultCode } from '../config-contract/index.ts';
  * them: the four that name the config FILE first, then the eleven that name a
  * key inside it.
  *
- * `satisfies` holds one direction — a code spelled wrong, or one the catalog
- * never had, does not compile. `unreachedProof` holds the other.
+ * The `satisfies` check holds one direction — a code spelled wrong, or one the
+ * catalog never had, does not compile. Its intersection holds the other.
  *
  * Fifteen. It was fourteen: `CONFIG_SELECTOR_AMBIGUOUS` was retired with the
  * grammar that made it reachable — `folders:` and `fileNames:` intersect rather
@@ -28,7 +28,7 @@ import type { ConfigFaultCode } from '../config-contract/index.ts';
  * machinery working rather than a hole to paper over: a code with no case fails
  * coverage, and a case with no code fails closure.
  */
-export const DECLARED_CODES = [
+const declaredCodes = [
   'CONFIG_NOT_FOUND',
   'CONFIG_UNREADABLE',
   'CONFIG_NOT_YAML',
@@ -44,25 +44,23 @@ export const DECLARED_CODES = [
   'CONFIG_EMPTY_CONSTRAINT',
   'CONFIG_FRONTMATTER_FORBIDDEN_WITH_PAYLOAD',
   'CONFIG_ASSESS_WITHOUT_REQUIRED_FIELD',
-] as const satisfies readonly ConfigFaultCode[];
+] as const;
 
 /** Whatever the catalog declares and the list above has not claimed. */
-type UnreachedCodes = Exclude<ConfigFaultCode, (typeof DECLARED_CODES)[number]>;
+type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
 
 /**
- * The pin, HELD BY THE TYPE CHECKER AND NEVER BY THE TEST RUNNER.
+ * The two-sided catalog proof, HELD BY THE TYPE CHECKER AND NEVER BY THE TEST RUNNER.
  *
  * `UnreachedCodes` collapses to `never` only while the hand-written list covers
- * the union whole. The moment it does not, the annotation evaluates to `false`,
- * `true` is not assignable to it, and `tsc --noEmit` refuses the file naming
- * this line — which is the only place a code added to the catalog and forgotten
- * here can be caught, because vitest transforms types away without reading them.
+ * the union whole. The moment it does not, the intersection below becomes
+ * `never` and `tsc --noEmit` refuses the catalog — which is the only place a
+ * code added to the contract and forgotten here can be caught, because vitest
+ * transforms types away without reading them.
  *
- * The obvious shape does NOT work and was rejected on measurement: an empty
- * array literal is assignable to any array type, so a pin written as
- * `const unreached: UnreachedCodes[] = []` compiles cleanly over a missing
- * member and enforces nothing at all. The tuple wrapper on both sides of
- * `extends` is load-bearing too — it stops the conditional distributing over the
- * union, which would make a partially covered catalog answer `true`.
+ * The tuple wrapper on both sides of `extends` is load-bearing: it stops the
+ * conditional distributing over the union, which would make a partially
+ * covered catalog answer `unknown` rather than `never`.
  */
-export const unreachedProof: [UnreachedCodes] extends [never] ? true : false = true;
+export const DECLARED_CODES = declaredCodes satisfies readonly ConfigFaultCode[] &
+  ([UnreachedCodes] extends [never] ? unknown : never);

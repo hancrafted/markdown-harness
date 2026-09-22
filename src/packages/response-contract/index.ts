@@ -4,11 +4,9 @@
 // barrel ARCH-004 bans: a re-exported subtree grows silently, so a declaration
 // added to a types file becomes public without anyone deciding it.
 //
-// Two runtime exports, `isConfigError` and `FIELD_VIOLATION_CODES`. Neither can
-// live beside its own types — ARCH-005 keeps a `types` file free of runtime
-// values — so each sits in a `pure` sibling and is re-exported here, giving the
-// Package one public shape. `FIELD_VIOLATION_CODES` is the reason the catalog is
-// a value at all: a consumer that cannot reach it cannot enumerate the codes.
+// Runtime exports sit in `pure` siblings because ARCH-005 keeps a `types` file
+// free of values. The constructors and serialiser own envelope construction,
+// so callers never re-spell the wire format.
 
 export type {
   AbsentFile,
@@ -16,14 +14,25 @@ export type {
   AssessEvidence,
   AssessResult,
   AssessState,
+  AssessedFile,
   FreshFile,
+  ModuleAssess,
+  ModuleAssessment,
   PromptSource,
   StaleFile,
   UnassessableFile,
   UngovernedFile,
+  UnreadableFile,
   WinningRule,
 } from './lib/assess.types.ts';
-export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';
+export type {
+  AuditResult,
+  ModuleAudit,
+  ModuleAuditResult,
+  RuleAudit,
+  RuleRef,
+  SelectorRef,
+} from './lib/audit.types.ts';
 export type {
   CheckResult,
   CheckSummary,
@@ -52,6 +61,14 @@ export type {
   QueryResult,
   Requirements,
 } from './lib/query.types.ts';
+export {
+  assessResponse,
+  auditResponse,
+  checkResponse,
+  configError,
+  queryResponse,
+  serializeResponse,
+} from './lib/response.pure.ts';
 export type {
   AssessResponse,
   AuditResponse,

@@ -22,7 +22,7 @@
   "author": "Han Che",
   "type": "module",
   "engines": {
-    "node": ">=24.16.0 <25 || >=26.1.0"
+    "node": ">=24 <25 || >=26"
   },
   "bin": {
     "markdown-harness": "dist/packages/cli/cli.js",

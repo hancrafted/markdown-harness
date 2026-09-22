@@ -30,9 +30,10 @@ const ABSENT = 'ENOENT';
  * as `EISDIR` and therefore answers `unreadable` — which is what keeps the
  * rejected-config tier's unreadable case and its not-found case two cases.
  *
+ * @param location The normalised host path the gate attempted.
  * @param read What the host handed back, errno included.
  */
-export function fileReadFor(read: HostRead): FileRead {
+export function fileReadFor(location: string, read: HostRead): FileRead {
   if (read.kind === 'text') return { kind: 'text', text: read.text };
-  return read.errorCode === ABSENT ? { kind: 'absent' } : { kind: 'unreadable' };
+  return read.errorCode === ABSENT ? { kind: 'absent', location } : { kind: 'unreadable', location };
 }

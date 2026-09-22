@@ -79,27 +79,36 @@ describe('selector-faults', () => {
       const noSlash = { folders: ['docs'] };
       const leadingSlash = { folders: ['/docs/'] };
       const doubleSlash = { folders: ['docs//vision/'] };
+      const decoratedNonRoot = { folders: ['./docs/'] };
       const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.folders` }];
       // ACT
       const noSlashFaults = tokenFaults(noSlash, AT);
       const leadingSlashFaults = tokenFaults(leadingSlash, AT);
       const doubleSlashFaults = tokenFaults(doubleSlash, AT);
+      const decoratedNonRootFaults = tokenFaults(decoratedNonRoot, AT);
       // ASSERT
       expect(noSlashFaults).toEqual(expected);
       expect(leadingSlashFaults).toEqual(expected);
       expect(doubleSlashFaults).toEqual(expected);
+      expect(decoratedNonRootFaults).toEqual(expected);
     });
 
-    it('reports CONFIG_INVALID_VALUE when a fileName token contains a slash or is empty', () => {
+    it('reports CONFIG_INVALID_VALUE when a fileName token is a path, directory entry, or empty', () => {
       // ARRANGE
       const slash = { fileNames: ['docs/file.md'] };
+      const currentDirectory = { fileNames: ['.'] };
+      const parentDirectory = { fileNames: ['..'] };
       const empty = { fileNames: [''] };
       const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.fileNames` }];
       // ACT
       const slashFaults = tokenFaults(slash, AT);
+      const currentDirectoryFaults = tokenFaults(currentDirectory, AT);
+      const parentDirectoryFaults = tokenFaults(parentDirectory, AT);
       const emptyFaults = tokenFaults(empty, AT);
       // ASSERT
       expect(slashFaults).toEqual(expected);
+      expect(currentDirectoryFaults).toEqual(expected);
+      expect(parentDirectoryFaults).toEqual(expected);
       expect(emptyFaults).toEqual(expected);
     });
 

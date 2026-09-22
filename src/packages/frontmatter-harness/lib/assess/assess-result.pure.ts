@@ -11,7 +11,7 @@
  */
 
 import type { FileRead } from '../../../foundation/read-text.ts';
-import type { AssessEvidence, AssessResult, PromptSource, WinningRule } from '../../../response-contract/index.ts';
+import type { AssessEvidence, ModuleAssess, PromptSource, WinningRule } from '../../../response-contract/index.ts';
 import type { Freshness } from './assess.types.ts';
 
 /** The Operator's sentence and its provenance, when one applied. */
@@ -33,7 +33,7 @@ interface Findings {
 }
 
 /** The one branch that carries prose, split out so the ranking above stays a list of returns. */
-function staleResult(rule: WinningRule, evidence: AssessEvidence, prompt: Prompt | undefined): AssessResult {
+function staleResult(rule: WinningRule, evidence: AssessEvidence, prompt: Prompt | undefined): ModuleAssess {
   // The judgement travels whether or not the Operator wrote a sentence for it.
   // Inventing one here would make this the only place the tool speaks prose of
   // its own about a corpus.
@@ -58,8 +58,9 @@ function staleResult(rule: WinningRule, evidence: AssessEvidence, prompt: Prompt
  *
  * @param found Everything the earlier stages established about the file.
  */
-export function assessResultFor({ rule, file, freshness, prompt }: Findings): AssessResult {
+export function assessResultFor({ rule, file, freshness, prompt }: Findings): ModuleAssess {
   if (file.kind === 'absent') return { agentAction: 'PROCEED', state: 'absent', rule };
+  if (file.kind === 'unreadable') return { agentAction: 'FIX_FILE', state: 'unreadable', rule };
   if (freshness === undefined || freshness.state === 'unassessable') {
     return { agentAction: 'FIX_FILE', state: 'unassessable', rule };
   }

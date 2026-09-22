@@ -20,26 +20,22 @@
 // on it. That difference is policy and it lives at these two call sites, which
 // is the whole point of a gate that answers rather than throws.
 //
-// `unreadable` is UNCOVERED BY TEST, deliberately and not by oversight. Its
-// only reachable causes are a file with no read permission and a directory
-// named `*.md`, and neither is committable as a fixture — a directory whose
-// name has no `.md` never reaches here at all, because every rule names `*.md`
-// and governance is decided before the read. The branch stays because a
-// permissions failure must not crash the process. The assess integration suite
-// states the same measurement.
+// `unreadable` is covered by planting a directory named `unreadable.md` in the
+// assess integration suite. A committed corpus cannot hold that shape as a
+// document, so the explicit filesystem case stays beside the entry point.
 //
 // Corpus membership is asked first, for the same reason `--query` asks it: a
 // selector carries no extension any more, so without it this command would
 // start assessing a `.txt` file the corpus walk would never have collected.
 
+import { isCorpusPath } from '../foundation/corpus-membership.ts';
 import { readTextIn } from '../foundation/read-text.ts';
-import type { AssessResult, WinningRule } from '../response-contract/index.ts';
+import type { ModuleAssess, WinningRule } from '../response-contract/index.ts';
 import { effectivePrompt } from './lib/assess/assess-prompt.pure.ts';
 import { assessResultFor } from './lib/assess/assess-result.pure.ts';
 
 import { normalisePath } from '../foundation/path-shape.ts';
 import { freshnessOf } from './lib/assess/freshness.pure.ts';
-import { isCorpusPath } from './lib/rules/corpus-path.pure.ts';
 import { findFirstMatch } from './lib/rules/first-match.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
 
@@ -54,18 +50,18 @@ import type { FrontmatterConfig } from './section.ts';
  * because `--assess` names one file rather than a corpus.
  *
  * @param file The corpus root, and the root-relative path asked about. It need not exist.
- * @param section This Module's validated section, or `undefined` when its key was not written — a Module governing nothing tells the agent to PROCEED.
+ * @param section This Module's validated section, or `undefined` when its key was not written — a Module governing nothing passes the path by.
  * @param now The Assessment instant, already known to name a moment.
  */
 export function assessPath(
   file: { root: string; path: string },
   section: FrontmatterConfig | undefined,
   now: string,
-): AssessResult {
+): ModuleAssess | undefined {
   const path = normalisePath(file.path);
   const winner = isCorpusPath(path) ? findFirstMatch(path, section?.rules ?? []) : undefined;
 
-  if (winner === undefined) return { agentAction: 'PROCEED', state: 'ungoverned' };
+  if (winner === undefined) return undefined;
 
   const rule: WinningRule = { ruleId: winner.ruleId, intent: winner.intent };
   const found = readTextIn(file.root, path);

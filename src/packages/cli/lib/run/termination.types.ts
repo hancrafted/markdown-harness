@@ -8,6 +8,7 @@
  * `terminationFor` what to emit.
  */
 
+import type { UnreadableGovernedFile } from '../../../frontmatter-harness/check.ts';
 import type {
   AssessResult,
   AuditResult,
@@ -59,8 +60,7 @@ export interface CheckGathered {
   readonly kind: 'check';
   readonly root: string;
   readonly config: string;
-  readonly outcome:
-    { readonly kind: 'no-root' } | { readonly kind: 'unreadable'; readonly path: string } | ConfigOutcome<CheckResult>;
+  readonly outcome: { readonly kind: 'no-root' } | UnreadableGovernedFile | ConfigOutcome<CheckResult>;
 }
 
 /**

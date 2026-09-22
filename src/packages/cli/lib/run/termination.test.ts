@@ -16,7 +16,7 @@ const EMPTY_QUERY_RESULT: QueryResult = {
 };
 
 const EMPTY_AUDIT_RESULT: AuditResult = {
-  rules: [],
+  modules: [],
 };
 
 const CLEAN_CHECK_RESULT: CheckResult = {
@@ -38,7 +38,7 @@ describe('termination', () => {
   describe('success cases', () => {
     it('routes a valid query under a supported runtime to a parsed invocation', () => {
       // ARRANGE
-      const nodeVersion = '24.16.0';
+      const nodeVersion = '24.0.0';
       const argv = ['--query', 'docs/a.md'];
       const expectedKind = 'routed';
       const expectedCommand = 'query';
@@ -56,7 +56,7 @@ describe('termination', () => {
 
     it('routes --help under a supported runtime to help invocation', () => {
       // ARRANGE
-      const nodeVersion = '26.1.0';
+      const nodeVersion = '26.0.0';
       const argv = ['--help'];
       const expectedKind = 'routed';
       const expectedCommand = 'help';

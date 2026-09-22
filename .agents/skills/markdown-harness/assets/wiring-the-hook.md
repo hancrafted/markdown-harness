@@ -103,9 +103,11 @@ time,command,file,result
 2026-09-09T15:51:40.882Z,assess,"docs/notes/idea.md",fresh
 ```
 
-`result` is `mh --assess`'s own state — `stale`, `fresh`, `unassessable`, `ungoverned`, `absent` — or
-one of this hook's three refusals: `not-installed`, `config-rejected`, `no-answer`. Never a bare
-boolean, because "ran and found nothing" and "ran" are different facts.
+With one governing Module, `result` is that Module's state — `stale`, `fresh`, `unassessable`,
+`unreadable` or `absent`; `ungoverned` is the whole-config state when no Module answers. If several
+Modules answer, the row preserves all of them as `module:state|module:state`. The other values are
+this hook's three refusals: `not-installed`, `config-rejected`, `no-answer`. Never a bare boolean,
+because "ran and found nothing" and "ran" are different facts.
 
 A `fresh` row is the useful one: it proves the hook ran and chose to stay quiet, which is the one
 thing stdout can never show you. **Nothing is written where the tool was not invited** — no config
@@ -123,7 +125,7 @@ the floor.
 
 | What happened                                         | The hook   |
 | ----------------------------------------------------- | ---------- |
-| `mh --assess` answered `REVIEW`                       | **Speaks** |
+| Any Module answered `REVIEW`                          | **Speaks** |
 | It answered anything else                             | Silent     |
 | Never asked — the file is not `.md`                   | Silent     |
 | Never asked — no config anywhere above the file       | Silent     |

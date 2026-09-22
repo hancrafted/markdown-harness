@@ -89,6 +89,7 @@ was traded; a permanent choice was simply taken while it still cost nothing.
    was settled in #162 when findings were nested under Modules: `governedFiles` is the union of
    governed files across Modules (computed in `cli`), so a file governed by multiple Modules is counted
    once.
-4. **The response can name a prompt's origin in one word.** Because a prompt comes from exactly one
-   place, `--assess` answers with `"source": "rule"` or `"source": "module"`. Under merging that
-   field would have had to be per-key, or be a lie.
+4. **The response can name a prompt's origin in one value.** Because a prompt comes from exactly one
+   place, `--assess` answers with `"source": "rule"` or `"source": "module-wide"`. The latter names
+   the block's scope rather than colliding with the `module` key that identifies a Module in the
+   response. Under merging that field would have had to be per-key, or be a lie.

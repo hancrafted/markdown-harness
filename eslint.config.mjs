@@ -312,9 +312,9 @@ export default tseslint.config(
   // `.rules.ts` runs inside archgate's own sandbox against its own ambient types,
   // not this project's build, so linting it means importing rules it was never
   // written against. Its TESTS are ordinary vitest files and must be reachable:
-  // four of this repo's six test files live here, and an ADR naming an enforcer
-  // that cannot see the file it governs is exactly the silent non-governance
-  // `src/packages/AGENTS.md` exists to close.
+  // Measured 2026-09-22: five of this repo's seventy-one test files live here.
+  // An ADR naming an enforcer that cannot see the file it governs is exactly
+  // the silent non-governance `src/packages/AGENTS.md` exists to close.
   //
   // Written as two precise patterns because a subtree ignore cannot be undone —
   // ESLint refuses to unignore a file inside an ignored directory, so the

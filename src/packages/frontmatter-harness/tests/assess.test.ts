@@ -9,8 +9,11 @@
 // there is nothing to put a marker on. ARCH-002 records the gap; this is where
 // it is covered.
 
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadConfig } from '../../foundation/load-config.ts';
 import { assessPath } from '../assess.ts';
 import { frontmatterModule } from '../module.ts';
@@ -32,6 +35,17 @@ const NOW = '2026-12-01T00:00:00Z';
 
 const STALE = 'docs/freshness/stale.md';
 const FRESH = 'docs/freshness/fresh.md';
+
+let unreadableRoot = '';
+
+beforeAll(() => {
+  unreadableRoot = mkdtempSync(join(tmpdir(), 'mh-assess-unreadable-'));
+  mkdirSync(join(unreadableRoot, 'docs', 'freshness', 'unreadable.md'), { recursive: true });
+});
+
+afterAll(() => {
+  rmSync(unreadableRoot, { recursive: true, force: true });
+});
 
 describe('assessPath', () => {
   describe('success cases', () => {
@@ -98,12 +112,27 @@ describe('assessPath', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('keeps an unreadable governed file distinct from a file with no freshness claim', () => {
+      // A directory with a markdown name is readable only as an error, so this
+      // reaches the gate's third answer without relying on permission bits.
+      // ARRANGE
+      const expected = {
+        agentAction: 'FIX_FILE',
+        state: 'unreadable',
+        rule: { ruleId: 'freshness', intent: 'A page that goes out of date says when to stop trusting it' },
+      };
+      // ACT
+      const actual = assessPath({ root: unreadableRoot, path: 'docs/freshness/unreadable.md' }, section, NOW);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('edge cases', () => {
-    it('says nothing whatever about a path no rule selects, without opening anything', () => {
+    it('passes by a path no rule selects, without opening anything', () => {
       // ARRANGE
-      const expected = { agentAction: 'PROCEED', state: 'ungoverned' };
+      const expected = undefined;
       // ACT
       const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/research/vendor/upstream.md' }, section, NOW);
       // ASSERT
@@ -120,24 +149,21 @@ describe('assessPath', () => {
       const expected = ['PROCEED', 'REVIEW'];
       // ACT
       const actual = [
-        assessPath({ root: CORPUS_ROOT, path: STALE }, section, beforeExpiry).agentAction,
-        assessPath({ root: CORPUS_ROOT, path: STALE }, section, afterExpiry).agentAction,
+        assessPath({ root: CORPUS_ROOT, path: STALE }, section, beforeExpiry)?.agentAction,
+        assessPath({ root: CORPUS_ROOT, path: STALE }, section, afterExpiry)?.agentAction,
       ];
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('never opens a directory, because governance is decided before the read', () => {
-      // Measured, not assumed: `docs/freshness` is the directory holding three
-      // governed documents, and it is itself UNGOVERNED — every glob in the
-      // config names `*.md`, so the directory matches nothing and no read is
-      // attempted. This is why the gate's `unreadable` answer cannot
-      // be reached from a committed fixture: the only causes left are a
-      // permissionless file and a directory named `*.md`, and neither is
-      // committable. The branch stays because a permissions failure must not
-      // crash the process, and it is honestly uncovered rather than faked.
+    it('never opens an ungoverned directory, because governance is decided before the read', () => {
+      // Measured, not assumed: `docs/freshness` is a directory, and it is
+      // UNGOVERNED — the config names markdown paths only. The failure case
+      // plants a directory called `unreadable.md`, so the gate's third answer
+      // is covered without making a permanent Conformance case from a
+      // non-document.
       // ARRANGE
-      const expected = { agentAction: 'PROCEED', state: 'ungoverned' };
+      const expected = undefined;
       // ACT
       const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness' }, section, NOW);
       // ASSERT
