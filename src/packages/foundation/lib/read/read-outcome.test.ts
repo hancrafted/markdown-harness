@@ -10,6 +10,8 @@
 import { describe, expect, it } from 'vitest';
 import { fileReadFor } from './read-outcome.pure';
 
+const LOCATION = 'docs/read.md';
+
 describe('fileReadFor', () => {
   describe('success cases', () => {
     it('passes the bytes through unchanged', () => {
@@ -17,7 +19,7 @@ describe('fileReadFor', () => {
       const bytes = 'the file said this\n';
       const expected = { kind: 'text', text: bytes };
       // ACT
-      const actual = fileReadFor({ kind: 'text', text: bytes });
+      const actual = fileReadFor(LOCATION, { kind: 'text', text: bytes });
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -27,9 +29,9 @@ describe('fileReadFor', () => {
     it('maps the one errno that proves absence to absent', () => {
       // ARRANGE
       const missing = 'ENOENT';
-      const expected = { kind: 'absent' };
+      const expected = { kind: 'absent', location: LOCATION };
       // ACT
-      const actual = fileReadFor({ kind: 'failed', errorCode: missing });
+      const actual = fileReadFor(LOCATION, { kind: 'failed', errorCode: missing });
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -37,9 +39,9 @@ describe('fileReadFor', () => {
     it('maps a permission refusal to unreadable', () => {
       // ARRANGE
       const refused = 'EACCES';
-      const expected = { kind: 'unreadable' };
+      const expected = { kind: 'unreadable', location: LOCATION };
       // ACT
-      const actual = fileReadFor({ kind: 'failed', errorCode: refused });
+      const actual = fileReadFor(LOCATION, { kind: 'failed', errorCode: refused });
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -49,9 +51,9 @@ describe('fileReadFor', () => {
       // not-found case and its unreadable case two cases rather than one.
       // ARRANGE
       const directory = 'EISDIR';
-      const expected = { kind: 'unreadable' };
+      const expected = { kind: 'unreadable', location: LOCATION };
       // ACT
-      const actual = fileReadFor({ kind: 'failed', errorCode: directory });
+      const actual = fileReadFor(LOCATION, { kind: 'failed', errorCode: directory });
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -64,9 +66,9 @@ describe('fileReadFor', () => {
       // this distinction exists to prevent.
       // ARRANGE
       const unnamed = undefined;
-      const expected = { kind: 'unreadable' };
+      const expected = { kind: 'unreadable', location: LOCATION };
       // ACT
-      const actual = fileReadFor({ kind: 'failed', errorCode: unnamed });
+      const actual = fileReadFor(LOCATION, { kind: 'failed', errorCode: unnamed });
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -76,9 +78,9 @@ describe('fileReadFor', () => {
       // is the stack trace a corpus cycle used to produce.
       // ARRANGE
       const looped = 'ELOOP';
-      const expected = { kind: 'unreadable' };
+      const expected = { kind: 'unreadable', location: LOCATION };
       // ACT
-      const actual = fileReadFor({ kind: 'failed', errorCode: looped });
+      const actual = fileReadFor(LOCATION, { kind: 'failed', errorCode: looped });
       // ASSERT
       expect(actual).toEqual(expected);
     });

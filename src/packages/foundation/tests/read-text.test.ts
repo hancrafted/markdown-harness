@@ -66,7 +66,7 @@ describe('the gate reader', () => {
   describe('failure cases', () => {
     it('answers absent for a path with nothing at it, rather than throwing', () => {
       // ARRANGE
-      const expected = { kind: 'absent' };
+      const expected = { kind: 'absent', location: join(root, 'docs', 'never-written.md') };
       // ACT
       const actual = readTextIn(root, 'docs/never-written.md');
       // ASSERT
@@ -78,7 +78,7 @@ describe('the gate reader', () => {
       // is the false negative that would collapse the rejected-config tier's
       // not-found case and its unreadable case into one.
       // ARRANGE
-      const expected = { kind: 'unreadable' };
+      const expected = { kind: 'unreadable', location: join(root, 'docs', 'a-directory.md') };
       // ACT
       const actual = readTextIn(root, 'docs/a-directory.md');
       // ASSERT
@@ -107,7 +107,7 @@ describe('the gate reader', () => {
       // the same answer.
       // ARRANGE
       const planted = join(root, 'docs', 'appears-later.md');
-      const expected = { kind: 'absent' };
+      const expected = { kind: 'absent', location: planted };
       const written = 'now it exists\n';
       // ACT
       const before = readTextIn(root, 'docs/appears-later.md');
@@ -124,13 +124,28 @@ describe('the gate reader', () => {
       // ARRANGE
       const first = join(root, 'docs', 'loop-a.md');
       const second = join(root, 'docs', 'loop-b.md');
-      const expected = { kind: 'unreadable' };
+      const expected = { kind: 'unreadable', location: first };
       // ACT
       symlinkSync(second, first);
       symlinkSync(first, second);
       const actual = readTextIn(root, 'docs/loop-a.md');
       // ASSERT
       expect(actual).toEqual(expected);
+    });
+
+    it('keeps one answer for host-path spellings that normalise to the same file', () => {
+      // ARRANGE
+      const planted = join(root, 'docs', 'one-answer.md');
+      const equivalent = `${root}/docs/./one-answer.md`;
+      const expected = { kind: 'text', text: 'first answer\n' };
+      writeFileSync(planted, expected.text);
+      // ACT
+      const before = readTextAt(planted);
+      writeFileSync(planted, 'second answer\n');
+      const after = readTextAt(equivalent);
+      // ASSERT
+      expect(before).toEqual(expected);
+      expect(after).toEqual(expected);
     });
   });
 });

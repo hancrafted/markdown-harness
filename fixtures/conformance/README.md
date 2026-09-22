@@ -29,6 +29,12 @@ wanted: the enforcement rule's case glob reaches `<tier>/docs/**/*.md` and stops
 the reason a runner pointed at this directory instead of at its tier enumerates one file too many
 and fails its declared case count.
 
+**Unreadable Assessment is a response-contract change, not a Conformance case.** A case must be a
+document carrying its own marker, while an unreadable path is deliberately not a readable document.
+The `unreadable` state is therefore frozen at the `assessPath` and `mh --assess` seams with a
+directory named `*.md`; this keeps it distinct from `unassessable`, which is a readable document
+whose frontmatter makes no freshness claim.
+
 ## Inside the rejected-config tier
 
 A case here is a **directory**, not a document: config bytes under the adopter's own config

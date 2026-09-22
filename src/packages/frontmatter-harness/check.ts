@@ -14,11 +14,32 @@
 // failure.
 
 import { normalisePath } from '../foundation/path-shape.ts';
+import { readTextIn } from '../foundation/read-text.ts';
 import { moduleCheckFor } from './lib/check/check-result.pure.ts';
-import type { CorpusCheck } from './lib/check/check.types.ts';
+import type { CorpusCheck, GovernedRead, GovernedSource } from './lib/check/check.types.ts';
 import { governedFiles } from './lib/check/corpus-governance.pure.ts';
-import { readGovernedSources } from './lib/check/file-source.impure.ts';
 import type { FrontmatterConfig } from './section.ts';
+
+export type { UnreadableGovernedFile } from './lib/check/check.types.ts';
+
+/**
+ * Read each governed file, or preserve the first refusal from the gate.
+ *
+ * `--assess` reaches the same gate directly at its entry point. Keeping this
+ * batch here gives both commands one Module-to-gate hop and leaves the gate as
+ * the only code that joins a host path.
+ */
+function readGovernedSources(root: string, governed: ReturnType<typeof governedFiles>): GovernedRead {
+  const sources: GovernedSource[] = [];
+
+  for (const file of governed) {
+    const found = readTextIn(root, file.path);
+    if (found.kind !== 'text') return { kind: 'unreadable', path: found.location };
+    sources.push({ path: file.path, rule: file.rule, text: found.text });
+  }
+
+  return { kind: 'read', sources };
+}
 
 /**
  * Check one corpus against this Module's ordered rule list.

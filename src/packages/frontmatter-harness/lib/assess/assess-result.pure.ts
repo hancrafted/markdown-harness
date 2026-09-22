@@ -60,6 +60,7 @@ function staleResult(rule: WinningRule, evidence: AssessEvidence, prompt: Prompt
  */
 export function assessResultFor({ rule, file, freshness, prompt }: Findings): AssessResult {
   if (file.kind === 'absent') return { agentAction: 'PROCEED', state: 'absent', rule };
+  if (file.kind === 'unreadable') return { agentAction: 'FIX_FILE', state: 'unreadable', rule };
   if (freshness === undefined || freshness.state === 'unassessable') {
     return { agentAction: 'FIX_FILE', state: 'unassessable', rule };
   }

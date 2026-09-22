@@ -772,6 +772,32 @@ describe('mh --assess', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('names an unreadable governed file as unreadable rather than unassessable', () => {
+      // ARRANGE
+      const expected = {
+        command: 'assess',
+        path: 'sealed.md',
+        now: PINNED,
+        config: lockedConfig,
+        result: {
+          agentAction: 'FIX_FILE',
+          state: 'unreadable',
+          rule: {
+            ruleId: 'every-markdown-file',
+            intent: 'Governs every markdown file the walker enumerates',
+          },
+        },
+        code: 0,
+      };
+      // ACT
+      const run = mhIn(locked, '--assess', 'sealed.md', '--config', lockedConfig, '--now', PINNED);
+      const answered = JSON.parse(run.stdout);
+      const actual = { ...answered, code: run.code };
+      // ASSERT
+      expect(sealed).toBe(REFUSED);
+      expect(actual).toEqual(expected);
+    });
+
     it('echoes an instant a caller could hand straight back, when none was given', () => {
       // The replayability claim at the process boundary: with no `--now`, the
       // clock is read once and the value it produced is echoed — and it is a

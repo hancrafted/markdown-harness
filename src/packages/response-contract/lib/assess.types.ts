@@ -8,7 +8,7 @@
  * that reads a clock.
  *
  * `agentAction` leads every variant, and it is FULLY DERIVABLE from `state` on
- * purpose. Five states map onto three actions, and asking a busy model to do
+ * purpose. Six states map onto three actions, and asking a busy model to do
  * that mapping is asking for the one thing it is least reliable at — the same
  * reasoning that makes `CheckSummary` precompute its counts rather than leave
  * an array to be summed.
@@ -40,9 +40,9 @@ export type PromptSource =
 /**
  * How the file answered, at the instant supplied.
  *
- * Five values, three of which are not about freshness at all: a file can be
- * outside every rule, unable to answer, or absent, and collapsing any of those
- * into "fresh" would report an untested file as a sound one.
+ * Six values, four of which are not about freshness at all: a file can be
+ * outside every rule, unreadable, unable to answer, or absent, and collapsing
+ * any of those into "fresh" would report an untested file as a sound one.
  */
 export type AssessState =
   /** The freshness date falls at or before the Assessment instant. */
@@ -51,6 +51,8 @@ export type AssessState =
   | 'fresh'
   /** A rule governs the file, and `stale_after` is missing or the frontmatter will not parse. */
   | 'unassessable'
+  /** A rule governs the file, but it would not open. */
+  | 'unreadable'
   /** No rule selects the path, so nothing will ever be said about it. */
   | 'ungoverned'
   /** Nothing exists at the path. */
@@ -81,7 +83,7 @@ export interface AssessEvidence {
 }
 
 /** Either the file was judged, or something stopped it being judged. */
-export type AssessResult = StaleFile | FreshFile | UnassessableFile | UngovernedFile | AbsentFile;
+export type AssessResult = StaleFile | FreshFile | UnassessableFile | UnreadableFile | UngovernedFile | AbsentFile;
 
 /** Past its freshness date: the one case that carries the Operator's words. */
 export interface StaleFile {
@@ -139,9 +141,32 @@ export interface UnassessableFile {
   state: 'unassessable';
   /** Absent. */
   source?: never;
-  /** Absent: there was nothing to read, which is the finding. */
+  /** Absent: the readable frontmatter made no usable freshness claim. */
   evidence?: never;
   /** The rule that won, so the reader knows who is asking for the repair. */
+  rule: WinningRule;
+}
+
+/**
+ * Governed, but impossible to read.
+ *
+ * This is distinct from `unassessable`: that state reports bytes whose
+ * frontmatter made no usable freshness claim; this one reports no bytes at
+ * all. The assessment envelope already echoes the requested path, so the
+ * result keeps the rule and adds no duplicate location.
+ */
+export interface UnreadableFile {
+  /** Leads the variant, and derived from `state`. */
+  agentAction: 'FIX_FILE';
+  /** Absent by construction. */
+  instruction?: never;
+  /** The discriminant. */
+  state: 'unreadable';
+  /** Absent. */
+  source?: never;
+  /** Absent: there were no bytes to inspect. */
+  evidence?: never;
+  /** The rule that made opening this file necessary. */
   rule: WinningRule;
 }
 

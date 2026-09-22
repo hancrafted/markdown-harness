@@ -473,6 +473,14 @@ throw — what a failure means is the caller's to decide, so the gate reports wh
 there.
 _Avoid_ as a name for this: read result, file state, read error
 
+**read memo**:
+The gate's process-lifetime memory of each **read outcome**, failures included. Its key is the host
+path after syntactic normalisation: dot segments and repeated separators are one question, but the
+gate never resolves a target, follows a symlink, or performs an extra filesystem read to choose the
+key. The first answer persists until the process exits, even if the tree changes. Every real-tree
+test therefore plants a unique root; a second test reusing a path would ask the memo, not the tree.
+_Avoid_ as a name for this: cache, read cache, path cache
+
 ### Dependency governance
 
 **Admission bar**:

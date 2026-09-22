@@ -21,7 +21,7 @@
  */
 
 import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { HostEntry, HostEntryKind, HostRead } from './node-host.types.ts';
 
@@ -121,6 +121,15 @@ export function realHostPath(location: string): string | undefined {
  */
 export function hostPathOf(root: string, segments: readonly string[]): string {
   return join(root, ...segments);
+}
+
+/**
+ * Collapse equivalent host-path spellings without resolving a filesystem target.
+ *
+ * @param location A host path whose spelling may contain redundant segments.
+ */
+export function normaliseHostPath(location: string): string {
+  return normalize(location);
 }
 
 /**

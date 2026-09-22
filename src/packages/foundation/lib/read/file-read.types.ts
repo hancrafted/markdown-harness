@@ -17,7 +17,15 @@
 export type FileRead =
   /** The file's contents. */
   | { kind: 'text'; text: string }
-  /** Nothing is at that path. An ordinary answer, never a failure by itself. */
-  | { kind: 'absent' }
-  /** Something is there and will not open: a directory, a permission refusal, a symlink that loops. */
-  | { kind: 'unreadable' };
+  /**
+   * Nothing is at `location`. An ordinary answer, never a failure by itself.
+   *
+   * The gate owns the joined host path, so a caller that must name the failed
+   * read does not assemble a second spelling.
+   */
+  | { kind: 'absent'; location: string }
+  /**
+   * Something is at `location` and will not open: a directory, a permission
+   * refusal, or a symlink that loops.
+   */
+  | { kind: 'unreadable'; location: string };
