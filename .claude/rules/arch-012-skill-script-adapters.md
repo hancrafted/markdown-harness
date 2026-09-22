@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-012-skill-script-adapters.md

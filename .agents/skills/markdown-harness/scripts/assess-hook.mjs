@@ -33,6 +33,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { recordActivity } from './activity-log.mjs';
+import { loadRuntime } from './runtime.mjs';
 
 /** The one thing this hook has to say, and the only state that carries a sentence. */
 const SPEAKS_ON = 'REVIEW';
@@ -126,20 +127,6 @@ function installedEntry(root) {
  * block reached the winning rule, and the finding is real either way — so the
  * evidence line carries the judgement when the sentence cannot.
  */
-function reviewNotice(answer, assessment) {
-  const { path, now } = answer;
-  const wentStale = assessment.evidence?.value ?? 'an instant it did not report';
-  const lines = [`markdown-harness: ${path} is past its stale_after under Module "${assessment.module}".`];
-
-  if (typeof assessment.instruction === 'string') lines.push('', assessment.instruction);
-
-  lines.push(
-    '',
-    `stale_after ${wentStale}, assessed at ${now}. Rule "${assessment.rule.ruleId}": ${assessment.rule.intent}`,
-  );
-  return lines.join('\n');
-}
-
 /**
  * What happened: one shape, assembled at every exit `main()` has past the root.
  *
@@ -165,7 +152,7 @@ function reviewNotice(answer, assessment) {
  *
  * @returns {Outcome | undefined}
  */
-function main() {
+async function main() {
   const payload = JSON.parse(readFileSync(0, 'utf8'));
   const read = payload?.tool_input?.file_path;
   if (typeof read !== 'string' || read === '') return undefined;
@@ -187,6 +174,9 @@ function main() {
 
   const entry = installedEntry(root);
   if (entry === undefined) return { root, file: asked, result: NOT_INSTALLED };
+
+  const loaded = await loadRuntime(root, 'assess-hook');
+  if (loaded.kind !== 'loaded') return { root, file: asked, result: NO_ANSWER };
 
   const run = spawnSync(process.execPath, [entry, '--assess', asked], {
     cwd: root,
@@ -219,38 +209,40 @@ function main() {
 
   const notices = modules
     .filter(({ agentAction }) => agentAction === SPEAKS_ON)
-    .map((assessment) => reviewNotice(answer, assessment));
+    .map((assessment) => loaded.runtime.formatReviewNotice({ path: answer.path, now: answer.now, assessment }));
   const notice = notices.length === 0 ? undefined : notices.join('\n\n');
   const result =
     modules.length === 1 ? modules[0].state : modules.map(({ module, state }) => `${module}:${state}`).join('|');
   return { root, file: asked, result, notice };
 }
 
-let outcome;
-try {
-  outcome = main();
-} catch {
-  // Every throw lands here on purpose: a malformed payload, a config that moved
-  // mid-run, output that is not JSON. None of them are the agent's problem.
-  outcome = undefined;
-}
-
-if (outcome !== undefined) {
+async function runHook() {
+  let outcome;
   try {
-    recordActivity(outcome.root, COMMAND, outcome.file, outcome.result);
+    outcome = await main();
   } catch {
-    // THE LOG IS EVIDENCE, NEVER A GATE. A read-only checkout, a full disk or a
-    // permissions problem must not turn a read the agent already completed into
-    // an error in front of it — the same reasoning that makes every branch above
-    // exit 0. A hook that failed loudly about its own bookkeeping would be worse
-    // than one that kept none.
+    // Every throw lands here on purpose: a malformed payload, a config that moved
+    // mid-run, output that is not JSON. None of them are the agent's problem.
+    outcome = undefined;
+  }
+
+  if (outcome !== undefined) {
+    try {
+      await recordActivity(outcome.root, COMMAND, outcome.file, outcome.result);
+    } catch {
+      // THE LOG IS EVIDENCE, NEVER A GATE. A read-only checkout, a full disk or a
+      // permissions problem must not turn a read the agent already completed into
+      // an error in front of it — the same reasoning that makes every branch above
+      // exit 0. A hook that failed loudly about its own bookkeeping would be worse
+      // than one that kept none.
+    }
+  }
+
+  if (outcome?.notice !== undefined) {
+    process.stdout.write(
+      `${JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: outcome.notice } })}\n`,
+    );
   }
 }
 
-if (outcome?.notice !== undefined) {
-  process.stdout.write(
-    `${JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: outcome.notice } })}\n`,
-  );
-}
-
-process.exit(0);
+await runHook();

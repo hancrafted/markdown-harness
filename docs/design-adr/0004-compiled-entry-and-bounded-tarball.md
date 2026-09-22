@@ -58,8 +58,8 @@ shorter coordinate. The restricted-by-default consequence is real and is paid ex
 avoided: `--access public` on every publish, in `publish.yml` and in the bootstrap step, without
 which the publish fails on visibility rather than on anything about the artefact. The scope is a
 registry namespace and nothing else — `bin` still installs `markdown-harness` and `mh`, the config
-file is still `markdown-harness.config.yaml`, and `npm pack` reports the same 59 files at the same
-38.5 kB, only the tarball's filename gaining a prefix. The unscoped name remains unclaimed. npm has
+file is still `markdown-harness.config.yaml`, and `npm pack` reports 109 files at 245.5 kB. The
+unscoped name remains unclaimed. npm has
 no rename, so claiming it later would be an additional package with a deprecation pointer on it —
 which remains possible and is not a breaking change.
 
@@ -95,10 +95,11 @@ still see both strings written out.
    eleven `TS2591 Cannot find name 'node:fs'` errors, which read as a missing devDependency rather
    than as a resolution change. `types: ["node"]` restores it and narrows the build to the one
    ambient package `src/` uses — nothing that ships may depend on a test runner's globals.
-3. **The tarball falls from 417 files to 59.** Measured 2026-09-07: without an allowlist `npm pack`
+3. **The tarball falls from 417 files to 109.** Re-measured 2026-09-22: without an allowlist `npm pack`
    ships the governance records, the research corpus, the ablation kit and 143 vendored skill files.
-   With `files: ["dist"]` it carries the 56 emitted files plus the three npm always includes —
-   `package.json`, `README.md`, `LICENSE`. The allowlist ships the tree rather than a manifest of it,
+   With `files: ["dist"]` it carries the 106 emitted files plus the three npm always includes —
+   `package.json`, `README.md`, `LICENSE`. This includes the eight compiled `skill-runtime` files
+   that post-install skill adapters import. The allowlist ships the tree rather than a manifest of it,
    and `tsc` never removes an output whose source is gone, so `build` clears `dist/` before emitting:
    measured, a planted orphan survived a rebuild at 57 files and would have shipped.
 4. **The manifest still declares a `prepare` script, and npm names it on an adopter's install.**

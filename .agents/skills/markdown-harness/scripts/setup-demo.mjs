@@ -21,6 +21,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync,
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { recordActivity } from './activity-log.mjs';
+import { loadRuntime } from './runtime.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES = resolve(HERE, '..', 'assets', 'demo');
@@ -79,28 +80,15 @@ function report(ok, detail) {
   process.exit(ok ? 0 : 1);
 }
 
-/** Strip the marked block, leaving everything outside it byte-for-byte. */
-function withoutBlock(text) {
-  const lines = text.split('\n');
-  const from = lines.findIndex((l) => l.trim() === BEGIN.trim());
-  if (from === -1) return { text, found: false };
-  const to = lines.findIndex((l, i) => i > from && l.trim() === END.trim());
-  if (to === -1) return { text, found: false };
-  lines.splice(from, to - from + 1);
-  return { text: lines.join('\n'), found: true };
-}
-
-/** Insert the block directly beneath the `rules:` key, so it wins first-match. */
-function withBlock(text) {
-  const lines = text.split('\n');
-  const at = lines.findIndex((l) => /^\s*rules:\s*$/.test(l));
-  if (at === -1) return undefined;
-  lines.splice(at + 1, 0, BLOCK);
-  return lines.join('\n');
-}
-
 const root = repoRoot();
 if (root === undefined) report(false, { error: 'NO_PACKAGE_JSON', cwd: process.cwd() });
+const loaded = await loadRuntime(root, 'demo');
+if (loaded.kind !== 'loaded') {
+  report(false, {
+    error: 'SKILL_RUNTIME_NOT_INSTALLED',
+    detail: 'Install a markdown-harness version that includes the skill runtime before setting up the demo.',
+  });
+}
 
 const configPath = join(root, CONFIG_NAME);
 const demoPath = join(root, DEMO_DIR);
@@ -112,7 +100,7 @@ if (remove) {
     removed.push(DEMO_DIR);
   }
   if (existsSync(configPath)) {
-    const { text, found } = withoutBlock(readFileSync(configPath, 'utf8'));
+    const { text, found } = loaded.runtime.removeDemoBlock(readFileSync(configPath, 'utf8'));
     if (found) {
       // A config that held nothing but the demo is left with an empty rule list,
       // which the tool rejects outright — so the whole file goes rather than a
@@ -128,7 +116,7 @@ if (remove) {
   }
   // `docs/markdown-harness/` outlives the demo folder inside it, so the log is
   // still there to take this row — and a reader can see the window close.
-  recordActivity(root, 'demo', DEMO_DIR.split(sep).join('/'), 'removed');
+  await recordActivity(root, 'demo', DEMO_DIR.split(sep).join('/'), 'removed');
   report(true, { removed });
 }
 
@@ -147,7 +135,7 @@ if (!existsSync(configPath)) {
   if (current.includes(BEGIN.trim())) {
     configAction = 'already';
   } else {
-    const next = withBlock(current);
+    const next = loaded.runtime.insertDemoBlock(current, BLOCK);
     if (next === undefined) {
       report(false, {
         error: 'NO_RULES_KEY',
@@ -185,7 +173,7 @@ if (won !== DEMO_RULE) {
 //    it is evidence the hook fired during the demo rather than at some point
 //    before it. That comparison is what `demo.md` step 4 asks the user to make,
 //    and it is the reason no step here reports the hook as proven.
-const marker = recordActivity(root, 'demo', DEMO_DIR.split(sep).join('/'), 'installed');
+const marker = await recordActivity(root, 'demo', DEMO_DIR.split(sep).join('/'), 'installed');
 
 report(true, {
   demoDir: DEMO_DIR,

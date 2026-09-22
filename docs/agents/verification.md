@@ -185,34 +185,30 @@ every invocation that finds a config root, silent ones included. A `fresh` row p
 and chose to say nothing; no rows at all is the finding. Verify from the log, and never from a
 step's own report — `src/packages/cli/tests/assess-hook.test.ts` is where that log is held to it.
 
-## 11. Nothing under `.agents/skills/` is reached by the gate except `prettier`
+## 11. Skill scripts are named by an ADR; Package decisions enter the executable gate
 
-Measured 2026-09-09 on a change touching only `.agents/skills/setup-local-e2e-repo/`. Two checks
-inside `verify` report green over it without looking at it, and they fail in different directions.
+Re-measured 2026-09-22 for #192. `ARCH-010-skill-script-adapters` now scopes every executable
+markdown-harness skill script and `setup-local-e2e-repo/scripts/new-repo.mjs`. `archgate check`
+passed **15/15** ADR checks after the record landed, so an edit to either directory is no longer
+context with no governing record. The dependency-cruiser configuration template under
+`setup-ts-deep-modules/` is not an invoked product script and is explicitly outside the ticket.
 
-**`archgate` has no ADR in scope.** Every `files:` glob in `.archgate/adrs/` points at `src/**`,
-`package.json`, `fixtures/conformance/**`, `.archgate/adrs/**`, `.claude/rules/**`, or
-`**/*.test.ts`. `archgate review-context --run-checks` on that change returned `"domains": []`
-alongside `"total": 0` — not one briefing applied. This is trap 1 with the scope emptied by path
-rather than by diff, so re-running with `--base` does not reach it either: no base makes an
-unwritten ADR apply.
+**Naming is not executable enforcement.** `ARCH-010` has no companion rules file: it records why
+an Adapter or bootstrap script stands outside `src/`, but neither ESLint nor dependency-cruiser
+checks JavaScript in `.agents/skills/`. Prettier remains the only gate member that reads those
+scripts mechanically, and it measures layout. The hook's process-boundary suite proves its
+observable protocol; review verifies that a post-install adapter delegates rather than copying a
+decision.
 
-**`eslint` parses these files and configures no rule for them.** Every rule block in
-`eslint.config.mjs` is held behind `files: ['**/*.ts']` or `GOVERNED` (`src/**/*.ts`), and ESLint 9
-lints `**/*.mjs` by default — so a skill script is visited with an empty rule set. Canaried: append
-`undefinedFunctionCall(thisVarDoesNotExist)` to a script under `.agents/skills/` and `eslint` still
-exits **0**. A green `eslint .` is not evidence about any file in this subtree.
+**Moved decisions do reach their classifier enforcement.** `skill-runtime` lives under
+`src/packages/`, so `ARCH-004`, `ARCH-006` and `ARCH-007` apply. Canary: adding `Math.random()` to
+`lib/demo/insert-block.pure.ts` made ESLint fail at that line under ARCH-006's
+`no-restricted-properties` rule; removing it restored green. That is a record's own enforcer
+firing, not a passing check over an unscoped file.
 
-So `prettier` is the only check in `verify` that measures a skill script, and it measures layout.
-On the change above, three real faults — a `git ls-remote` exit code read as a successful lookup, a
-value-taking flag swallowing the next flag and minting into a garbage path under `ok: true`, and an
-uncaught `writeFileSync` that would exit with no JSON at all — were found by review and by running
-the script. None was reachable by the gate.
-
-A test does not close this by itself: `tsconfig.json` includes only `["src", "*.ts", "*.mts"]` while
-`vitest.config.ts` includes `**/*.{test,spec}.ts` greedily, so a `.test.ts` placed here would run
-untypechecked — trap 8 by construction, and no skill script has a test today. Prove a skill script
-by executing it, and say which paths you ran.
+The prior warning survives in narrower form: a `.mjs` adapter can still be syntactically valid and
+behaviourally wrong while `eslint .` reports green. Execute its documented process seam, build
+before a hook suite, and name both the adapter and the compiled Package entry point in review.
 
 ## 12. A git ref lookup reports success over nothing, twice over
 

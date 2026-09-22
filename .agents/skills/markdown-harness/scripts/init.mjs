@@ -16,6 +16,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { MEMORY_DIR, recordActivity } from './activity-log.mjs';
+import { loadRuntime } from './runtime.mjs';
 
 const PACKAGE = '@hancrafted/markdown-harness';
 const CHECK = 'mh --check';
@@ -103,24 +104,33 @@ const steps = [];
 // 2. THE GATE. Appended last, so the cheap checks fail first. `&&` is what makes
 //    exit 1 and exit 2 both fail the build, so neither is swallowed.
 {
-  const manifest = readJson(manifestPath);
-  manifest.scripts ??= {};
-  const existing = manifest.scripts[gate];
-
-  if (typeof existing === 'string' && existing.includes(CHECK)) {
-    steps.push({ step: 'gate', done: 'already', detail: `${gate}: ${existing}` });
-  } else if (typeof existing === 'string') {
-    manifest.scripts[gate] = `${existing} && ${CHECK}`;
-    writeJson(manifestPath, manifest);
+  const loaded = await loadRuntime(root, 'initialization');
+  if (loaded.kind !== 'loaded') {
     steps.push({
       step: 'gate',
-      done: dryRun ? 'would-extend' : 'extended',
-      detail: `${gate}: ${manifest.scripts[gate]}`,
+      done: 'failed',
+      detail: `${PACKAGE} did not provide the installed skill runtime; reinstall it before retrying.`,
     });
   } else {
-    manifest.scripts[gate] = CHECK;
-    writeJson(manifestPath, manifest);
-    steps.push({ step: 'gate', done: dryRun ? 'would-create' : 'created', detail: `${gate}: ${CHECK}` });
+    const manifest = readJson(manifestPath);
+    manifest.scripts ??= {};
+    const existing = manifest.scripts[gate];
+
+    if (typeof existing === 'string' && existing.includes(CHECK)) {
+      steps.push({ step: 'gate', done: 'already', detail: `${gate}: ${existing}` });
+    } else if (typeof existing === 'string') {
+      manifest.scripts[gate] = loaded.runtime.extendGate(existing, CHECK);
+      writeJson(manifestPath, manifest);
+      steps.push({
+        step: 'gate',
+        done: dryRun ? 'would-extend' : 'extended',
+        detail: `${gate}: ${manifest.scripts[gate]}`,
+      });
+    } else {
+      manifest.scripts[gate] = CHECK;
+      writeJson(manifestPath, manifest);
+      steps.push({ step: 'gate', done: dryRun ? 'would-create' : 'created', detail: `${gate}: ${CHECK}` });
+    }
   }
 }
 
@@ -162,7 +172,7 @@ const steps = [];
 
   // Written last in this block, so the header lands in a folder that exists and
   // the first row of every adopter's log is the moment they opted in.
-  if (!dryRun) recordActivity(root, 'init', '.', 'ok');
+  if (!dryRun) await recordActivity(root, 'init', '.', 'ok');
 }
 
 // 5. THE HOOK, and only under Claude Code. `CLAUDECODE` is set in hook commands
