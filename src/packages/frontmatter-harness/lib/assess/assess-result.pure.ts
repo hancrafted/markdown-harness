@@ -11,13 +11,13 @@
  */
 
 import type { FileRead } from '../../../foundation/read-text.ts';
-import type { AssessEvidence, AssessResult, WinningRule } from '../../../response-contract/index.ts';
+import type { AssessEvidence, AssessResult, PromptSource, WinningRule } from '../../../response-contract/index.ts';
 import type { Freshness } from './assess.types.ts';
 
 /** The Operator's sentence and its provenance, when one applied. */
 interface Prompt {
   prompt: string;
-  source: 'rule' | 'module';
+  source: PromptSource;
 }
 
 /** Everything the four earlier stages found, gathered so this file only ranks it. */

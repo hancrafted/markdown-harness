@@ -14,6 +14,7 @@
  * ask for the same repair once per element.
  */
 
+import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
 
 /** The two axes, named once so the presence checks and the token checks agree. */
@@ -24,7 +25,6 @@ const SEPARATOR = '/';
 
 /** The corpus root's own token, the one folder with no name of its own. */
 const ROOT_FOLDER = './';
-
 /**
  * Glob syntax characters from the retired matcher that the config language
  * refuses in any selector token:
@@ -48,26 +48,26 @@ function carriesWildcard(token: string): boolean {
   return REFUSED_GLOB_CHARACTERS.some((character) => token.includes(character));
 }
 
-function isMapping(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 function isMappingList(value: unknown): value is readonly Record<string, unknown>[] {
   return Array.isArray(value) && value.every(isMapping);
 }
-
 function invalid(location: string): ConfigFault {
   return { code: 'CONFIG_INVALID_VALUE', location };
 }
 
 /**
- * A list of strings, which is what a selector axis holds.
+ * A list of strings, which is what a selector axis holds — and, unchanged
+ * elsewhere in a rule, what every other list-valued key holds too.
  *
- * An empty list is a list of strings. It names no folders and no names, which
- * is a different thing from naming a wrong one — and a different thing again
- * from leaving the key out, which means every.
+ * The elements are checked and not merely the container: a non-string token
+ * reaches the selector as something it can never equal, and §3.5 line 271 puts
+ * a cross-field set of the wrong shape under `CONFIG_INVALID_VALUE`.
+ *
+ * An empty list is a list of strings. It names no folders, no names and no
+ * addresses — a different thing from naming a wrong one, and a different
+ * thing again from leaving the key out, which on a selector axis means every.
  */
-function isStringList(value: unknown): boolean {
+export function isStringList(value: unknown): boolean {
   return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 }
 

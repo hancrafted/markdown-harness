@@ -13,7 +13,9 @@
  * ever say so.
  */
 
+import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
+import { STALE_AFTER } from '../assess/freshness.pure.ts';
 
 /**
  * Every condition the `assess:` vocabulary defines.
@@ -23,16 +25,11 @@ import type { ConfigFault } from '../../../response-contract/index.ts';
  */
 const ASSESS_KEYS: readonly string[] = ['stale'];
 
-/** The one condition, and the frontmatter field it is answered from. */
+/** The one condition. `STALE_AFTER`, the field it is answered from, is `freshness.pure.ts`'s. */
 const STALE = 'stale';
-const STALE_AFTER = 'stale_after';
 
 /** What `presence` must say for a `stale` prompt to be able to fire. */
 const REQUIRED = 'required';
-
-function isMapping(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /**
  * Whether a written block carries a prompt that could be printed.

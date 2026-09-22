@@ -19,8 +19,15 @@ import { resolveAddress } from '../check/field-address.pure.ts';
 import { frontmatterData } from '../check/frontmatter-data.pure.ts';
 import type { Freshness } from './assess.types.ts';
 
-/** The one frontmatter address a freshness judgement reads. */
-const STALE_AFTER = 'stale_after';
+/**
+ * The one frontmatter address a freshness judgement reads.
+ *
+ * Exported rather than kept private: `assess-faults.pure.ts` validates that a
+ * rule's `fields:` constrains this same address before a `stale` prompt is
+ * allowed to fire, and a second, hand-copied spelling of the field name is
+ * exactly the drift a rename here would not catch.
+ */
+export const STALE_AFTER = 'stale_after';
 
 /**
  * The freshness claim a file actually wrote, or nothing.
