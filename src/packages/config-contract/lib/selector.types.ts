@@ -60,6 +60,10 @@ export interface Selector {
  *
  * A token missing its trailing `/`, or written with any other decoration, is
  * `CONFIG_INVALID_VALUE` at the `folders` key.
+ *
+ * Kept as an exported nominal type despite having no external consumer today:
+ * it names the domain concept at the contract boundary and gives consumers
+ * and adapters a named token type rather than drilling into `Selector['folders']`.
  */
 export type FolderPath = string;
 
@@ -73,5 +77,9 @@ export type FolderPath = string;
  *
  * A name carrying a separator is `CONFIG_INVALID_VALUE` at the `fileNames`
  * key: it is not a basename, and it could never match anything.
+ *
+ * Kept as an exported nominal type despite having no external consumer today:
+ * it names the domain concept at the contract boundary and gives consumers
+ * and adapters a named token type rather than drilling into `Selector['fileNames']`.
  */
 export type FileName = string;
