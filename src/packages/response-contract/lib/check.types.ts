@@ -105,7 +105,7 @@ export interface ModuleViolations extends RuleFindings {
  * One Module's answer about one corpus, before composition nests it.
  *
  * Both halves are needed and neither is recoverable from the other: the
- * findings say what is wrong, and the extent says which files were looked at —
+ * findings say what is wrong, and `governed` says which files were looked at —
  * which is what the union behind `governedFiles` is taken over.
  */
 export interface ModuleCheck {

@@ -81,7 +81,7 @@ translation.
 _Avoid_: LRM-wiki, wiki (unqualified), vault
 
 **config contract**:
-The vocabulary every config section is built from — selectors, Constraints, claims, the fault a
+The vocabulary every config section is built from — selectors, Constraints, the fault a
 rejected config reports — plus the port a Module declares itself through. It names no Module and
 describes no file: a Module's own section type belongs to that Module. It is the **portable** half of
 the product — adopters and any reimplementation receive it and never receive `.archgate/`, which is
@@ -104,8 +104,7 @@ The role every Package that is not a Module fills: config reading, path resoluti
 surface, and reporting. No single Package is Core — the role spans `foundation`, `cli`,
 `config-contract` and `response-contract`, so it is a position in the architecture rather than a
 folder. Core loads a config it has no type for and hands each Module its own section back under the
-type that Module's own validation earned. It compares the claims Modules make and never parses a
-Module's section, which is what lets a Module be added without editing Core. It is also where the
+type that Module's own validation earned. It never parses a Module's section. It is also where the
 filesystem gate lives: Core is the only part that reaches the filesystem, and every Module reads
 through it. It reads frontmatter without learning what any field means.
 
@@ -134,10 +133,8 @@ Package)
 **Module**:
 A named checking domain that owns one section of the config and one family of checks. It owns its
 section's **type** as well as its section, in its own Package, and no Package outside it may name
-that type. It projects its own section into **claims**, and it knows no other Module exists:
-claims are made in Core's vocabulary, so Core can compare two Modules without either one reading the
-other's section. Narrower than the general design sense used in `codebase-design`, where a
-module is anything with an interface and an implementation.
+that type. It knows no other Module exists. Narrower than the general design sense used in
+`codebase-design`, where a module is anything with an interface and an implementation.
 _Avoid_ as a name for this: plugin, checker, rule pack
 
 **declared Module set**:
@@ -299,33 +296,9 @@ _Avoid_ as a name for anything this repo's config language currently admits: glo
 pattern
 
 **claim**:
-What one Module says about one set of files, in vocabulary Core owns: a site, an **extent**, a kind
-and a **stance**. A Module projects its own section into claims; it never reads another Module's
-section, and Core never reads any Module's section. A claim is a projection of config text — a Module
-is handed its own validated section and nothing else — so nothing a claim says was read from a
-document, and a sentence written in a document is never one.
-_Avoid_ as a name for this: assertion (taken by **Constraint**), rule (taken), declaration,
-requirement, fact
-
-**stance**:
-What a claim does to its subject: `requires`, `forbids`, or `reads`. `reads` is the weak one and it is
-the reason the vocabulary works — a Module that reads a field tolerates its absence and contradicts
-only a declared forbid.
-_Avoid_ as a name for this: mode, polarity, verb, direction
-
-**extent**:
-Which files a claim is about: one **selector**, minus a list of extents. An absent axis means every,
-so "a directory" is an extent with no name axis and "a name" is an extent with no folder axis; there
-is no third kind of extent and no separate comparison for one. An extent is exact rather than an
-approximation — it is what a claim's site won under first match, and approximating it loses
-contradictions outright rather than merely blurring them.
-_Avoid_ as a name for this: scope, range, coverage, file set, target
-
-**claim vocabulary**:
-The closed set of kinds and stances a claim may use, portable on the same terms as the **config
-contract** itself. Closed, so that a Module cannot coin a term Core would compare against nothing.
-What it cannot say falls to a hand-written check, which is permanent and not a defect.
-_Avoid_ as a name for this: claim schema, claim language, the claim types, the claim API
+What one Module asks of one path: which Rule won, and what that Rule requires. It does not name
+the Module.
+_Avoid_ as a name for this: assertion (taken by **Constraint**), declaration, requirement, fact
 
 **Constraint**:
 One assertion a Rule makes about one frontmatter field, keyed by field address. Constraints
@@ -373,8 +346,8 @@ _Avoid_: Floor, baseline, unrelaxable, promise, SLA
 **Signal**:
 What a document states about its own trustworthiness, in the file, for a reader that may never
 run `markdown-harness` — provenance, trust tier, freshness and lifecycle, each of which OKF
-names and supplies fields for. It is separate from the body's claims about itself, and it
-outranks them.
+names and supplies fields for. It is separate from what the document says about itself, and it
+outranks that.
 _Avoid_: warning, status, health, score, badge
 
 **Authoring path**:

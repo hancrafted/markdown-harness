@@ -1,6 +1,6 @@
 // Colocated unit test for this Module's answer about one corpus.
 //
-// What this file answers is one Module's half: the extent it governed and the
+// What this file answers is one Module's half: the governed list and the
 // findings it made. The three counts are no longer here — `governedFiles` is a
 // union across Modules and no Module can see the others to take it — so the
 // arithmetic is asserted where it is now computed, in `cli`, and what is
@@ -78,8 +78,8 @@ describe("one Module's corpus check", () => {
       expect(actual).toEqual(expected);
     });
 
-    it('reports the whole governed extent, not only the part it found something in', () => {
-      // The extent is what the union behind `governedFiles` is taken over, and
+    it('reports the whole governed list, not only the part it found something in', () => {
+      // The governed list is what the union behind `governedFiles` is taken over, and
       // it is the one fact not recoverable from the findings: a governed file
       // that passed leaves no finding to count. The fixture is deliberately
       // mixed and both numbers are written out by hand — read off one return,

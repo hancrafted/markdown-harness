@@ -429,7 +429,7 @@ describe('the harness reports the verdict each Conformance case states', () => {
     });
 
     it('agrees with the marker tally on how many files are governed and invalid', () => {
-      // The extent and the per-file verdicts come from the same run, so this
+      // The governed list and the per-file verdicts come from the same run, so this
       // catches the two drifting apart — and it is stated against the MARKERS
       // rather than against the corpus size, so adding a case with no marker
       // cannot quietly satisfy it.
