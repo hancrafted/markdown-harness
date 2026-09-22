@@ -78,6 +78,21 @@ describe('ruleFaults', () => {
       // ASSERT
       expect(actual).toEqual([]);
     });
+
+    it('accepts literal folder and file name tokens that glob syntax would have approximated', () => {
+      // An Operator migrating from glob syntax might have written `docs/*/` or
+      // `*.md`. The literal replacements name their targets directly.
+      // ARRANGE
+      const rule = {
+        ...sound,
+        folders: ['docs/notes/', 'docs/reference/'],
+        fileNames: ['index.md', 'file1.md'],
+      };
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual([]);
+    });
   });
 
   describe('failure cases', () => {
@@ -116,6 +131,106 @@ describe('ruleFaults', () => {
       // ARRANGE
       const rule = { ruleId: 'r', intent: 'i', fileNames: ['docs/log.md'] };
       const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.fileNames` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a folder token carrying a wildcard asterisk (*)', () => {
+      // ARRANGE
+      const rule = { ...sound, folders: ['docs/*/'] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.folders` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a folder token carrying a single-character wildcard question mark (?)', () => {
+      // ARRANGE
+      const rule = { ...sound, folders: ['docs/?/'] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.folders` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a folder token carrying character class brackets ([ and ])', () => {
+      // ARRANGE
+      const rule = { ...sound, folders: ['docs/[a-z]/'] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.folders` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a folder token carrying brace expansion ({ and })', () => {
+      // ARRANGE
+      const rule = { ...sound, folders: ['docs/{a,b}/'] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.folders` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a file name carrying a wildcard asterisk (*)', () => {
+      // ARRANGE
+      const rule = { ruleId: 'r', intent: 'i', fileNames: ['*.md'] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.fileNames` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a file name carrying a single-character wildcard question mark (?)', () => {
+      // ARRANGE
+      const rule = { ruleId: 'r', intent: 'i', fileNames: ['file?.md'] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.fileNames` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a file name carrying character class brackets ([ and ])', () => {
+      // ARRANGE
+      const rule = { ruleId: 'r', intent: 'i', fileNames: ['file[0-9].md'] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.fileNames` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a file name carrying brace expansion ({ and })', () => {
+      // ARRANGE
+      const rule = { ruleId: 'r', intent: 'i', fileNames: ['file{a,b}.md'] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.fileNames` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects an exclusion carrying a wildcard folder token', () => {
+      // ARRANGE
+      const rule = { ...sound, excludeFiles: [{ folders: ['docs/*/'] }] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.excludeFiles` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects an exclusion carrying a wildcard file name', () => {
+      // ARRANGE
+      const rule = { ...sound, excludeFiles: [{ fileNames: ['*.md'] }] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.excludeFiles` }];
       // ACT
       const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT

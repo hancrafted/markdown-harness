@@ -25,6 +25,29 @@ const SEPARATOR = '/';
 /** The corpus root's own token, the one folder with no name of its own. */
 const ROOT_FOLDER = './';
 
+/**
+ * Glob syntax characters from the retired matcher that the config language
+ * refuses in any selector token:
+ * - `*` and `?`: wildcards (match-any, single-character)
+ * - `[` and `]`: character classes
+ * - `{` and `}`: brace expansions / alternatives
+ *
+ * Chosen because an Operator migrating from glob syntax might paste one of
+ * these into the new literal selector grammar. Without this refusal, a token
+ * like `docs/*\/` or `*.md` would be accepted as a literal token matching
+ * nothing on disk, silently leaving documents ungoverned.
+ *
+ * Kept to exactly these six characters rather than forbidding all non-alphanumeric
+ * characters: filesystem paths and file names legitimately carry characters like
+ * `-`, `_`, `.`, and `@`.
+ */
+const REFUSED_GLOB_CHARACTERS: readonly string[] = ['*', '?', '[', ']', '{', '}'];
+
+/** Whether one token carries any refused glob / wildcard character. */
+function carriesWildcard(token: string): boolean {
+  return REFUSED_GLOB_CHARACTERS.some((character) => token.includes(character));
+}
+
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -58,6 +81,7 @@ function isStringList(value: unknown): boolean {
  * of its own and the empty string is not a token anyone can write.
  */
 function isFolderToken(token: string): boolean {
+  if (carriesWildcard(token)) return false;
   if (token === ROOT_FOLDER) return true;
   if (!token.endsWith(SEPARATOR)) return false;
   if (token.startsWith(SEPARATOR)) return false;
@@ -66,6 +90,7 @@ function isFolderToken(token: string): boolean {
 
 /** Whether one file name is a basename rather than a path. */
 function isFileNameToken(token: string): boolean {
+  if (carriesWildcard(token)) return false;
   return token !== '' && !token.includes(SEPARATOR);
 }
 
