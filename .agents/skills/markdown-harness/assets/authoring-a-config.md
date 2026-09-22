@@ -16,6 +16,11 @@ frontmatter they already carry.
 Bring the candidates to the first question. "You have 34 files under `docs/research/`, 30 of which
 already carry `sources:`" is a question the user can answer; "what would you like to govern?" is not.
 
+**If a config is already there, read its selectors before its rules.** A `path:` key, a `fileName:`
+key, or any glob (a `*` inside a selector value) is the grammar this skill no longer teaches — read
+[`migrating-a-config.md`](migrating-a-config.md) and translate every rule before doing anything else.
+The rest of this workflow assumes the config in front of you is already on `folders:` / `fileNames:`.
+
 _Done when_ you can name each governable directory, roughly how many files it holds, and what its
 files already declare.
 
@@ -28,7 +33,10 @@ decision caused what.
 Four things make a rule, and the user supplies all four. Number them when you ask, so they can answer
 one at a time and point at the one they want to change:
 
-1. **Which paths** — a `path:` glob list, or `fileName:` to match a basename at any depth.
+1. **Which paths** — `folders:`, one repo-root-relative folder per token with no recursion, or
+   `fileNames:`, one literal basename matched at any depth. At least one axis is required; an absent
+   axis means every, so folders alone is every file in those folders and names alone is that name
+   anywhere in the corpus.
 2. **Why, in one sentence** — `intent:`, mandatory, in their words. It travels back with every
    violation this rule reports, so the failure says why the rule exists rather than only which check
    fired.
@@ -44,7 +52,7 @@ The shape, at its smallest:
 frontmatter:
   rules:
     - ruleId: research # mandatory, unique, and how reports refer to this rule
-      path: [docs/research/**/*.md]
+      folders: [docs/research/]
       intent: Research is only worth as much as the sources behind it, so it names them
       fields:
         sources: { minItems: 1 }
