@@ -31,7 +31,7 @@ walk decides membership at `corpus-entry.pure.ts`, case-sensitively and delibera
 the platform matcher. For `--query` and `--assess` no walk runs, so nothing was left to tell
 `notes.txt` from `notes.md`, and both would have answered `governed` — a measured change in a
 frozen response field. **The conservative answer is taken**: those two commands ask the same
-predicate the walk uses, through `markdown-file-tree/corpus-membership.ts`, so today's answers are
+predicate the walk uses, through `foundation/corpus-membership.ts`, so today's answers are
 preserved exactly and the extension lives in one place for all four commands. One residue is named
 rather than closed: the walk also refuses `node_modules/`, `.git/` and dot-directories, and
 `--query` does not — that is a fact about a walk rather than about a file name.

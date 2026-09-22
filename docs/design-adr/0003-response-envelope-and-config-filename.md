@@ -77,11 +77,7 @@ current directory, **never** `--root`. Bare `mh` therefore reads the config wher
    The normalised spelling still appears, but inside the result (`GovernedPath.path`) rather than on
    the envelope — the two answer different questions, and a query that echoed only the normalised
    form would lose what was actually typed.
-5. **Only `--query`'s result shapes are declared so far.** `CheckResult` and `AuditResult` arrive with
-   the phases that implement them. Declaring them now would put unused exports in the entry point,
-   which `knip` reports and which would be speculative in the precise sense `ARCH-004` warns about:
-   the shape of `CheckSummary.governedFiles` is itself listed as not-yet-specified once a
-   body-governing Module exists.
+5. **`CheckResult` and `AuditResult` arrived with the phases that implemented them, and `CheckSummary.governedFiles` settled as a union across Modules.** Declaring them earlier would have put unused exports in the entry point, which `knip` reports and which would have been speculative in the precise sense `ARCH-004` warns about. When #162 nested findings under Modules, `governedFiles` was settled as the union across Modules rather than a sum of tallies, computed in `cli` where all Modules are visible.
 
 Both items are struck from `architecture.md`'s Deliberately-open list in the same change that records
 this, so the list and this file cannot disagree about what is still open.
