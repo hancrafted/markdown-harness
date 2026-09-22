@@ -31,9 +31,9 @@ describe('effectivePrompt', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('falls back to the Module-wide sentence, and names the module as its source', () => {
+    it('falls back to the Module-wide sentence, and names that scope as its source', () => {
       // ARRANGE
-      const expected = { prompt: MODULE_SENTENCE, source: 'module' };
+      const expected = { prompt: MODULE_SENTENCE, source: 'module-wide' };
       // ACT
       const actual = effectivePrompt(bare, moduleBlock);
       // ASSERT

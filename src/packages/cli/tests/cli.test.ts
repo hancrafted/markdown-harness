@@ -305,7 +305,7 @@ describe('mh', () => {
       expect(JSON.parse(run.stdout).command).toBe(auditing);
     });
 
-    it('gives every rule a row, including the ones that governed nothing', () => {
+    it('nests every rule row under the Module that declared it', () => {
       // A rule that wins no file reports nothing anywhere else, so its row is
       // the only place an ordering mistake or a glob typo becomes visible.
       //
@@ -315,11 +315,14 @@ describe('mh', () => {
       // review instead of silently agreeing with whatever the config now says.
       // ARRANGE
       const declaredRules = 10;
+      const moduleName = 'frontmatter';
       const rowShape = ['rule', 'won', 'shadowed', 'shadowedBy', 'excluded'];
       // ACT
       const run = mh('--audit', '--root', CORPUS_ROOT, '--config', CONFIG);
-      const rows = JSON.parse(run.stdout).result.rules;
+      const modules = JSON.parse(run.stdout).result.modules;
+      const rows = modules[0].rules;
       // ASSERT
+      expect(modules[0].module).toBe(moduleName);
       expect(rows).toHaveLength(declaredRules);
       expect(Object.keys(rows[0])).toEqual(rowShape);
     });
@@ -475,7 +478,7 @@ describe('mh', () => {
       const onlyKeptMd = 1;
       // ACT
       const run = mh('--audit', '--root', planted, '--config', plantedConfig);
-      const rows = JSON.parse(run.stdout).result.rules;
+      const rows = JSON.parse(run.stdout).result.modules[0].rules;
       // ASSERT
       expect(rows[0].won).toBe(onlyKeptMd);
     });
@@ -750,6 +753,7 @@ describe('mh --assess', () => {
       const expected = {
         command: 'assess',
         now: PINNED,
+        module: 'frontmatter',
         agentAction: 'REVIEW',
         instruction: 'Re-verify this against the source before quoting it, then move stale_after.',
         code: 0,
@@ -759,13 +763,15 @@ describe('mh --assess', () => {
       const answered = JSON.parse(run.stdout) as {
         command: string;
         now: string;
-        result: { agentAction: string; instruction: string };
+        result: { modules: { module: string; agentAction: string; instruction: string }[] };
       };
+      const assessment = answered.result.modules[0];
       const actual = {
         command: answered.command,
         now: answered.now,
-        agentAction: answered.result.agentAction,
-        instruction: answered.result.instruction,
+        module: assessment.module,
+        agentAction: assessment.agentAction,
+        instruction: assessment.instruction,
         code: run.code,
       };
       // ASSERT
@@ -780,12 +786,17 @@ describe('mh --assess', () => {
         now: PINNED,
         config: lockedConfig,
         result: {
-          agentAction: 'FIX_FILE',
-          state: 'unreadable',
-          rule: {
-            ruleId: 'every-markdown-file',
-            intent: 'Governs every markdown file the walker enumerates',
-          },
+          modules: [
+            {
+              module: 'frontmatter',
+              agentAction: 'FIX_FILE',
+              state: 'unreadable',
+              rule: {
+                ruleId: 'every-markdown-file',
+                intent: 'Governs every markdown file the walker enumerates',
+              },
+            },
+          ],
         },
         code: 0,
       };
@@ -814,8 +825,10 @@ describe('mh --assess', () => {
       const first = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG);
       const echoed = (JSON.parse(first.stdout) as { now: string }).now;
       const again = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', echoed);
-      const firstAnswer = (JSON.parse(first.stdout) as { result: { agentAction: string } }).result.agentAction;
-      const replayed = (JSON.parse(again.stdout) as { result: { agentAction: string } }).result.agentAction;
+      const firstAnswer = (JSON.parse(first.stdout) as { result: { modules: { agentAction: string }[] } }).result
+        .modules[0].agentAction;
+      const replayed = (JSON.parse(again.stdout) as { result: { modules: { agentAction: string }[] } }).result
+        .modules[0].agentAction;
       // ASSERT
       expect(echoed).toMatch(instantShape);
       expect(replayed).toBe(firstAnswer);
@@ -850,6 +863,27 @@ describe('mh --assess', () => {
   });
 
   describe('edge cases', () => {
+    it('claims ungoverned only after every Module passes the path by', () => {
+      // The frontmatter Module returns no answer for this Conformance case.
+      // `ungoverned` appears only in the composed command response, where the
+      // declared Module set is visible.
+      // ARRANGE
+      const expected = { agentAction: 'PROCEED', state: 'ungoverned' };
+      // ACT
+      const run = mhIn(
+        CORPUS_ROOT,
+        '--assess',
+        'docs/research/vendor/upstream.md',
+        '--config',
+        LOCAL_CONFIG,
+        '--now',
+        PINNED,
+      );
+      const actual = JSON.parse(run.stdout).result;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses a root beside an assessment, which answers about one path', () => {
       // ARRANGE
       const empty = '';

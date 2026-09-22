@@ -126,14 +126,17 @@ function installedEntry(root) {
  * block reached the winning rule, and the finding is real either way — so the
  * evidence line carries the judgement when the sentence cannot.
  */
-function reviewNotice(answer) {
-  const { path, now, result } = answer;
-  const wentStale = result.evidence?.value ?? 'an instant it did not report';
-  const lines = [`markdown-harness: ${path} is past its stale_after.`];
+function reviewNotice(answer, assessment) {
+  const { path, now } = answer;
+  const wentStale = assessment.evidence?.value ?? 'an instant it did not report';
+  const lines = [`markdown-harness: ${path} is past its stale_after under Module "${assessment.module}".`];
 
-  if (typeof result.instruction === 'string') lines.push('', result.instruction);
+  if (typeof assessment.instruction === 'string') lines.push('', assessment.instruction);
 
-  lines.push('', `stale_after ${wentStale}, assessed at ${now}. Rule "${result.rule.ruleId}": ${result.rule.intent}`);
+  lines.push(
+    '',
+    `stale_after ${wentStale}, assessed at ${now}. Rule "${assessment.rule.ruleId}": ${assessment.rule.intent}`,
+  );
   return lines.join('\n');
 }
 
@@ -206,11 +209,21 @@ function main() {
 
   if (answer?.result?.error !== undefined) return { root, file: asked, result: CONFIG_REJECTED };
 
-  const state = answer?.result?.state;
-  if (typeof state !== 'string') return { root, file: asked, result: NO_ANSWER };
+  const wholeConfigState = answer?.result?.state;
+  if (wholeConfigState === 'ungoverned') return { root, file: asked, result: wholeConfigState };
 
-  const notice = answer.result.agentAction === SPEAKS_ON ? reviewNotice(answer) : undefined;
-  return { root, file: asked, result: state, notice };
+  const modules = answer?.result?.modules;
+  if (!Array.isArray(modules) || modules.length === 0 || modules.some(({ state }) => typeof state !== 'string')) {
+    return { root, file: asked, result: NO_ANSWER };
+  }
+
+  const notices = modules
+    .filter(({ agentAction }) => agentAction === SPEAKS_ON)
+    .map((assessment) => reviewNotice(answer, assessment));
+  const notice = notices.length === 0 ? undefined : notices.join('\n\n');
+  const result =
+    modules.length === 1 ? modules[0].state : modules.map(({ module, state }) => `${module}:${state}`).join('|');
+  return { root, file: asked, result, notice };
 }
 
 let outcome;

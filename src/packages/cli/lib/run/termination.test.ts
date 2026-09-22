@@ -16,7 +16,7 @@ const EMPTY_QUERY_RESULT: QueryResult = {
 };
 
 const EMPTY_AUDIT_RESULT: AuditResult = {
-  rules: [],
+  modules: [],
 };
 
 const CLEAN_CHECK_RESULT: CheckResult = {

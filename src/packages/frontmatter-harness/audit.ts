@@ -10,7 +10,7 @@
 // than only the winner — a subset would have thrown that away upstream.
 
 import { normalisePath } from '../foundation/path-shape.ts';
-import type { AuditResult } from '../response-contract/index.ts';
+import type { ModuleAudit } from '../response-contract/index.ts';
 import { tallyRules } from './lib/audit/rule-tally.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
 
@@ -25,7 +25,7 @@ import type { FrontmatterConfig } from './section.ts';
  * @param files The corpus, as root-relative paths in walker order.
  * @param section This Module's validated section, or `undefined` when its key was not written — a Module governing nothing tallies nothing.
  */
-export function auditRules(files: readonly string[], section: FrontmatterConfig | undefined): AuditResult {
+export function auditRules(files: readonly string[], section: FrontmatterConfig | undefined): ModuleAudit {
   const normalised = files.map(normalisePath);
   return { rules: tallyRules(normalised, section?.rules ?? []) };
 }

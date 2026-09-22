@@ -8,10 +8,22 @@
  * which is why none of it rides in `--check`, whose reader can act on none of it.
  */
 
-/** Every rule's fate across one corpus. */
+/** Every Module's rule tallies across one corpus. */
 export interface AuditResult {
-  /** One row per rule, in config order — including rules that governed nothing. */
+  /** One block per declared Module, in declared Module order. */
+  modules: readonly ModuleAuditResult[];
+}
+
+/** What one Module answers before composition names it. */
+export interface ModuleAudit {
+  /** One row per rule, in section order — including rules that governed nothing. */
   rules: readonly RuleAudit[];
+}
+
+/** One Module's rule tallies, named by the top-level config key the Operator typed. */
+export interface ModuleAuditResult extends ModuleAudit {
+  /** Present even when the Module declares no rules, so its empty audit remains attributable. */
+  module: string;
 }
 
 /** How one rule fared. */
