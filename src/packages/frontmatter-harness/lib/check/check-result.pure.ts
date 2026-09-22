@@ -1,5 +1,5 @@
 /**
- * One Module's answer about one corpus: the extent it governed, and what it
+ * One Module's answer about one corpus: the governed list, and what it
  * found there.
  *
  * NOT the response. The three counts used to be computed here and are not any
@@ -26,9 +26,9 @@ function countIn(finding: ModuleFinding): number {
 /**
  * Judge every governed file that has been read.
  *
- * The governed extent is the INPUT's paths rather than a separate tally: every
+ * The governed list is the INPUT's paths rather than a separate tally: every
  * governed file was read, and only the ones with findings survive into `files`.
- * That is what makes the extent the fact not recoverable from the findings.
+ * That is what makes the governed list the fact not recoverable from the findings.
  *
  * @param sources Every governed file with its bytes, in walker order.
  */

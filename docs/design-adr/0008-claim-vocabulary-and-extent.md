@@ -26,9 +26,13 @@ status: superseded
 > port carries one member, and the reason the surviving guard is
 > `foundation/lib/config/module-sections.pure.ts` plus `foundation/tests/load-config.test.ts`.
 >
-> Where the cut work is preserved: this file, in full, plus the prototype it was measured in at
-> `.worktrees/test-implement-one-shot`. A Module ships its own section type and its own codes today;
-> whoever revives a cross-Module comparison starts from the measurements here, not from a blank page.
+> Where the cut work is preserved: this file, in full, plus commit
+> `1359efd089fa07932a7888813913a000990c9024` on the remote branch `test-implement-one-shot`
+> (https://github.com/hancrafted/markdown-harness/commit/1359efd089fa07932a7888813913a000990c9024).
+> Claim, stance, and extent in this record are the superseded projection, not the glossary. No new
+> name is coined; the name is chosen when the projection returns. A Module ships its own section
+> type and its own codes today; whoever revives a cross-Module comparison starts from the
+> measurements here, not from a blank page.
 
 Core has to decide whether two Modules' declarations contradict each other without either Module
 knowing the other exists, so a Module projects its validated section into `readonly Claim[]` — a

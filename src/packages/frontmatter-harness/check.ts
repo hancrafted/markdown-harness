@@ -48,7 +48,7 @@ function readGovernedSources(root: string, governed: ReturnType<typeof governedF
  * reaches for its own key inside one.
  *
  * Answers with THIS MODULE'S HALF of the report rather than the report: the
- * extent it governed and the findings it made, with nothing naming the Module
+ * governed list and the findings it made, with nothing naming the Module
  * and no counts over the corpus. Both belong to the composing Package, which is
  * the only one that can see every Module — and `governedFiles` is a union
  * across them rather than any one Module's tally.

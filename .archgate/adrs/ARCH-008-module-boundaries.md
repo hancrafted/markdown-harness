@@ -47,6 +47,8 @@ A Module is a bounded context, conformist to the Core (Evans): it declares what 
 1. A comparison both of whose extents are written in the config MUST run once, at load, in Core.
 2. A comparison either of whose extents is derived from a file's content MUST NOT run in Core: it is one Module's finding about one file, reported as a violation on that file under that Module's own codes.
 
+The words claim and extent in Decision 5 and the consequence saying Core compares claims are the superseded projection in design-ADR 0008, not the glossary's claim. That comparison is a target, not a check the code holds. This does not retract Decision 5.
+
 ## Do's and Don'ts
 
 ### Do's
@@ -71,7 +73,7 @@ A Module is a bounded context, conformist to the Core (Evans): it declares what 
 
 **Positive:**
 
-1. **A Module is addable without editing Core.** Core compares claims and never parses a section, so a fourth Module costs its own Package plus one list entry.
+1. **A Module is addable without editing Core.** Core compares claims and never parses a section, so a fourth Module costs its own Package plus one list entry. The words claim and extent in that comparison are the superseded projection in design-ADR 0008, not the glossary's claim. That comparison is a target, not a check the code holds.
 2. **The check stays hermetic.** Decision 5 keeps every config comparison a function of config text.
 
 **Negative:**

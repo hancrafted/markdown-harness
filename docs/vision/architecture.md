@@ -213,11 +213,11 @@ records what closed them and what was rejected on the way.
 
 **The shape of the second Module** is struck on the same terms, and for the same reason: what a
 Module _is_ — one top-level config key, one `ModuleDescriptor` on a declared Module set, its own
-section type in its own Package, claims projected into a vocabulary the Core owns, and a Conformance
-tier of its own — is now decided.
-[`ARCH-008-module-boundaries`](../../.archgate/adrs/ARCH-008-module-boundaries.md),
-[`0008-claim-vocabulary-and-extent.md`](../design-adr/0008-claim-vocabulary-and-extent.md) and
+section type in its own Package, and a Conformance tier of its own — is now decided.
+[`ARCH-008-module-boundaries`](../../.archgate/adrs/ARCH-008-module-boundaries.md) and
 [`0009-retiring-the-whole-config-type.md`](../design-adr/0009-retiring-the-whole-config-type.md)
-record what closed it. What stays open is narrower than the old sentence and belongs to whichever
-Module ships second: its own config vocabulary and what it asserts about a file — not its shape, and
-not whether reviewability is the aim.
+record what closed it. The projection into a vocabulary the Core owns was cut;
+[`0008-claim-vocabulary-and-extent.md`](../design-adr/0008-claim-vocabulary-and-extent.md) holds it
+as superseded. What stays open is narrower than the old sentence and belongs to whichever Module
+ships second: its own config vocabulary and what it asserts about a file — not its shape, and not
+whether reviewability is the aim.
