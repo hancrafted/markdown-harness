@@ -23,9 +23,9 @@ A Module is a bounded context, conformist to the Core (Evans): it declares what 
 
 1. A Module Package MUST NOT import another Module Package, at any depth, through any entry point.
 2. `foundation` MUST NOT import a Module Package.
-3. Any Package MAY import `config-contract`, type-only. A Module imports that claim vocabulary and no other Module's entry point.
+3. Any Package MAY import `config-contract`, type-only. A Module imports that shared vocabulary and no other Module's entry point.
 4. A Module's config section type MUST live in that Module's Package; no Package outside it may name that type.
-5. `claimsFor` MUST be handed its own Module's validated section and nothing else, so no Module can project an extent derived from a document's content.
+5. `validateSection` MUST be handed only the value written under its own Module's key (`src/packages/foundation/lib/config/module-sections.pure.ts` lines 39-44), and `LoadedConfig.sectionFor` MUST return only the validated section stored under that descriptor's identity (lines 60-68), so no Module can project an extent derived from a document's content.
 
 ### 2. The platform gate
 
@@ -62,7 +62,7 @@ A Module is a bounded context, conformist to the Core (Evans): it declares what 
 
 1. **DON'T** import another Module Package, or name another Module's section type. (Decision 1)
 2. **DON'T** let `foundation` import a Module. (Decision 1)
-3. **DON'T** hand `claimsFor` anything but its own Module's validated section. (Decision 1)
+3. **DON'T** hand `validateSection` anything but its own Module's raw section, or return a section through `LoadedConfig.sectionFor` under another descriptor's identity. (Decision 1)
 4. **DON'T** import a platform builtin outside `foundation`, type-only imports included. (Decision 2)
 5. **DON'T** hardcode the recognised top-level keys, or compose a Module outside `cli`. (Decisions 3, 4)
 6. **DON'T** raise a config fault for a comparison whose extent came from a document. (Decision 5)
@@ -87,7 +87,7 @@ A Module is a bounded context, conformist to the Core (Evans): it declares what 
 
 **Enforcer per Discipline.** `dependency-cruiser` holds Decisions 1 and 2 at `error`. `modules-never-import-modules` holds §1.1 from an explicit Module list, not a naming convention; `only-the-gate-imports-a-builtin` holds §2.1 and `gate-builtins-sit-in-platform` holds §2.2, both written `to: { dependencyTypes: ['core'] }` — dependency-cruiser's word for a Node builtin, never this repo's Core. Test files are carved out of both because `ARCH-003-testing` Decision 1.2 forbids `vi.mock`, so a suite proving a symlink case must plant one; the carve-out matches that record's two homes and no wider. A type-only import is caught only while `tsPreCompilationDeps: true` (trap 5), so read the dependency count, never the checkmark, and canary by **rule name** — `pure-imports-no-builtin` already forbids the same edge out of a `.pure.ts` file.
 
-**Review duty, not mechanical.** Decisions 3, 4 and 5, and the globals hole: `globalThis.process`, a laundered `require` and a computed specifier are invisible to `dependencyTypes`. Decision 1.5 rests on `claimsFor`'s signature plus one call site — the type system was measured unable to catch a cross-wired section — so the guard is that call site and two loader unit tests. A `module-descriptor-is-pure` rule, barring the file that declares a `ModuleDescriptor` from reaching an `.impure.ts`, is measured firing and owed to Phase 1.
+**Review duty, not mechanical.** Decisions 3, 4 and 5, and the globals hole: `globalThis.process`, a laundered `require` and a computed specifier are invisible to `dependencyTypes`. Decision 1.5 rests on `src/packages/foundation/lib/config/module-sections.pure.ts` (lines 39-44 writing the section map and lines 60-68 reading it) and its colocated suite `module-sections.test.ts` — the type system was measured unable to catch a cross-wired section, so the guard is those call sites plus the suite proving two descriptors cannot receive or read each other's section. The `module-descriptor-is-pure` rule, barring the file that declares a `ModuleDescriptor` from reaching an `.impure.ts`, is a target owed to a later phase rather than a guard held today (measured firing).
 
 **Exceptions:** raise a separate ADR; human approval required.
 
