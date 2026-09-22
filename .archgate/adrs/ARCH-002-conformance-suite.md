@@ -6,18 +6,18 @@ domain: architecture
 rules: true
 files: ['fixtures/conformance/**']
 paths: ['fixtures/conformance/**']
-description: 'The corpus half of the Conformance suite under fixtures/conformance/: corpus tiers and what each holds, the coverage half versus the permanent specification half, the expect and assess markers each Conformance case carries, and the review duties that keep the corpus honest.'
+description: 'The corpus half of the Conformance suite under fixtures/conformance/: corpus tiers and what each holds, vocabulary coverage and closure, the expect and assess markers each Conformance case carries, and deliberately defective bytes.'
 ---
 
 # Conformance Suite
 
 ## Context
 
-A corpus tier's documents both exercise the full configuration vocabulary and act as a permanent specification: the contract for what `markdown-harness` must report on real-shaped files. An expected outcome carried only by a reasoning paragraph's leading word is indistinguishable in a diff from a wording fix, so the contract can change under a review that reads an edit. One Module's cases, a refused config, and a corpus two Modules govern at once are three subjects rather than one: hence tiers. Machine-readable markers and review duties keep the promises explicit and diffable.
+A corpus tier's documents exercise the full configuration vocabulary and carry the outcomes governed as permanent specification by [ARCH-010](./ARCH-010-conformance-specification.md). An expected outcome carried only by a reasoning paragraph's leading word is indistinguishable in a diff from a wording fix, so markers make those outcomes explicit and diffable. One Module's cases, a refused config, and a corpus two Modules govern at once are three subjects rather than one: hence tiers.
 
 A **fixture** pins nothing; a **corpus** is an adopter's tree. A **corpus tier** is one directory rooted as a synthetic repo root — one config plus the cases it governs, one config per tier, so every location is tier-relative and a tier moves whole.
 
-This record governs the **corpus** — the bytes under `fixtures/conformance/`. The runners that read them live under `src/packages/conformance/` and are governed by [ARCH-009](./ARCH-009-conformance-runners.md): one record split by the glob each needs, per [design-ADR 0002](../../docs/design-adr/0002-archgate-records-disciplines-scoped-by-glob.md), never by topic.
+This record governs the **corpus shape** — the bytes under `fixtures/conformance/`. [ARCH-009](./ARCH-009-conformance-runners.md) governs the runners; ARCH-010 governs the specification those two sides form together. The first split follows the glob each Discipline needs; the second follows the cross-artifact contract a reviewer changes as one unit.
 
 ## Decision
 
@@ -26,7 +26,7 @@ This record governs the **corpus** — the bytes under `fixtures/conformance/`. 
 1. The **Conformance suite** is every **corpus tier** under `fixtures/conformance/` plus the runners in `src/packages/conformance/`. This record's scope MUST stay `fixtures/conformance/**`, never `fixtures/**`.
 2. A **Module tier** holds **Conformance case** documents under `docs/`. A **rejected-config case** is one directory under `fixtures/conformance/rejected-config/`: a config the loader MUST refuse plus one `expected-rejection.json` freezing it. That tier MUST hold no markdown.
 3. `fixtures/llm-wiki/` MUST NOT be folded into this record's globs.
-4. The **coverage half** — every key of every **vocabulary tier** (rule, constraint, `allowed` entry, named format) reached — MUST grow with the vocabulary. The **specification half** — each tier's config plus its cases' stated outcomes — is permanent.
+4. Every key of every **vocabulary tier** (rule, constraint, `allowed` entry, named format) MUST be reached, and coverage MUST grow with the vocabulary.
 
 ### 2. The expect marker (📜 Rule: `expect-marker`)
 
@@ -34,10 +34,9 @@ This record governs the **corpus** — the bytes under `fixtures/conformance/`. 
 2. The marker MUST be an HTML comment, never a frontmatter key and never the body's leading word.
 3. The case glob MUST reach tier depth; matching zero files MUST itself be a violation.
 
-### 3. Two duties over the corpus
+### 3. Vocabulary closure
 
-1. Changing a case's stated outcome, or removing a case, is a contract change, never a test fix; moving one is neither if the bytes hold.
-2. Every vocabulary tier MUST also be **closed**: no key outside the vocabulary may appear.
+1. Every vocabulary tier MUST be **closed**: no key outside the vocabulary may appear.
 
 ### 4. The assess marker (📜 Rule: `assess-marker`)
 
@@ -59,9 +58,8 @@ This record governs the **corpus** — the bytes under `fixtures/conformance/`. 
 5. **DO** give a rejected-config case one refused config and one `expected-rejection.json`. (Decision 1.2)
 6. **DO** add a case and extend its tier's config in the same change. (Decision 1.4)
 7. **DO** write an `assess:` action as REVIEW, PROCEED or FIX_FILE. (Decision 4, 📜 Rule: `assess-marker`)
-8. **DO** treat a changed stated outcome as a contract change. (Decision 3.1)
-9. **DO** close every vocabulary tier as well as cover it. (Decision 3.2)
-10. **DO** move a `.prettierignore` entry in the change that moves the tree it names. (Decision 5.1)
+8. **DO** close every vocabulary tier as well as cover it. (Decision 3.1)
+9. **DO** move a `.prettierignore` entry in the change that moves the tree it names. (Decision 5.1)
 
 ### Don'ts
 
@@ -69,12 +67,11 @@ This record governs the **corpus** — the bytes under `fixtures/conformance/`. 
 2. **DON'T** record an expected outcome as a frontmatter key or the leading word of the prose. (Decision 2.2)
 3. **DON'T** leave a case with zero markers, or more than one. (Decision 2, 📜 Rule: `expect-marker`)
 4. **DON'T** write a verdict outside PASSES, FAILS, UNGOVERNED. (Decision 2.1)
-5. **DON'T** reword a stated outcome, or delete a case, without review sign-off. (Decision 3.1)
-6. **DON'T** leave the case glob pointed where the corpus no longer is. (Decision 2.3)
-7. **DON'T** enumerate only some vocabulary tiers when extending coverage. (Decision 3.2)
-8. **DON'T** file markdown into the rejected-config tier. (Decision 1.2)
-9. **DON'T** write a second `assess:` marker, or put the instant in the config under test. (Decision 4)
-10. **DON'T** let `prettier --write` reach deliberately malformed corpus bytes. (Decision 5.1)
+5. **DON'T** leave the case glob pointed where the corpus no longer is. (Decision 2.3)
+6. **DON'T** enumerate only some vocabulary tiers when extending coverage. (Decision 3.1)
+7. **DON'T** file markdown into the rejected-config tier. (Decision 1.2)
+8. **DON'T** write a second `assess:` marker, or put the instant in the config under test. (Decision 4)
+9. **DON'T** let `prettier --write` reach deliberately malformed corpus bytes. (Decision 5.1)
 
 ## Consequences
 
@@ -104,11 +101,11 @@ This record governs the **corpus** — the bytes under `fixtures/conformance/`. 
 
 **§2.3's guard, and why only one rule carries it.** Both rules loop the same glob, so one guard proves its reach for both. The loop itself cannot fail — had the corpus moved and the glob stayed, every case would have gone ungoverned under a green run. **The sibling `.rules.test.ts` proves what a rule DECIDES and never what it REACHES**: its context is hand-built, so a glob aimed at a vanished directory passes every test in it. Reach is provable only against the real tree.
 
-**§1.4's halves are enforced from the runner side**, by the coverage, closure and enrolment assertions governed by [ARCH-009](./ARCH-009-conformance-runners.md). Coverage proves the SUITE complete; closure proves the CONFIG complete, which is why §3.2 demands both. §3.1 is a review duty: no rule can tell a corrected verdict from an uncorrected one, or a retired case from an accidentally deleted one.
+**§1.4 and §3.1 are enforced from the runner side**, by the coverage, closure and enrolment assertions governed by [ARCH-009](./ARCH-009-conformance-runners.md). Coverage proves the SUITE complete; closure proves the CONFIG complete, which is why neither may stand alone.
 
 **§5's entries** live in `.prettierignore`. The rejected-config tier earns one because some of its configs are refused precisely for not being YAML, and formatting one repairs the fault the case exists to state. A stale entry fails nothing — it matches no files and the malformed bytes are reformatted under a green run — so the entry moves in the change that moves the tree.
 
-**Manual review duties** (never linted): a changed verdict actually matches its reasoning paragraph (§2.1 pairs presence, never meaning); an expected-outcome change or a removed case carries review sign-off (§3.1); these globs never also cover `fixtures/llm-wiki/` (§1.3).
+**Manual review duties** (never linted): a marker matches its reasoning paragraph (§2.1 pairs presence, never meaning); these globs never also cover `fixtures/llm-wiki/` (§1.3). ARCH-010 governs review of changed or removed expectations.
 
 **Two named gaps, both measured, neither papered over.**
 
@@ -120,6 +117,7 @@ This record governs the **corpus** — the bytes under `fixtures/conformance/`. 
 ## References
 
 - [Conformance Runners](./ARCH-009-conformance-runners.md) — the `src/packages/conformance/**` half of this record.
+- [Conformance Specification](./ARCH-010-conformance-specification.md) — the permanent contract formed by corpus bytes and the runners that read them.
 - [Module Boundaries](./ARCH-008-module-boundaries.md) — why a suite checking more than one tier belongs to no Module.
 - [design-ADR 0002](../../docs/design-adr/0002-archgate-records-disciplines-scoped-by-glob.md) — Disciplines are grouped by glob, which is why this record split.
 - [archgate](https://archgate.dev/) — the `files:`/`paths:` scoping keys and the deterministic rule model this Discipline runs under.
