@@ -6,20 +6,20 @@
 // back in, which four independent implementations got three different ways.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { violationsForFile } from './file-verdict.pure';
 
 const PLAIN: FrontmatterRule = {
   ruleId: 'plain',
   intent: 'Everything under plain/ still has to say what it is',
-  path: ['docs/plain/**/*.md'],
+  folders: ['docs/plain/'],
   fields: { type: { presence: 'required' } },
 };
 
 const INDEX: FrontmatterRule = {
   ruleId: 'index-files',
   intent: 'An index enumerates a directory, and carries no frontmatter',
-  fileName: 'index.md',
+  fileNames: ['index.md'],
   frontmatter: 'forbidden',
 };
 
@@ -142,7 +142,7 @@ describe('one file verdict', () => {
       const rule: FrontmatterRule = {
         ruleId: 'everything',
         intent: 'A rule that breaks in all three tiers at once',
-        path: ['docs/**/*.md'],
+        folders: ['docs/'],
         unknownKeys: 'forbidden',
         allOf: ['title', 'description'],
         fields: { type: { presence: 'required' }, slug: { pattern: '^[a-z]+$', intent: 'lowercase' } },
@@ -162,7 +162,7 @@ describe('one file verdict', () => {
       const rule: FrontmatterRule = {
         ruleId: 'datasets',
         intent: 'A dataset card says who fetched it, when, and where it came from',
-        path: ['docs/datasets/**/*.md'],
+        folders: ['docs/datasets/'],
         fields: {
           'retrieved.by': { presence: 'required', format: 'actor' },
           'retrieved.at': { presence: 'required', format: 'datetime' },

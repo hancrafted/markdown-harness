@@ -1,35 +1,38 @@
 /**
- * One corpus's verdict, and the arithmetic over it.
+ * One Module's answer about one corpus: the governed list, and what it
+ * found there.
  *
- * The three counts are computed AT THE POINT OF RETURN, from the same array the
- * response carries, so they cannot disagree with it. They are stored rather
- * than left to the consumer because the consumer is an agent, and asking a
- * language model to sum an array to find out whether anything is wrong is
- * asking the one thing it is least reliable at.
+ * NOT the response. The three counts used to be computed here and are not any
+ * more: `governedFiles` is a union across Modules, and a Module that cannot see
+ * the others cannot take it — two Modules' own tallies added together would
+ * report one file twice. The arithmetic moved to `cli`, which is the only
+ * Package that sees every Module (ARCH-008 §4.1), and what this file hands back
+ * is the two facts it is taken over.
  *
- * There is deliberately no `invisible` count. A field holding one would be the
- * report noticing files it promised never to notice.
+ * Nothing here names this Module. The key that reaches the report is read from
+ * the descriptor at composition, so a report cannot go on saying `frontmatter`
+ * after the Operator renamed nothing and a second Module arrived.
  */
 
-import type { CheckResult, FileViolations } from '../../../response-contract/index.ts';
+import type { ModuleCheck, ModuleFinding } from '../../../response-contract/index.ts';
 import type { GovernedSource } from './check.types.ts';
 import { violationsForFile } from './file-verdict.pure.ts';
 
 /** How many findings one file contributed. */
-function countIn(file: FileViolations): number {
-  return file.violations.length;
+function countIn(finding: ModuleFinding): number {
+  return finding.violations.length;
 }
 
 /**
  * Judge every governed file that has been read.
  *
- * `governedFiles` is the length of the input rather than a separate tally: every
- * governed file is read, and only the ones with findings survive into `files`.
- * That makes it the one count not recoverable from `files` alone.
+ * The governed list is the INPUT's paths rather than a separate tally: every
+ * governed file was read, and only the ones with findings survive into `files`.
+ * That is what makes the governed list the fact not recoverable from the findings.
  *
  * @param sources Every governed file with its bytes, in walker order.
  */
-export function checkResultFor(sources: readonly GovernedSource[]): CheckResult {
+export function moduleCheckFor(sources: readonly GovernedSource[]): ModuleCheck {
   const files = sources
     .map((source) => ({
       path: source.path,
@@ -37,14 +40,7 @@ export function checkResultFor(sources: readonly GovernedSource[]): CheckResult 
       ruleIntent: source.rule.intent,
       violations: violationsForFile(source.text, source.rule),
     }))
-    .filter((file) => countIn(file) > 0);
+    .filter((finding) => countIn(finding) > 0);
 
-  return {
-    summary: {
-      governedFiles: sources.length,
-      invalidFiles: files.length,
-      totalViolations: files.reduce((total, file) => total + countIn(file), 0),
-    },
-    files,
-  };
+  return { governed: sources.map((source) => source.path), files };
 }

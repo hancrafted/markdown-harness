@@ -1,0 +1,16 @@
+The config path is a DIRECTORY in this case, and that is the whole case.
+
+`markdown-harness.config.yaml` one level up is a folder rather than a file, so
+the single `readFileSync` the loader performs fails with something other than
+ENOENT and earns CONFIG_UNREADABLE rather than CONFIG_NOT_FOUND. Absence is one
+thing and everything else is unreadable, and that line is a decision this
+repository draws rather than something the filesystem hands back.
+
+This file exists only because git stores no empty directory. Its bytes are never
+read: the loader opens the directory above it and never descends.
+
+Reachable from committed bytes alone — no permission change, no platform state,
+no setup step — which is what lets the suite run anywhere and travel to a
+reimplementation intact. A permissions-based unreadable case would not: chmod
+does not survive a clone on every platform, and CI runners routinely run as a
+user the mode bits do not stop.

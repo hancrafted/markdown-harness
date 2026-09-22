@@ -10,13 +10,14 @@
  * each earlier state makes the later question unanswerable rather than false.
  */
 
-import type { AssessEvidence, AssessResult, WinningRule } from '../../../response-contract/index.ts';
-import type { AssessedFile, Freshness } from './assess.types.ts';
+import type { FileRead } from '../../../foundation/read-text.ts';
+import type { AssessEvidence, ModuleAssess, PromptSource, WinningRule } from '../../../response-contract/index.ts';
+import type { Freshness } from './assess.types.ts';
 
 /** The Operator's sentence and its provenance, when one applied. */
 interface Prompt {
   prompt: string;
-  source: 'rule' | 'module';
+  source: PromptSource;
 }
 
 /** Everything the four earlier stages found, gathered so this file only ranks it. */
@@ -24,7 +25,7 @@ interface Findings {
   /** The rule that won under first-match, reduced to what the response carries. */
   rule: WinningRule;
   /** What the filesystem found at the path. */
-  file: AssessedFile;
+  file: FileRead;
   /** The judgement, if the bytes were read and could answer. */
   freshness: Freshness | undefined;
   /** The effective `assess.stale` prompt, if the config carried one. */
@@ -32,7 +33,7 @@ interface Findings {
 }
 
 /** The one branch that carries prose, split out so the ranking above stays a list of returns. */
-function staleResult(rule: WinningRule, evidence: AssessEvidence, prompt: Prompt | undefined): AssessResult {
+function staleResult(rule: WinningRule, evidence: AssessEvidence, prompt: Prompt | undefined): ModuleAssess {
   // The judgement travels whether or not the Operator wrote a sentence for it.
   // Inventing one here would make this the only place the tool speaks prose of
   // its own about a corpus.
@@ -57,8 +58,9 @@ function staleResult(rule: WinningRule, evidence: AssessEvidence, prompt: Prompt
  *
  * @param found Everything the earlier stages established about the file.
  */
-export function assessResultFor({ rule, file, freshness, prompt }: Findings): AssessResult {
+export function assessResultFor({ rule, file, freshness, prompt }: Findings): ModuleAssess {
   if (file.kind === 'absent') return { agentAction: 'PROCEED', state: 'absent', rule };
+  if (file.kind === 'unreadable') return { agentAction: 'FIX_FILE', state: 'unreadable', rule };
   if (freshness === undefined || freshness.state === 'unassessable') {
     return { agentAction: 'FIX_FILE', state: 'unassessable', rule };
   }

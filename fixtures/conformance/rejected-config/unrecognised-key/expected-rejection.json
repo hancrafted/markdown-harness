@@ -1,0 +1,4 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [{ "code": "CONFIG_UNRECOGNISED_KEY", "location": "not-a-module" }]
+}

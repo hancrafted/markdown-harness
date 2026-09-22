@@ -1,0 +1,12 @@
+# A constraint stating nothing.
+#
+# The field is named and then nothing is asked of it. That reads as governance
+# in a diff and is not, which is the one shape a permissive default cannot be
+# told apart from once the config is loaded.
+frontmatter:
+  rules:
+    - ruleId: every-document
+      folders: ['docs/']
+      intent: A sound rule, so the only fault reported is the empty constraint below.
+      fields:
+        title: {}

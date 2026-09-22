@@ -13,8 +13,8 @@
  * behaviour today. That is exactly why the decision was cheap to make now.
  */
 
-import type { AssessConditions, FrontmatterRule } from '../../../config-contract/index.ts';
 import type { PromptSource } from '../../../response-contract/index.ts';
+import type { AssessConditions, FrontmatterRule } from '../../section.ts';
 
 /** The Operator's sentence, and which of the two blocks it came from. */
 interface EffectivePrompt {
@@ -37,7 +37,7 @@ function blockFor(
   moduleAssess: AssessConditions | undefined,
 ): { block: AssessConditions | undefined; source: PromptSource } {
   if ('assess' in rule && rule.assess !== undefined) return { block: rule.assess, source: 'rule' };
-  return { block: moduleAssess, source: 'module' };
+  return { block: moduleAssess, source: 'module-wide' };
 }
 
 /**

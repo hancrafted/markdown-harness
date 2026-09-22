@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { sectionFaults } from './section-faults.pure';
 
 const RULES_AT = 'frontmatter.rules';
-const one = { ruleId: 'a', intent: 'first', path: ['docs/a.md'] };
-const two = { ruleId: 'b', intent: 'second', path: ['docs/b.md'] };
+const one = { ruleId: 'a', intent: 'first', folders: ['docs/'], fileNames: ['a.md'] };
+const two = { ruleId: 'b', intent: 'second', folders: ['docs/'], fileNames: ['b.md'] };
 
 describe('sectionFaults', () => {
   describe('success cases', () => {
@@ -23,10 +23,16 @@ describe('sectionFaults', () => {
   });
 
   describe('failure cases', () => {
-    it('rejects an absent section as an empty rule list', () => {
-      // Naming a module and governing nothing is a mistake, not a no-op.
+    it('rejects a value that is not a mapping at all', () => {
+      // `undefined` no longer has a branch of its own. It used to answer
+      // CONFIG_EMPTY_RULE_LIST on the reasoning that an absent section and an
+      // empty list are one mistake — sound while one Module existed, and unsound
+      // the moment a second does, because each would then answer for the other's
+      // config. The loader owns the absent case now, as CONFIG_NO_MODULE_SECTION
+      // against the file, and never calls here for a key that was not written.
+      // What is left is the ordinary "written, and not a section" answer.
       // ARRANGE
-      const expected = [{ code: 'CONFIG_EMPTY_RULE_LIST', location: RULES_AT }];
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: 'frontmatter' }];
       // ACT
       const actual = sectionFaults(undefined);
       // ASSERT
@@ -45,7 +51,7 @@ describe('sectionFaults', () => {
 
     it('points a duplicate ruleId at the later occurrence', () => {
       // ARRANGE
-      const twin = { ruleId: 'a', intent: 'second claim', path: ['docs/b.md'] };
+      const twin = { ruleId: 'a', intent: 'second claim', folders: ['docs/'], fileNames: ['b.md'] };
       const section = { rules: [one, twin] };
       const expected = [{ code: 'CONFIG_DUPLICATE_RULE_ID', location: `${RULES_AT}[1].ruleId` }];
       // ACT
@@ -78,7 +84,7 @@ describe('sectionFaults', () => {
 
     it('addresses each rule by its own index', () => {
       // ARRANGE
-      const nameless = { intent: 'i', path: ['docs/c.md'] };
+      const nameless = { intent: 'i', folders: ['docs/'], fileNames: ['c.md'] };
       const section = { rules: [one, two, nameless] };
       const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${RULES_AT}[2].ruleId` }];
       // ACT
@@ -89,8 +95,8 @@ describe('sectionFaults', () => {
 
     it('reports every later twin when an id is claimed three times', () => {
       // ARRANGE
-      const second = { ruleId: 'a', intent: 'second', path: ['docs/b.md'] };
-      const third = { ruleId: 'a', intent: 'third', path: ['docs/c.md'] };
+      const second = { ruleId: 'a', intent: 'second', folders: ['docs/'], fileNames: ['b.md'] };
+      const third = { ruleId: 'a', intent: 'third', folders: ['docs/'], fileNames: ['c.md'] };
       const expected = [`${RULES_AT}[1].ruleId`, `${RULES_AT}[2].ruleId`];
       // ACT
       const actual = sectionFaults({ rules: [one, second, third] });

@@ -14,8 +14,8 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-const CONFIG = 'fixtures/conformance/valid-test-config.yaml';
-const CORPUS_ROOT = 'fixtures/conformance';
+const CONFIG = 'fixtures/conformance/frontmatter/valid-test-config.yaml';
+const CORPUS_ROOT = 'fixtures/conformance/frontmatter';
 const USAGE_LEAD = 'usage: mh';
 const REJECTED = 'CONFIG_REJECTED';
 const GOVERNED = 'governed';
@@ -68,7 +68,7 @@ let plantedConfig = '';
 /**
  * A corpus with nothing wrong with it, so exit 0 can be proven.
  *
- * `fixtures/conformance/` is built to fail, and a `--check` that always exited
+ * The `frontmatter` tier is built to fail, and a `--check` that always exited
  * 1 would satisfy every other assertion in this file.
  */
 let conforming = '';
@@ -101,6 +101,11 @@ let sealed = '';
  * to be made rather than assumed.
  */
 let configless = '';
+
+/** Temporary corpus and configs for #175 two-sided exclusion canary test. */
+let canaryRoot = '';
+let misspelledCanaryConfig = '';
+let correctedCanaryConfig = '';
 
 /** Where the one-line Node-version stand-ins are written. See `mhOnNode`. */
 let shimmed = '';
@@ -151,7 +156,7 @@ beforeAll(() => {
       'frontmatter:',
       '  rules:',
       '    - ruleId: every-markdown-file',
-      "      path: ['**/*.md']",
+      "      folders: ['./']",
       '      intent: Every markdown file says what it is',
       '      fields:',
       '        type:',
@@ -175,7 +180,7 @@ beforeAll(() => {
       'frontmatter:',
       '  rules:',
       '    - ruleId: every-markdown-file',
-      "      path: ['**/*.md']",
+      "      folders: ['./']",
       '      intent: Governs every markdown file the walker enumerates',
       '      fields:',
       '        type:',
@@ -191,7 +196,7 @@ beforeAll(() => {
       'frontmatter:',
       '  rules:',
       '    - ruleId: every-markdown-file',
-      "      path: ['**/*.md']",
+      "      folders: ['./', 'node_modules/', 'node_modules/pkg/', '.git/']",
       '      intent: Governs every markdown file the walker enumerates',
       '      fields:',
       '        type:',
@@ -199,6 +204,34 @@ beforeAll(() => {
       '',
     ].join('\n'),
   );
+
+  canaryRoot = mkdtempSync(join(tmpdir(), 'mh-canary-'));
+  mkdirSync(join(canaryRoot, 'docs'), { recursive: true });
+  writeFileSync(join(canaryRoot, 'docs', 'a.md'), '---\ntype: note\n---\n');
+  writeFileSync(join(canaryRoot, 'docs', 'b.md'), '---\ntype: note\n---\n');
+  writeFileSync(join(canaryRoot, 'docs', 'c.md'), '---\ntype: note\n---\n');
+
+  const canaryConfig = (axisKey: 'filenames' | 'fileNames'): string =>
+    [
+      'frontmatter:',
+      '  rules:',
+      '    - ruleId: canary-rule',
+      "      folders: ['docs/']",
+      '      excludeFiles:',
+      "        - folders: ['docs/']",
+      `          ${axisKey}: ['c.md']`,
+      '      intent: Tests two-sided exclusion canary',
+      '      fields:',
+      '        type:',
+      '          presence: required',
+      '',
+    ].join('\n');
+
+  misspelledCanaryConfig = join(canaryRoot, 'misspelled.config.yaml');
+  writeFileSync(misspelledCanaryConfig, canaryConfig('filenames'));
+
+  correctedCanaryConfig = join(canaryRoot, 'corrected.config.yaml');
+  writeFileSync(correctedCanaryConfig, canaryConfig('fileNames'));
 });
 
 afterAll(() => {
@@ -208,6 +241,7 @@ afterAll(() => {
   rmSync(conforming, { recursive: true, force: true });
   rmSync(shimmed, { recursive: true, force: true });
   rmSync(configless, { recursive: true, force: true });
+  rmSync(canaryRoot, { recursive: true, force: true });
 });
 
 /** Run the built entry file the way a caller would, and report all three channels. */
@@ -271,33 +305,53 @@ describe('mh', () => {
       expect(JSON.parse(run.stdout).command).toBe(auditing);
     });
 
-    it('gives every rule a row, including the ones that governed nothing', () => {
+    it('nests every rule row under the Module that declared it', () => {
       // A rule that wins no file reports nothing anywhere else, so its row is
       // the only place an ordering mistake or a glob typo becomes visible.
       //
-      // The count tracks `fixtures/conformance/valid-test-config.yaml`. ARCH-002
+      // The count tracks the `frontmatter` tier's own config. ARCH-002
       // makes growing that config a reviewed act, so stating the number here
       // rather than counting it back off the file keeps this test part of that
       // review instead of silently agreeing with whatever the config now says.
       // ARRANGE
       const declaredRules = 10;
+      const moduleName = 'frontmatter';
       const rowShape = ['rule', 'won', 'shadowed', 'shadowedBy', 'excluded'];
       // ACT
       const run = mh('--audit', '--root', CORPUS_ROOT, '--config', CONFIG);
-      const rows = JSON.parse(run.stdout).result.rules;
+      const modules = JSON.parse(run.stdout).result.modules;
+      const rows = modules[0].rules;
       // ASSERT
+      expect(modules[0].module).toBe(moduleName);
       expect(rows).toHaveLength(declaredRules);
       expect(Object.keys(rows[0])).toEqual(rowShape);
+    });
+
+    it('nests what the config asks of a path under the Module asking it', () => {
+      // The steering answer mirrors the checking answer's shape: one block per
+      // governing Module, named by the top-level config key the Operator typed.
+      // ARRANGE
+      const expected = [{ module: 'frontmatter', ruleId: 'reference' }];
+      // ACT
+      const run = mh('--query', 'docs/reference/api-limits.md', '--config', CONFIG);
+      const result = JSON.parse(run.stdout).result as { modules: { module: string; rule: { ruleId: string } }[] };
+      const actual = result.modules.map((block) => ({ module: block.module, ruleId: block.rule.ruleId }));
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
 
     it('answers an ungoverned path as invisible and still exits 0', () => {
       // ARRANGE
       const success = 0;
+      // No declared Module claims it, which is what `invisible` says — a claim
+      // about the whole config rather than about a null rule.
       // ACT
       const run = mh('--query', 'README.md', '--config', CONFIG);
+      const body = JSON.parse(run.stdout);
       // ASSERT
       expect(run.code).toBe(success);
-      expect(JSON.parse(run.stdout).result.governance).toBe(INVISIBLE);
+      expect(body.result.governance).toBe(INVISIBLE);
+      expect(body.result.modules).toBe(undefined);
     });
   });
 
@@ -397,32 +451,41 @@ describe('mh', () => {
       expect(run.stdout.slice(-trailing.length)).toBe(trailing);
     });
 
-    it('echoes path and config exactly as written, never resolved', () => {
+    it('echoes path and config exactly as written, and normalises only inside the result', () => {
+      // Two spellings, deliberately. The envelope repeats the invocation so a
+      // stored response says what was asked; the result carries the normalised
+      // path so a caller can key on what it gets back. Neither is resolved
+      // against this machine, which is what lets a stored response compare
+      // equal on another one.
       // ARRANGE
       const written = './docs/reference/api-limits.md';
+      const normalised = 'docs/reference/api-limits.md';
       // ACT
       const run = mh('--query', written, '--config', CONFIG);
+      const body = JSON.parse(run.stdout);
       // ASSERT
-      expect(JSON.parse(run.stdout).path).toBe(written);
-      expect(JSON.parse(run.stdout).config).toBe(CONFIG);
+      expect(body.path).toBe(written);
+      expect(body.config).toBe(CONFIG);
+      expect(body.result.path).toBe(normalised);
     });
 
     it('never lets a refused directory into the corpus it audits', () => {
-      // Measured, not assumed: `node_modules/x.md` DOES match `**/*.md` under
-      // the platform matcher, so this count is the only thing standing between
-      // an adopter and every dependency they ever installed.
+      // The config NAMES both refused directories on its folder axis, so this
+      // count is the only thing standing between an adopter and every
+      // dependency they ever installed. A config that simply failed to reach
+      // them would pass this test while proving nothing about the walker.
       // ARRANGE
       const onlyKeptMd = 1;
       // ACT
       const run = mh('--audit', '--root', planted, '--config', plantedConfig);
-      const rows = JSON.parse(run.stdout).result.rules;
+      const rows = JSON.parse(run.stdout).result.modules[0].rules;
       // ASSERT
       expect(rows[0].won).toBe(onlyKeptMd);
     });
 
     it('echoes an audit root and config exactly as written, never resolved', () => {
       // ARRANGE
-      const written = './fixtures/conformance';
+      const written = './fixtures/conformance/frontmatter';
       // ACT
       const run = mh('--audit', '--root', written, '--config', CONFIG);
       // ASSERT
@@ -523,26 +586,51 @@ describe('mh --check', () => {
       ];
       // ACT
       const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
-      const files = JSON.parse(run.stdout).result.files as { violations: { violation: string }[] }[];
-      const reached = files.flatMap((file) => file.violations.map((found) => found.violation));
+      const files = JSON.parse(run.stdout).result.files as { modules: { violations: { violation: string }[] }[] }[];
+      const reached = files.flatMap((file) =>
+        file.modules.flatMap((block) => block.violations.map((found) => found.violation)),
+      );
       // ASSERT
       expect([...new Set(reached)].sort()).toEqual(codes);
+    });
+
+    it('governs the corpus when an exclusion axis is spelled fileNames rather than filenames', () => {
+      // The other half of #175's two-sided canary: with the typo corrected, the
+      // exclusion narrows to the named file and the remaining files stay governed.
+      // ARRANGE
+      const nothingWrong = 0;
+      const expectedGovernedCount = 2;
+      // ACT
+      const run = mh('--check', '--root', canaryRoot, '--config', correctedCanaryConfig);
+      const summary = JSON.parse(run.stdout).result.summary;
+      // ASSERT
+      expect(run.code).toBe(nothingWrong);
+      expect(summary.governedFiles).toBe(expectedGovernedCount);
     });
   });
 
   describe('failure cases', () => {
-    it('reports a too-short title with the rule that won the file and its intent', () => {
+    it('reports a too-short title under the Module whose rule won the file, with its intent', () => {
+      // The findings nest one level down. The Module is named by the top-level
+      // config key the Operator typed — never a Package name and never a short
+      // name minted for the report — because the point of naming it is to say
+      // which section of their own config to open.
       // ARRANGE
       const row = {
         path: 'docs/workflows/tagging.md',
-        ruleId: 'workflows',
-        ruleIntent: 'A workflow names itself and says when to reach for it',
-        violations: [
+        modules: [
           {
-            field: 'title',
-            value: 'Go',
-            violation: 'VALUE_TOO_SHORT',
-            requirement: { minLength: 3, maxLength: 80 },
+            module: 'frontmatter',
+            ruleId: 'workflows',
+            ruleIntent: 'A workflow names itself and says when to reach for it',
+            violations: [
+              {
+                field: 'title',
+                value: 'Go',
+                violation: 'VALUE_TOO_SHORT',
+                requirement: { minLength: 3, maxLength: 80 },
+              },
+            ],
           },
         ],
       };
@@ -572,6 +660,23 @@ describe('mh --check', () => {
       expect(run.stderr).toContain(lockedFile);
       expect(run.stderr).not.toContain(USAGE_LEAD);
     });
+
+    it('refuses an exclusion whose axis key is misspelled, rather than silently ungoverning the corpus', () => {
+      // The two-sided canary from #175: writing `filenames:` inside an exclusion
+      // previously widened it to the whole folder, taking 3 governed files down to 0
+      // while staying green. Now it is refused with CONFIG_UNRECOGNISED_KEY.
+      // ARRANGE
+      const cannotReport = 2;
+      const expectedFaults = [
+        { code: 'CONFIG_UNRECOGNISED_KEY', location: 'frontmatter.rules[0].excludeFiles.filenames' },
+      ];
+      // ACT
+      const run = mh('--check', '--root', canaryRoot, '--config', misspelledCanaryConfig);
+      const actualFaults = JSON.parse(run.stdout).result.faults;
+      // ASSERT
+      expect(run.code).toBe(cannotReport);
+      expect(actualFaults).toEqual(expectedFaults);
+    });
   });
 
   describe('edge cases', () => {
@@ -582,7 +687,7 @@ describe('mh --check', () => {
       // nothing uncommitted" — and only the first is this test's subject.
       //
       // It also made the suite unrunnable during any change to the corpus: a
-      // staged edit under `fixtures/conformance/` shows in `--porcelain` too, so
+      // staged edit under the tier shows in `--porcelain` too, so
       // the pre-commit hook failed on the very commit that added a Conformance
       // case. Measured 2026-09-09, on the first commit to touch the corpus since
       // the assertion took that form. Proven still able to fail by writing a
@@ -622,7 +727,7 @@ describe('mh --check', () => {
  *
  * `--assess` anchors the config's globs at the current directory, because it
  * names one file rather than a corpus and refuses `--root`. The Conformance
- * config's globs are written relative to `fixtures/conformance/`, so the only
+ * config's globs are written relative to its own tier directory, so the only
  * honest way to exercise it at the process boundary is to stand where an
  * Operator running that config would stand.
  *
@@ -648,6 +753,7 @@ describe('mh --assess', () => {
       const expected = {
         command: 'assess',
         now: PINNED,
+        module: 'frontmatter',
         agentAction: 'REVIEW',
         instruction: 'Re-verify this against the source before quoting it, then move stale_after.',
         code: 0,
@@ -657,16 +763,49 @@ describe('mh --assess', () => {
       const answered = JSON.parse(run.stdout) as {
         command: string;
         now: string;
-        result: { agentAction: string; instruction: string };
+        result: { modules: { module: string; agentAction: string; instruction: string }[] };
       };
+      const assessment = answered.result.modules[0];
       const actual = {
         command: answered.command,
         now: answered.now,
-        agentAction: answered.result.agentAction,
-        instruction: answered.result.instruction,
+        module: assessment.module,
+        agentAction: assessment.agentAction,
+        instruction: assessment.instruction,
         code: run.code,
       };
       // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('names an unreadable governed file as unreadable rather than unassessable', () => {
+      // ARRANGE
+      const expected = {
+        command: 'assess',
+        path: 'sealed.md',
+        now: PINNED,
+        config: lockedConfig,
+        result: {
+          modules: [
+            {
+              module: 'frontmatter',
+              agentAction: 'FIX_FILE',
+              state: 'unreadable',
+              rule: {
+                ruleId: 'every-markdown-file',
+                intent: 'Governs every markdown file the walker enumerates',
+              },
+            },
+          ],
+        },
+        code: 0,
+      };
+      // ACT
+      const run = mhIn(locked, '--assess', 'sealed.md', '--config', lockedConfig, '--now', PINNED);
+      const answered = JSON.parse(run.stdout);
+      const actual = { ...answered, code: run.code };
+      // ASSERT
+      expect(sealed).toBe(REFUSED);
       expect(actual).toEqual(expected);
     });
 
@@ -686,8 +825,10 @@ describe('mh --assess', () => {
       const first = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG);
       const echoed = (JSON.parse(first.stdout) as { now: string }).now;
       const again = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', echoed);
-      const firstAnswer = (JSON.parse(first.stdout) as { result: { agentAction: string } }).result.agentAction;
-      const replayed = (JSON.parse(again.stdout) as { result: { agentAction: string } }).result.agentAction;
+      const firstAnswer = (JSON.parse(first.stdout) as { result: { modules: { agentAction: string }[] } }).result
+        .modules[0].agentAction;
+      const replayed = (JSON.parse(again.stdout) as { result: { modules: { agentAction: string }[] } }).result
+        .modules[0].agentAction;
       // ASSERT
       expect(echoed).toMatch(instantShape);
       expect(replayed).toBe(firstAnswer);
@@ -722,6 +863,27 @@ describe('mh --assess', () => {
   });
 
   describe('edge cases', () => {
+    it('claims ungoverned only after every Module passes the path by', () => {
+      // The frontmatter Module returns no answer for this Conformance case.
+      // `ungoverned` appears only in the composed command response, where the
+      // declared Module set is visible.
+      // ARRANGE
+      const expected = { agentAction: 'PROCEED', state: 'ungoverned' };
+      // ACT
+      const run = mhIn(
+        CORPUS_ROOT,
+        '--assess',
+        'docs/research/vendor/upstream.md',
+        '--config',
+        LOCAL_CONFIG,
+        '--now',
+        PINNED,
+      );
+      const actual = JSON.parse(run.stdout).result;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses a root beside an assessment, which answers about one path', () => {
       // ARRANGE
       const empty = '';
@@ -848,17 +1010,15 @@ describe('mh --help', () => {
 //
 // `engines` is advisory — npm enforces it only for an adopter who opted into
 // strictness — so the command refuses for itself rather than trusting the
-// installer to have done it. What that protects is tenet 3: path matching
-// delegates to the platform's glob matcher, whose behaviour is fixed by the
-// matcher bundled with each Node release, and outside the declared range the
-// same tree gives a different result out. A refusal is the only honest answer
-// available there, and it is preferable to a quietly different one.
+// installer to have done it. The range admits currently supported release
+// lines: 24 is Active LTS, 25 is EOL, and 26 is Current before its LTS
+// transition. A refusal is the only honest answer available outside it.
 
 describe('mh under a stated Node version', () => {
   describe('success cases', () => {
-    it('answers normally on the first release of the upper window', () => {
+    it('answers normally on the first release of the upper supported line', () => {
       // ARRANGE
-      const supported = '26.1.0';
+      const supported = '26.0.0';
       const success = 0;
       const empty = '';
       // ACT
@@ -907,23 +1067,22 @@ describe('mh under a stated Node version', () => {
   });
 
   describe('edge cases', () => {
-    it('takes each window at its first release and refuses the release below it', () => {
-      // Written out by hand, because the boundaries ARE the decision. A
-      // prerelease is read as its release: `26.1.0-rc.1` is below `26.1.0` to
-      // semver, and refusing it would be a refusal about version syntax rather
-      // than about matcher behaviour, which is the only thing at stake.
+    it('takes each supported release line and refuses the EOL line', () => {
+      // Written out by hand, because the supported lines ARE the decision. A
+      // prerelease is read as its release: this guard compares release lines,
+      // not SemVer precedence.
       // ARRANGE
       const nothingWrong = 0;
       const cannotReport = 2;
       const boundaries = [
         { version: '22.20.0', code: cannotReport },
-        { version: '24.15.9', code: cannotReport },
-        { version: '24.16.0', code: nothingWrong },
+        { version: '23.99.9', code: cannotReport },
+        { version: '24.0.0', code: nothingWrong },
         { version: '24.99.0', code: nothingWrong },
         { version: '25.0.0', code: cannotReport },
-        { version: '26.0.9', code: cannotReport },
-        { version: '26.1.0', code: nothingWrong },
-        { version: '26.1.0-rc.1', code: nothingWrong },
+        { version: '25.99.9', code: cannotReport },
+        { version: '26.0.0', code: nothingWrong },
+        { version: '26.0.0-rc.1', code: nothingWrong },
         { version: '27.0.0', code: nothingWrong },
       ];
       // ACT

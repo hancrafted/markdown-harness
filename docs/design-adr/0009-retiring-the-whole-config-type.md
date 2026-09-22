@@ -15,9 +15,10 @@ declared Module set stays one list in `cli/module-set.ts`, pinned with `satisfie
 `TOP_LEVEL_KEYS` derives from it.
 
 `config-contract` therefore stops describing the config file and becomes the shared vocabulary a
-section is built from — selector, constraint, claim, fault — plus the port a Module declares
-through. All nine `frontmatter:` type declarations move into `frontmatter-harness`, behind a root
-`section.types.ts`. Measurement decided that, not tidiness: section types left behind one
+section is built from — selector, constraint, fault — plus the port a Module declares
+through. All nine `frontmatter:` type declarations move into `frontmatter-harness`, exposed behind a
+root `section.ts` re-exporting declarations from below, because ARCH-004 bans root `*.types.ts` and
+ARCH-005 Decision 1.3 admits the re-export. Measurement decided that, not tidiness: section types left behind one
 `config-contract` entry point make _no Module knows another Module exists_ unenforceable, because
 `dependency-cruiser` passes blind at five modules and five dependencies and only catches the import
 once each Module owns its own section type, at seven and six. One unbudgeted cycle was found on the

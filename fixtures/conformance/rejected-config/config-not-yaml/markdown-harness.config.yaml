@@ -1,0 +1,9 @@
+# A truncated config. The flow collection opened on the last line is never
+# closed, so the parser refuses the bytes outright and there are no keys left to
+# recognise — which is why the loader's stages stop at the first one that cannot
+# hand its successor anything usable.
+#
+# DELIBERATELY UNPARSEABLE. `fixtures/conformance/rejected-config/**` sits in
+# .prettierignore for exactly this reason: formatting would repair the defect
+# the case exists to present.
+frontmatter: { rules: [

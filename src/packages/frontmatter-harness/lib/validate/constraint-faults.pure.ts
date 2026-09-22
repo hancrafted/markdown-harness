@@ -8,6 +8,7 @@
  */
 
 import type { AllowedValue, FieldConstraints, Format } from '../../../config-contract/index.ts';
+import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
 
 /**
@@ -59,11 +60,6 @@ const BOUND_KEYS: readonly (keyof FieldConstraints)[] = [
   'maxItems',
   'itemMaxLength',
 ];
-
-/** A YAML mapping, excluding arrays — `typeof [] === 'object'` would otherwise admit a list. */
-function isMapping(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** An intent key written and left blank, wherever it sits. */
 function emptyIntentAt(carrier: Record<string, unknown>, location: string): readonly ConfigFault[] {

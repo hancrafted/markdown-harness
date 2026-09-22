@@ -1,8 +1,25 @@
 # markdown-harness.config.yaml — a worked example, not a preset.
 #
-# Copy it, delete the rules you do not want, and rename the paths to your own.
+# Copy it, delete the rules you do not want, and rename the folders to your own.
 # Every key in the language appears below at least once, so this file doubles as
 # the vocabulary: if a key is not here, it does not exist.
+#
+# A selector is two axes of LITERAL tokens and carries no wildcard anywhere:
+#
+#   folders:   each token one folder, repo-root-relative, with a MANDATORY
+#              trailing `/`, selecting THAT FOLDER ALONE. No recursion — name a
+#              subfolder to govern it. The corpus root is `./`.
+#   fileNames: each token one literal basename, extension included, compared
+#              case-sensitively.
+#
+# At least one axis is required. An absent axis means every, so folders alone is
+# every file in those folders, names alone is that name anywhere, and both
+# together is those names in those folders. Literal tokens compare the same way
+# on every filesystem, which is why your colleague on Linux gets your report.
+#
+# A folder list goes stale: a folder created under one you named is governed by
+# nothing until you add it here, and the tool will not tell you. A rule keyed on
+# a file name alone has no such hole.
 #
 # Verify any edit with the query loop, which needs no file to exist yet:
 #
@@ -19,13 +36,15 @@ frontmatter:
   # silently governs zero files — `mh --audit` is what makes that visible.
   rules:
     # ── 1. A rule that forbids frontmatter outright ───────────────────────────
-    # `fileName` matches the basename at any depth, so it needs no glob. It is
-    # sugar for `path: ["**/index.md"]`.
+    # `fileNames` on its own matches the basename ANYWHERE in the corpus — the
+    # corpus root included, and folders created after you wrote this config.
+    # An absent axis means every, which is the only spelling "all" has: there is
+    # no wildcard in this language.
     #
     # `frontmatter: forbidden` is the one payload that takes no other payload
     # key — there is nothing to constrain on a file that must carry none.
     - ruleId: index-files
-      fileName: index.md
+      fileNames: [index.md]
       intent: An index lists what is in a directory, and carries no frontmatter of its own
       frontmatter: forbidden
 
@@ -45,17 +64,22 @@ frontmatter:
     # index files carry none. §9 says no such thing about `log.md`, so forbidding
     # it here would be this config over-claiming on OKF's behalf.
     - ruleId: log-files
-      fileName: log.md
+      fileNames: [log.md]
       intent: An update history is not a concept document, and OKF asks nothing of its frontmatter
 
     # ── 3. The signal-bearing rule ────────────────────────────────────────────
     # Research is where provenance matters, so this is the rule that reaches the
     # nested addresses and the named formats.
     - ruleId: research
-      path: [docs/research/**/*.md]
-      # Excluded paths fall THROUGH to a later, broader rule rather than being
+      folders: [docs/research/]
+      # Excluded files fall THROUGH to a later, broader rule rather than being
       # exempted from governance altogether. Per rule, never global.
-      excludeFiles: [docs/research/vendor/**]
+      #
+      # An exclusion is the SAME selector object, under the same at-least-one
+      # rule — one vocabulary rather than two. Prefer a folder, or a folder and
+      # a name together: an exclusion written by name alone reaches that name
+      # anywhere, and a widened exclusion makes files ungoverned silently.
+      excludeFiles: [{ folders: [docs/research/vendor/] }]
       intent: Research is only worth as much as the sources behind it, so it names them
       # At least one of these must be present. `allOf` and `exactlyOneOf` are the
       # other two spellings.
@@ -83,7 +107,7 @@ frontmatter:
 
     # ── 4. Closing the key set, and the escape valve ──────────────────────────
     - ruleId: reference
-      path: [docs/reference/**/*.md]
+      folders: [docs/reference/]
       intent: Reference pages are looked up by slug and say how far they can be trusted
       # Defaults to `allowed` when absent. `forbidden` is the only rule-level way
       # to catch a typo'd frontmatter key.
@@ -119,7 +143,7 @@ frontmatter:
     # `stale_after` onto EVERY constraining rule in the list, which is rarely
     # what anyone means.
     - ruleId: runbooks
-      path: [docs/runbooks/**/*.md]
+      folders: [docs/runbooks/]
       intent: A runbook that has drifted from the system it describes is worse than none
       assess:
         stale: Re-run these steps against the live system before following them, then move stale_after.
@@ -131,8 +155,13 @@ frontmatter:
     # The narrowest useful payload there is: say what you are. Governance is
     # opt-in, so anything this does not match is invisible to the harness — never
     # reported, never counted.
+    #
+    # "Broadest" is an ENUMERATION now, not a wildcard, so this is the rule that
+    # carries the cost of the grammar: every folder you want reached is named,
+    # including the ones the rules above already claim. Keep it in step with
+    # your tree — `mh --audit` shows what each rule actually won.
     - ruleId: everything-else
-      path: [docs/**/*.md]
+      folders: [docs/, docs/reference/, docs/research/, docs/runbooks/]
       intent: Every document under docs/ still has to say what it is
       fields:
         type: { presence: required }

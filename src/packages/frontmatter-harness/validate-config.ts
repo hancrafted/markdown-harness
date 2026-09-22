@@ -8,13 +8,18 @@
 // What goes back is the section itself when it is sound, not merely a verdict
 // on it. The loader cannot type the section — that would mean knowing the rule
 // language — so the Module that can is the one that must hand it over already
-// typed.
+// typed. `SectionValidation` is the port's own shape, instantiated here at this
+// Module's own section type.
+//
+// Called only for a key that was WRITTEN. An absent `frontmatter:` is the
+// loader's answer now — `CONFIG_NO_MODULE_SECTION` against the file, decided
+// once against the whole declared Module set rather than once per Module — so
+// nothing below describes a config this Module was never named in.
 
+import type { SectionValidation } from '../config-contract/index.ts';
 import { sectionFaults } from './lib/validate/section-faults.pure.ts';
 import { isFrontmatterConfig } from './lib/validate/section-narrowing.pure.ts';
-import type { SectionValidation } from './lib/validate/validate.types.ts';
-
-export type { SectionValidation } from './lib/validate/validate.types.ts';
+import type { FrontmatterConfig } from './section.ts';
 
 /**
  * Every fault the `frontmatter:` section carries, and the section itself if it
@@ -23,11 +28,11 @@ export type { SectionValidation } from './lib/validate/validate.types.ts';
  * The predicate runs first and the fault walk runs only when it fails, so the
  * sound path validates exactly once. The failing path walks twice, and that is
  * the right way round: the second walk is what produces the faults the caller
- * has to report anyway.
+ * is going to report anyway.
  *
- * @param section The value written under `frontmatter:`, or `undefined` if the key was never written.
+ * @param section The value written under `frontmatter:`, whatever it parsed to.
  */
-export function validateFrontmatterSection(section: unknown): SectionValidation {
+export function validateFrontmatterSection(section: unknown): SectionValidation<FrontmatterConfig> {
   if (isFrontmatterConfig(section)) return { section, faults: [] };
   return { faults: sectionFaults(section) };
 }

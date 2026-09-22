@@ -9,6 +9,7 @@
  * the two are decided here rather than left to each constraint.
  */
 
+import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { AddressResolution, AddressSite, FrontmatterMapping } from './check.types.ts';
 
 /** The list marker, OKF's own notation: `sources[].resource`. */
@@ -16,11 +17,6 @@ const ENTRY_MARKER = '[].';
 
 /** The mapping separator: `generated.by`. */
 const KEY_SEPARATOR = '.';
-
-/** A mapping, for the purpose of reaching a key inside it. */
-function isMapping(value: unknown): value is FrontmatterMapping {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /**
  * A container that was never really written.

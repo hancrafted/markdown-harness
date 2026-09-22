@@ -81,7 +81,7 @@ translation.
 _Avoid_: LRM-wiki, wiki (unqualified), vault
 
 **config contract**:
-The vocabulary every config section is built from — selectors, Constraints, claims, the fault a
+The vocabulary every config section is built from — selectors, Constraints, the fault a
 rejected config reports — plus the port a Module declares itself through. It names no Module and
 describes no file: a Module's own section type belongs to that Module. It is the **portable** half of
 the product — adopters and any reimplementation receive it and never receive `.archgate/`, which is
@@ -104,8 +104,7 @@ The role every Package that is not a Module fills: config reading, path resoluti
 surface, and reporting. No single Package is Core — the role spans `foundation`, `cli`,
 `config-contract` and `response-contract`, so it is a position in the architecture rather than a
 folder. Core loads a config it has no type for and hands each Module its own section back under the
-type that Module's own validation earned. It compares the claims Modules make and never parses a
-Module's section, which is what lets a Module be added without editing Core. It is also where the
+type that Module's own validation earned. It never parses a Module's section. It is also where the
 filesystem gate lives: Core is the only part that reaches the filesystem, and every Module reads
 through it. It reads frontmatter without learning what any field means.
 
@@ -134,10 +133,8 @@ Package)
 **Module**:
 A named checking domain that owns one section of the config and one family of checks. It owns its
 section's **type** as well as its section, in its own Package, and no Package outside it may name
-that type. It projects its own section into **claims**, and it knows no other Module exists:
-claims are made in Core's vocabulary, so Core can compare two Modules without either one reading the
-other's section. Narrower than the general design sense used in `codebase-design`, where a
-module is anything with an interface and an implementation.
+that type. It knows no other Module exists. Narrower than the general design sense used in
+`codebase-design`, where a module is anything with an interface and an implementation.
 _Avoid_ as a name for this: plugin, checker, rule pack
 
 **declared Module set**:
@@ -272,56 +269,36 @@ _Avoid_ as a name for this: path rule, matcher, policy
 
 **selector**:
 How a Rule says which files it is about, on two literal axes — folders and file names. A folder token
-is a literal path from the repo root carrying a mandatory trailing `/`, and the corpus root is `./`; a
-file name is one literal basename with its extension. An absent axis means every, which is the only
-spelling "all" has, because a selector carries no wildcard anywhere. Being literal is what makes it
-decidable: whether two selectors reach the same file is settled from the config text alone, with no
-tree read.
+is a literal path from the repo root carrying a mandatory trailing `/` and selecting **that folder
+alone**, and the corpus root is `./`; a file name is one literal basename with its extension,
+compared case-sensitively. An absent axis means every, which is the only spelling "all" has, because
+a selector carries no wildcard anywhere. Being literal is what makes it host-independent: literal
+names compare the same way on every filesystem, where a glob matcher turns case-insensitive inside a
+wildcard-bearing segment. Nothing compares two selectors to each other — a Rule is only ever asked
+whether it selects one file.
 _Avoid_ as a name for this: glob, pattern, path spec, matcher
 
 **folder tree**:
-A folder and every folder below it, as against the folder alone. Both are spellable on the folder
-axis of a **selector**, and a reader who has only met "directory" cannot tell which of the two a
-token means, which is why they are named apart rather than distinguished by punctuation.
+A folder and every folder below it, as against the folder alone. A **selector** can spell only the
+second: there is no recursion in the language, so a folder tree is written as an enumeration its
+author maintains. The term is kept because a reader who has only met "directory" cannot tell which
+of the two a token means.
 _Avoid_ as a name for this: recursive glob, subtree, directory (unqualified)
 
 **glob** — _retired, defined only so the term resolves_:
 A wildcard pattern matched against a path — how a **selector** was written before it became two
 literal axes. The config language admits none now. It survives in `docs/research/`, in design-ADR
-0005, and in every config an adopter has already written, so a reader will meet it; treat every such
-mention as history. Archgate's own `files:` and `paths:` keys are globs in the same sense and are not
-this repo's language to retire.
+0005, in every config an adopter has already written, and — until the new grammar ships in a release
+— in this repository's own root config, which the gate reads through the published version rather
+than the local build. So a reader will meet it; treat every such mention as history. Archgate's own
+`files:` and `paths:` keys are globs in the same sense and are not this repo's language to retire.
 _Avoid_ as a name for anything this repo's config language currently admits: glob, wildcard
 pattern
 
 **claim**:
-What one Module says about one set of files, in vocabulary Core owns: a site, an **extent**, a kind
-and a **stance**. A Module projects its own section into claims; it never reads another Module's
-section, and Core never reads any Module's section. A claim is a projection of config text — a Module
-is handed its own validated section and nothing else — so nothing a claim says was read from a
-document, and a sentence written in a document is never one.
-_Avoid_ as a name for this: assertion (taken by **Constraint**), rule (taken), declaration,
-requirement, fact
-
-**stance**:
-What a claim does to its subject: `requires`, `forbids`, or `reads`. `reads` is the weak one and it is
-the reason the vocabulary works — a Module that reads a field tolerates its absence and contradicts
-only a declared forbid.
-_Avoid_ as a name for this: mode, polarity, verb, direction
-
-**extent**:
-Which files a claim is about: one **selector**, minus a list of extents. An absent axis means every,
-so "a directory" is an extent with no name axis and "a name" is an extent with no folder axis; there
-is no third kind of extent and no separate comparison for one. An extent is exact rather than an
-approximation — it is what a claim's site won under first match, and approximating it loses
-contradictions outright rather than merely blurring them.
-_Avoid_ as a name for this: scope, range, coverage, file set, target
-
-**claim vocabulary**:
-The closed set of kinds and stances a claim may use, portable on the same terms as the **config
-contract** itself. Closed, so that a Module cannot coin a term Core would compare against nothing.
-What it cannot say falls to a hand-written check, which is permanent and not a defect.
-_Avoid_ as a name for this: claim schema, claim language, the claim types, the claim API
+What one Module asks of one path: which Rule won, and what that Rule requires. It does not name
+the Module.
+_Avoid_ as a name for this: assertion (taken by **Constraint**), declaration, requirement, fact
 
 **Constraint**:
 One assertion a Rule makes about one frontmatter field, keyed by field address. Constraints
@@ -369,8 +346,8 @@ _Avoid_: Floor, baseline, unrelaxable, promise, SLA
 **Signal**:
 What a document states about its own trustworthiness, in the file, for a reader that may never
 run `markdown-harness` — provenance, trust tier, freshness and lifecycle, each of which OKF
-names and supplies fields for. It is separate from the body's claims about itself, and it
-outranks them.
+names and supplies fields for. It is separate from what the document says about itself, and it
+outranks that.
 _Avoid_: warning, status, health, score, badge
 
 **Authoring path**:
@@ -393,22 +370,37 @@ _Avoid_: relaxation, weakening, regression, tamper
 ### The Conformance suite
 
 **Conformance suite**:
-One config file plus the Conformance case documents it governs; `fixtures/conformance/` holds one
-suite per tier. Its coverage half — every config-vocabulary key exercised somewhere — is scaffolding a
-future config-schema validator will replace; its specification half, the config together with each
-document's stated expected outcome, is permanent: the contract for what `markdown-harness` must
-report against a real-shaped file.
+Every corpus tier under `fixtures/conformance/`, plus the runners in `src/packages/conformance/`
+that check them. Each tier is one config file plus the Conformance case documents that config
+governs, so the suite holds one config per tier rather than one config overall. Its coverage half —
+every config-vocabulary key exercised somewhere — is scaffolding a future config-schema validator
+will replace; its specification half, each tier's config together with each case's stated expected
+outcome, is permanent: the contract for what `markdown-harness` must report against a real-shaped
+file. The whole is the suite; the per-tier unit is a **corpus tier**, never "a suite".
 _Avoid_ as a name for this: fixture corpus (retired for this artifact), test suite
 
+**corpus tier**:
+One directory under `fixtures/conformance/`, holding what one runner checks: a Module tier holds
+that Module's config and its Conformance cases, and the rejected-config tier holds config bytes a
+load must refuse and no markdown at all. A tier root is a synthetic repo root — the directory a
+tier's own selectors are written relative to — which is why a tier moves whole or not at all. One
+runner per tier, named `<tier>-tier.test.ts`, with both sets derived from the tree and asserted
+equal, so a tier added without a runner fails rather than sitting unnoticed. Say **corpus tier** in
+full wherever ARCH-002 is also in view: that record calls the config vocabulary's four levels
+(rule, constraint, `allowed` entry, named format) **vocabulary tiers**, and a bare "tier" there
+reads as either.
+_Avoid_: suite, corpus, fixture group, category
+
 **Conformance case**:
-One document under a suite's own `docs/` — `fixtures/conformance/**/docs/` — carrying a
+One document under a Module tier's `docs/` — `fixtures/conformance/**/docs/` — carrying a
 machine-readable `<!-- expect: -->` marker that names the verdict — PASSES, FAILS, or UNGOVERNED —
 its prose already argues. A case of another kind has no document to mark, so not everything a
-Conformance tier holds is one of these.
+corpus tier holds is one of these: a **rejected-config case** is a directory of config bytes and
+one frozen expectation, and a **witness case** is a path with no document at all.
 _Avoid_ as a name for this: fixture, test file, example doc
 
 **integrated**:
-The Conformance tier where one config names more than one Module over one tree. A disagreement
+The corpus tier where one config names more than one Module over one tree. A disagreement
 between two Modules is expressible as a case nowhere else, which is why it is a frozen tier rather
 than a demo.
 _Avoid_ as a name for this: end-to-end, e2e, combined, the whole suite
@@ -436,7 +428,8 @@ _Avoid_: sample data, mock, stub, dummy data
 
 **corpus**:
 An adopter's own tree of real documents, never this repo's own synthetic material.
-`fixtures/conformance/` and `fixtures/llm-wiki/` are synthetic repo roots, not corpora. A corpus is
+A tier root under `fixtures/conformance/`, and `fixtures/llm-wiki/`, are synthetic repo roots, not
+corpora. `fixtures/conformance/` itself is neither: it holds corpus tiers. A corpus is
 bounded by its root: a symlink whose target resolves outside the root is not part of it, and a tree
 holding one is refused rather than read, because a verdict that depends on bytes outside the root is
 a verdict the caller never asked for.
@@ -452,6 +445,14 @@ What the gate answers for one path: `text`, `absent`, or `unreadable`. It is an 
 throw — what a failure means is the caller's to decide, so the gate reports what it found and stops
 there.
 _Avoid_ as a name for this: read result, file state, read error
+
+**read memo**:
+The gate's process-lifetime memory of each **read outcome**, failures included. Its key is the host
+path after syntactic normalisation: dot segments and repeated separators are one question, but the
+gate never resolves a target, follows a symlink, or performs an extra filesystem read to choose the
+key. The first answer persists until the process exits, even if the tree changes. Every real-tree
+test therefore plants a unique root; a second test reusing a path would ask the memo, not the tree.
+_Avoid_ as a name for this: cache, read cache, path cache
 
 ### Dependency governance
 

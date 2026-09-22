@@ -49,7 +49,7 @@ export interface AuditResponse {
   root: string;
   /** The config path, echoed exactly as the caller wrote it — never resolved. */
   config: string;
-  /** Every rule's fate, or the reason the config could not be trusted. */
+  /** Every Module's rule tallies, or the reason the config could not be trusted. */
   result: AuditResult | ConfigErrorResult;
 }
 
@@ -65,7 +65,9 @@ export interface AuditResponse {
  * The envelope rather than a flat object, and the choice is deliberate: one
  * shape whether the command answers or refuses the config, which is what keeps
  * `isConfigError` meaningful and keeps `result` the one place an answer lives.
- * It costs an agent reading this one hop to `result.agentAction`.
+ * A governed answer costs an agent two hops to `result.modules[n].agentAction`,
+ * preserving each Module's instruction without inventing precedence between
+ * them. An ungoverned answer remains the whole-config `result.agentAction`.
  */
 export interface AssessResponse {
   /** The discriminant, naming what was asked. */

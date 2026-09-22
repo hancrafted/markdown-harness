@@ -12,12 +12,8 @@
  * simultaneously failing `required`.
  */
 
+import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { FieldValue } from '../../../response-contract/index.ts';
-
-/** A mapping, for the purpose of naming its keys. */
-function isMapping(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /**
  * Describe a value for a report.

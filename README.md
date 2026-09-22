@@ -63,10 +63,11 @@ bare name.
 <details>
 <summary>Node <code>&gt;=24.16.0 &lt;25 || &gt;=26.1.0</code> — why the range is narrow rather than tidy</summary>
 
-Path matching delegates to the platform's glob matcher, and only those releases carry the
-segment-aware behaviour the config language is specified against. Outside it the command refuses and
-names the range — a refusal is better than the same corpus reporting differently on your machine
-than on CI.
+The range was measured when path matching still delegated to the platform's glob matcher, whose
+segment-aware behaviour moved by patch rather than by major line. Selectors are two axes of literal
+tokens now and nothing reaches that matcher, so the range is narrower than the code requires — it is
+held unchanged until widening it is reviewed on its own. Outside it the command refuses and names
+the range.
 
 </details>
 
@@ -163,7 +164,7 @@ match is the complete set of constraints, and a file no rule names is invisible.
 frontmatter:
   rules:
     - ruleId: research
-      path: [docs/research/**/*.md]
+      folders: [docs/research/]
       intent: Research is indexed, and an index entry copies the description
       fields:
         type: { presence: required, allowed: [{ value: research }] }
@@ -209,18 +210,26 @@ mh --assess docs/research/yaml.md --now 2026-12-01T00:00:00Z
   "now": "2026-12-01T00:00:00Z",
   "config": "markdown-harness.config.yaml",
   "result": {
-    "agentAction": "REVIEW",
-    "instruction": "Re-verify by web research before quoting this.",
-    "state": "stale",
-    "source": "rule",
-    "evidence": { "field": "stale_after", "value": "2026-11-24T00:00:00Z" },
-    "rule": { "ruleId": "research", "intent": "Research is indexed, so it names its sources." }
+    "modules": [
+      {
+        "module": "frontmatter",
+        "agentAction": "REVIEW",
+        "instruction": "Re-verify by web research before quoting this.",
+        "state": "stale",
+        "source": "rule",
+        "evidence": { "field": "stale_after", "value": "2026-11-24T00:00:00Z" },
+        "rule": { "ruleId": "research", "intent": "Research is indexed, so it names its sources." }
+      }
+    ]
   }
 }
 ```
 
-`agentAction` is one of `REVIEW`, `PROCEED` or `FIX_FILE`, and it is derivable from `state` on
-purpose — five states onto three actions is a mapping worth doing for the reader rather than by them.
+Each Module's `agentAction` is one of `REVIEW`, `PROCEED` or `FIX_FILE`, and it is derivable from
+that Module's `state` on purpose — five Module states onto three actions is a mapping worth doing
+for the reader rather than by them. Multiple Modules keep separate blocks and separate Operator
+instructions; when none governs the path, the whole-config result is `state: "ungoverned"` with
+`agentAction: "PROCEED"`.
 The instant is the whole of why this stays trustworthy: `--now` is echoed back, so the comparison can
 be repeated by hand, and `--check` is left clock-free so a corpus cannot go red overnight on a tree
 nobody touched. Configure the sentence beside the rules:
@@ -231,7 +240,7 @@ frontmatter:
     stale: This file is past its freshness date. Tell the user and offer to re-verify it.
   rules:
     - ruleId: research
-      path: [docs/research/**/*.md]
+      folders: [docs/research/]
       intent: Research is indexed, so it names its sources.
       assess:
         stale: Re-verify by web research before quoting this.

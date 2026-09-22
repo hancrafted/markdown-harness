@@ -1,52 +1,70 @@
-// Colocated unit test for the corpus result and its arithmetic.
+// Colocated unit test for this Module's answer about one corpus.
 //
-// The three counts are stored rather than left to the consumer, so the tests
-// that matter here are the ones that would catch them disagreeing. The consumer
-// is an agent, and asking a language model to sum an array to find out whether
-// anything is wrong is asking the one thing it is least reliable at.
+// What this file answers is one Module's half: the governed list and the
+// findings it made. The three counts are no longer here — `governedFiles` is a
+// union across Modules and no Module can see the others to take it — so the
+// arithmetic is asserted where it is now computed, in `cli`, and what is
+// asserted here is the two facts the arithmetic is taken over.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import { checkResultFor } from './check-result.pure';
+import type { FrontmatterRule } from '../../section.ts';
+import { moduleCheckFor } from './check-result.pure';
 
 const PLAIN: FrontmatterRule = {
   ruleId: 'plain',
   intent: 'Everything under plain/ still has to say what it is',
-  path: ['docs/plain/**/*.md'],
+  folders: ['docs/plain/'],
   fields: { type: { presence: 'required' } },
 };
 
 const CONFORMING = '---\ntype: plain\n---\n';
 const UNTYPED = '---\ntitle: No type here\n---\n';
 
-describe('corpus check result', () => {
+describe("one Module's corpus check", () => {
   describe('success cases', () => {
     it('reports an all-conforming corpus as governed but clean', () => {
       // ARRANGE
       const sources = [{ path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING }];
-      const expected = { summary: { governedFiles: 1, invalidFiles: 0, totalViolations: 0 }, files: [] };
+      const expected = { governed: ['docs/plain/notes.md'], files: [] };
       // ACT
-      const actual = checkResultFor(sources);
+      const actual = moduleCheckFor(sources);
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('carries the winning rule id and its intent on the file', () => {
-      // Under first-match every violation in a file comes from the same rule, so
-      // these sit on the file rather than on each violation.
+    it('carries the winning rule id and its intent on the finding', () => {
+      // Under first-match every violation in a file comes from the same rule,
+      // so these sit on the finding rather than on each violation. The
+      // justification is not repealed by the nesting: it holds within one
+      // Module, which is the level this finding becomes a block at.
       // ARRANGE
       const sources = [{ path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED }];
       const expected = { ruleId: 'plain', ruleIntent: 'Everything under plain/ still has to say what it is' };
       // ACT
-      const [file] = checkResultFor(sources).files;
+      const [finding] = moduleCheckFor(sources).files;
       // ASSERT
-      expect({ ruleId: file.ruleId, ruleIntent: file.ruleIntent }).toEqual(expected);
+      expect({ ruleId: finding.ruleId, ruleIntent: finding.ruleIntent }).toEqual(expected);
+    });
+
+    it('names no Module, leaving that to the descriptor at composition', () => {
+      // The defect this ticket exists to not reproduce: a Module that wrote its
+      // own config key into its own findings would make the promise that a
+      // Module costs one descriptor plus one list entry quietly false. The
+      // finding carries the rule and the path; the key comes from `cli`.
+      // ARRANGE
+      const sources = [{ path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED }];
+      const expected = ['path', 'ruleId', 'ruleIntent', 'violations'];
+      // ACT
+      const [finding] = moduleCheckFor(sources).files;
+      // ASSERT
+      expect(Object.keys(finding)).toEqual(expected);
     });
   });
 
   describe('failure cases', () => {
     it('lists only the files carrying a violation, in the order given', () => {
-      // Conforming files are absent, and the order is the walker's.
+      // Conforming files are absent from the findings, and the order is the
+      // walker's.
       // ARRANGE
       const sources = [
         { path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED },
@@ -55,56 +73,42 @@ describe('corpus check result', () => {
       ];
       const expected = ['docs/plain/untyped.md', 'docs/plain/empty.md'];
       // ACT
-      const actual = checkResultFor(sources).files.map((file) => file.path);
+      const actual = moduleCheckFor(sources).files.map((finding) => finding.path);
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('reports counts that cannot disagree with the files it listed', () => {
-      // ARRANGE
-      const sources = [
-        { path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED },
-        { path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING },
-        { path: 'docs/plain/empty.md', rule: PLAIN, text: '---\ntype:\n---\n' },
-      ];
-      const expected = { governedFiles: 3, invalidFiles: 2, totalViolations: 2 };
-      // ACT
-      const actual = checkResultFor(sources).summary;
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-  });
-
-  describe('edge cases', () => {
-    it('counts invalidFiles off the files it listed, not off the corpus it read', () => {
-      // The contract says `invalidFiles === files.length`, always. Reading both
-      // sides off one return would assert the implementation against itself and
-      // could not go red — and a corpus whose files are ALL invalid could not
-      // tell `files.length` from the number of files read either. So the
-      // fixture is mixed, and the number is written out by hand.
+    it('reports the whole governed list, not only the part it found something in', () => {
+      // The governed list is what the union behind `governedFiles` is taken over, and
+      // it is the one fact not recoverable from the findings: a governed file
+      // that passed leaves no finding to count. The fixture is deliberately
+      // mixed and both numbers are written out by hand — read off one return,
+      // a corpus whose files were ALL invalid could not tell the two apart.
       // ARRANGE
       const sources = [
         { path: 'docs/plain/a.md', rule: PLAIN, text: UNTYPED },
         { path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING },
         { path: 'docs/plain/b.md', rule: PLAIN, text: UNTYPED },
       ];
-      const invalid = 2;
-      const read = 3;
+      const governed = ['docs/plain/a.md', 'docs/plain/notes.md', 'docs/plain/b.md'];
+      const found = ['docs/plain/a.md', 'docs/plain/b.md'];
       // ACT
-      const result = checkResultFor(sources);
+      const actual = moduleCheckFor(sources);
       // ASSERT
-      expect(result.summary.invalidFiles).toBe(invalid);
-      expect(result.files).toHaveLength(invalid);
-      expect(result.summary.governedFiles).toBe(read);
+      expect(actual.governed).toEqual(governed);
+      expect(actual.files.map((finding) => finding.path)).toEqual(found);
     });
+  });
 
-    it('sums violations across files rather than counting the files', () => {
-      // A file with three findings must not count as one.
+  describe('edge cases', () => {
+    it('keeps every finding about one file in one block', () => {
+      // A file with three findings must not become three entries: the block is
+      // per Module and per file, and what nests under it is the whole list.
       // ARRANGE
       const reference: FrontmatterRule = {
         ruleId: 'reference',
         intent: 'Reference pages say how far they can be trusted',
-        path: ['docs/reference/**/*.md'],
+        folders: ['docs/reference/'],
         unknownKeys: 'forbidden',
         fields: {
           status: { allowed: [{ value: 'stable' }] },
@@ -113,18 +117,20 @@ describe('corpus check result', () => {
       };
       const text = '---\nstatus: retired\nslug: Legacy_Reference\nreviewedBy: nobody\n---\n';
       const sources = [{ path: 'docs/reference/legacy.md', rule: reference, text }];
-      const expected = { governedFiles: 1, invalidFiles: 1, totalViolations: 3 };
+      const findings = 1;
+      const violations = 3;
       // ACT
-      const actual = checkResultFor(sources).summary;
+      const actual = moduleCheckFor(sources);
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(actual.files).toHaveLength(findings);
+      expect(actual.files[0]?.violations).toHaveLength(violations);
     });
 
-    it('reports an empty corpus as nothing governed and nothing wrong', () => {
+    it('reports an empty corpus as nothing governed and nothing found', () => {
       // ARRANGE
-      const expected = { summary: { governedFiles: 0, invalidFiles: 0, totalViolations: 0 }, files: [] };
+      const expected = { governed: [], files: [] };
       // ACT
-      const actual = checkResultFor([]);
+      const actual = moduleCheckFor([]);
       // ASSERT
       expect(actual).toEqual(expected);
     });

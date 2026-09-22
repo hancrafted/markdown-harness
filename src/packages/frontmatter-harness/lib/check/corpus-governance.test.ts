@@ -5,23 +5,15 @@
 // result for the stronger reason that nothing ever read it.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { governedFiles } from './corpus-governance.pure';
-
-/** A hand-written stand-in covering exact paths and the one `**` shape in use. */
-function matches(glob: string, path: string): boolean {
-  if (glob.endsWith('/**/*.md')) return path.startsWith(`${glob.slice(0, -8)}/`) && path.endsWith('.md');
-  if (!glob.startsWith('**/')) return glob === path;
-  const tail = glob.slice(3);
-  return path === tail || path.endsWith(`/${tail}`);
-}
 
 const INDEX: FrontmatterRule = {
   ruleId: 'index-files',
   intent: 'An index carries no frontmatter',
-  fileName: 'index.md',
+  fileNames: ['index.md'],
 };
-const PLAIN: FrontmatterRule = { ruleId: 'plain', intent: 'Say what you are', path: ['docs/plain/**/*.md'] };
+const PLAIN: FrontmatterRule = { ruleId: 'plain', intent: 'Say what you are', folders: ['docs/plain/'] };
 
 describe('corpus governance', () => {
   describe('success cases', () => {
@@ -30,7 +22,7 @@ describe('corpus governance', () => {
       const files = ['docs/plain/notes.md'];
       const expected = ['plain'];
       // ACT
-      const actual = governedFiles(files, [INDEX, PLAIN], matches).map((file) => file.rule.ruleId);
+      const actual = governedFiles(files, [INDEX, PLAIN]).map((file) => file.rule.ruleId);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -41,7 +33,7 @@ describe('corpus governance', () => {
       const files = ['docs/plain/zebra.md', 'docs/plain/apple.md'];
       const expected = ['docs/plain/zebra.md', 'docs/plain/apple.md'];
       // ACT
-      const actual = governedFiles(files, [PLAIN], matches).map((file) => file.path);
+      const actual = governedFiles(files, [PLAIN]).map((file) => file.path);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -53,7 +45,7 @@ describe('corpus governance', () => {
       const files = ['README.md', 'docs/plain/notes.md'];
       const expected = ['docs/plain/notes.md'];
       // ACT
-      const actual = governedFiles(files, [PLAIN], matches).map((file) => file.path);
+      const actual = governedFiles(files, [PLAIN]).map((file) => file.path);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -63,7 +55,7 @@ describe('corpus governance', () => {
       const files = ['docs/plain/notes.md'];
       const empty: readonly unknown[] = [];
       // ACT
-      const actual = governedFiles(files, [], matches);
+      const actual = governedFiles(files, []);
       // ASSERT
       expect(actual).toEqual(empty);
     });
@@ -77,7 +69,7 @@ describe('corpus governance', () => {
       const files = ['docs/plain/index.md'];
       const expected = ['index-files'];
       // ACT
-      const actual = governedFiles(files, [INDEX, PLAIN], matches).map((file) => file.rule.ruleId);
+      const actual = governedFiles(files, [INDEX, PLAIN]).map((file) => file.rule.ruleId);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -86,7 +78,7 @@ describe('corpus governance', () => {
       // ARRANGE
       const empty: readonly unknown[] = [];
       // ACT
-      const actual = governedFiles([], [PLAIN], matches);
+      const actual = governedFiles([], [PLAIN]);
       // ASSERT
       expect(actual).toEqual(empty);
     });

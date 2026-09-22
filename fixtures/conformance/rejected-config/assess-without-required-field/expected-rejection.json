@@ -1,0 +1,4 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [{ "code": "CONFIG_ASSESS_WITHOUT_REQUIRED_FIELD", "location": "frontmatter.rules[0]" }]
+}

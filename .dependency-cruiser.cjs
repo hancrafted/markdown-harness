@@ -23,6 +23,53 @@ const R = PACKAGES_ROOT;
  */
 const PACKAGE_INTERNALS = `^${R}/[^/]+/[^/]+/`;
 
+/**
+ * The shared foundation Package: the gate through which the filesystem and
+ * every other platform read is reached (ARCH-008 §2). Named here as a literal
+ * rather than derived, because "which Package is the gate" is a product
+ * decision and not a naming convention — a second Package called something
+ * foundation-ish must not inherit the exemption by spelling.
+ */
+const GATE = 'foundation';
+
+/**
+ * ARCH-003 Decision 4's two test homes — `<pkg>/tests/*.test.ts` and
+ * `<pkg>/<subfolder>/*.test.ts` — which together are every `.test.ts` BELOW a
+ * Package root. A `.test.ts` AT a Package root is not among them and is not
+ * matched: ARCH-004 §2.4 forbids a classified file there, so the carve-out
+ * covers those two homes and no wider.
+ *
+ * The carve-out exists because ARCH-003 Decision 1.2 forbids `vi.mock`, so a
+ * suite proving a symlink or file-fixture case has to plant one, and planting
+ * is a builtin call. ARCH-003 Decision 4.2 and ARCH-004 Decision 3.2 admit
+ * platform builtins for colocated unit tests when needed for in-test file
+ * fixtures under this exemption. It is spent on test files only, and never on a
+ * production file.
+ */
+const TEST_HOMES = `^${R}/[^/]+/.+/[^/]+\\.test\\.ts$`;
+
+/**
+ * Every Module Package, written out.
+ *
+ * A Module owns one top-level key of the config and the grammar below it;
+ * everything else in the tree is Core. ARCH-008 §1.1 forbids one Module
+ * importing another, and this literal is what the rule is written against.
+ *
+ * NOT DERIVED, and not a naming convention: `-harness` is a suffix on the
+ * product's own name, so a Core Package could wear it and a Module could stop
+ * wearing it, and either would move a Package in or out of the rule with nobody
+ * deciding. A rule derived from the thing it checks cannot fail. Written out,
+ * adding a Module is a reviewed edit inside the file that enforces the
+ * boundary — the cost the record accepts, and the mitigation it names.
+ *
+ * `cli/module-set.ts` is the other list, and the two are deliberately separate:
+ * one composes Modules with the Core, this one holds them apart.
+ */
+const MODULES = ['frontmatter-harness'];
+
+/** The alternation the Module rule matches with, on both ends of the edge. */
+const ANY_MODULE = `^${R}/(${MODULES.join('|')})/`;
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -59,7 +106,7 @@ module.exports = {
     {
       name: 'colocated-test-lane',
       comment:
-        "A test colocated below a package root tests ONE unit: it may import its same-directory sibling of the same base name with a .pure.ts suffix, and no other internal — not its own package's, not any other's. A unit may be as small as a single function, and extracting complex private logic into its own file is the standard way to make it testable, so a .pure.ts file is a legitimate subject. Any wider lane is a loophole: rename a file .pure.ts and every restriction lifts.",
+        "ARCH-003 Decision 4.2 / ARCH-004 Decision 3.2: a colocated unit suite may import its same-directory sibling of the same base name with a .pure.ts suffix, Package root entry points, and platform builtins (exempted by only-the-gate-imports-a-builtin when needed for in-test file fixtures), and no other Package internals — not its own package's, not any other's. A unit may be as small as a single function, and extracting complex private logic into its own file is the standard way to make it testable, so a .pure.ts file is a legitimate subject. Any wider lane is a loophole: rename a file .pure.ts and every restriction lifts.",
       severity: 'error',
       // $1 package, $2 directory path below the package root, $3 base name. The
       // directory group is mandatory rather than optional: a colocated test is
@@ -101,6 +148,33 @@ module.exports = {
       severity: 'error',
       from: { path: `^${R}/[^/]+/.*\\.pure\\.ts$` },
       to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'only-the-gate-imports-a-builtin',
+      comment:
+        "ARCH-008 §2.1: only the foundation Package may import a platform builtin; every other Package reaches the filesystem, the host separator and a module's own location through it. Two copies of a read are how two Modules end up disagreeing about whether a path is readable at all. Written against `dependencyTypes: [core]`, which is dependency-cruiser's word for a Node builtin and never this repository's word for Core.",
+      severity: 'error',
+      from: { path: `^${R}/`, pathNot: [`^${R}/${GATE}/`, TEST_HOMES] },
+      to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'gate-builtins-sit-in-platform',
+      comment:
+        'ARCH-008 §2.2: inside the foundation Package, a builtin import must sit in `lib/platform/`. The gate is only reviewable if the syscalls are in one folder rather than scattered through the Package that is allowed to make them.',
+      severity: 'error',
+      from: { path: `^${R}/${GATE}/`, pathNot: [`^${R}/${GATE}/lib/platform/`, TEST_HOMES] },
+      to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'modules-never-import-modules',
+      comment:
+        "ARCH-008 §1.1: a Module Package may not import another Module Package, at any depth, through any entry point. A Module declares what it needs in the Core's vocabulary and takes it as given; an edge between two Modules is a translation layer starting, and it is also how one Module ends up naming another's section type. Written against the explicit MODULES literal above rather than a naming convention, so adding a Module is a reviewed edit here. A Module's own files import each other freely — that is what `pathNot` excludes. Type-only edges are the ones that matter most here and they exist only while `tsPreCompilationDeps: true` (trap 5), so canary this rule BY NAME and read the dependency count, never the checkmark.",
+      severity: 'error',
+      from: { path: ANY_MODULE },
+      to: {
+        path: ANY_MODULE,
+        pathNot: `^${R}/$1/`, // same Module → intra-package freedom
+      },
     },
     {
       name: 'no-circular',

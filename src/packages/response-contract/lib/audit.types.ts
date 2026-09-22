@@ -8,10 +8,22 @@
  * which is why none of it rides in `--check`, whose reader can act on none of it.
  */
 
-/** Every rule's fate across one corpus. */
+/** Every Module's rule tallies across one corpus. */
 export interface AuditResult {
-  /** One row per rule, in config order — including rules that governed nothing. */
+  /** One block per declared Module, in declared Module order. */
+  modules: readonly ModuleAuditResult[];
+}
+
+/** What one Module answers before composition names it. */
+export interface ModuleAudit {
+  /** One row per rule, in section order — including rules that governed nothing. */
   rules: readonly RuleAudit[];
+}
+
+/** One Module's rule tallies, named by the top-level config key the Operator typed. */
+export interface ModuleAuditResult extends ModuleAudit {
+  /** Present even when the Module declares no rules, so its empty audit remains attributable. */
+  module: string;
 }
 
 /** How one rule fared. */
@@ -32,7 +44,7 @@ export interface RuleAudit {
 export interface RuleRef {
   /** The rule's id, the way every report refers to a rule. */
   ruleId: string;
-  /** As written: the `fileName` sugar is reported as sugar, never expanded away. */
+  /** As written: an axis the Operator left out is left out here too. */
   selector: SelectorRef;
   /** The rule's `intent`, verbatim. */
   intent: string;
@@ -41,8 +53,19 @@ export interface RuleRef {
 /**
  * A rule's selector, in the shape the Operator wrote it.
  *
- * Reporting `fileName` as the sugar it is, rather than the `path: ["**\/<name>"]`
- * it desugars to, is deliberate: an Operator reading a diagnostic has to
- * recognise their own config in it.
+ * Both axes optional, and an axis the rule never carried is ABSENT rather than
+ * echoed back as an empty list: an Operator reading a diagnostic has to
+ * recognise their own config in it, and "every file name" spelled as `[]` is
+ * not what they typed. A selector carries at least one axis, so this is never
+ * the empty object.
+ *
+ * Declared here rather than imported from the config contract on purpose. This
+ * is the wire format, and the two are free to diverge — a response is read by
+ * tools that never see a config type.
  */
-export type SelectorRef = { path: readonly string[]; fileName?: never } | { fileName: string; path?: never };
+export interface SelectorRef {
+  /** The folders the rule listed, each selecting that folder alone. */
+  folders?: readonly string[];
+  /** The literal basenames the rule listed. */
+  fileNames?: readonly string[];
+}

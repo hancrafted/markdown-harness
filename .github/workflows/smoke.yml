@@ -114,7 +114,7 @@ jobs:
           frontmatter:
             rules:
               - ruleId: docs
-                path: ['docs/**/*.md']
+                folders: [docs/]
                 intent: Every document says what it is
                 fields:
                   type:

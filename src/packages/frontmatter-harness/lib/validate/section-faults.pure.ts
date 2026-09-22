@@ -8,8 +8,9 @@
  * Module.
  */
 
-import type { FrontmatterConfig } from '../../../config-contract/index.ts';
+import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
+import type { FrontmatterConfig } from '../../section.ts';
 import { assessBlockFaults } from './assess-faults.pure.ts';
 import { ruleFaults } from './rule-faults.pure.ts';
 
@@ -38,10 +39,6 @@ const ASSESS = `${SECTION}.assess`;
  */
 const SECTION_KEYS: Record<keyof FrontmatterConfig, true> = { rules: true, assess: true };
 
-function isMapping(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /**
  * One fault per id already claimed by an earlier rule.
  *
@@ -64,14 +61,21 @@ function duplicateIdFaults(rules: readonly unknown[]): readonly ConfigFault[] {
 /**
  * Every fault the `frontmatter:` section carries.
  *
- * An absent section and an empty list are the same mistake reported the same
- * way: a config naming no module governs nothing, and the Operator's fix is the
- * same sentence either way.
+ * An absent section is NOT answered here any more, and the branch that answered
+ * it is gone rather than left standing. It used to return `CONFIG_EMPTY_RULE_LIST`
+ * on the reasoning that an absent section and an empty list are the same mistake
+ * — true while one Module existed, and false the moment a second one does, since
+ * each would then raise it for the other's config. The loader answers it once
+ * against the whole declared Module set, as `CONFIG_NO_MODULE_SECTION` against
+ * the file, and never calls this for a key that was not written. A branch kept
+ * for a case nothing can produce is one more check that can never go red.
  *
- * @param section The value written under `frontmatter:`, or `undefined` if the key was never written.
+ * So `CONFIG_EMPTY_RULE_LIST` now means exactly one thing: `rules: []` was
+ * written.
+ *
+ * @param section The value written under `frontmatter:`, whatever it parsed to.
  */
 export function sectionFaults(section: unknown): readonly ConfigFault[] {
-  if (section === undefined) return [{ code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
   if (!isMapping(section)) return [{ code: 'CONFIG_INVALID_VALUE', location: SECTION }];
 
   const unrecognised = Object.keys(section)

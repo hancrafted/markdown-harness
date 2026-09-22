@@ -103,9 +103,11 @@ time,command,file,result
 2026-09-09T15:51:40.882Z,assess,"docs/notes/idea.md",fresh
 ```
 
-`result` is `mh --assess`'s own state — `stale`, `fresh`, `unassessable`, `ungoverned`, `absent` — or
-one of this hook's three refusals: `not-installed`, `config-rejected`, `no-answer`. Never a bare
-boolean, because "ran and found nothing" and "ran" are different facts.
+With one governing Module, `result` is that Module's state — `stale`, `fresh`, `unassessable`,
+`unreadable` or `absent`; `ungoverned` is the whole-config state when no Module answers. If several
+Modules answer, the row preserves all of them as `module:state|module:state`. The other values are
+this hook's three refusals: `not-installed`, `config-rejected`, `no-answer`. Never a bare boolean,
+because "ran and found nothing" and "ran" are different facts.
 
 A `fresh` row is the useful one: it proves the hook ran and chose to stay quiet, which is the one
 thing stdout can never show you. **Nothing is written where the tool was not invited** — no config
@@ -123,7 +125,7 @@ the floor.
 
 | What happened                                         | The hook   |
 | ----------------------------------------------------- | ---------- |
-| `mh --assess` answered `REVIEW`                       | **Speaks** |
+| Any Module answered `REVIEW`                          | **Speaks** |
 | It answered anything else                             | Silent     |
 | Never asked — the file is not `.md`                   | Silent     |
 | Never asked — no config anywhere above the file       | Silent     |
@@ -190,7 +192,7 @@ causes in one look, and both are near the top of the table.
 | Silent, and step 3 is silent too       | No config above the file, no local install, or the file is not `.md`                                                                                                  |
 | Silent on a file you know is stale     | `mh --query <path>` — check a rule actually selects it, and `mh --audit` for a rule reporting `won: 0`                                                                |
 | Speaks with no sentence, only evidence | The winning rule has no `assess.stale`. Add one to that rule, not module-wide                                                                                         |
-| Fires on files you do not care about   | The rule's glob is broader than you meant. Narrow it, then re-run `mh --audit`                                                                                        |
+| Fires on files you do not care about   | The rule's `folders:` / `fileNames:` reach further than you meant. Narrow it, then re-run `mh --audit`                                                                |
 | Slows every `Read`                     | Every markdown read spawns one short-lived process. Non-markdown reads cost nothing                                                                                   |
 | Worked for one person, nobody else     | The skill was installed with `--copy`, which puts it somewhere per-agent instead of `.agents/skills/`. The command path above is fixed, so reinstall without the flag |
 
@@ -203,7 +205,7 @@ more than a general impression:
   what you wanted the agent to do instead. That sentence is the whole product surface here.
 - **Silence you did not expect.** Include the output of the by-hand check above — it separates a
   wiring problem from a corpus that really is fresh.
-- **Noise.** A rule that fires more often than it earns, and the glob behind it.
+- **Noise.** A rule that fires more often than it earns, and the selector behind it.
 
 Open an issue at <https://github.com/hancrafted/markdown-harness/issues> with the label
 `needs-triage`, which is this repository's intake label.

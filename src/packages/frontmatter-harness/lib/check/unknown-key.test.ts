@@ -6,7 +6,7 @@
 // a nested shape still permits only its own top-level key.
 
 import { describe, expect, it } from 'vitest';
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { unknownKeyViolations } from './unknown-key.pure';
 
 const REFERENCE = { ruleId: 'reference', intent: 'Reference pages are looked up by slug' };
@@ -19,7 +19,7 @@ describe('unknown keys', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ...REFERENCE,
-        path: ['docs/**/*.md'],
+        folders: ['docs/'],
         fields: { type: { presence: 'required' } },
       };
       const data = { type: 'reference', anything: 'else' };
@@ -32,7 +32,7 @@ describe('unknown keys', () => {
 
     it('reports nothing when unknownKeys is written as allowed', () => {
       // ARRANGE
-      const rule: FrontmatterRule = { ...REFERENCE, path: ['docs/**/*.md'], unknownKeys: 'allowed', fields: {} };
+      const rule: FrontmatterRule = { ...REFERENCE, folders: ['docs/'], unknownKeys: 'allowed', fields: {} };
       const data = { whatever: 1 };
       const clean: readonly unknown[] = [];
       // ACT
@@ -45,7 +45,7 @@ describe('unknown keys', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ...REFERENCE,
-        path: ['docs/**/*.md'],
+        folders: ['docs/'],
         unknownKeys: 'forbidden',
         fields: { type: { presence: 'required' }, slug: { presence: 'optional' } },
       };
@@ -63,7 +63,7 @@ describe('unknown keys', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ...REFERENCE,
-        path: ['docs/reference/**/*.md'],
+        folders: ['docs/reference/'],
         unknownKeys: 'forbidden',
         fields: { type: { presence: 'required' }, description: { presence: 'required' } },
       };
@@ -88,7 +88,7 @@ describe('unknown keys', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ...REFERENCE,
-        path: ['docs/**/*.md'],
+        folders: ['docs/'],
         unknownKeys: 'forbidden',
         fields: { type: { presence: 'required' } },
       };
@@ -108,7 +108,7 @@ describe('unknown keys', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ...REFERENCE,
-        path: ['docs/**/*.md'],
+        folders: ['docs/'],
         unknownKeys: 'forbidden',
         fields: { 'generated.by': { presence: 'required' }, 'sources[].id': { presence: 'required' } },
       };
@@ -124,7 +124,7 @@ describe('unknown keys', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ...REFERENCE,
-        path: ['docs/**/*.md'],
+        folders: ['docs/'],
         unknownKeys: 'forbidden',
         fields: {
           sources: { minItems: 1 },
@@ -147,7 +147,7 @@ describe('unknown keys', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ...REFERENCE,
-        path: ['docs/**/*.md'],
+        folders: ['docs/'],
         unknownKeys: 'forbidden',
         allOf: ['title', 'description'],
         fields: { type: { presence: 'required' } },
@@ -164,7 +164,7 @@ describe('unknown keys', () => {
       // ARRANGE
       const rule: FrontmatterRule = {
         ...REFERENCE,
-        path: ['docs/**/*.md'],
+        folders: ['docs/'],
         unknownKeys: 'forbidden',
         fields: { type: { presence: 'required' } },
       };

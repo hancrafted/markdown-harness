@@ -7,8 +7,9 @@
  * contract is the config fragment exactly as written.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
 import type { UnknownKeyViolation } from '../../../response-contract/index.ts';
+import { FIELD_VIOLATION_CODES } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import type { FrontmatterMapping } from './check.types.ts';
 import { evidenceFor } from './field-evidence.pure.ts';
 
@@ -58,7 +59,7 @@ export function unknownKeyViolations(rule: FrontmatterRule, data: FrontmatterMap
     .map((key) => ({
       field: key,
       value: evidenceFor(data[key]),
-      violation: 'UNKNOWN_KEY_FORBIDDEN' as const,
+      violation: FIELD_VIOLATION_CODES.UNKNOWN_KEY_FORBIDDEN,
       requirement: { unknownKeys: 'forbidden' as const, allowedKeys },
     }));
 }

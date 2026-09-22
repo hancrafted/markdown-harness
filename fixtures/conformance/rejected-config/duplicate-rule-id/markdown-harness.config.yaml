@@ -1,0 +1,14 @@
+# Two rules sharing a `ruleId`.
+#
+# Reports refer to a rule by id and never by position, so two rules answering to
+# one name make every stored answer ambiguous. The fault points at the LATER
+# occurrence: the first rule to claim a name is not the mistake, and reporting
+# it would send the Operator to the rule they meant to keep.
+frontmatter:
+  rules:
+    - ruleId: every-document
+      folders: ['docs/']
+      intent: The first rule to claim this name, and not the mistake.
+    - ruleId: every-document
+      fileNames: [log.md]
+      intent: The second rule to claim the same name.

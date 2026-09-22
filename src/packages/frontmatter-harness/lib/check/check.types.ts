@@ -9,8 +9,8 @@
  * broken block means.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import type { CheckResult } from '../../../response-contract/index.ts';
+import type { ModuleCheck } from '../../../response-contract/index.ts';
+import type { FrontmatterRule } from '../../section.ts';
 
 /** A YAML mapping, before any key of it has been read. */
 export type FrontmatterMapping = Record<string, unknown>;
@@ -94,16 +94,16 @@ export interface GovernedSource {
  * already enough to act on.
  */
 export interface UnreadableGovernedFile {
-  kind: 'unreadable';
+  readonly kind: 'unreadable';
   /** The path the read was attempted at — the corpus root as written, joined to the file's own. */
-  path: string;
+  readonly path: string;
 }
 
 /**
  * The outcome of opening every governed file.
  *
  * A tagged union and not an optional field beside a sentinel, which is what
- * `config-loader`'s stages use: those pair an optional value with a fault LIST,
+ * `foundation`'s config-loading stages use: those pair an optional value with a fault LIST,
  * where empty is a real count and carries no second meaning. There is no
  * equivalent here — a path is one string or no string, and `''` would be a
  * value nobody reads standing in for a state nobody can test. The two unions
@@ -118,8 +118,10 @@ export type GovernedRead =
  * The outcome of checking one corpus.
  *
  * `GovernedRead` one tier up: the same refusal, passed through unchanged,
- * now carrying a verdict instead of bytes.
+ * now carrying this Module's answer instead of bytes. Its answer rather than
+ * the response: the report nests a file's findings under every Module that made
+ * one, and only the composing Package sees them all.
  */
 export type CorpusCheck =
   /** Every governed file was read and judged. */
-  { kind: 'checked'; result: CheckResult } | UnreadableGovernedFile;
+  { kind: 'checked'; result: ModuleCheck } | UnreadableGovernedFile;

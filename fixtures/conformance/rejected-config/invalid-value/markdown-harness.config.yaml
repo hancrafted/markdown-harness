@@ -1,0 +1,14 @@
+# A defined key holding a value outside its type.
+#
+# `presence` draws from a closed vocabulary — required, optional, forbidden —
+# and `maybe` is none of them. Recognising a key without reading what it holds
+# is what lets a value like this reach the evaluator, which branches on
+# `required` and `forbidden` alone and leaves the field silently ungoverned.
+frontmatter:
+  rules:
+    - ruleId: every-document
+      folders: ['docs/']
+      intent: A sound rule, so the only fault reported is the presence value below.
+      fields:
+        title:
+          presence: maybe

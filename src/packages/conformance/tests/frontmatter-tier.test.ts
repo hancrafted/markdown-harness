@@ -1,0 +1,591 @@
+// The `frontmatter` tier's runner, under `fixtures/conformance/frontmatter/`,
+// doing both of its jobs.
+//
+// COVERAGE: every key in the config vocabulary is exercised somewhere, and the
+// config obeys the config-validity rules the validator enforces. When the
+// vocabulary grows, this fails until the suite grows with it.
+//
+// SPECIFICATION: every Conformance case states its own expected outcome in an
+// `<!-- expect: -->` marker, and the last suite in this file holds the
+// implementation to it. That half could not exist before `--check` did; the
+// coverage half above ran alone until then.
+//
+// ARCH-002 makes a changed marker a CONTRACT CHANGE rather than a test fix, so
+// a failure here is answered by reading the case's reasoning paragraph and
+// deciding which of the two is wrong — never by editing the marker to agree
+// with the code.
+//
+// One tier, one runner. The corpus root is the TIER directory rather than
+// `fixtures/conformance/`, which holds tiers and is not a corpus: the config
+// below sits inside the tier and its selectors are written relative to it, so
+// the split moved the tier whole and changed no byte of it.
+
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { pathAssessment } from '../../cli/assessment.ts';
+import { MODULE_SET } from '../../cli/module-set.ts';
+import type { AllowedValue, FieldConstraints, Format } from '../../config-contract/index.ts';
+import { loadConfig } from '../../foundation/load-config.ts';
+import { assessPath } from '../../frontmatter-harness/assess.ts';
+import { checkCorpus } from '../../frontmatter-harness/check.ts';
+import { frontmatterModule } from '../../frontmatter-harness/module.ts';
+import { queryPath } from '../../frontmatter-harness/query.ts';
+import { casesIn, tierRoot } from '../case-corpus.ts';
+import { agentActionOf, FAILS, FIX_FILE, PASSES, PROCEED, REVIEW, UNGOVERNED, verdictOf } from '../case-marker.ts';
+import { coverageAndClosure } from '../coverage-closure.ts';
+import { tierForRunner } from '../tier-record.ts';
+
+const TIER = tierForRunner(import.meta.url);
+if (TIER.caseKind !== 'markdown') throw new Error(`${TIER.name} is not a markdown tier`);
+if (TIER.assessmentInstant === undefined) throw new Error(`${TIER.name} has no assessment instant`);
+
+/** The synthetic repo root the tier's config is written relative to. */
+const CORPUS_ROOT = tierRoot(TIER.name);
+
+// Through the real loader against the DECLARED Module set, rather than a YAML
+// parse plus a cast. The cast was the only thing typing this file, and it typed
+// it as a config type that no longer exists: with the whole-file type retired,
+// the largest thing anybody may claim is one Module's section, and the only way
+// to hold one is to have the Module that owns it validate it.
+const loaded = loadConfig(join(CORPUS_ROOT, TIER.configFile), MODULE_SET);
+if (loaded.config === undefined) throw new Error(`the tier config was refused: ${JSON.stringify(loaded.faults)}`);
+const section = loaded.config.sectionFor(frontmatterModule);
+if (section === undefined) throw new Error('the tier config must name the frontmatter Module');
+const rules = section.rules;
+
+/** Every key a rule may carry. Grows only by deliberate amendment. */
+const RULE_KEYS = [
+  'ruleId',
+  'folders',
+  'fileNames',
+  'excludeFiles',
+  'intent',
+  'frontmatter',
+  'fields',
+  'unknownKeys',
+  'exactlyOneOf',
+  'anyOf',
+  'allOf',
+  'assess',
+] as const;
+
+/** Every key a field constraint may carry. */
+const CONSTRAINT_KEYS = [
+  'presence',
+  'minLength',
+  'maxLength',
+  'format',
+  'pattern',
+  'minItems',
+  'maxItems',
+  'itemMaxLength',
+  'allowed',
+  'intent',
+] as const;
+
+/**
+ * What a rule may still carry alongside `frontmatter: forbidden`. Everything else
+ * in `RULE_KEYS` is payload, derived rather than listed again — so a payload key
+ * added above is covered here without a second edit.
+ */
+const NON_PAYLOAD_KEYS: readonly string[] = ['ruleId', 'folders', 'fileNames', 'excludeFiles', 'intent', 'frontmatter'];
+const PAYLOAD_KEYS = RULE_KEYS.filter((key) => !NON_PAYLOAD_KEYS.includes(key));
+
+/** Every key one `allowed` entry may carry. */
+const ALLOWED_ENTRY_KEYS: readonly string[] = ['value', 'intent'];
+
+const FORMATS: Format[] = ['datetime', 'uri', 'actor'];
+
+function everyRuleKey(): Set<string> {
+  const seen = new Set<string>();
+  for (const rule of rules) for (const key of Object.keys(rule)) seen.add(key);
+  return seen;
+}
+
+function everyConstraint(): FieldConstraints[] {
+  return rules.flatMap((rule) => Object.values(rule.fields ?? {}));
+}
+
+function everyConstraintKey(): Set<string> {
+  const seen = new Set<string>();
+  for (const constraint of everyConstraint()) for (const key of Object.keys(constraint)) seen.add(key);
+  return seen;
+}
+
+function everyAllowedValue(): AllowedValue[] {
+  return everyConstraint().flatMap((constraint) => constraint.allowed ?? []);
+}
+
+function everyFieldAddress(): string[] {
+  return rules.flatMap((rule) => Object.keys(rule.fields ?? {}));
+}
+
+describe('valid-test-config.yaml is a complete test surface', () => {
+  describe('success cases', () => {
+    it('names exactly one Module of the declared set', () => {
+      // Asked of the declared Module set rather than of the file's own keys,
+      // which is what the derived key list made possible: a key nobody claims is
+      // no longer in the config language at all, so "one section" is a statement
+      // about which Modules this tier exercises rather than about YAML.
+      // ARRANGE
+      const expected = ['frontmatter'];
+      // ACT
+      const actual = MODULE_SET.filter((module) => loaded.config?.sectionFor(module) !== undefined).map(
+        (module) => module.key,
+      );
+      // ASSERT
+      expect(actual).toEqual(expected);
+      expect(rules.length).toBeGreaterThan(0);
+    });
+
+    it('proves coverage and closure for the rule-key vocabulary together', () => {
+      // ARRANGE
+      const complete = { unreached: [], undeclared: [] };
+      // ACT
+      const keys = [...everyRuleKey()];
+      const actual = coverageAndClosure(RULE_KEYS, keys, keys);
+      // ASSERT
+      expect(actual).toEqual(complete);
+    });
+
+    it('proves coverage and closure for the constraint-key vocabulary together', () => {
+      // ARRANGE
+      const complete = { unreached: [], undeclared: [] };
+      // ACT
+      const keys = [...everyConstraintKey()];
+      const actual = coverageAndClosure(CONSTRAINT_KEYS, keys, keys);
+      // ASSERT
+      expect(actual).toEqual(complete);
+    });
+
+    it('proves coverage and closure for the allowed-entry vocabulary together', () => {
+      // The allowed-entry tier had a closure assertion and no coverage loop, so
+      // an entry key could have gone unreached while the suite still called
+      // itself complete. ARCH-002 §1.2 names this tier alongside the other
+      // three; §3.1 requires every one of them be reached.
+      // ARRANGE
+      const complete = { unreached: [], undeclared: [] };
+      // ACT
+      const keys = everyAllowedValue().flatMap((entry) => Object.keys(entry));
+      const actual = coverageAndClosure(ALLOWED_ENTRY_KEYS, keys, keys);
+      // ASSERT
+      expect(actual).toEqual(complete);
+    });
+
+    it('proves coverage and closure for named formats together', () => {
+      // ARRANGE
+      const complete = { unreached: [], undeclared: [] };
+      // ACT
+      const formats = everyConstraint().flatMap((constraint) => constraint.format ?? []);
+      const actual = coverageAndClosure(FORMATS, formats, formats);
+      // ASSERT
+      expect(actual).toEqual(complete);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('gives no two rules the same ruleId', () => {
+      // ARRANGE
+      const ids = rules.map((rule) => rule.ruleId);
+      // ACT
+      const repeated = ids.filter((id, index) => ids.indexOf(id) !== index);
+      // ASSERT
+      expect(repeated).toEqual([]);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('reaches both nesting depths', () => {
+      // ARRANGE
+      const listEntry = 'list entry';
+      const mappingKey = 'mapping key';
+      const topLevel = 'top level';
+      // ACT
+      const depths = everyFieldAddress().map((address) => {
+        if (address.includes('[].')) return listEntry;
+        return address.includes('.') ? mappingKey : topLevel;
+      });
+      // ASSERT
+      expect(depths).toContain(listEntry);
+      expect(depths).toContain(mappingKey);
+    });
+
+    it('addresses a list and its entries separately', () => {
+      // ARRANGE
+      const list = 'sources';
+      const entryField = 'sources[].resource';
+      // ACT
+      const addresses = new Set(everyFieldAddress());
+      // ASSERT
+      expect(addresses).toContain(list);
+      expect(addresses).toContain(entryField);
+    });
+  });
+});
+
+describe('valid-test-config.yaml obeys the config-validity rules', () => {
+  describe('success cases', () => {
+    it('gives every rule at least one selector axis', () => {
+      // At least one, never exactly one: the two axes INTERSECT, so a rule
+      // carrying both is spelling an exact path rather than asking twice.
+      // ARRANGE
+      const selectorKeys = ['folders', 'fileNames'];
+      const none = 0;
+      // ACT
+      const counts = rules.map((rule) => selectorKeys.filter((key) => key in rule).length);
+      // ASSERT
+      for (const count of counts) expect(count).toBeGreaterThan(none);
+    });
+
+    it('spells every folder token with its mandatory trailing separator', () => {
+      // ARRANGE
+      const separator = '/';
+      // ACT
+      const tokens = rules.flatMap((rule) => rule.folders ?? []);
+      // ASSERT
+      expect(tokens.length).toBeGreaterThan(0);
+      for (const token of tokens) expect(token.endsWith(separator)).toBe(true);
+    });
+
+    it('spells every file-name token as a bare basename', () => {
+      // ARRANGE
+      const separator = '/';
+      // ACT
+      const tokens = rules.flatMap((rule) => rule.fileNames ?? []);
+      // ASSERT
+      expect(tokens.length).toBeGreaterThan(0);
+      for (const token of tokens) expect(token).not.toContain(separator);
+    });
+
+    it('gives every rule a ruleId', () => {
+      // ARRANGE
+      const ids = rules.map((rule) => rule.ruleId);
+      // ACT
+      const missing = ids.filter((id) => !id);
+      // ASSERT
+      expect(missing).toEqual([]);
+    });
+
+    it('gives every rule an intent', () => {
+      // ARRANGE
+      const intents = rules.map((rule) => rule.intent);
+      // ACT
+      const missing = intents.filter((intent) => !intent);
+      // ASSERT
+      expect(missing).toEqual([]);
+    });
+
+    it('gives every pattern a sibling intent', () => {
+      // ARRANGE
+      const patterned = everyConstraint().filter((constraint) => 'pattern' in constraint);
+      // ACT
+      const missing = patterned.filter((constraint) => !constraint.intent);
+      // ASSERT
+      expect(missing).toEqual([]);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('leaves a frontmatter-forbidden rule with no payload', () => {
+      // ARRANGE
+      const forbidding = rules.filter((rule) => 'frontmatter' in rule);
+      const forbidden = 'forbidden';
+      // ACT
+      const withPayload = forbidding.flatMap((rule) => PAYLOAD_KEYS.filter((key) => key in rule));
+      // ASSERT
+      for (const rule of forbidding) expect(rule.frontmatter).toBe(forbidden);
+      expect(withPayload).toEqual([]);
+    });
+
+    it('spells every allowed entry as a record, never a bare string', () => {
+      // ARRANGE
+      const entries = everyAllowedValue();
+      const recordType = 'object';
+      const valueKey = 'value';
+      // ACT
+      const types = entries.map((entry) => typeof entry);
+      // ASSERT
+      for (const type of types) expect(type).toBe(recordType);
+      for (const entry of entries) expect(entry).toHaveProperty(valueKey);
+    });
+
+    it('rejects an intent that is present but empty', () => {
+      // ARRANGE
+      const carriers = [...everyConstraint(), ...everyAllowedValue()].filter((carrier) => 'intent' in carrier);
+      // ACT
+      const empty = carriers.filter((carrier) => !carrier.intent);
+      // ASSERT
+      expect(empty).toEqual([]);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('derives the type vocabulary from the union of allowed values', () => {
+      // The Floor is gone: no top-level ceiling and no rule-level `types:`. `type`
+      // is an ordinary field, so the repo's vocabulary is implicit rather than
+      // declared — derivable for reporting, no longer stated in one place.
+      // ARRANGE
+      const retiredKey = 'types';
+      // ACT
+      const ceilingCarriers = rules.filter((rule) => retiredKey in rule).map((rule) => rule.intent);
+      const vocabulary = new Set(
+        (rules.flatMap((rule) => rule.fields?.type?.allowed ?? []) as AllowedValue[]).map((entry) => entry.value),
+      );
+      // ASSERT
+      expect(ceilingCarriers).toEqual([]);
+      expect(vocabulary.size).toBeGreaterThan(1);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The specification half: each case's stated verdict, against what runs.
+// ---------------------------------------------------------------------------
+
+// The verdict vocabulary and the marker reading both come from the Package's
+// own entry points now, so the runner and ARCH-002's enforcer name the same
+// three words in one place and a tier move stays a rename.
+
+const corpus = casesIn(TIER.name);
+const cases = corpus.map((path) => ({ path, verdict: verdictOf(CORPUS_ROOT, path) }));
+const stated = (verdict: string): string[] => cases.filter((one) => one.verdict === verdict).map((one) => one.path);
+
+const checked = checkCorpus(CORPUS_ROOT, corpus, section);
+const verdict = checked.kind === 'checked' ? checked.result : undefined;
+const reported = new Set((verdict?.files ?? []).map((file) => file.path));
+
+/**
+ * The verdict the IMPLEMENTATION reaches for one case.
+ *
+ * Reduced to the same three words the markers use, so a disagreement reads as
+ * `expected 'PASSES' to be 'FAILS'` — which names what the harness actually
+ * said. Comparing set membership as a boolean would report only that false is
+ * not true, the same message for every possible cause.
+ */
+function verdictFrom(path: string): string {
+  if (queryPath(path, section) === undefined) return UNGOVERNED;
+  return reported.has(path) ? FAILS : PASSES;
+}
+
+describe('the harness reports the verdict each Conformance case states', () => {
+  describe('success cases', () => {
+    it.each(stated(PASSES))('reports %s as conforming', (path) => {
+      // A PASSES case must be GOVERNED and carry nothing: a file that passed
+      // because no rule looked at it would be an UNGOVERNED case instead, and
+      // the two are different claims. Both are covered by comparing verdicts.
+      // ARRANGE
+      const expected = PASSES;
+      // ACT
+      const actual = verdictFrom(path);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it.each(stated(FAILS))('reports %s as violating', (path) => {
+      // ARRANGE
+      const expected = FAILS;
+      // ACT
+      const actual = verdictFrom(path);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it.each(stated(UNGOVERNED))('never governs %s, so it can carry real faults unreported', (path) => {
+      // The faults in an UNGOVERNED case are real and may never be reported.
+      // That is the whole of what such a case tests.
+      // ARRANGE
+      const expected = UNGOVERNED;
+      // ACT
+      const actual = verdictFrom(path);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+
+    it('answers every case at once, so a disagreement names the whole corpus', () => {
+      // The per-case tests above fail one file at a time. This one fails with a
+      // diff of every case that disagrees, which is what a reader needs when a
+      // parsing change moves several verdicts together.
+      // ARRANGE
+      const expected = Object.fromEntries(cases.map((one) => [one.path, one.verdict]));
+      // ACT
+      const actual = Object.fromEntries(cases.map((one) => [one.path, verdictFrom(one.path)]));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('exercises all three verdicts, so no branch of this suite is vacuous', () => {
+      // An `it.each` over an empty list is a passing suite that asserted
+      // nothing. This is what stops one of the three blocks above going silent.
+      // ARRANGE
+      const everyVerdict = [PASSES, FAILS, UNGOVERNED];
+      // ACT
+      const exercised = everyVerdict.filter((verdict) => stated(verdict).length > 0);
+      // ASSERT
+      expect(exercised).toEqual(everyVerdict);
+    });
+
+    it('agrees with the marker tally on how many files are governed and invalid', () => {
+      // The governed list and the per-file verdicts come from the same run, so this
+      // catches the two drifting apart — and it is stated against the MARKERS
+      // rather than against the corpus size, so adding a case with no marker
+      // cannot quietly satisfy it.
+      //
+      // This Module's own tally rather than the response summary: `--check`
+      // counts governed files as a UNION across Modules, and a tier with one
+      // Module in it cannot tell a union from a sum. The summary itself is
+      // asserted at the process boundary, where the composition it comes from
+      // has actually run.
+      // ARRANGE
+      const expected = {
+        governedFiles: stated(PASSES).length + stated(FAILS).length,
+        invalidFiles: stated(FAILS).length,
+      };
+      // ACT
+      const actual = { governedFiles: verdict?.governed.length, invalidFiles: verdict?.files.length };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('enumerates every Conformance case the suite declares', () => {
+      // Stated by hand rather than counted back off the corpus it is checking.
+      // ARCH-002 makes adding or removing a Conformance case a contract change,
+      // so this number belongs to that review instead of silently agreeing with
+      // whatever the tree now holds — and `corpus.length` compared against
+      // anything derived from `corpus` could not fail at all.
+      // ARRANGE
+      const declaredCases = TIER.caseCount;
+      // ACT
+      const enumerated = corpus.length;
+      // ASSERT
+      expect(enumerated).toBe(declaredCases);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The Assessment half: each case's stated agent action, against what runs.
+// ---------------------------------------------------------------------------
+
+/**
+ * The instant this suite is judged against, PINNED.
+ *
+ * Not in `valid-test-config.yaml`, and the placement is the decision: the
+ * config is the subject under test, so the instant belongs beside the runner
+ * that judges it. Left to a real clock, `fresh.md` would turn `REVIEW` on the
+ * day its `stale_after` passed and this suite would go red on an unchanged tree
+ * — on a date nobody wrote down. Moving this constant is a contract change on
+ * the same terms as moving a marker.
+ */
+const ASSESSMENT_INSTANT = TIER.assessmentInstant;
+
+const assessCases = corpus
+  .map((path) => ({ path, action: agentActionOf(CORPUS_ROOT, path) }))
+  .filter((one): one is { path: string; action: string } => one.action !== undefined);
+
+const marked = (action: string): string[] => assessCases.filter((one) => one.action === action).map((one) => one.path);
+
+/** What the IMPLEMENTATION answers for one case, at the pinned instant. */
+function actionFrom(path: string): string {
+  const assessment = assessPath({ root: CORPUS_ROOT, path: path }, section, ASSESSMENT_INSTANT);
+  const result = pathAssessment([{ module: frontmatterModule.key, assessment }]);
+  if (result.modules !== undefined) return result.modules[0].agentAction;
+  return result.agentAction;
+}
+
+describe('the harness reports the agent action each Conformance case states', () => {
+  describe('success cases', () => {
+    it.each(marked(PROCEED))('tells an agent to proceed on %s', (path) => {
+      // ARRANGE
+      const expected = PROCEED;
+      // ACT
+      const actual = actionFrom(path);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+
+    it("carries the Operator's own sentence on a stale file, verbatim, and names the block it came from", () => {
+      // The one case where this tool emits prose, and it is never its own. The
+      // sentence below is the `freshness` rule's `assess.stale` value, copied
+      // from the config rather than reworded — if the two ever disagree, the
+      // config is right and this is the contract change.
+      // ARRANGE
+      const verbatim = 'Re-verify this against the source before quoting it, then move stale_after.';
+      const expected = { instruction: verbatim, source: 'rule' };
+      // ACT
+      const answered = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness/stale.md' }, section, ASSESSMENT_INSTANT);
+      const actual = { instruction: answered?.instruction, source: answered?.source };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it.each(marked(REVIEW))('tells an agent to review %s', (path) => {
+      // ARRANGE
+      const expected = REVIEW;
+      // ACT
+      const actual = actionFrom(path);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+
+    it.each(marked(FIX_FILE))('tells an agent to repair %s', (path) => {
+      // ARRANGE
+      const expected = FIX_FILE;
+      // ACT
+      const actual = actionFrom(path);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('answers every marked case at once, so a disagreement names them together', () => {
+      // ARRANGE
+      const expected = Object.fromEntries(assessCases.map((one) => [one.path, one.action]));
+      // ACT
+      const actual = Object.fromEntries(assessCases.map((one) => [one.path, actionFrom(one.path)]));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('exercises all three agent actions, so no branch of this suite is vacuous', () => {
+      // ARRANGE
+      const everyAction = [REVIEW, PROCEED, FIX_FILE];
+      // ACT
+      const exercised = everyAction.filter((action) => marked(action).length > 0);
+      // ASSERT
+      expect(exercised).toEqual(everyAction);
+    });
+
+    it('states no agent action outside the vocabulary', () => {
+      // Closure, not coverage: the marker set proves the SUITE reaches every
+      // action, and this proves no case states one the contract does not define.
+      // ARRANGE
+      const known = [REVIEW, PROCEED, FIX_FILE];
+      // ACT
+      const unknown = assessCases.map((one) => one.action).filter((action) => !known.includes(action));
+      // ASSERT
+      expect(unknown).toEqual([]);
+    });
+
+    it('has no Module answer for a file no rule selects', () => {
+      // The UNGOVERNED case carries a second marker. This Module passes it by;
+      // the composing Package turns every Module passing by into `ungoverned`.
+      // ARRANGE
+      const expected = undefined;
+      // ACT
+      const actual = assessPath(
+        { root: CORPUS_ROOT, path: 'docs/research/vendor/upstream.md' },
+        section,
+        ASSESSMENT_INSTANT,
+      );
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});

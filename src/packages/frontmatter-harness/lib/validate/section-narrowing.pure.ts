@@ -1,7 +1,9 @@
 /**
  * Earn the config type for a validated section, rather than asserting it.
  *
- * Loading used to end in `as unknown as MarkdownHarnessConfig`. That assertion
+ * Loading used to end in `as unknown as` the whole-file config type — a type
+ * that has since retired outright, leaving each Module's own section as the
+ * largest thing anybody claims. That assertion
  * was already GUARDED — validation ran first and returned early on any fault —
  * so by the time #41 landed, nothing reached the evaluator mistyped. What it
  * lacked was any way to STAY guarded. An assertion is unconditional by
@@ -16,11 +18,11 @@
  * `Record<keyof T, true>` and stops compiling when its type grows.
  */
 
-import type { FrontmatterConfig } from '../../../config-contract/index.ts';
+import type { FrontmatterConfig } from '../../section.ts';
 import { sectionFaults } from './section-faults.pure.ts';
 
 /**
- * Whether a section is assignable to the type the config contract declares.
+ * Whether a section is assignable to the type this Module declares.
  *
  * The validator is the whole of the check, and there is deliberately no second
  * structural walk here. Two descriptions of one shape drift apart, and the
@@ -29,7 +31,7 @@ import { sectionFaults } from './section-faults.pure.ts';
  * authority there is; a rival walk in this file could only ever be a worse copy
  * of it.
  *
- * @param section The value written under `frontmatter:`, or `undefined` if the key was never written.
+ * @param section The value written under `frontmatter:`, whatever it parsed to.
  */
 export function isFrontmatterConfig(section: unknown): section is FrontmatterConfig {
   return sectionFaults(section).length === 0;

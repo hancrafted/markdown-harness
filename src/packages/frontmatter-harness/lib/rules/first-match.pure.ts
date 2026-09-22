@@ -7,8 +7,7 @@
  * why the config's rule list is a list and not a mapping.
  */
 
-import type { FrontmatterRule } from '../../../config-contract/index.ts';
-import type { GlobMatcher } from './rules.types.ts';
+import type { FrontmatterRule } from '../../section.ts';
 import { ruleSelects } from './selector.pure.ts';
 
 /**
@@ -21,12 +20,7 @@ import { ruleSelects } from './selector.pure.ts';
  *
  * @param path A normalised, repo-root-relative path.
  * @param rules The ordered rule list, in the order the Operator wrote it.
- * @param matches The glob matcher to decide with.
  */
-export function findFirstMatch(
-  path: string,
-  rules: readonly FrontmatterRule[],
-  matches: GlobMatcher,
-): FrontmatterRule | undefined {
-  return rules.find((rule) => ruleSelects(rule, path, matches));
+export function findFirstMatch(path: string, rules: readonly FrontmatterRule[]): FrontmatterRule | undefined {
+  return rules.find((rule) => ruleSelects(rule, path));
 }

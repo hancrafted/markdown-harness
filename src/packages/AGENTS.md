@@ -31,9 +31,9 @@ The measurement is in `docs/workshop/probe/adr-routing/measurement.md`.
 There is no copy-me template Package. The canonical shape is the `Example` block in `ARCH-004`,
 which loads itself when you open any file under `src/`.
 
-Every classifier now has an on-disk instance, so read one rather than only the record: 35 `.pure.ts`
-files and 5 `.impure.ts` files sit under `src/packages/`, measured 2026-09-08. `config-contract/` is
-still the one Package that holds nothing but `.types` under `lib/` and `.test` under `tests/`, which
+Every classifier now has an on-disk instance, so read one rather than only the record: 47 `.pure.ts`
+files and 9 `.impure.ts` files sit under `src/packages/`, measured 2026-09-22. `config-contract/` is
+the one Package that holds only `.types` under `lib/`, with no `tests/` directory, which
 is why its boundary edges are invisible to `dependency-cruiser` — trap 5 in `docs/agents/verification.md`.
 
 For a `.pure` file whose determinism is the whole point, read `usage.pure.ts` or `parse-argv.pure.ts`

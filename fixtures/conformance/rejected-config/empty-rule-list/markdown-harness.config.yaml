@@ -1,0 +1,14 @@
+# A config naming a Module and governing nothing.
+#
+# An empty list is a config error rather than an inert harness: the Operator
+# wrote the section, so silence is the one answer that cannot be what they
+# meant.
+#
+# An ABSENT `frontmatter:` section no longer earns this code, and that sentence
+# used to stand here. With the recognised key set derived from the declared
+# Module set, a config naming no Module at all is answered once by the loader as
+# `CONFIG_NO_MODULE_SECTION` against the file, and a Module's own validation is
+# never reached for a key that was not written. So this code now means exactly
+# one thing: `rules: []` was written. See `../no-module-section/`.
+frontmatter:
+  rules: []
