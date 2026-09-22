@@ -102,6 +102,11 @@ let sealed = '';
  */
 let configless = '';
 
+/** Temporary corpus and configs for #175 two-sided exclusion canary test. */
+let canaryRoot = '';
+let misspelledCanaryConfig = '';
+let correctedCanaryConfig = '';
+
 /** Where the one-line Node-version stand-ins are written. See `mhOnNode`. */
 let shimmed = '';
 
@@ -199,6 +204,34 @@ beforeAll(() => {
       '',
     ].join('\n'),
   );
+
+  canaryRoot = mkdtempSync(join(tmpdir(), 'mh-canary-'));
+  mkdirSync(join(canaryRoot, 'docs'), { recursive: true });
+  writeFileSync(join(canaryRoot, 'docs', 'a.md'), '---\ntype: note\n---\n');
+  writeFileSync(join(canaryRoot, 'docs', 'b.md'), '---\ntype: note\n---\n');
+  writeFileSync(join(canaryRoot, 'docs', 'c.md'), '---\ntype: note\n---\n');
+
+  const canaryConfig = (axisKey: 'filenames' | 'fileNames'): string =>
+    [
+      'frontmatter:',
+      '  rules:',
+      '    - ruleId: canary-rule',
+      "      folders: ['docs/']",
+      '      excludeFiles:',
+      "        - folders: ['docs/']",
+      `          ${axisKey}: ['c.md']`,
+      '      intent: Tests two-sided exclusion canary',
+      '      fields:',
+      '        type:',
+      '          presence: required',
+      '',
+    ].join('\n');
+
+  misspelledCanaryConfig = join(canaryRoot, 'misspelled.config.yaml');
+  writeFileSync(misspelledCanaryConfig, canaryConfig('filenames'));
+
+  correctedCanaryConfig = join(canaryRoot, 'corrected.config.yaml');
+  writeFileSync(correctedCanaryConfig, canaryConfig('fileNames'));
 });
 
 afterAll(() => {
@@ -208,6 +241,7 @@ afterAll(() => {
   rmSync(conforming, { recursive: true, force: true });
   rmSync(shimmed, { recursive: true, force: true });
   rmSync(configless, { recursive: true, force: true });
+  rmSync(canaryRoot, { recursive: true, force: true });
 });
 
 /** Run the built entry file the way a caller would, and report all three channels. */
@@ -556,6 +590,20 @@ describe('mh --check', () => {
       // ASSERT
       expect([...new Set(reached)].sort()).toEqual(codes);
     });
+
+    it('governs the corpus when an exclusion axis is spelled fileNames rather than filenames', () => {
+      // The other half of #175's two-sided canary: with the typo corrected, the
+      // exclusion narrows to the named file and the remaining files stay governed.
+      // ARRANGE
+      const nothingWrong = 0;
+      const expectedGovernedCount = 2;
+      // ACT
+      const run = mh('--check', '--root', canaryRoot, '--config', correctedCanaryConfig);
+      const summary = JSON.parse(run.stdout).result.summary;
+      // ASSERT
+      expect(run.code).toBe(nothingWrong);
+      expect(summary.governedFiles).toBe(expectedGovernedCount);
+    });
   });
 
   describe('failure cases', () => {
@@ -608,6 +656,23 @@ describe('mh --check', () => {
       expect(run.stdout).toBe(empty);
       expect(run.stderr).toContain(lockedFile);
       expect(run.stderr).not.toContain(USAGE_LEAD);
+    });
+
+    it('refuses an exclusion whose axis key is misspelled, rather than silently ungoverning the corpus', () => {
+      // The two-sided canary from #175: writing `filenames:` inside an exclusion
+      // previously widened it to the whole folder, taking 3 governed files down to 0
+      // while staying green. Now it is refused with CONFIG_UNRECOGNISED_KEY.
+      // ARRANGE
+      const cannotReport = 2;
+      const expectedFaults = [
+        { code: 'CONFIG_UNRECOGNISED_KEY', location: 'frontmatter.rules[0].excludeFiles.filenames' },
+      ];
+      // ACT
+      const run = mh('--check', '--root', canaryRoot, '--config', misspelledCanaryConfig);
+      const actualFaults = JSON.parse(run.stdout).result.faults;
+      // ASSERT
+      expect(run.code).toBe(cannotReport);
+      expect(actualFaults).toEqual(expectedFaults);
     });
   });
 
