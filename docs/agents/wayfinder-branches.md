@@ -4,9 +4,12 @@ type: agent-guide
 
 # Wayfinder Branches
 
-Where a map's work lands. Every map owns one **map branch**; ticket work stacks on it, and `main` sees the effort once, when the map's own pull request merges.
+Where a map's or epic's work lands. Each owns a branch named after itself —
+`map/<map-number>-<slug>` or `epic/<epic-number>-<slug>` — and every sub-ticket pull request is
+based on that branch rather than on `main`. The work reaches the default branch once, when the
+map's or epic's own pull request merges.
 
-This **adds** to the wayfinder skill, which says nothing about branches beyond a throwaway `research/<name>`. It is lock-managed and gets overwritten on skill update, so the rule lives here instead. It applies to every session on a map — charting, resolving, research subagent — and to every checkout: the repo root, `.worktrees/<name>`, or a Host-harness worktree under `.claude/worktrees/`. Where the session is checked out is not the question. What its pull request is **based on** is.
+This **adds** to the wayfinder skill, which says nothing about branches beyond a throwaway `research/<name>`. It is lock-managed and gets overwritten on skill update, so the rule lives here instead. It applies to every session on a map or epic — charting, slicing, resolving, research subagent — and to every checkout: the repo root, `.worktrees/<name>`, or a Host-harness worktree under `.claude/worktrees/`. Where the session is checked out is not the question. What its pull request is **based on** is.
 
 ## The map branch
 
@@ -26,7 +29,7 @@ gh pr create --base main --draft --title "Map: folders-and-files (#63)" --body "
 
 ## Resolving a ticket
 
-Branch from the map branch, never from `main`, and target the map branch explicitly:
+Branch from the owner branch, never from `main`, and target it explicitly:
 
 ```bash
 git fetch origin
@@ -36,18 +39,18 @@ gh pr create --base map/63-folders-and-files --title "..." --body "... (map #63)
 
 Keep the prefix the repo already uses — `feature/<slug>`, `research/<name>`. The prefix is cosmetic; the base is load-bearing.
 
-`--base` is not optional. Without it `gh` falls back to `branch.<name>.gh-merge-base`, and with that unset, to the repository's default branch — so an omitted flag opens a pull request against `main` silently, with no error to read. A worktree cut from `main` also has no `map/*` ref until it fetches, which is why `git fetch origin` comes first.
+`--base` is not optional. Without it `gh` falls back to `branch.<name>.gh-merge-base`, and with that unset, to the repository's default branch — so an omitted flag opens a pull request against `main` silently, with no error to read. A worktree cut from `main` also has no `map/*` or `epic/*` ref until it fetches, which is why `git fetch origin` comes first.
 
 ## Closing a ticket
 
-A ticket that produced a diff closes **after** its pull request merges into the map branch, and closes **by hand**:
+A ticket that produced a diff closes **after** its pull request merges into the owner branch, and closes **by hand**:
 
 ```bash
 gh pr merge <n> --squash --delete-branch
 gh issue close <ticket> --comment "<the answer>"
 ```
 
-`Closes #<ticket>` in the body does nothing here. GitHub only auto-closes a linked issue when the pull request merges into the repository's **default branch**, and a map branch never is one — the link renders in the UI and then the merge passes it by. `gh pr create --help` states the behaviour without that condition, so the help text is not the thing to trust. Write the keyword anyway for the visible link, and close the issue yourself.
+`Closes #<ticket>` in the body does nothing here. GitHub only auto-closes a linked issue when the pull request merges into the repository's **default branch**, and an owner branch never is one — the link renders in the UI and then the merge passes it by. `gh pr create --help` states the behaviour without that condition, so the help text is not the thing to trust. Write the keyword anyway for the visible link, and close the issue yourself.
 
 A ticket that produced no diff — most grillings, most research reaching a decision rather than a file — has no pull request to wait on and closes exactly as the skill says.
 
