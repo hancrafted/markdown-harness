@@ -14,39 +14,12 @@
  * ask for the same repair once per element.
  */
 
+import { isFileNameToken, isFolderToken } from '../../../foundation/selector-grammar.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
 
 /** The two axes, named once so the presence checks and the token checks agree. */
 const SELECTOR_AXES: readonly string[] = ['folders', 'fileNames'];
-
-/** The separator a folder token must end in and a file name must not carry. */
-const SEPARATOR = '/';
-
-/** The corpus root's own token, the one folder with no name of its own. */
-const ROOT_FOLDER = './';
-/**
- * Glob syntax characters from the retired matcher that the config language
- * refuses in any selector token:
- * - `*` and `?`: wildcards (match-any, single-character)
- * - `[` and `]`: character classes
- * - `{` and `}`: brace expansions / alternatives
- *
- * Chosen because an Operator migrating from glob syntax might paste one of
- * these into the new literal selector grammar. Without this refusal, a token
- * like `docs/*\/` or `*.md` would be accepted as a literal token matching
- * nothing on disk, silently leaving documents ungoverned.
- *
- * Kept to exactly these six characters rather than forbidding all non-alphanumeric
- * characters: filesystem paths and file names legitimately carry characters like
- * `-`, `_`, `.`, and `@`.
- */
-const REFUSED_GLOB_CHARACTERS: readonly string[] = ['*', '?', '[', ']', '{', '}'];
-
-/** Whether one token carries any refused glob / wildcard character. */
-function carriesWildcard(token: string): boolean {
-  return REFUSED_GLOB_CHARACTERS.some((character) => token.includes(character));
-}
 
 function isMappingList(value: unknown): value is readonly Record<string, unknown>[] {
   return Array.isArray(value) && value.every(isMapping);
@@ -69,29 +42,6 @@ function invalid(location: string): ConfigFault {
  */
 export function isStringList(value: unknown): boolean {
   return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
-}
-
-/**
- * Whether one folder token is spelled the one way a folder is spelled.
- *
- * The mandatory trailing separator is what keeps `docs/vision/` from
- * prefix-matching `docs/visionary/`, and what makes a folder token
- * unmistakable for a file name at a glance. `./` is allowed the dot segment no
- * other token may carry, because the corpus root is the one folder with no name
- * of its own and the empty string is not a token anyone can write.
- */
-function isFolderToken(token: string): boolean {
-  if (carriesWildcard(token)) return false;
-  if (token === ROOT_FOLDER) return true;
-  if (!token.endsWith(SEPARATOR)) return false;
-  if (token.startsWith(SEPARATOR)) return false;
-  return !token.split(SEPARATOR).some((segment, index, segments) => segment === '' && index < segments.length - 1);
-}
-
-/** Whether one file name is a basename rather than a path. */
-function isFileNameToken(token: string): boolean {
-  if (carriesWildcard(token)) return false;
-  return token !== '' && !token.includes(SEPARATOR);
 }
 
 /**

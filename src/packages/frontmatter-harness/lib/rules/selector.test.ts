@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Selector } from '../../../config-contract/index.ts';
 import type { FrontmatterRule } from '../../section.ts';
-import { folderOf, ruleSelects, selectionFor, selectorMatches } from './selector.pure';
+import { ruleSelects, selectionFor, selectorMatches } from './selector.pure';
 
 const folderRule: FrontmatterRule = {
   ruleId: 'research',
@@ -143,24 +143,6 @@ describe('rule selection', () => {
   });
 
   describe('edge cases', () => {
-    it('answers the root token for a path carrying no separator', () => {
-      // ARRANGE
-      const root = './';
-      // ACT
-      const actual = folderOf('README.md');
-      // ASSERT
-      expect(actual).toBe(root);
-    });
-
-    it('answers everything up to and including the last separator for a nested path', () => {
-      // ARRANGE
-      const folder = 'docs/research/vendor/';
-      // ACT
-      const actual = folderOf('docs/research/vendor/upstream.md');
-      // ASSERT
-      expect(actual).toBe(folder);
-    });
-
     it('reaches every path when a selector carries neither axis, which only a refused config can hold', () => {
       // ARRANGE
       // "An absent axis means every" composes, so both absent means everything.
