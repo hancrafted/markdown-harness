@@ -20,7 +20,14 @@ import { findUnrecognisedTopLevelKeys, namesAnyModule } from './top-level-keys.p
 
 /** A Module by its key alone, which is all this unit reads. */
 function moduleClaiming(key: string): ModuleDescriptor<unknown> {
-  return { key, validateSection: () => ({ faults: [] }) };
+  return {
+    key,
+    validateSection: () => ({ faults: [] }),
+    query: () => undefined,
+    audit: () => undefined,
+    assess: () => undefined,
+    check: () => undefined,
+  };
 }
 
 const FRONTMATTER = moduleClaiming('frontmatter');

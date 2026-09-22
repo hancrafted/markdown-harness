@@ -36,19 +36,26 @@ export interface SectionValidation<TSection> {
 }
 
 /**
- * How a Module reaches the Core: one top-level key, and the grammar of what may
- * sit under it.
+ * How a Module reaches the Core: one top-level key, the grammar of what may sit
+ * under it, and one answerer per read verb.
  *
- * ONE MEMBER, deliberately. An earlier design gave it a second member taking the
- * validated section as an ARGUMENT, which put `TSection` in a parameter position
- * and bought a variance hole: method syntax made the descriptor bivariant, so a
- * descriptor widened into a `ModuleDescriptor<unknown>[]` would accept a section
- * of the wrong Module's type with nothing to say about it. With the type in
- * return position only, a descriptor over one Module's section widens to
- * `ModuleDescriptor<unknown>` soundly, and the hole closes rather than ships.
- * This Package cannot name a section type to illustrate it, which is the point:
- * a section type belongs to its Module (ARCH-008 §1.4) and nothing here may
- * reach for one.
+ * SIX MEMBERS, deliberately. `key` names the config section, `validateSection`
+ * earns its typed value, and the four verbs answer the work a Module does.
+ * Only `validateSection` carries `TSection`, and only in return position. An
+ * earlier design gave a member a validated section as an ARGUMENT, which put
+ * `TSection` in parameter position and bought a variance hole: method syntax
+ * made the descriptor bivariant, so a descriptor widened into a
+ * `ModuleDescriptor<unknown>` could accept another Module's section with
+ * nothing to say about it.
+ *
+ * A verb instead receives `LoadedConfig` and closes over its own descriptor.
+ * `sectionFor` then returns the section under that descriptor identity, so the
+ * Module holds the right type without a parameter-position `TSection`. A
+ * descriptor over one Module's section therefore widens to
+ * `ModuleDescriptor<unknown>` soundly, and the declared set can be iterated
+ * without reopening the hole. This Package cannot name a section type to
+ * illustrate it, which is the point: a section type belongs to its Module
+ * (ARCH-008 §1.4) and nothing here may reach for one.
  *
  * `validateSection` is written in METHOD syntax. Under `strictFunctionTypes`
  * method syntax is bivariant in its parameters and property syntax is
@@ -57,7 +64,13 @@ export interface SectionValidation<TSection> {
  * choice. Method syntax is what the ticket fixed, and it reads as what it is: a
  * Module answering a question rather than a Module carrying a callback.
  */
-export interface ModuleDescriptor<TSection = unknown> {
+export interface ModuleDescriptor<
+  TSection = unknown,
+  TQuery = unknown,
+  TAudit = unknown,
+  TAssess = unknown,
+  TCheck = unknown,
+> {
   /**
    * The Module's one top-level config key.
    *
@@ -80,6 +93,18 @@ export interface ModuleDescriptor<TSection = unknown> {
    * @param raw The value written under this Module's key, exactly as parsed.
    */
   validateSection(raw: unknown): SectionValidation<TSection>;
+
+  /** Answer what this Module asks of one path before that path exists. */
+  query(path: string, config: LoadedConfig): TQuery;
+
+  /** Tally how this Module's declared rules fared across one corpus. */
+  audit(files: readonly string[], config: LoadedConfig): TAudit;
+
+  /** Assess one path at the caller-supplied instant. */
+  assess(file: { root: string; path: string }, now: string, config: LoadedConfig): TAssess;
+
+  /** Check this Module's governed files across one corpus. */
+  check(root: string, files: readonly string[], config: LoadedConfig): TCheck;
 }
 
 /**

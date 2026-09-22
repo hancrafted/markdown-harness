@@ -15,11 +15,6 @@
 import { listMarkdownFiles } from '../../../foundation/list-markdown-files.ts';
 import { loadConfig } from '../../../foundation/load-config.ts';
 import { normalisePath } from '../../../foundation/path-shape.ts';
-import { assessPath } from '../../../frontmatter-harness/assess.ts';
-import { auditRules } from '../../../frontmatter-harness/audit.ts';
-import { checkCorpus } from '../../../frontmatter-harness/check.ts';
-import { frontmatterModule } from '../../../frontmatter-harness/module.ts';
-import { queryPath } from '../../../frontmatter-harness/query.ts';
 import { MODULE_SET } from '../../module-set.ts';
 import type { Invocation } from '../argv/argv.types.ts';
 import { auditReport } from './audit-report.pure.ts';
@@ -63,8 +58,7 @@ function gatherQuery({ path, config }: Invocation): QueryGathered {
   const cfg = gatherConfig(config);
   if (cfg.kind === 'rejected') return { kind: 'query', path, config, outcome: cfg };
 
-  const section = cfg.result.sectionFor(frontmatterModule);
-  const answers = [{ module: frontmatterModule.key, claim: queryPath(path, section) }];
+  const answers = MODULE_SET.map((module) => ({ module: module.key, claim: module.query(path, cfg.result) }));
   const result = pathGovernance(normalisePath(path), answers);
   return { kind: 'query', path, config, outcome: { kind: 'answered', result } };
 }
@@ -78,8 +72,7 @@ function gatherAudit({ root, config }: Invocation): AuditGathered {
   const outcome = withCorpusGuard(listMarkdownFiles(root), (files) => {
     const cfg = gatherConfig(config);
     if (cfg.kind === 'rejected') return cfg;
-    const section = cfg.result.sectionFor(frontmatterModule);
-    const answers = [{ module: frontmatterModule.key, audit: auditRules(files, section) }];
+    const answers = MODULE_SET.map((module) => ({ module: module.key, audit: module.audit(files, cfg.result) }));
     return { kind: 'answered' as const, result: auditReport(answers) };
   });
   return { kind: 'audit', root, config, outcome };
@@ -101,12 +94,10 @@ function gatherAssess({ path, config, now, root }: Invocation): AssessGathered {
 
   // `root` is always the default here: `--root` beside `--assess` is refused as
   // conflicting input, so this is the current directory by construction.
-  const answers = [
-    {
-      module: frontmatterModule.key,
-      assessment: assessPath({ root, path }, cfg.result.sectionFor(frontmatterModule), instant),
-    },
-  ];
+  const answers = MODULE_SET.map((module) => ({
+    module: module.key,
+    assessment: module.assess({ root, path }, instant, cfg.result),
+  }));
   const result = pathAssessment(answers);
   return { kind: 'assess', path, now: instant, config, outcome: { kind: 'answered', result } };
 }
@@ -124,15 +115,17 @@ function gatherCheck({ root, config }: Invocation): CheckGathered {
     const cfg = gatherConfig(config);
     if (cfg.kind === 'rejected') return cfg;
 
-    const checked = checkCorpus(root, files, cfg.result.sectionFor(frontmatterModule));
-    if (checked.kind === 'unreadable') {
-      return checked;
-    }
+    const checked = MODULE_SET.map((module) => ({ module: module.key, result: module.check(root, files, cfg.result) }));
+    const unreadable = checked.find((answer) => answer.result.kind === 'unreadable');
+    if (unreadable !== undefined && unreadable.result.kind === 'unreadable') return unreadable.result;
 
     // Composed on the same terms as the steering command, and the counts with
     // it: `governedFiles` is a union over Modules, which no Module can see to
     // take.
-    const answers = [{ module: frontmatterModule.key, check: checked.result }];
+    const answers = checked.map((answer) => {
+      if (answer.result.kind !== 'checked') throw new Error('unreadable Module result escaped its guard');
+      return { module: answer.module, check: answer.result.result };
+    });
     const result = corpusVerdict(files.map(normalisePath), answers);
     return { kind: 'answered' as const, result };
   });

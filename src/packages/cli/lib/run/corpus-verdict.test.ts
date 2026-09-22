@@ -45,6 +45,10 @@ function moduleNamed(key: string): ModuleDescriptor<StandInSection> {
       if (typeof intent !== 'string') return { faults: [{ code: 'CONFIG_INVALID_VALUE', location: `${key}.intent` }] };
       return { section: { intent }, faults: [] };
     },
+    query: () => undefined,
+    audit: () => undefined,
+    assess: () => undefined,
+    check: () => undefined,
   };
 }
 

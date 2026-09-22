@@ -21,6 +21,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { ModuleDescriptor } from '../../config-contract/index.ts';
+import { loadConfig } from '../../foundation/load-config.ts';
 import { MODULE_SET } from '../module-set.ts';
 
 /** Every key claimed by more than one descriptor, in the order they were claimed. */
@@ -36,11 +37,47 @@ function duplicateKeys(modules: readonly ModuleDescriptor<unknown>[]): readonly 
 
 /** A descriptor that validates nothing, standing in for a Module by its key alone. */
 function descriptorFor(key: string): ModuleDescriptor<unknown> {
-  return { key, validateSection: () => ({ faults: [] }) };
+  return {
+    key,
+    validateSection: () => ({ faults: [] }),
+    query: () => undefined,
+    audit: () => undefined,
+    assess: () => undefined,
+    check: () => undefined,
+  };
 }
 
 describe('the declared Module set', () => {
   describe('success cases', () => {
+    it('reaches every read verb through each declared descriptor', () => {
+      // ARRANGE
+      const configPath = 'fixtures/conformance/frontmatter/valid-test-config.yaml';
+      const root = 'fixtures/conformance/frontmatter';
+      const stalePath = 'docs/freshness/stale.md';
+      const logPath = 'docs/log.md';
+      const instant = '2026-12-01T00:00:00Z';
+      const expected = [
+        { key: 'frontmatter', queryRule: 'log-files', auditWins: 1, assessment: 'stale', check: 'checked' },
+      ];
+      const loaded = loadConfig(configPath, MODULE_SET);
+      if (loaded.config === undefined)
+        throw new Error('the conformance config must load for this suite to mean anything');
+      const config = loaded.config;
+      // ACT
+      const actual = MODULE_SET.map((module) => {
+        const audit = module.audit([logPath], config);
+        return {
+          key: module.key,
+          queryRule: module.query(logPath, config)?.rule.ruleId,
+          auditWins: audit.rules.find((row) => row.rule.ruleId === 'log-files')?.won,
+          assessment: module.assess({ root, path: stalePath }, instant, config)?.state,
+          check: module.check(root, [logPath], config).kind,
+        };
+      });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('claims each top-level key once', () => {
       // ARRANGE
       const none: readonly string[] = [];

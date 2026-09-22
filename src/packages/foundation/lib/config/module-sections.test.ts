@@ -22,6 +22,18 @@ function stubModule<TSection>(key: string, coerce: (raw: unknown) => TSection): 
       handed.push({ key, raw });
       return { section: coerce(raw), faults: [] };
     },
+    query() {
+      return undefined;
+    },
+    audit() {
+      return undefined;
+    },
+    assess() {
+      return undefined;
+    },
+    check() {
+      return undefined;
+    },
   };
 }
 
@@ -34,6 +46,18 @@ const REJECTING: ModuleDescriptor<unknown> = {
   key: 'rejecting',
   validateSection() {
     return { faults: [{ code: 'CONFIG_INVALID_VALUE', location: 'rejecting' }] };
+  },
+  query() {
+    return undefined;
+  },
+  audit() {
+    return undefined;
+  },
+  assess() {
+    return undefined;
+  },
+  check() {
+    return undefined;
   },
 };
 
