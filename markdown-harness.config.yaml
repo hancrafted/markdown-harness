@@ -11,8 +11,13 @@ frontmatter:
     # ── 1. Vision — narrow, and the only rule a clock reads ───────────────────
     # Must stay ABOVE the catch-all. Below it, `docs-carry-a-type` would match
     # every vision file first and this rule would govern nothing.
+    #
+    # APPROXIMATE: folders carry no recursion. docs/vision/ has no subfolder
+    # today, so this agrees with the old glob exactly — but a subfolder created
+    # under docs/vision/ later is reached by neither this list nor the one
+    # below until it is added by hand. See docs/research/selector-migration-both-grammars.md §A1.
     - ruleId: vision
-      path: [docs/vision/**/*.md]
+      folders: [docs/vision/]
       intent: 'Vision is the reasoning decisions get derived from, so it is re-read against the product before it is trusted'
       assess:
         stale: Re-read this against the product as it now stands before deriving anything from it, then move stale_after.
@@ -26,13 +31,35 @@ frontmatter:
     # zero casing language and §11 forbids rejecting unknown `type` values —
     # measured in docs/research/okf-conformance.md §1.
     #
-    # Both exclusions are content-pinned files, already pinned in
-    # .prettierignore for the same reason: an edit destroys what they exist to
-    # preserve. Excluded paths fall through, and with no rule below this one
-    # they are ungoverned rather than exempted.
+    # APPROXIMATE, at the widest blast radius in this config: folders carry no
+    # recursion, so one glob became twelve folder tokens, and any folder
+    # created anywhere under docs/ is governed by nothing until this list is
+    # edited by hand. Both exclusions are the same story at a smaller scale —
+    # the workshop one narrows (a new session's raw.md becomes governed and
+    # fails loudly) rather than widens (which would silently ungovern any
+    # raw.md anywhere). Both exclusions are content-pinned files, already
+    # pinned in .prettierignore for the same reason: an edit destroys what they
+    # exist to preserve. Excluded paths fall through, and with no rule below
+    # this one they are ungoverned rather than exempted. See
+    # docs/research/selector-migration-both-grammars.md §A2–A4.
     - ruleId: docs-carry-a-type
-      path: [docs/**/*.md]
-      excludeFiles: [docs/okf/SPEC-v0.2.md, docs/workshop/**/raw.md]
+      folders:
+        [
+          docs/,
+          docs/agents/,
+          docs/design-adr/,
+          docs/okf/,
+          docs/research/,
+          docs/research/parts/,
+          docs/vision/,
+          docs/workshop/,
+          docs/workshop/grill/,
+          docs/workshop/grill/vision/,
+          docs/workshop/probe/,
+          docs/workshop/probe/adr-routing/,
+        ]
+      excludeFiles:
+        - { folders: [docs/okf/], fileNames: [SPEC-v0.2.md] }
       intent: 'OKF asks one thing of every concept document, that it says what it is'
       fields:
         type: { presence: required }
