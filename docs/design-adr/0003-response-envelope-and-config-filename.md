@@ -78,6 +78,7 @@ current directory, **never** `--root`. Bare `mh` therefore reads the config wher
    the envelope — the two answer different questions, and a query that echoed only the normalised
    form would lose what was actually typed.
 5. **`CheckResult` and `AuditResult` arrived with the phases that implemented them, and `CheckSummary.governedFiles` settled as a union across Modules.** Declaring them earlier would have put unused exports in the entry point, which `knip` reports and which would have been speculative in the precise sense `ARCH-004` warns about. When #162 nested findings under Modules, `governedFiles` was settled as the union across Modules rather than a sum of tallies, computed in `cli` where all Modules are visible.
+6. **`AuditResult` stays in `response-contract`.** #189 made it the composed wire shape: its ordered `ModuleAuditResult[]` distinguishes duplicate rule ids and carries the top-level Module key. `ModuleAudit` remains the per-Module contribution that `cli` composes, but the public result belongs with the envelope rather than a Module.
 
 Both items are struck from `architecture.md`'s Deliberately-open list in the same change that records
 this, so the list and this file cannot disagree about what is still open.

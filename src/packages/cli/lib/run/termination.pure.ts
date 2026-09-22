@@ -6,6 +6,15 @@
  */
 
 import type { ConfigFault, MarkdownHarnessResponse } from '../../../response-contract/index.ts';
+import {
+  assessResponse,
+  auditResponse,
+  checkResponse,
+  configError,
+  isConfigError,
+  queryResponse,
+  serializeResponse,
+} from '../../../response-contract/index.ts';
 import { parseArgv } from '../argv/parse-argv.pure.ts';
 import { HELP, USAGE } from '../argv/usage.pure.ts';
 import { unsupportedRuntime } from '../runtime/node-support.pure.ts';
@@ -44,14 +53,14 @@ const USAGE_ERROR: Termination = { stdout: '', stderr: USAGE, code: CANNOT_REPOR
 /** Help text on stdout, nothing on stderr, exit 0. */
 const HELP_ANSWER: Termination = { stdout: HELP, stderr: '', code: NOTHING_WRONG };
 
-/** A config that could not be trusted, in the one shape every command reports it. */
-function rejection(faults: readonly ConfigFault[]) {
-  return { error: 'CONFIG_REJECTED', faults } as const;
-}
-
 /** JSON on stdout: 2-space indentation, trailing newline. */
 function emit(response: MarkdownHarnessResponse, code: number): Termination {
-  return { stdout: `${JSON.stringify(response, null, 2)}\n`, stderr: '', code };
+  return { stdout: serializeResponse(response), stderr: '', code };
+}
+
+/** Every response uses the rejection guard to keep failure exit policy central. */
+function responseTermination(response: MarkdownHarnessResponse, answeredCode = NOTHING_WRONG): Termination {
+  return emit(response, isConfigError(response.result) ? CANNOT_REPORT : answeredCode);
 }
 
 /**
@@ -104,12 +113,8 @@ function fromConfigOutcome<Result>(
 function queryTermination(gathered: QueryGathered): Termination {
   return fromConfigOutcome(
     gathered.outcome,
-    (faults) =>
-      emit(
-        { command: 'query', path: gathered.path, config: gathered.config, result: rejection(faults) },
-        CANNOT_REPORT,
-      ),
-    (result) => emit({ command: 'query', path: gathered.path, config: gathered.config, result }, NOTHING_WRONG),
+    (faults) => responseTermination(queryResponse(gathered.path, gathered.config, configError(faults))),
+    (result) => responseTermination(queryResponse(gathered.path, gathered.config, result)),
   );
 }
 
@@ -145,12 +150,8 @@ function auditTermination(gathered: AuditGathered): Termination {
   return withCorpus(gathered.outcome, (outcome) =>
     fromConfigOutcome(
       outcome,
-      (faults) =>
-        emit(
-          { command: 'audit', root: gathered.root, config: gathered.config, result: rejection(faults) },
-          CANNOT_REPORT,
-        ),
-      (result) => emit({ command: 'audit', root: gathered.root, config: gathered.config, result }, NOTHING_WRONG),
+      (faults) => responseTermination(auditResponse(gathered.root, gathered.config, configError(faults))),
+      (result) => responseTermination(auditResponse(gathered.root, gathered.config, result)),
     ),
   );
 }
@@ -158,22 +159,8 @@ function auditTermination(gathered: AuditGathered): Termination {
 function assessTermination(gathered: AssessGathered): Termination {
   return fromConfigOutcome(
     gathered.outcome,
-    (faults) =>
-      emit(
-        {
-          command: 'assess',
-          path: gathered.path,
-          now: gathered.now,
-          config: gathered.config,
-          result: rejection(faults),
-        },
-        CANNOT_REPORT,
-      ),
-    (result) =>
-      emit(
-        { command: 'assess', path: gathered.path, now: gathered.now, config: gathered.config, result },
-        NOTHING_WRONG,
-      ),
+    (faults) => responseTermination(assessResponse(gathered, configError(faults))),
+    (result) => responseTermination(assessResponse(gathered, result)),
   );
 }
 
@@ -185,18 +172,14 @@ function checkTermination(gathered: CheckGathered): Termination {
 
     return fromConfigOutcome(
       outcome,
-      (faults) =>
-        emit(
-          { command: 'check', root: gathered.root, config: gathered.config, result: rejection(faults) },
-          CANNOT_REPORT,
-        ),
+      (faults) => responseTermination(checkResponse(gathered.root, gathered.config, configError(faults))),
       (result) => {
         // THE SECOND RULE ENCODED AS A CONDITIONAL RATHER THAN AN EFFECT: whether
         // a corpus is wrong is a fact about `invalidFiles`, and only `--check`
         // ever exits on it.
         const wrong = result.summary.invalidFiles > 0;
-        return emit(
-          { command: 'check', root: gathered.root, config: gathered.config, result },
+        return responseTermination(
+          checkResponse(gathered.root, gathered.config, result),
           wrong ? CORPUS_IS_WRONG : NOTHING_WRONG,
         );
       },

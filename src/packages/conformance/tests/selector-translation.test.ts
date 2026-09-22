@@ -29,6 +29,7 @@ import { listMarkdownFiles } from '../../foundation/list-markdown-files.ts';
 import { loadConfig } from '../../foundation/load-config.ts';
 import { frontmatterModule } from '../../frontmatter-harness/module.ts';
 import { queryPath } from '../../frontmatter-harness/query.ts';
+import type { QueryResult } from '../../response-contract/index.ts';
 import { corpusComparisons, translationTierRoot, witnessComparisons } from '../selector-translation.ts';
 
 const TIER_ROOT = translationTierRoot();
@@ -84,7 +85,7 @@ function tierFolders(directory: string, prefix: string): readonly string[] {
  * written out rather than assumed: the frozen witnesses state the response's
  * word, and this says which Module fact stands behind it.
  */
-function answerFor(path: string): { path: string; governance: string; ruleId: string | null } {
+function answerFor(path: string): { path: string; governance: QueryResult['governance']; ruleId: string | null } {
   const claim = queryPath(path, section);
   return {
     path,

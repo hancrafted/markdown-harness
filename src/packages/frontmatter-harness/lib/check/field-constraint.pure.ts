@@ -15,6 +15,7 @@
 
 import type { FieldConstraints } from '../../../config-contract/index.ts';
 import type { FieldViolation, FieldViolationCode } from '../../../response-contract/index.ts';
+import { FIELD_VIOLATION_CODES } from '../../../response-contract/index.ts';
 import type { AddressSite, FrontmatterMapping } from './check.types.ts';
 import { resolveAddress } from './field-address.pure.ts';
 import { evidenceFor, isEmptyValue } from './field-evidence.pure.ts';
@@ -78,10 +79,10 @@ function lengthViolations(field: string, constraints: FieldConstraints, value: s
   const failures: FieldViolation[] = [];
 
   if (minLength !== undefined && value.length < minLength) {
-    failures.push(report(field, 'VALUE_TOO_SHORT', { of: value }));
+    failures.push(report(field, FIELD_VIOLATION_CODES.VALUE_TOO_SHORT, { of: value }));
   }
   if (maxLength !== undefined && value.length > maxLength) {
-    failures.push(report(field, 'VALUE_TOO_LONG', { of: value }));
+    failures.push(report(field, FIELD_VIOLATION_CODES.VALUE_TOO_LONG, { of: value }));
   }
   return failures;
 }
@@ -93,12 +94,12 @@ function formatViolations(field: string, constraints: FieldConstraints, value: s
   const failures: FieldViolation[] = [];
 
   if (format !== undefined && !matchesFormat(format, value)) {
-    failures.push(report(field, 'FORMAT_MISMATCH', { of: value }));
+    failures.push(report(field, FIELD_VIOLATION_CODES.FORMAT_MISMATCH, { of: value }));
   }
   // A `pattern` that will not compile is a config fault caught at load time, so
   // reaching one here would mean validation let it through.
   if (pattern !== undefined && !new RegExp(pattern).test(value)) {
-    failures.push(report(field, 'PATTERN_MISMATCH', { of: value }));
+    failures.push(report(field, FIELD_VIOLATION_CODES.PATTERN_MISMATCH, { of: value }));
   }
   return failures;
 }
@@ -110,10 +111,10 @@ function countViolations(field: string, constraints: FieldConstraints, entries: 
   const failures: FieldViolation[] = [];
 
   if (minItems !== undefined && entries.length < minItems) {
-    failures.push(report(field, 'TOO_FEW_ITEMS', { of: entries }));
+    failures.push(report(field, FIELD_VIOLATION_CODES.TOO_FEW_ITEMS, { of: entries }));
   }
   if (maxItems !== undefined && entries.length > maxItems) {
-    failures.push(report(field, 'TOO_MANY_ITEMS', { of: entries }));
+    failures.push(report(field, FIELD_VIOLATION_CODES.TOO_MANY_ITEMS, { of: entries }));
   }
   return failures;
 }
@@ -131,7 +132,7 @@ function entryViolations(field: string, constraints: FieldConstraints, entries: 
 
   return entries.flatMap((entry, index) => {
     if (typeof entry !== 'string' || entry.length <= itemMaxLength) return [];
-    return [report(`${field}[${index}]`, 'ITEM_TOO_LONG', { of: entry })];
+    return [report(`${field}[${index}]`, FIELD_VIOLATION_CODES.ITEM_TOO_LONG, { of: entry })];
   });
 }
 
@@ -140,7 +141,7 @@ function allowedViolations(field: string, constraints: FieldConstraints, value: 
   const report = reportFor(constraints);
   const { allowed } = constraints;
   if (allowed === undefined || allowed.some((entry) => entry.value === value)) return [];
-  return [report(field, 'VALUE_NOT_ALLOWED', { of: value })];
+  return [report(field, FIELD_VIOLATION_CODES.VALUE_NOT_ALLOWED, { of: value })];
 }
 
 /** What `presence` says about a field that IS there. */
@@ -149,9 +150,11 @@ function presenceViolations(site: AddressSite, constraints: FieldConstraints): F
   const { presence } = constraints;
   const failures: FieldViolation[] = [];
 
-  if (presence === 'forbidden') failures.push(report(site.field, 'FORBIDDEN_FIELD_PRESENT', { of: site.value }));
+  if (presence === 'forbidden') {
+    failures.push(report(site.field, FIELD_VIOLATION_CODES.FORBIDDEN_FIELD_PRESENT, { of: site.value }));
+  }
   if (presence === 'required' && isEmptyValue(site.value)) {
-    failures.push(report(site.field, 'EMPTY_REQUIRED_FIELD', { of: site.value }));
+    failures.push(report(site.field, FIELD_VIOLATION_CODES.EMPTY_REQUIRED_FIELD, { of: site.value }));
   }
   return failures;
 }
@@ -174,7 +177,9 @@ function siteViolations(site: AddressSite, constraints: FieldConstraints): Field
 
   if (!site.present) {
     // Nothing but `presence` may speak about a field that is not there.
-    return constraints.presence === 'required' ? [report(site.field, 'MISSING_REQUIRED_FIELD')] : [];
+    return constraints.presence === 'required'
+      ? [report(site.field, FIELD_VIOLATION_CODES.MISSING_REQUIRED_FIELD)]
+      : [];
   }
 
   const presence = presenceViolations(site, constraints);
@@ -188,7 +193,7 @@ function siteViolations(site: AddressSite, constraints: FieldConstraints): Field
   // A collision stops the tiers below it: neither the shape checks nor
   // membership can answer against a value of the wrong kind.
   if (collides(constraints, site.value)) {
-    return [...presence, report(site.field, 'CONSTRAINT_SHAPE_MISMATCH', { of: site.value })];
+    return [...presence, report(site.field, FIELD_VIOLATION_CODES.CONSTRAINT_SHAPE_MISMATCH, { of: site.value })];
   }
 
   return [
@@ -225,7 +230,7 @@ export function fieldViolations(
   // opposite case and does carry its value, because there the reported address
   // is the one holding it.
   if (resolved.kind === 'shape-mismatch') {
-    return [reportFor(constraints)(address, 'CONSTRAINT_SHAPE_MISMATCH')];
+    return [reportFor(constraints)(address, FIELD_VIOLATION_CODES.CONSTRAINT_SHAPE_MISMATCH)];
   }
 
   return resolved.sites.flatMap((site) => siteViolations(site, constraints));

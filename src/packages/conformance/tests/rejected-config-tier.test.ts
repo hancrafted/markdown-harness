@@ -27,22 +27,18 @@
 import { describe, expect, it } from 'vitest';
 import { MODULE_SET } from '../../cli/module-set.ts';
 import { loadConfig } from '../../foundation/load-config.ts';
+import { readTextIn } from '../../foundation/read-text.ts';
 import type { ConfigErrorResult } from '../../response-contract/index.ts';
-import { casesIn } from '../case-corpus.ts';
+import { checkResponse, configError, serializeResponse } from '../../response-contract/index.ts';
+import { casesIn, tierRoot } from '../case-corpus.ts';
 import { DECLARED_CODES } from '../config-fault-catalog.ts';
 import { configPathOf, expectedRejectionOf, REJECTED_CONFIG, rejectedConfigCases } from '../rejected-config-case.ts';
 
 const cases = rejectedConfigCases();
-
-/**
- * The one literal that marks the failure variant.
- *
- * Spelled here and held against the contract by `rejectionFor`'s return type,
- * so the runner and the frozen files are two independent statements of it: tsc
- * ties this to `ConfigErrorResult`, and deep equality ties the frozen files to
- * this.
- */
-const REJECTED = 'CONFIG_REJECTED';
+const CONFIG_NOT_FOUND = 'config-not-found';
+const REJECTED_CONFIG_ROOT = 'fixtures/conformance/rejected-config';
+const CONFIG_NOT_FOUND_PATH = `${REJECTED_CONFIG_ROOT}/${CONFIG_NOT_FOUND}/markdown-harness.config.yaml`;
+const SERIALIZED_RESPONSE = 'expected-check-response.json';
 
 /**
  * The whole config-error response one case produces.
@@ -56,7 +52,16 @@ const REJECTED = 'CONFIG_REJECTED';
  * ships.
  */
 function rejectionFor(caseName: string): ConfigErrorResult {
-  return { error: REJECTED, faults: loadConfig(configPathOf(caseName), MODULE_SET).faults };
+  return configError(loadConfig(configPathOf(caseName), MODULE_SET).faults);
+}
+
+/** The frozen whole-envelope bytes for the config-not-found Conformance case. */
+function expectedCheckResponse(): string {
+  const found = readTextIn(tierRoot(REJECTED_CONFIG), `${CONFIG_NOT_FOUND}/${SERIALIZED_RESPONSE}`);
+  if (found.kind !== 'text') {
+    throw new Error(`${CONFIG_NOT_FOUND} must contain ${SERIALIZED_RESPONSE}`);
+  }
+  return found.text;
 }
 
 /** Every code the frozen files name, across the tier, with repeats. */
@@ -77,6 +82,16 @@ describe('the rejected-config tier', () => {
       const actual = rejectionFor(caseName);
       // ASSERT
       expect(actual).toEqual(expected);
+    });
+
+    it('freezes the serialized --check envelope for config-not-found', () => {
+      // ARRANGE
+      const expected = expectedCheckResponse();
+      // ACT
+      const faults = loadConfig(CONFIG_NOT_FOUND_PATH, MODULE_SET).faults;
+      const actual = serializeResponse(checkResponse(REJECTED_CONFIG_ROOT, CONFIG_NOT_FOUND_PATH, configError(faults)));
+      // ASSERT
+      expect(actual).toBe(expected);
     });
 
     it('points at its own tier rather than at the directory holding every tier', () => {

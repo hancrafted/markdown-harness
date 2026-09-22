@@ -18,8 +18,8 @@ export interface FrozenAttribution {
 export interface FrozenWitness {
   /** A tier-relative path to a file that does NOT exist, in a folder that does. */
   path: string;
-  /** `governed` or `invisible`, verbatim from the response contract. */
-  governance: string;
+  /** The response contract's whole-config governance discriminant. */
+  governance: QueryResult['governance'];
   /** The winning `ruleId`, or `null` where the path is invisible. */
   ruleId: string | null;
   /**
@@ -33,3 +33,4 @@ export interface FrozenWitness {
    */
   divergesFrom?: string;
 }
+import type { QueryResult } from '../../../response-contract/index.ts';
