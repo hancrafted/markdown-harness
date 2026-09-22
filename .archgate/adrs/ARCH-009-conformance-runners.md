@@ -21,51 +21,51 @@ The failure this record exists to prevent is a suite that is green over nothing.
 
 ### 1. One runner per corpus tier
 
-1. Each corpus tier MUST have exactly one runner at `src/packages/conformance/tests/<tier>-tier.test.ts`.
-2. Tier enrolment MUST be asserted: tier directories derived from the tree and tier names derived from the `*-tier.test.ts` names MUST be equal, and neither set empty.
-3. Each runner MUST state its declared case count by hand.
+1. Each tier MUST have one `tier-record.ts` record: name, case kind, config filename, reviewed count and, where needed, assessment instant.
+2. Each declared tier MUST have one `tests/<tier>-tier.test.ts` runner, reading its record through `tierForRunner(import.meta.url)`.
+3. Enrolment MUST compare fixture directories and runner names separately with records; neither may be empty, and undeclared directories or absent or foreign records MUST fail.
 4. This Package MUST NOT be a Module; membership follows the declared Module set, never folder position.
 
 ### 2. Coverage and closure
 
-1. Every vocabulary tier MUST have a coverage assertion (each key reached) and a closure assertion (no key outside it).
-2. Neither MUST stand without the other.
+1. Every vocabulary tier MUST answer coverage and closure through one paired operation.
+2. A caller MUST NOT ask for one half without the other.
 3. A presence check MUST NOT be relied on to prove a value survived parsing.
 
 ### 3. The pinned assessment instant
 
-1. Each tier's Assessment half MUST be judged against one `ASSESSMENT_INSTANT` pinned in that tier's runner.
+1. Each tier's Assessment half MUST be judged against one pinned instant in its tier record.
 2. An unpinned suite MUST be treated as non-existent, not passing.
 
 ## Do's and Don'ts
 
 ### Do's
 
-1. **DO** give each corpus tier exactly one runner named `<tier>-tier.test.ts`. (Decision 1.1)
-2. **DO** derive both the tier directories and the tier names, assert the two sets equal, and assert neither is empty. (Decision 1.2)
-3. **DO** state each runner's case count by hand, so an emptied tier fails. (Decision 1.3)
-4. **DO** write a closure assertion beside every coverage loop. (Decision 2.1, 2.2)
-5. **DO** pin each tier's `ASSESSMENT_INSTANT` in its own runner. (Decision 3.1)
+1. **DO** declare each tier's name, case kind, config filename, count and assessment instant once in `tier-record.ts`. (Decision 1.1)
+2. **DO** give each declared tier exactly one runner named `<tier>-tier.test.ts`, and read its record through `tierForRunner(import.meta.url)`. (Decision 1.2)
+3. **DO** compare the fixture tree and runner set independently with the declaration, and reject undeclared fixture directories. (Decision 1.3, 1.4)
+4. **DO** use one paired coverage-and-closure operation for every vocabulary tier. (Decision 2.1, 2.2)
+5. **DO** pin each Assessment tier's instant in its record. (Decision 3.1)
 
 ### Don'ts
 
-1. **DON'T** add a corpus tier without its runner, or leave a runner behind a deleted tier. (Decision 1.1, 1.2)
-2. **DON'T** let a coverage loop stand without a closure test. (Decision 2.2)
+1. **DON'T** add a corpus tier without its declaration and runner, or leave either behind a deleted tier. (Decision 1.1, 1.2)
+2. **DON'T** call coverage or closure independently. (Decision 2.2)
 3. **DON'T** rely on a presence check to prove a value survived parsing. (Decision 2.3)
 4. **DON'T** treat this Package as a Module, or move it into one. (Decision 1.4)
-5. **DON'T** read the assessment instant from the wall clock or from the config under test. (Decision 3)
+5. **DON'T** read the assessment instant from the wall clock, the config under test, or a runner-local constant. (Decision 3)
 
 ## Consequences
 
 ### Positive
 
 - **A retirement is one reviewed change.** Deleting a fault code, its case and its catalog entry either compiles as a set or fails naming the line that is out of step.
-- **An emptied tier fails.** Enrolment plus a hand-stated case count means the two ways a suite can go green over nothing are both closed.
+- **An emptied tier fails.** Enrolment reads each runner's own-record declaration, while the reviewed record count closes the fixture loop.
 - **The Package is owned by no Module.** A tier that two Modules govern has somewhere to live, which it does not when the runner sits inside a Module's Package.
 
 ### Negative
 
-- **Hand-stated case counts age.** Adding a case means editing a number in the runner, and the number carries no meaning beyond being reviewed.
+- **Reviewed tier records age.** Adding a case means editing a record, and the number carries no meaning beyond being reviewed.
 
 ### Risks
 
@@ -73,17 +73,15 @@ The failure this record exists to prevent is a suite that is green over nothing.
 
 ## Compliance and Enforcement
 
-**Enforcer per Discipline:** this record has no companion `.rules.ts`, and that is the decision rather than an omission — every Discipline above is held by a channel that already exists and reads more than an archgate rule can. Restating the `ConfigFaultCode` catalog inside a rules file is precisely the drift §3.1 prevents.
+**Enforcer per Discipline:** this record has no companion `.rules.ts`, because every Discipline above is held by a channel that reads more than an archgate rule can.
 
-**§1.2's enrolment** is held by `src/packages/conformance/tests/tier-enrolment.test.ts`: it derives the tier directories from the fixture tree and the tier names from the `*-tier.test.ts` file names, asserts the two sets equal, and asserts neither is empty — because two empty sets are equal. **§1.3's hand-stated count** exists so an emptied tier fails against a reviewed number rather than passing over nothing. **§1.4** follows from a suite that checks more than one tier being ownable by no Module, and from a refused config producing no document for any Module to own.
+**§1.2–1.3's enrolment** is held by `src/packages/conformance/tests/tier-enrolment.test.ts`: it compares fixture directories and runner names independently with `tier-record.ts`, rejects an undeclared fixture directory, and requires each runner to call `tierForRunner(import.meta.url)`. **§1.1's reviewed count** lives beside the rest of the record, so an emptied tier fails against a reviewed number rather than passing over nothing. **§1.4** follows from a suite that checks more than one tier being ownable by no Module, and from a refused config producing no document for any Module to own.
 
-**§2's coverage and closure** are held by `src/packages/conformance/tests/frontmatter-tier.test.ts` — an `it.each` loop per vocabulary tier plus one closure test per tier. It is a vitest suite, and it fails the moment a tier's config stops exercising the vocabulary or carries a key outside it. §2.2 exists because either half alone is blind: the named-format tier once had coverage and no closure test, so `format: datetiem` failed nothing.
+**§2's coverage and closure** are held by `coverageAndClosure` in `src/packages/conformance/lib/tier/`, called from the frontmatter and rejected-config runners. It answers both directions in one result, and fails the moment a tier's config stops exercising the vocabulary or carries a value outside it. §2.2 exists because either half alone is blind: the named-format tier once had coverage and no closure test, so `format: datetiem` failed nothing.
 
-**§3.2 refuses an unpinned suite** because a freshness assertion against the wall clock is green tomorrow for a different reason than it was green today.
+**§3's pinned instant** is the `assessmentInstant` in the tier record, the only instant that tier's Assessment half is judged against. An unpinned suite is non-existent because a wall-clock assertion is green tomorrow for a different reason.
 
-**§3's pinned instant** is `ASSESSMENT_INSTANT` in each tier's runner, the only instant that tier's Assessment half is judged against.
-
-**Manual review duties** (never linted): a hand-stated case count was actually re-counted rather than incremented on faith (§1.3); this Package was not quietly enrolled in the declared Module set (§1.4).
+**Manual review duties** (never linted): a reviewed tier-record count was actually re-counted rather than incremented on faith (§1.1); this Package was not quietly enrolled in the declared Module set (§1.4).
 
 **Exceptions:** raise a separate ADR; human approval required.
 

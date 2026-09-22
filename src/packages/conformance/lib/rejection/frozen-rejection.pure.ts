@@ -15,16 +15,6 @@
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { FrozenFault, FrozenRejection } from './frozen-rejection.types.ts';
 
-/**
- * The adopter's own config filename, and the one location a case may write
- * relative.
- *
- * The filename is shared by every case rather than being per-case, because
- * several codes carry the config path in their location: a per-case name would
- * put the case's own name inside the contract it is freezing.
- */
-export const CASE_CONFIG_LOCATION = 'markdown-harness.config.yaml';
-
 /** A fault as frozen: two strings, both written out, neither derived. */
 function isFrozenFault(value: unknown): value is FrozenFault {
   return isMapping(value) && typeof value.code === 'string' && typeof value.location === 'string';
@@ -43,10 +33,10 @@ function isFrozenFault(value: unknown): value is FrozenFault {
  * equal to nothing and fail somewhere else, naming the wrong file.
  *
  * @param parsed The case's expectation file, already parsed from JSON.
- * @param configPath Where this case's config file actually sits — the prefix the runner supplies.
+ * @param config Where this case's config file sits and the filename it declares.
  * @param at The case directory's name, so a broken expectation names itself.
  */
-export function frozenRejection(parsed: unknown, configPath: string, at: string): FrozenRejection {
+export function frozenRejection(parsed: unknown, config: { path: string; file: string }, at: string): FrozenRejection {
   if (!isMapping(parsed) || typeof parsed.error !== 'string') {
     throw new Error(`the ${at} case must freeze a mapping carrying an error string`);
   }
@@ -56,7 +46,7 @@ export function frozenRejection(parsed: unknown, configPath: string, at: string)
 
   const faults = parsed.faults.map((fault): FrozenFault => ({
     code: fault.code,
-    location: fault.location === CASE_CONFIG_LOCATION ? configPath : fault.location,
+    location: fault.location === config.file ? config.path : fault.location,
   }));
 
   return { error: parsed.error, faults };

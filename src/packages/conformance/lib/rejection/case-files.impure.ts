@@ -12,7 +12,6 @@
 
 import { hostPath } from '../../../foundation/host-path.ts';
 import { readTextIn } from '../../../foundation/read-text.ts';
-import { CASE_CONFIG_LOCATION } from './frozen-rejection.pure.ts';
 
 /**
  * The one expectation each case freezes.
@@ -24,8 +23,8 @@ import { CASE_CONFIG_LOCATION } from './frozen-rejection.pure.ts';
 const CASE_EXPECTATION_FILE = 'expected-rejection.json';
 
 /** Where the loader is pointed for `caseName` — the prefix its locations omit. */
-export function caseConfigPath(tierRootPath: string, caseName: string): string {
-  return hostPath(tierRootPath, caseName, CASE_CONFIG_LOCATION);
+export function caseConfigPath(tierRootPath: string, caseName: string, configFile: string): string {
+  return hostPath(tierRootPath, caseName, configFile);
 }
 
 /**

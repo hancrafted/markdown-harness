@@ -22,15 +22,13 @@
 import { tierRoot } from './case-corpus.ts';
 import { frozenAttributions, frozenWitnesses } from './lib/translation/frozen-answers.impure.ts';
 import type { FrozenAttribution, FrozenWitness } from './lib/translation/translation.types.ts';
+import { tierNamed } from './tier-record.ts';
 
 export type { FrozenAttribution, FrozenWitness } from './lib/translation/translation.types.ts';
 
-/** The corpus tier whose config the guard is about. Spelled here once. */
-const FRONTMATTER = 'frontmatter';
-
 /** The tier root, which is the synthetic repo root every frozen path is relative to. */
 export function translationTierRoot(): string {
-  return tierRoot(FRONTMATTER);
+  return tierRoot(tierNamed('frontmatter').name);
 }
 
 /** Every corpus file's frozen winning rule — the half a real tree can express. */

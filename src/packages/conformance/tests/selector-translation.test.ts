@@ -31,9 +31,10 @@ import { frontmatterModule } from '../../frontmatter-harness/module.ts';
 import { queryPath } from '../../frontmatter-harness/query.ts';
 import type { QueryResult } from '../../response-contract/index.ts';
 import { corpusComparisons, translationTierRoot, witnessComparisons } from '../selector-translation.ts';
+import { tierNamed } from '../tier-record.ts';
 
 const TIER_ROOT = translationTierRoot();
-const CONFIG = join(TIER_ROOT, 'valid-test-config.yaml');
+const CONFIG = join(TIER_ROOT, tierNamed('frontmatter').configFile);
 
 const corpus = corpusComparisons();
 const witnesses = witnessComparisons();

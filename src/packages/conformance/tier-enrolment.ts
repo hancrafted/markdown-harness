@@ -17,17 +17,29 @@
 
 import { directoryOf, hostPath } from '../foundation/host-path.ts';
 import { directoryNamesIn, fileNamesIn } from '../foundation/list-directory.ts';
+import { readTextIn } from '../foundation/read-text.ts';
 import { conformanceRoot } from './case-corpus.ts';
+import { readsOwnTier } from './lib/tier/runner-source.pure.ts';
 import { tierOfRunnerFile } from './lib/tier/tier-name.pure.ts';
+import { CONFORMANCE_TIERS } from './tier-record.ts';
 
 /** Where the runners sit: this Package's own tests folder. */
 const RUNNERS = hostPath(directoryOf(import.meta.url), 'tests');
+
+/** Every declared tier name, in declaration order. */
+export function declaredTierNames(): readonly string[] {
+  return CONFORMANCE_TIERS.map((tier) => tier.name);
+}
 
 /** Every tier that exists, by name, derived from the fixture tree. */
 export function enrolledTiers(): readonly string[] {
   const root = conformanceRoot();
   const found = directoryNamesIn(root);
   if (found === undefined) throw new Error(`the conformance fixtures have no readable directory at ${root}`);
+  const declared = new Set(declaredTierNames());
+  const undeclared = found.filter((tier) => !declared.has(tier));
+  if (undeclared.length > 0)
+    throw new Error(`the conformance fixtures contain undeclared tiers: ${undeclared.join(', ')}`);
   return found;
 }
 
@@ -35,7 +47,13 @@ export function enrolledTiers(): readonly string[] {
 export function tierRunners(): readonly string[] {
   const found = fileNamesIn(RUNNERS);
   if (found === undefined) throw new Error(`the conformance runners have no readable directory at ${RUNNERS}`);
-  return found
+  const runners = found.filter((fileName) => tierOfRunnerFile(fileName) !== undefined);
+  for (const runner of runners) {
+    const source = readTextIn(RUNNERS, runner);
+    if (source.kind !== 'text') throw new Error(`the ${runner} runner is ${source.kind}`);
+    if (!readsOwnTier(source.text)) throw new Error(`the ${runner} runner does not read its own tier record`);
+  }
+  return runners
     .map((fileName) => tierOfRunnerFile(fileName))
     .filter((tier): tier is string => tier !== undefined)
     .sort();

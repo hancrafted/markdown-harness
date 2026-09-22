@@ -15,15 +15,13 @@ import { caseDirectoriesIn, tierRoot } from './case-corpus.ts';
 import { caseConfigPath, readFrozenExpectation } from './lib/rejection/case-files.impure.ts';
 import { frozenRejection } from './lib/rejection/frozen-rejection.pure.ts';
 import type { FrozenRejection } from './lib/rejection/frozen-rejection.types.ts';
+import type { ConformanceTier } from './tier-record.ts';
 
 export type { FrozenRejection } from './lib/rejection/frozen-rejection.types.ts';
 
-/** The corpus tier holding config bytes a load must refuse, and no markdown. */
-export const REJECTED_CONFIG = 'rejected-config';
-
 /** Every case in the tier, by directory name, sorted. */
-export function rejectedConfigCases(): readonly string[] {
-  return caseDirectoriesIn(REJECTED_CONFIG);
+export function rejectedConfigCases(tier: ConformanceTier): readonly string[] {
+  return caseDirectoriesIn(tier.name);
 }
 
 /**
@@ -34,8 +32,8 @@ export function rejectedConfigCases(): readonly string[] {
  * holds a directory where the file should be — so a guard here would refuse the
  * cases that prove the loader's own read-fault rule.
  */
-export function configPathOf(caseName: string): string {
-  return caseConfigPath(tierRoot(REJECTED_CONFIG), caseName);
+export function configPathOf(tier: ConformanceTier, caseName: string): string {
+  return caseConfigPath(tierRoot(tier.name), caseName, tier.configFile);
 }
 
 /**
@@ -44,7 +42,7 @@ export function configPathOf(caseName: string): string {
  * Locations are stated case-relative in the file and resolved here, so a case
  * travels to a reimplementation unchanged and a tier move stays a rename.
  */
-export function expectedRejectionOf(caseName: string): FrozenRejection {
-  const parsed = readFrozenExpectation(tierRoot(REJECTED_CONFIG), caseName);
-  return frozenRejection(parsed, configPathOf(caseName), caseName);
+export function expectedRejectionOf(tier: ConformanceTier, caseName: string): FrozenRejection {
+  const parsed = readFrozenExpectation(tierRoot(tier.name), caseName);
+  return frozenRejection(parsed, { path: configPathOf(tier, caseName), file: tier.configFile }, caseName);
 }
