@@ -32,6 +32,7 @@
 // selector carries no extension any more, so without it this command would
 // start assessing a `.txt` file the corpus walk would never have collected.
 
+import { isCorpusPath } from '../foundation/corpus-membership.ts';
 import { readTextIn } from '../foundation/read-text.ts';
 import type { AssessResult, WinningRule } from '../response-contract/index.ts';
 import { effectivePrompt } from './lib/assess/assess-prompt.pure.ts';
@@ -39,7 +40,6 @@ import { assessResultFor } from './lib/assess/assess-result.pure.ts';
 
 import { normalisePath } from '../foundation/path-shape.ts';
 import { freshnessOf } from './lib/assess/freshness.pure.ts';
-import { isCorpusPath } from './lib/rules/corpus-path.pure.ts';
 import { findFirstMatch } from './lib/rules/first-match.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
 

@@ -11,8 +11,10 @@
 
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../foundation/load-config.ts';
+import { fileNameOf, folderOf } from '../../foundation/selector-grammar.ts';
 import { frontmatterModule } from '../module.ts';
 import { queryPath } from '../query.ts';
+import { validateFrontmatterSection } from '../validate-config.ts';
 
 // Loaded through this Module's own descriptor, which is also what makes the
 // section below typed: `sectionFor` keys on the descriptor, so what comes back
@@ -66,6 +68,36 @@ describe('queryPath', () => {
       const actual = queryPath('docs/reference/api-limits.md', section);
       // ASSERT
       expect(Object.keys(actual ?? {})).toEqual(expected);
+    });
+
+    it('matches every folder and file-name token the validator admits from a normalised path', () => {
+      // ARRANGE
+      const paths = [
+        { path: 'README.md', ruleId: 'root-file' },
+        { path: 'docs/vision/product.md', ruleId: 'nested-file' },
+      ];
+      const expected = paths.map(({ ruleId }) => ({ faults: [], ruleId }));
+      // ACT
+      const actual = paths.map(({ path, ruleId }) => {
+        const validation = validateFrontmatterSection({
+          rules: [
+            {
+              ruleId,
+              intent: 'A round-trip token reaches the path that emitted it',
+              folders: [folderOf(path)],
+              fileNames: [fileNameOf(path)],
+              frontmatter: 'forbidden',
+            },
+          ],
+        });
+
+        return {
+          faults: validation.faults,
+          ruleId: queryPath(path, validation.section)?.rule.ruleId,
+        };
+      });
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
   });
 

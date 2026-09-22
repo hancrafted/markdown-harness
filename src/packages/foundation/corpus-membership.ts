@@ -10,8 +10,20 @@
 // `notes.txt` answered `invisible` because no glob matched it. Under two
 // literal axes there is no extension anywhere, and a folder token would reach
 // `notes.txt` as readily as `notes.md` — a real, measured change in a frozen
-// response field. Rather than let the corpus definition fork, the one predicate
-// the walk already uses is published here and the commands that never walk ask
-// it directly. See `docs/design-adr/0007-selector-is-two-literal-axes.md`.
+// response field. Rather than let the corpus definition fork, the walk's
+// predicate and the path decomposition it needs are published here. See
+// `docs/design-adr/0007-selector-is-two-literal-axes.md`.
 
-export { isMarkdownFile } from './lib/tree/corpus-entry.pure.ts';
+import { isMarkdownFile } from './lib/tree/corpus-entry.pure.ts';
+import { fileNameOf } from './selector-grammar.ts';
+
+export { isMarkdownFile };
+
+/**
+ * Whether the corpus walk would collect a normalised path.
+ *
+ * @param path A normalised, repo-root-relative path. It need not exist.
+ */
+export function isCorpusPath(path: string): boolean {
+  return isMarkdownFile(fileNameOf(path));
+}
