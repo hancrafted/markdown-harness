@@ -30,13 +30,13 @@ Test-driven development (TDD) and the red-green-refactor cycle are the primary a
 ### 3. Test-body structure
 
 1. Every test body MUST carry `// ARRANGE`, `// ACT` and `// ASSERT`, uppercase, exactly once each, in that order.
-2. The `// ASSERT` block MUST NOT hold a magic string or number; name it in `// ARRANGE`, so a reviewer can disagree with it. Exempt as pure noise: `0`, `1`, `-1`, `true`, `false`, `null`, `undefined`, `''`, `[]`, `{}`. The ban stops at `// ASSERT` for now; extending it to `// ACT` is a one-line change.
-3. An assertion MUST NOT collapse into a boolean inside `// ACT`. Doing so throws away the matcher message: `expect(seen).toContain(key)` names the key that is missing, while `expect(isSeen).toBe(true)` reports only that false is not true, which is the same report for every possible cause. Put the observation in `// ACT` and keep the rich matcher in `// ASSERT`.
+2. The `// ASSERT` block MUST NOT hold a magic string or number; name it in `// ARRANGE`, so a reviewer can disagree with it. Exempt as pure noise: `0`, `1`, `-1`, `true`, `false`, `null`, `undefined`, `''`, `[]`, `{}`.
+3. An assertion MUST NOT collapse into a boolean inside `// ACT`. Put the observation in `// ACT` and keep the rich matcher in `// ASSERT` — `expect(seen).toContain(key)` names the missing key, while `expect(isSeen).toBe(true)` discards why it failed.
 
 ### 4. Two homes for a test
 
-1. `<pkg>/tests/*.test.ts` is the Package's integration suite: entry points only, at the grain a caller sees. Reach for it by default — it asserts what a caller can actually observe. `*.impure.ts` is exercised here too — through the entry point, never imported directly.
-2. `<pkg>/<subfolder>/*.test.ts` is a unit suite. It MAY import `./*.pure.ts` — same directory, same base name — and no other internal, in any Package.
+1. `<pkg>/tests/*.test.ts` is the Package's integration suite: entry points only, at the grain a caller sees; `*.impure.ts` is exercised here too — through the entry point, never imported directly.
+2. `<pkg>/<subfolder>/*.test.ts` is a unit suite. It MAY import its same-directory, same-name `.pure.ts` sibling, Package root entry points, and platform builtins (exempted by `only-the-gate-imports-a-builtin` when needed for in-test file fixtures), and no other Package internals.
 
 ## Do's and Don'ts
 

@@ -25,7 +25,32 @@ const SEPARATOR = '/';
 
 /** The corpus root's own token, the one folder with no name of its own. */
 const ROOT_FOLDER = './';
+/**
+ * Glob syntax characters from the retired matcher that the config language
+ * refuses in any selector token:
+ * - `*` and `?`: wildcards (match-any, single-character)
+ * - `[` and `]`: character classes
+ * - `{` and `}`: brace expansions / alternatives
+ *
+ * Chosen because an Operator migrating from glob syntax might paste one of
+ * these into the new literal selector grammar. Without this refusal, a token
+ * like `docs/*\/` or `*.md` would be accepted as a literal token matching
+ * nothing on disk, silently leaving documents ungoverned.
+ *
+ * Kept to exactly these six characters rather than forbidding all non-alphanumeric
+ * characters: filesystem paths and file names legitimately carry characters like
+ * `-`, `_`, `.`, and `@`.
+ */
+const REFUSED_GLOB_CHARACTERS: readonly string[] = ['*', '?', '[', ']', '{', '}'];
 
+/** Whether one token carries any refused glob / wildcard character. */
+function carriesWildcard(token: string): boolean {
+  return REFUSED_GLOB_CHARACTERS.some((character) => token.includes(character));
+}
+
+function isMappingList(value: unknown): value is readonly Record<string, unknown>[] {
+  return Array.isArray(value) && value.every(isMapping);
+}
 function invalid(location: string): ConfigFault {
   return { code: 'CONFIG_INVALID_VALUE', location };
 }
@@ -56,6 +81,7 @@ export function isStringList(value: unknown): boolean {
  * of its own and the empty string is not a token anyone can write.
  */
 function isFolderToken(token: string): boolean {
+  if (carriesWildcard(token)) return false;
   if (token === ROOT_FOLDER) return true;
   if (!token.endsWith(SEPARATOR)) return false;
   if (token.startsWith(SEPARATOR)) return false;
@@ -64,6 +90,7 @@ function isFolderToken(token: string): boolean {
 
 /** Whether one file name is a basename rather than a path. */
 function isFileNameToken(token: string): boolean {
+  if (carriesWildcard(token)) return false;
   return token !== '' && !token.includes(SEPARATOR);
 }
 
@@ -105,13 +132,63 @@ export function tokenFaults(selector: Record<string, unknown>, at: string): read
   }).map((axis) => invalid(`${at}.${axis}`));
 }
 
+function unrecognisedExclusionFaults(
+  exclusions: readonly Record<string, unknown>[],
+  location: string,
+): readonly ConfigFault[] {
+  const unrecognisedKeys = [
+    ...new Set(exclusions.flatMap((entry) => Object.keys(entry).filter((key) => !SELECTOR_AXES.includes(key)))),
+  ];
+  return unrecognisedKeys.map((key) => ({
+    code: 'CONFIG_UNRECOGNISED_KEY',
+    location: `${location}.${key}`,
+  }));
+}
+
 /**
  * Exclusions, held to the same vocabulary and the same at-least-one rule.
  *
  * One language rather than two, which is why this delegates to the same token
  * checks an include axis gets. Every fault points at `excludeFiles` rather than
  * at an entry: an exclusion list reads as one statement about what this rule
- * gives back, and a reader repairing it opens the whole key.
+ * gives back, and a reader repairing it opens the whole key. A key an exclusion
+ * does not define is `CONFIG_UNRECOGNISED_KEY` naming the key as written rather
+ * than an offending index, so an exclusion list with several entries carrying
+ * the same misspelling earns one fault rather than one per entry.
+ *
+ * @param rule One entry of the rule list, straight off the YAML.
+ * @param at The rule's address in the config's own notation.
+ */
+function exclusionEntryFaults(
+  exclusions: readonly Record<string, unknown>[],
+  location: string,
+  at: string,
+): readonly ConfigFault[] {
+  const unrecognised = unrecognisedExclusionFaults(exclusions, location);
+  if (unrecognised.length > 0) return unrecognised;
+
+  const misshapen = exclusions.some((exclusion) =>
+    SELECTOR_AXES.some((axis) => axis in exclusion && !isStringList(exclusion[axis])),
+  );
+  if (misshapen) return [invalid(location)];
+
+  const axisless = exclusions.some((exclusion) => !SELECTOR_AXES.some((axis) => axis in exclusion));
+  if (axisless) return [{ code: 'CONFIG_SELECTOR_MISSING', location }];
+
+  const malformed = exclusions.some((exclusion) => tokenFaults(exclusion, at).length > 0);
+  return malformed ? [invalid(location)] : [];
+}
+
+/**
+ * Exclusions, held to the same vocabulary and the same at-least-one rule.
+ *
+ * One language rather than two, which is why this delegates to the same token
+ * checks an include axis gets. Every fault points at `excludeFiles` rather than
+ * at an entry: an exclusion list reads as one statement about what this rule
+ * gives back, and a reader repairing it opens the whole key. A key an exclusion
+ * does not define is `CONFIG_UNRECOGNISED_KEY` naming the key as written rather
+ * than an offending index, so an exclusion list with several entries carrying
+ * the same misspelling earns one fault rather than one per entry.
  *
  * @param rule One entry of the rule list, straight off the YAML.
  * @param at The rule's address in the config's own notation.
@@ -120,16 +197,6 @@ export function exclusionFaults(rule: Record<string, unknown>, at: string): read
   if (!('excludeFiles' in rule)) return [];
   const written = rule.excludeFiles;
   const location = `${at}.excludeFiles`;
-  if (!Array.isArray(written) || !written.every(isMapping)) return [invalid(location)];
-
-  const misshapen = written.some((exclusion) =>
-    SELECTOR_AXES.some((axis) => axis in exclusion && !isStringList(exclusion[axis])),
-  );
-  if (misshapen) return [invalid(location)];
-
-  const axisless = written.some((exclusion) => !SELECTOR_AXES.some((axis) => axis in exclusion));
-  if (axisless) return [{ code: 'CONFIG_SELECTOR_MISSING', location }];
-
-  const malformed = written.some((exclusion) => tokenFaults(exclusion, at).length > 0);
-  return malformed ? [invalid(location)] : [];
+  if (!isMappingList(written)) return [invalid(location)];
+  return exclusionEntryFaults(written, location, at);
 }

@@ -52,18 +52,14 @@ src/packages/
 
 1. **Position decides the public surface; the suffix decides the discipline inside.**
 2. A Package root file MUST be kebab-case with no suffix and no dot. The agent instruction pair named in Decision 1 is exempt.
-3. Every file below a Package root MUST carry exactly one of
-   - `.pure` (result is a function of its arguments alone)
-   - `.impure` (everything else: procedures, adapters, and the code that wires them)
-   - `.types` (exported type declarations, nothing else)
-   - `.test` (testing only)
-4. No stacking and no escape: a doubled suffix fails, an unclassified subfolder file fails, and a classified file at a Package root fails.
-5. A file under the packages root that is neither an entry point, a classified subfolder file, nor the agent instruction pair MUST fail outright.
+3. Every file below a Package root MUST carry exactly one classifier: `.pure` (pure functions), `.impure` (procedures/adapters), `.types` (type declarations), or `.test` (testing only).
+4. No stacking and no escape: doubled suffixes, unclassified subfolder files, and classified Package root files are forbidden.
+5. Stray files under `src/packages/` that are not Package folders or agent instructions MUST fail outright.
 
 ### 3. Import boundaries
 
 1. Packages expose only entry points to outside code; `tests/` is private and reaches Packages only via entry points and local fixtures.
-2. Subfolder `*.test` files MAY import only their same-directory, same-name `.pure` sibling. Dependency cycles are forbidden.
+2. Subfolder `*.test.ts` files MAY import their same-directory, same-name `.pure.ts` sibling, Package root entry points, and platform builtins (exempted by `only-the-gate-imports-a-builtin` when needed for in-test file fixtures), and no other Package internals. Dependency cycles are forbidden.
 
 ### 4. Naming
 
@@ -79,7 +75,7 @@ src/packages/
 2. **DO** expose several small entry points rather than re-exporting whole subtrees. (Decision 1)
 3. **DO** name Package root files in kebab-case with no suffix and give every subfolder file exactly one classifier (`.pure`, `.impure`, `.types`, `.test`). (Decision 2)
 4. **DO** import another Package only through its entry points. (Decision 3)
-5. **DO** keep a colocated test to its same-directory, same-name `.pure` sibling and integration tests under `tests/`. (Decision 3)
+5. **DO** restrict a colocated unit test to its same-directory, same-name `.pure.ts` sibling, Package root entry points, and platform builtins, keeping integration tests under `tests/`. (Decision 3)
 6. **DO** name a file after the subject it serves. (Decision 4)
 
 ### Don'ts
@@ -87,7 +83,7 @@ src/packages/
 1. **DON'T** nest Packages or place source files directly at `src/packages/`. (Decision 1)
 2. **DON'T** add a barrel that re-exports a whole subtree. (Decision 1)
 3. **DON'T** stack classifiers, leave a subfolder file unclassified, or classify a Package root file. (Decision 2)
-4. **DON'T** import another Package's internals, reach into any `tests/` folder from outside, or introduce dependency cycles. (Decision 3)
+4. **DON'T** import any Package internals in a colocated test beyond its same-directory, same-name `.pure.ts` sibling, reach into another Package's internals or any `tests/` folder from outside, or introduce dependency cycles. (Decision 3)
 5. **DON'T** name a file `utils`, `common`, `helpers` or `misc`, and don't use `.adapter` or `.orchestrator` as a suffix. (Decision 4)
 
 ## Consequences

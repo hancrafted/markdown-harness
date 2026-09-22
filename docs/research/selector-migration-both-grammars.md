@@ -438,8 +438,8 @@ split is measured rather than reasoned.
 ### Settled — `--check` and `--audit`
 
 Nothing is lost when `.md` leaves the selectors, because **the tree walk already carries the extension and always
-has**. `isMarkdownFile` decides corpus membership from an entry's name alone, case-sensitively, at
-`src/packages/markdown-file-tree/lib/corpus-entry.pure.ts:60-63`, from a `MARKDOWN_EXTENSION = '.md'` constant on line 22. Its own docblock states that it is "deliberately not a call to the platform matcher", for precisely the
+has**. `isMarkdownFile` decides corpus membership from an entry's name alone, case-sensitively, historically at
+`src/packages/markdown-file-tree/lib/corpus-entry.pure.ts:60-63` as of 2026-09-21 (prior to #154 relocating the predicate to `src/packages/foundation/corpus-membership.ts`), from a `MARKDOWN_EXTENSION = '.md'` constant on line 22. Its own docblock states that it is "deliberately not a call to the platform matcher", for precisely the
 host-independence reason the reduced grammar exists to serve.
 
 So the `.md` written inside today's globs is **already redundant** on these two commands. Every path a selector is
