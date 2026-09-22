@@ -37,7 +37,7 @@ function blockFor(
   moduleAssess: AssessConditions | undefined,
 ): { block: AssessConditions | undefined; source: PromptSource } {
   if ('assess' in rule && rule.assess !== undefined) return { block: rule.assess, source: 'rule' };
-  return { block: moduleAssess, source: 'module' };
+  return { block: moduleAssess, source: 'module-wide' };
 }
 
 /**

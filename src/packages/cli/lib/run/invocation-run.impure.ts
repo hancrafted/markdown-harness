@@ -22,8 +22,10 @@ import { frontmatterModule } from '../../../frontmatter-harness/module.ts';
 import { queryPath } from '../../../frontmatter-harness/query.ts';
 import { MODULE_SET } from '../../module-set.ts';
 import type { Invocation } from '../argv/argv.types.ts';
+import { auditReport } from './audit-report.pure.ts';
 import { corpusVerdict } from './corpus-verdict.pure.ts';
 import { hostInstant } from './host-instant.impure.ts';
+import { pathAssessment } from './path-assessment.pure.ts';
 import { pathGovernance } from './path-governance.pure.ts';
 import { resolvedInstant, route, terminationFor, withCorpusGuard } from './termination.pure.ts';
 import type {
@@ -77,7 +79,8 @@ function gatherAudit({ root, config }: Invocation): AuditGathered {
     const cfg = gatherConfig(config);
     if (cfg.kind === 'rejected') return cfg;
     const section = cfg.result.sectionFor(frontmatterModule);
-    return { kind: 'answered' as const, result: auditRules(files, section) };
+    const answers = [{ module: frontmatterModule.key, audit: auditRules(files, section) }];
+    return { kind: 'answered' as const, result: auditReport(answers) };
   });
   return { kind: 'audit', root, config, outcome };
 }
@@ -98,7 +101,13 @@ function gatherAssess({ path, config, now, root }: Invocation): AssessGathered {
 
   // `root` is always the default here: `--root` beside `--assess` is refused as
   // conflicting input, so this is the current directory by construction.
-  const result = assessPath({ root, path }, cfg.result.sectionFor(frontmatterModule), instant);
+  const answers = [
+    {
+      module: frontmatterModule.key,
+      assessment: assessPath({ root, path }, cfg.result.sectionFor(frontmatterModule), instant),
+    },
+  ];
+  const result = pathAssessment(answers);
   return { kind: 'assess', path, now: instant, config, outcome: { kind: 'answered', result } };
 }
 

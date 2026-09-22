@@ -16,7 +16,10 @@ export type {
   AssessEvidence,
   AssessResult,
   AssessState,
+  AssessedFile,
   FreshFile,
+  ModuleAssess,
+  ModuleAssessment,
   PromptSource,
   StaleFile,
   UnassessableFile,
@@ -24,7 +27,14 @@ export type {
   UnreadableFile,
   WinningRule,
 } from './lib/assess.types.ts';
-export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';
+export type {
+  AuditResult,
+  ModuleAudit,
+  ModuleAuditResult,
+  RuleAudit,
+  RuleRef,
+  SelectorRef,
+} from './lib/audit.types.ts';
 export type {
   CheckResult,
   CheckSummary,

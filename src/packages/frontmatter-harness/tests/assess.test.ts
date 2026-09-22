@@ -130,9 +130,9 @@ describe('assessPath', () => {
   });
 
   describe('edge cases', () => {
-    it('says nothing whatever about a path no rule selects, without opening anything', () => {
+    it('passes by a path no rule selects, without opening anything', () => {
       // ARRANGE
-      const expected = { agentAction: 'PROCEED', state: 'ungoverned' };
+      const expected = undefined;
       // ACT
       const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/research/vendor/upstream.md' }, section, NOW);
       // ASSERT
@@ -149,8 +149,8 @@ describe('assessPath', () => {
       const expected = ['PROCEED', 'REVIEW'];
       // ACT
       const actual = [
-        assessPath({ root: CORPUS_ROOT, path: STALE }, section, beforeExpiry).agentAction,
-        assessPath({ root: CORPUS_ROOT, path: STALE }, section, afterExpiry).agentAction,
+        assessPath({ root: CORPUS_ROOT, path: STALE }, section, beforeExpiry)?.agentAction,
+        assessPath({ root: CORPUS_ROOT, path: STALE }, section, afterExpiry)?.agentAction,
       ];
       // ASSERT
       expect(actual).toEqual(expected);
@@ -163,7 +163,7 @@ describe('assessPath', () => {
       // is covered without making a permanent Conformance case from a
       // non-document.
       // ARRANGE
-      const expected = { agentAction: 'PROCEED', state: 'ungoverned' };
+      const expected = undefined;
       // ACT
       const actual = assessPath({ root: CORPUS_ROOT, path: 'docs/freshness' }, section, NOW);
       // ASSERT
