@@ -1,33 +1,27 @@
 /**
  * Which Node this command will answer under, and what it says when it will not.
  *
- * The window below was measured for a reason that has since been removed. Path
- * matching used to delegate to `node:path`'s `matchesGlob`, whose behaviour is
- * fixed by the matcher library bundled with each Node release — and that
- * bundled version moves by patch, not by major line. Outside the window, the
- * same tree in gave a different result out, which breaks tenet 3 without saying
- * so. A selector is now two axes of literal tokens compared as strings, and
- * nothing in this command reaches that matcher any more.
+ * The window follows Node's support lines rather than a platform capability.
+ * Node 24 is Active LTS, Node 25 reached end of life, and Node 26 is Current
+ * before its LTS transition. Those lines are the support promise an Operator
+ * can rely on; a patch floor would claim a distinction this command no longer
+ * has after selectors stopped calling `node:path`'s glob matcher.
  *
- * THE RANGE IS HELD UNCHANGED ANYWAY, deliberately and for one change only.
- * Widening it is a public contract change — the refusal text, the manifest's
- * `engines`, and the platform matrix the smoke workflow runs are three places
- * that would have to move together, and none of them is this ticket's subject.
- * Retiring the glob matcher and re-deciding the runtime floor in one change
- * would make the second decision unreviewable inside the first.
- *
- * Which releases carried the matcher behaviour is a registry fact, measured
- * rather than derived; issue #46 §5 records the measurement.
+ * The range deliberately changes with this decision: the public contract now
+ * admits every release in the 24 line and every release from 26 onward, while
+ * retaining the 25 exclusion. `package.json`, this refusal and CI are changed
+ * together because an installer, command and maintainer must tell the same
+ * Operator-facing story.
  */
 
-/** `>=24.16.0` — the first Node 24 release whose bundled matcher carried it. */
-const LOWER_FROM = [24, 16, 0];
+/** `>=24` — the active LTS line. */
+const LOWER_FROM = [24, 0, 0];
 
-/** `<25` — no Node 25 release carried it, so the lower window closes at the line. */
+/** `<25` — the end-of-life line stays outside the support promise. */
 const LOWER_BELOW = [25, 0, 0];
 
-/** `>=26.1.0` — the first Node 26 release that carried it; later lines inherit it. */
-const UPPER_FROM = [26, 1, 0];
+/** `>=26` — the current line and later releases. */
+const UPPER_FROM = [26, 0, 0];
 
 /**
  * The supported range, in the spelling `package.json`'s `engines.node` carries.
@@ -39,15 +33,14 @@ const UPPER_FROM = [26, 1, 0];
  * carries the manifest's value verbatim, so the two cannot drift apart in
  * silence.
  */
-const SUPPORTED_NODE = '>=24.16.0 <25 || >=26.1.0';
+const SUPPORTED_NODE = '>=24 <25 || >=26';
 
 /**
  * A version read as three numbers, or nothing when it does not read as one.
  *
- * A prerelease is read as its release, so `26.1.0-rc.1` gives `[26, 1, 0]`.
- * Semver puts that below `26.1.0` and would refuse it; the only thing at stake
- * here is which matcher a release bundles, and a candidate for a release that
- * carries the behaviour carries it too.
+ * A prerelease is read as its release, so `26.0.0-rc.1` gives `[26, 0, 0]`.
+ * The guard decides support by release line rather than SemVer precedence, so
+ * a candidate on a supported line receives the same answer as that line.
  */
 function numbered(version: string): readonly number[] | undefined {
   const read = /^(\d+)\.(\d+)\.(\d+)/.exec(version);

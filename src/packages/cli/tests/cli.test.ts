@@ -1010,17 +1010,15 @@ describe('mh --help', () => {
 //
 // `engines` is advisory — npm enforces it only for an adopter who opted into
 // strictness — so the command refuses for itself rather than trusting the
-// installer to have done it. What that protects is tenet 3: path matching
-// delegates to the platform's glob matcher, whose behaviour is fixed by the
-// matcher bundled with each Node release, and outside the declared range the
-// same tree gives a different result out. A refusal is the only honest answer
-// available there, and it is preferable to a quietly different one.
+// installer to have done it. The range admits currently supported release
+// lines: 24 is Active LTS, 25 is EOL, and 26 is Current before its LTS
+// transition. A refusal is the only honest answer available outside it.
 
 describe('mh under a stated Node version', () => {
   describe('success cases', () => {
-    it('answers normally on the first release of the upper window', () => {
+    it('answers normally on the first release of the upper supported line', () => {
       // ARRANGE
-      const supported = '26.1.0';
+      const supported = '26.0.0';
       const success = 0;
       const empty = '';
       // ACT
@@ -1069,23 +1067,22 @@ describe('mh under a stated Node version', () => {
   });
 
   describe('edge cases', () => {
-    it('takes each window at its first release and refuses the release below it', () => {
-      // Written out by hand, because the boundaries ARE the decision. A
-      // prerelease is read as its release: `26.1.0-rc.1` is below `26.1.0` to
-      // semver, and refusing it would be a refusal about version syntax rather
-      // than about matcher behaviour, which is the only thing at stake.
+    it('takes each supported release line and refuses the EOL line', () => {
+      // Written out by hand, because the supported lines ARE the decision. A
+      // prerelease is read as its release: this guard compares release lines,
+      // not SemVer precedence.
       // ARRANGE
       const nothingWrong = 0;
       const cannotReport = 2;
       const boundaries = [
         { version: '22.20.0', code: cannotReport },
-        { version: '24.15.9', code: cannotReport },
-        { version: '24.16.0', code: nothingWrong },
+        { version: '23.99.9', code: cannotReport },
+        { version: '24.0.0', code: nothingWrong },
         { version: '24.99.0', code: nothingWrong },
         { version: '25.0.0', code: cannotReport },
-        { version: '26.0.9', code: cannotReport },
-        { version: '26.1.0', code: nothingWrong },
-        { version: '26.1.0-rc.1', code: nothingWrong },
+        { version: '25.99.9', code: cannotReport },
+        { version: '26.0.0', code: nothingWrong },
+        { version: '26.0.0-rc.1', code: nothingWrong },
         { version: '27.0.0', code: nothingWrong },
       ];
       // ACT
