@@ -18,6 +18,7 @@
  */
 
 import type { Violation } from '../../../response-contract/index.ts';
+import { FIELD_VIOLATION_CODES } from '../../../response-contract/index.ts';
 import type { FrontmatterRule } from '../../section.ts';
 import { crossFieldViolations } from './cross-field.pure.ts';
 import { fieldViolations } from './field-constraint.pure.ts';
@@ -38,8 +39,17 @@ const FORBIDS = { frontmatter: 'forbidden' } as const;
 function forbiddenVerdict(text: string): readonly Violation[] {
   const data = frontmatterData(text);
   if (data.kind === 'absent') return [];
-  if (data.kind === 'unparseable') return [{ field: null, violation: 'FRONTMATTER_FORBIDDEN', requirement: FORBIDS }];
-  return [{ field: null, value: evidenceFor(data.data), violation: 'FRONTMATTER_FORBIDDEN', requirement: FORBIDS }];
+  if (data.kind === 'unparseable') {
+    return [{ field: null, violation: FIELD_VIOLATION_CODES.FRONTMATTER_FORBIDDEN, requirement: FORBIDS }];
+  }
+  return [
+    {
+      field: null,
+      value: evidenceFor(data.data),
+      violation: FIELD_VIOLATION_CODES.FRONTMATTER_FORBIDDEN,
+      requirement: FORBIDS,
+    },
+  ];
 }
 
 /**

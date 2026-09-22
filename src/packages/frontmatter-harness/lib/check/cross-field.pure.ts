@@ -18,6 +18,7 @@
  */
 
 import type { CrossFieldViolation } from '../../../response-contract/index.ts';
+import { FIELD_VIOLATION_CODES } from '../../../response-contract/index.ts';
 import type { FrontmatterRule } from '../../section.ts';
 import type { FrontmatterMapping } from './check.types.ts';
 import { resolveAddress } from './field-address.pure.ts';
@@ -54,7 +55,10 @@ function exactlyOneOfViolation(
     // single one of them is at fault.
     field: null,
     satisfied,
-    violation: satisfied.length === 0 ? 'EXACTLY_ONE_OF_NONE_PRESENT' : 'EXACTLY_ONE_OF_MULTIPLE_PRESENT',
+    violation:
+      satisfied.length === 0
+        ? FIELD_VIOLATION_CODES.EXACTLY_ONE_OF_NONE_PRESENT
+        : FIELD_VIOLATION_CODES.EXACTLY_ONE_OF_MULTIPLE_PRESENT,
     requirement: { exactlyOneOf },
   };
 }
@@ -63,14 +67,14 @@ function exactlyOneOfViolation(
 function anyOfViolation(anyOf: readonly string[], data: FrontmatterMapping): CrossFieldViolation | undefined {
   const satisfied = satisfiedIn(anyOf, data);
   if (satisfied.length > 0) return undefined;
-  return { field: null, satisfied, violation: 'ANY_OF_UNSATISFIED', requirement: { anyOf } };
+  return { field: null, satisfied, violation: FIELD_VIOLATION_CODES.ANY_OF_UNSATISFIED, requirement: { anyOf } };
 }
 
 /** All of them. There is no such thing as satisfying too many arms of it. */
 function allOfViolation(allOf: readonly string[], data: FrontmatterMapping): CrossFieldViolation | undefined {
   const satisfied = satisfiedIn(allOf, data);
   if (satisfied.length === allOf.length) return undefined;
-  return { field: null, satisfied, violation: 'ALL_OF_UNSATISFIED', requirement: { allOf } };
+  return { field: null, satisfied, violation: FIELD_VIOLATION_CODES.ALL_OF_UNSATISFIED, requirement: { allOf } };
 }
 
 /**
