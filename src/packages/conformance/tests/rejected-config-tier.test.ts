@@ -30,9 +30,13 @@ import { loadConfig } from '../../foundation/load-config.ts';
 import type { ConfigErrorResult } from '../../response-contract/index.ts';
 import { casesIn } from '../case-corpus.ts';
 import { DECLARED_CODES } from '../config-fault-catalog.ts';
-import { configPathOf, expectedRejectionOf, REJECTED_CONFIG, rejectedConfigCases } from '../rejected-config-case.ts';
+import { coverageAndClosure } from '../coverage-closure.ts';
+import { configPathOf, expectedRejectionOf, rejectedConfigCases } from '../rejected-config-case.ts';
+import { tierForRunner } from '../tier-record.ts';
 
-const cases = rejectedConfigCases();
+const TIER = tierForRunner(import.meta.url);
+if (TIER.caseKind !== 'rejected-config') throw new Error(`${TIER.name} is not a rejected-config tier`);
+const cases = rejectedConfigCases(TIER);
 
 /**
  * The one literal that marks the failure variant.
@@ -56,12 +60,12 @@ const REJECTED = 'CONFIG_REJECTED';
  * ships.
  */
 function rejectionFor(caseName: string): ConfigErrorResult {
-  return { error: REJECTED, faults: loadConfig(configPathOf(caseName), MODULE_SET).faults };
+  return { error: REJECTED, faults: loadConfig(configPathOf(TIER, caseName), MODULE_SET).faults };
 }
 
 /** Every code the frozen files name, across the tier, with repeats. */
 function codesFrozen(): readonly string[] {
-  return cases.flatMap((caseName) => expectedRejectionOf(caseName).faults.map((fault) => fault.code));
+  return cases.flatMap((caseName) => expectedRejectionOf(TIER, caseName).faults.map((fault) => fault.code));
 }
 
 describe('the rejected-config tier', () => {
@@ -72,7 +76,7 @@ describe('the rejected-config tier', () => {
       // faults, and a config fails whole precisely so an Operator sees all of
       // them in one run.
       // ARRANGE
-      const expected = expectedRejectionOf(caseName);
+      const expected = expectedRejectionOf(TIER, caseName);
       // ACT
       const actual = rejectionFor(caseName);
       // ASSERT
@@ -84,9 +88,9 @@ describe('the rejected-config tier', () => {
       // for the tier next door that means reading its cases with the wrong
       // prefix rather than failing.
       // ARRANGE
-      const ownTier = `${REJECTED_CONFIG}/`;
+      const ownTier = `${TIER.name}/`;
       // ACT
-      const actual = configPathOf(cases[0]);
+      const actual = configPathOf(TIER, cases[0]);
       // ASSERT
       expect(actual).toContain(ownTier);
     });
@@ -100,7 +104,7 @@ describe('the rejected-config tier', () => {
       // ARRANGE
       const noConfig = undefined;
       // ACT
-      const actual = loadConfig(configPathOf(caseName), MODULE_SET).config;
+      const actual = loadConfig(configPathOf(TIER, caseName), MODULE_SET).config;
       // ASSERT
       expect(actual).toBe(noConfig);
     });
@@ -112,39 +116,27 @@ describe('the rejected-config tier', () => {
       // ARRANGE
       const none = 0;
       // ACT
-      const frozen = expectedRejectionOf(caseName).faults.length;
+      const frozen = expectedRejectionOf(TIER, caseName).faults.length;
       // ASSERT
       expect(frozen).toBeGreaterThan(none);
     });
   });
 
   describe('edge cases', () => {
-    it('reaches every code the fault catalog declares', () => {
-      // COVERAGE, read off what the loader actually emitted rather than off the
-      // frozen files: a code reached only by an expectation nobody's bytes can
-      // provoke is a specification of nothing. Delete a case directory while its
-      // code stays declared and this is the assertion that goes red.
+    it('proves coverage and closure against the fault catalog together', () => {
+      // A reached code says the tier has bytes that provoke it. A frozen code
+      // says the permanent specification names it. Neither assertion is
+      // meaningful alone, so the paired operation answers both at once.
       // ARRANGE
-      const declared: readonly string[] = DECLARED_CODES;
+      const complete = { unreached: [], undeclared: [] };
       // ACT
-      const reached = new Set<string>(
+      const actual = coverageAndClosure(
+        DECLARED_CODES,
         cases.flatMap((caseName) => rejectionFor(caseName).faults.map((fault) => fault.code)),
+        codesFrozen(),
       );
-      const unreached = declared.filter((code) => !reached.has(code));
       // ASSERT
-      expect(unreached).toEqual([]);
-    });
-
-    it('names no code outside the fault catalog it declares', () => {
-      // CLOSURE, read off the frozen files: coverage proves the TIER complete,
-      // closure proves it honest. Either alone is blind — a tier can reach every
-      // code and still freeze one the catalog retired years ago.
-      // ARRANGE
-      const declared: readonly string[] = DECLARED_CODES;
-      // ACT
-      const outside = codesFrozen().filter((code) => !declared.includes(code));
-      // ASSERT
-      expect(outside).toEqual([]);
+      expect(actual).toEqual(complete);
     });
 
     it('enumerates every case the suite declares', () => {
@@ -153,7 +145,7 @@ describe('the rejected-config tier', () => {
       // number belongs in review — and `cases.length` compared against anything
       // derived from `cases` could not fail at all.
       // ARRANGE
-      const declaredCases = 16;
+      const declaredCases = TIER.caseCount;
       // ACT
       const enumerated = cases.length;
       // ASSERT
@@ -167,7 +159,7 @@ describe('the rejected-config tier', () => {
       // ARRANGE
       const single = 1;
       // ACT
-      const longest = Math.max(...cases.map((caseName) => expectedRejectionOf(caseName).faults.length));
+      const longest = Math.max(...cases.map((caseName) => expectedRejectionOf(TIER, caseName).faults.length));
       // ASSERT
       expect(longest).toBeGreaterThan(single);
     });
@@ -179,7 +171,7 @@ describe('the rejected-config tier', () => {
       // ARRANGE
       const noMarkdown: readonly string[] = [];
       // ACT
-      const actual = [...casesIn(REJECTED_CONFIG)];
+      const actual = [...casesIn(TIER.name)];
       // ASSERT
       expect(actual).toEqual(noMarkdown);
     });

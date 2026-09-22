@@ -31,19 +31,22 @@ import { frontmatterModule } from '../../frontmatter-harness/module.ts';
 import { queryPath } from '../../frontmatter-harness/query.ts';
 import { casesIn, tierRoot } from '../case-corpus.ts';
 import { agentActionOf, FAILS, FIX_FILE, PASSES, PROCEED, REVIEW, UNGOVERNED, verdictOf } from '../case-marker.ts';
+import { coverageAndClosure } from '../coverage-closure.ts';
+import { tierForRunner } from '../tier-record.ts';
 
-/** The per-Module tier this runner checks. */
-const FRONTMATTER = 'frontmatter';
+const TIER = tierForRunner(import.meta.url);
+if (TIER.caseKind !== 'markdown') throw new Error(`${TIER.name} is not a markdown tier`);
+if (TIER.assessmentInstant === undefined) throw new Error(`${TIER.name} has no assessment instant`);
 
 /** The synthetic repo root the tier's config is written relative to. */
-const CORPUS_ROOT = tierRoot(FRONTMATTER);
+const CORPUS_ROOT = tierRoot(TIER.name);
 
 // Through the real loader against the DECLARED Module set, rather than a YAML
 // parse plus a cast. The cast was the only thing typing this file, and it typed
 // it as a config type that no longer exists: with the whole-file type retired,
 // the largest thing anybody may claim is one Module's section, and the only way
 // to hold one is to have the Module that owns it validate it.
-const loaded = loadConfig(join(CORPUS_ROOT, 'valid-test-config.yaml'), MODULE_SET);
+const loaded = loadConfig(join(CORPUS_ROOT, TIER.configFile), MODULE_SET);
 if (loaded.config === undefined) throw new Error(`the tier config was refused: ${JSON.stringify(loaded.faults)}`);
 const section = loaded.config.sectionFor(frontmatterModule);
 if (section === undefined) throw new Error('the tier config must name the frontmatter Module');
@@ -134,93 +137,59 @@ describe('valid-test-config.yaml is a complete test surface', () => {
       expect(rules.length).toBeGreaterThan(0);
     });
 
-    it.each(RULE_KEYS)('exercises the rule key %s', (key) => {
+    it('proves coverage and closure for the rule-key vocabulary together', () => {
       // ARRANGE
-      const keysInConfig = everyRuleKey();
+      const complete = { unreached: [], undeclared: [] };
       // ACT
-      const seen = [...keysInConfig];
+      const keys = [...everyRuleKey()];
+      const actual = coverageAndClosure(RULE_KEYS, keys, keys);
       // ASSERT
-      expect(seen).toContain(key);
+      expect(actual).toEqual(complete);
     });
 
-    it.each(CONSTRAINT_KEYS)('exercises the constraint %s', (key) => {
+    it('proves coverage and closure for the constraint-key vocabulary together', () => {
       // ARRANGE
-      const constraints = everyConstraint();
+      const complete = { unreached: [], undeclared: [] };
       // ACT
-      const seen = constraints.flatMap((constraint) => Object.keys(constraint));
+      const keys = [...everyConstraintKey()];
+      const actual = coverageAndClosure(CONSTRAINT_KEYS, keys, keys);
       // ASSERT
-      expect(seen).toContain(key);
+      expect(actual).toEqual(complete);
     });
 
-    it.each(ALLOWED_ENTRY_KEYS)('exercises the allowed-entry key %s', (key) => {
+    it('proves coverage and closure for the allowed-entry vocabulary together', () => {
       // The allowed-entry tier had a closure assertion and no coverage loop, so
       // an entry key could have gone unreached while the suite still called
       // itself complete. ARCH-002 §1.2 names this tier alongside the other
       // three; §3.1 requires every one of them be reached.
       // ARRANGE
-      const entries = everyAllowedValue();
+      const complete = { unreached: [], undeclared: [] };
       // ACT
-      const seen = entries.flatMap((entry) => Object.keys(entry));
+      const keys = everyAllowedValue().flatMap((entry) => Object.keys(entry));
+      const actual = coverageAndClosure(ALLOWED_ENTRY_KEYS, keys, keys);
       // ASSERT
-      expect(seen).toContain(key);
+      expect(actual).toEqual(complete);
     });
 
-    it.each(FORMATS)('exercises the named format %s', (format) => {
+    it('proves coverage and closure for named formats together', () => {
       // ARRANGE
-      const constraints = everyConstraint();
+      const complete = { unreached: [], undeclared: [] };
       // ACT
-      const seen = constraints.flatMap((constraint) => constraint.format ?? []);
+      const formats = everyConstraint().flatMap((constraint) => constraint.format ?? []);
+      const actual = coverageAndClosure(FORMATS, formats, formats);
       // ASSERT
-      expect(seen).toContain(format);
+      expect(actual).toEqual(complete);
     });
   });
 
   describe('failure cases', () => {
-    it('carries no rule key outside the vocabulary', () => {
+    it('gives no two rules the same ruleId', () => {
       // ARRANGE
-      const known: readonly string[] = RULE_KEYS;
+      const ids = rules.map((rule) => rule.ruleId);
       // ACT
-      const unknown = [...everyRuleKey()].filter((key) => !known.includes(key));
+      const repeated = ids.filter((id, index) => ids.indexOf(id) !== index);
       // ASSERT
-      expect(unknown).toEqual([]);
-    });
-
-    it('carries no allowed-entry key outside the vocabulary', () => {
-      // The assertion that was missing while five intents sat truncated. An
-      // unquoted YAML flow scalar splits on its own commas, so
-      // `{ value: log, intent: A history, newest first. }` yields a halved
-      // `intent` and a null key named after the tail. Every presence check
-      // still passes, which is exactly why presence checks were not enough.
-      // ARRANGE
-      const known = ALLOWED_ENTRY_KEYS;
-      // ACT
-      const unknown = everyAllowedValue().flatMap((entry) => Object.keys(entry).filter((key) => !known.includes(key)));
-      // ASSERT
-      expect(unknown).toEqual([]);
-    });
-
-    it('names no format outside the vocabulary', () => {
-      // The named-format tier had a coverage loop and no closure assertion, so
-      // `format: datetiem` would have failed nothing here — the constraint-key
-      // closure test sees the KEY `format`, never its value. Only three formats
-      // exist, and a fourth is a deliberate amendment.
-      // ARRANGE
-      const known: readonly string[] = FORMATS;
-      // ACT
-      const unknown = everyConstraint()
-        .flatMap((constraint) => constraint.format ?? [])
-        .filter((format) => !known.includes(format));
-      // ASSERT
-      expect(unknown).toEqual([]);
-    });
-
-    it('carries no constraint key outside the vocabulary', () => {
-      // ARRANGE
-      const known: readonly string[] = CONSTRAINT_KEYS;
-      // ACT
-      const unknown = [...everyConstraintKey()].filter((key) => !known.includes(key));
-      // ASSERT
-      expect(unknown).toEqual([]);
+      expect(repeated).toEqual([]);
     });
   });
 
@@ -316,15 +285,6 @@ describe('valid-test-config.yaml obeys the config-validity rules', () => {
   });
 
   describe('failure cases', () => {
-    it('gives no two rules the same ruleId', () => {
-      // ARRANGE
-      const ids = rules.map((rule) => rule.ruleId);
-      // ACT
-      const repeated = ids.filter((id, index) => ids.indexOf(id) !== index);
-      // ASSERT
-      expect(repeated).toEqual([]);
-    });
-
     it('leaves a frontmatter-forbidden rule with no payload', () => {
       // ARRANGE
       const forbidding = rules.filter((rule) => 'frontmatter' in rule);
@@ -385,7 +345,7 @@ describe('valid-test-config.yaml obeys the config-validity rules', () => {
 // own entry points now, so the runner and ARCH-002's enforcer name the same
 // three words in one place and a tier move stays a rename.
 
-const corpus = casesIn(FRONTMATTER);
+const corpus = casesIn(TIER.name);
 const cases = corpus.map((path) => ({ path, verdict: verdictOf(CORPUS_ROOT, path) }));
 const stated = (verdict: string): string[] => cases.filter((one) => one.verdict === verdict).map((one) => one.path);
 
@@ -496,7 +456,7 @@ describe('the harness reports the verdict each Conformance case states', () => {
       // whatever the tree now holds — and `corpus.length` compared against
       // anything derived from `corpus` could not fail at all.
       // ARRANGE
-      const declaredCases = 40;
+      const declaredCases = TIER.caseCount;
       // ACT
       const enumerated = corpus.length;
       // ASSERT
@@ -519,7 +479,7 @@ describe('the harness reports the verdict each Conformance case states', () => {
  * — on a date nobody wrote down. Moving this constant is a contract change on
  * the same terms as moving a marker.
  */
-const ASSESSMENT_INSTANT = '2026-12-01T00:00:00Z';
+const ASSESSMENT_INSTANT = TIER.assessmentInstant;
 
 const assessCases = corpus
   .map((path) => ({ path, action: agentActionOf(CORPUS_ROOT, path) }))

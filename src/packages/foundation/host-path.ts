@@ -10,7 +10,7 @@
 // platform reads, which is the thing ARCH-008 §2.1 puts behind one Package —
 // not because they are filesystem reads, which they are not.
 
-import { directoryOfModule, hostPathOf } from './lib/platform/node-host.impure.ts';
+import { directoryOfModule, fileNameOfModule, hostPathOf } from './lib/platform/node-host.impure.ts';
 
 /**
  * Join a root and the segments below it into one host path.
@@ -38,4 +38,14 @@ export function hostPath(root: string, ...segments: readonly string[]): string {
  */
 export function directoryOf(moduleUrl: string): string {
   return directoryOfModule(moduleUrl);
+}
+
+/**
+ * The filename of the calling module.
+ *
+ * Pass `import.meta.url` and nothing else, so a caller cannot disagree with
+ * the name the module loader assigned it.
+ */
+export function fileNameOf(moduleUrl: string): string {
+  return fileNameOfModule(moduleUrl);
 }

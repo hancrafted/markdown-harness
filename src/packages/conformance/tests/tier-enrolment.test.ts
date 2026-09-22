@@ -9,33 +9,20 @@
 // `-tier.test.ts`, which is what keeps it out of the set it derives.
 
 import { describe, expect, it } from 'vitest';
-import { enrolledTiers, tierRunners } from '../tier-enrolment.ts';
+import { declaredTierNames, enrolledTiers, tierRunners } from '../tier-enrolment.ts';
 
 /** The tier the second Module brings, named so its absence can be asserted. */
 const INTEGRATED = 'integrated';
 
 describe('tier enrolment', () => {
   describe('success cases', () => {
-    it('derives the same tier set from the fixtures and from the runners', () => {
+    it('derives fixtures and runners from the declared tier set', () => {
       // ARRANGE
-      const tiers = [...enrolledTiers()];
+      const declared = [...declaredTierNames()];
       // ACT
-      const runners = [...tierRunners()];
+      const actual = { fixtures: [...enrolledTiers()], runners: [...tierRunners()] };
       // ASSERT
-      expect(runners).toEqual(tiers);
-    });
-
-    it('states which tiers exist, so adding one is a reviewed act', () => {
-      // Written out by hand for the reason the case counts already are: a list
-      // derived from the thing it is checking cannot fail. The test above
-      // proves the two sides agree; this one proves they agree on what a
-      // reviewer signed off.
-      // ARRANGE
-      const declaredTiers = ['frontmatter', 'rejected-config'];
-      // ACT
-      const actual = [...enrolledTiers()];
-      // ASSERT
-      expect(actual).toEqual(declaredTiers);
+      expect(actual).toEqual({ fixtures: declared, runners: declared });
     });
   });
 

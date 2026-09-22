@@ -3,6 +3,8 @@ import { frozenRejection } from './frozen-rejection.pure.ts';
 
 /** The prefix a runner supplies: where this case's config file actually sits. */
 const CONFIG_PATH = '/tmp/conformance/rejected-config/config-not-found/markdown-harness.config.yaml';
+const CONFIG_FILE = 'markdown-harness.config.yaml';
+const CONFIG = { path: CONFIG_PATH, file: CONFIG_FILE };
 
 /** The case a failure names, so a broken expectation is traceable to its directory. */
 const CASE = 'config-not-found';
@@ -20,7 +22,7 @@ describe('a case-relative frozen rejection', () => {
       };
       const expected = { error: REJECTED, faults: [{ code: 'CONFIG_NOT_FOUND', location: CONFIG_PATH }] };
       // ACT
-      const actual = frozenRejection(frozen, CONFIG_PATH, CASE);
+      const actual = frozenRejection(frozen, CONFIG, CASE);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -31,7 +33,7 @@ describe('a case-relative frozen rejection', () => {
       const frozen = { error: REJECTED, faults: [{ code: 'CONFIG_EMPTY_INTENT', location: notation }] };
       const expected = { error: REJECTED, faults: [{ code: 'CONFIG_EMPTY_INTENT', location: notation }] };
       // ACT
-      const actual = frozenRejection(frozen, CONFIG_PATH, CASE);
+      const actual = frozenRejection(frozen, CONFIG, CASE);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -42,7 +44,7 @@ describe('a case-relative frozen rejection', () => {
       // ARRANGE
       const notAMapping = [{ code: 'CONFIG_NOT_FOUND', location: 'markdown-harness.config.yaml' }];
       // ACT
-      const reading = () => frozenRejection(notAMapping, CONFIG_PATH, CASE);
+      const reading = () => frozenRejection(notAMapping, CONFIG, CASE);
       // ASSERT
       expect(reading).toThrow(CASE);
     });
@@ -51,7 +53,7 @@ describe('a case-relative frozen rejection', () => {
       // ARRANGE
       const faultsNotAList = { error: REJECTED, faults: { code: 'CONFIG_NOT_FOUND' } };
       // ACT
-      const reading = () => frozenRejection(faultsNotAList, CONFIG_PATH, CASE);
+      const reading = () => frozenRejection(faultsNotAList, CONFIG, CASE);
       // ASSERT
       expect(reading).toThrow(CASE);
     });
@@ -60,7 +62,7 @@ describe('a case-relative frozen rejection', () => {
       // ARRANGE
       const faultWithoutCode = { error: REJECTED, faults: [{ location: 'markdown-harness.config.yaml' }] };
       // ACT
-      const reading = () => frozenRejection(faultWithoutCode, CONFIG_PATH, CASE);
+      const reading = () => frozenRejection(faultWithoutCode, CONFIG, CASE);
       // ASSERT
       expect(reading).toThrow(CASE);
     });
@@ -77,7 +79,7 @@ describe('a case-relative frozen rejection', () => {
       const frozen = { error: REJECTED, faults: [{ code: 'CONFIG_INVALID_VALUE', location: nearMiss }] };
       const expected = { error: REJECTED, faults: [{ code: 'CONFIG_INVALID_VALUE', location: nearMiss }] };
       // ACT
-      const actual = frozenRejection(frozen, CONFIG_PATH, CASE);
+      const actual = frozenRejection(frozen, CONFIG, CASE);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -91,7 +93,7 @@ describe('a case-relative frozen rejection', () => {
       const frozen = { error: REJECTED, faults: [] };
       const expected = { error: REJECTED, faults: [] };
       // ACT
-      const actual = frozenRejection(frozen, CONFIG_PATH, CASE);
+      const actual = frozenRejection(frozen, CONFIG, CASE);
       // ASSERT
       expect(actual).toEqual(expected);
     });

@@ -21,7 +21,7 @@
  */
 
 import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { HostEntry, HostEntryKind, HostRead } from './node-host.types.ts';
 
@@ -135,4 +135,9 @@ export function hostPathOf(root: string, segments: readonly string[]): string {
  */
 export function directoryOfModule(moduleUrl: string): string {
   return fileURLToPath(new URL('.', moduleUrl));
+}
+
+/** The filename of the module at `moduleUrl`. */
+export function fileNameOfModule(moduleUrl: string): string {
+  return basename(fileURLToPath(moduleUrl));
 }
