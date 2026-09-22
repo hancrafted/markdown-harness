@@ -85,9 +85,10 @@ was traded; a permanent choice was simply taken while it still cost nothing.
    which restating a block is not a real authoring cost.
 3. **The second Module has a shape waiting for it.** A body-governing Module gets `body:` at the
    top level with its own `rules:` and its own Module-wide keys, and neither Module can name the
-   other's data. Note the separate open question this does not settle:
-   `CheckSummary.governedFiles` means "files at least one rule governs", which becomes ambiguous
-   the moment two Modules exist, since `response-contract` has no Module dimension.
+   other's data. The open question of `CheckSummary.governedFiles` ("files at least one rule governs")
+   was settled in #162 when findings were nested under Modules: `governedFiles` is the union of
+   governed files across Modules (computed in `cli`), so a file governed by multiple Modules is counted
+   once.
 4. **The response can name a prompt's origin in one word.** Because a prompt comes from exactly one
    place, `--assess` answers with `"source": "rule"` or `"source": "module"`. Under merging that
    field would have had to be per-key, or be a lie.
