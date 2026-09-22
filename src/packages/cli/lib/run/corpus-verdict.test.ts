@@ -12,7 +12,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import type { ModuleDescriptor } from '../../../config-contract/index.ts';
 import { loadConfig } from '../../../foundation/load-config.ts';
 import type { ModuleCheck } from '../../../response-contract/index.ts';
-import { corpusVerdict } from './corpus-verdict.pure';
+import { checkVerdict, corpusVerdict } from './corpus-verdict.pure';
 
 /** One thing wrong, written out once so the fixtures stay about the nesting. */
 const MISSING_TYPE = {
@@ -143,6 +143,20 @@ describe('corpusVerdict', () => {
   });
 
   describe('failure cases', () => {
+    it('refuses the corpus when any Module could not read a governed file', () => {
+      // ARRANGE
+      const corpus = ['docs/a.md'];
+      const unreadable = { kind: 'unreadable' as const, path: '/fixture/docs/a.md' };
+      const answers = [
+        { module: 'zulu', result: { kind: 'checked' as const, result: { governed: [], files: [] } } },
+        { module: 'alpha', result: unreadable },
+      ];
+      // ACT
+      const actual = checkVerdict(corpus, answers);
+      // ASSERT
+      expect(actual).toEqual(unreadable);
+    });
+
     it('lists only the Modules with a finding, not every Module that governed the file', () => {
       // An agent about to edit the document can act on nothing in a block that
       // says nothing is wrong. The steering command is where every governing

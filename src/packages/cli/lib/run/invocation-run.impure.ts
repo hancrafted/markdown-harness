@@ -18,7 +18,7 @@ import { normalisePath } from '../../../foundation/path-shape.ts';
 import { MODULE_SET } from '../../module-set.ts';
 import type { Invocation } from '../argv/argv.types.ts';
 import { auditReport } from './audit-report.pure.ts';
-import { corpusVerdict } from './corpus-verdict.pure.ts';
+import { checkVerdict } from './corpus-verdict.pure.ts';
 import { hostInstant } from './host-instant.impure.ts';
 import { pathAssessment } from './path-assessment.pure.ts';
 import { pathGovernance } from './path-governance.pure.ts';
@@ -115,19 +115,15 @@ function gatherCheck({ root, config }: Invocation): CheckGathered {
     const cfg = gatherConfig(config);
     if (cfg.kind === 'rejected') return cfg;
 
-    const checked = MODULE_SET.map((module) => ({ module: module.key, result: module.check(root, files, cfg.result) }));
-    const unreadable = checked.find((answer) => answer.result.kind === 'unreadable');
-    if (unreadable !== undefined && unreadable.result.kind === 'unreadable') return unreadable.result;
-
     // Composed on the same terms as the steering command, and the counts with
     // it: `governedFiles` is a union over Modules, which no Module can see to
     // take.
-    const answers = checked.map((answer) => {
-      if (answer.result.kind !== 'checked') throw new Error('unreadable Module result escaped its guard');
-      return { module: answer.module, check: answer.result.result };
-    });
-    const result = corpusVerdict(files.map(normalisePath), answers);
-    return { kind: 'answered' as const, result };
+    const verdict = checkVerdict(
+      files.map(normalisePath),
+      MODULE_SET.map((module) => ({ module: module.key, result: module.check(root, files, cfg.result) })),
+    );
+    if (verdict.kind === 'unreadable') return verdict;
+    return { kind: 'answered' as const, result: verdict.result };
   });
   return { kind: 'check', root, config, outcome };
 }
