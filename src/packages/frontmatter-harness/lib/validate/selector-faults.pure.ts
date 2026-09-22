@@ -29,6 +29,10 @@ function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function isMappingList(value: unknown): value is readonly Record<string, unknown>[] {
+  return Array.isArray(value) && value.every(isMapping);
+}
+
 function invalid(location: string): ConfigFault {
   return { code: 'CONFIG_INVALID_VALUE', location };
 }
@@ -103,13 +107,63 @@ export function tokenFaults(selector: Record<string, unknown>, at: string): read
   }).map((axis) => invalid(`${at}.${axis}`));
 }
 
+function unrecognisedExclusionFaults(
+  exclusions: readonly Record<string, unknown>[],
+  location: string,
+): readonly ConfigFault[] {
+  const unrecognisedKeys = [
+    ...new Set(exclusions.flatMap((entry) => Object.keys(entry).filter((key) => !SELECTOR_AXES.includes(key)))),
+  ];
+  return unrecognisedKeys.map((key) => ({
+    code: 'CONFIG_UNRECOGNISED_KEY',
+    location: `${location}.${key}`,
+  }));
+}
+
 /**
  * Exclusions, held to the same vocabulary and the same at-least-one rule.
  *
  * One language rather than two, which is why this delegates to the same token
  * checks an include axis gets. Every fault points at `excludeFiles` rather than
  * at an entry: an exclusion list reads as one statement about what this rule
- * gives back, and a reader repairing it opens the whole key.
+ * gives back, and a reader repairing it opens the whole key. A key an exclusion
+ * does not define is `CONFIG_UNRECOGNISED_KEY` naming the key as written rather
+ * than an offending index, so an exclusion list with several entries carrying
+ * the same misspelling earns one fault rather than one per entry.
+ *
+ * @param rule One entry of the rule list, straight off the YAML.
+ * @param at The rule's address in the config's own notation.
+ */
+function exclusionEntryFaults(
+  exclusions: readonly Record<string, unknown>[],
+  location: string,
+  at: string,
+): readonly ConfigFault[] {
+  const unrecognised = unrecognisedExclusionFaults(exclusions, location);
+  if (unrecognised.length > 0) return unrecognised;
+
+  const misshapen = exclusions.some((exclusion) =>
+    SELECTOR_AXES.some((axis) => axis in exclusion && !isStringList(exclusion[axis])),
+  );
+  if (misshapen) return [invalid(location)];
+
+  const axisless = exclusions.some((exclusion) => !SELECTOR_AXES.some((axis) => axis in exclusion));
+  if (axisless) return [{ code: 'CONFIG_SELECTOR_MISSING', location }];
+
+  const malformed = exclusions.some((exclusion) => tokenFaults(exclusion, at).length > 0);
+  return malformed ? [invalid(location)] : [];
+}
+
+/**
+ * Exclusions, held to the same vocabulary and the same at-least-one rule.
+ *
+ * One language rather than two, which is why this delegates to the same token
+ * checks an include axis gets. Every fault points at `excludeFiles` rather than
+ * at an entry: an exclusion list reads as one statement about what this rule
+ * gives back, and a reader repairing it opens the whole key. A key an exclusion
+ * does not define is `CONFIG_UNRECOGNISED_KEY` naming the key as written rather
+ * than an offending index, so an exclusion list with several entries carrying
+ * the same misspelling earns one fault rather than one per entry.
  *
  * @param rule One entry of the rule list, straight off the YAML.
  * @param at The rule's address in the config's own notation.
@@ -118,16 +172,6 @@ export function exclusionFaults(rule: Record<string, unknown>, at: string): read
   if (!('excludeFiles' in rule)) return [];
   const written = rule.excludeFiles;
   const location = `${at}.excludeFiles`;
-  if (!Array.isArray(written) || !written.every(isMapping)) return [invalid(location)];
-
-  const misshapen = written.some((exclusion) =>
-    SELECTOR_AXES.some((axis) => axis in exclusion && !isStringList(exclusion[axis])),
-  );
-  if (misshapen) return [invalid(location)];
-
-  const axisless = written.some((exclusion) => !SELECTOR_AXES.some((axis) => axis in exclusion));
-  if (axisless) return [{ code: 'CONFIG_SELECTOR_MISSING', location }];
-
-  const malformed = written.some((exclusion) => tokenFaults(exclusion, at).length > 0);
-  return malformed ? [invalid(location)] : [];
+  if (!isMappingList(written)) return [invalid(location)];
+  return exclusionEntryFaults(written, location, at);
 }
