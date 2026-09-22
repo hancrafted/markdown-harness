@@ -21,6 +21,7 @@ export type {
   StaleFile,
   UnassessableFile,
   UngovernedFile,
+  UnreadableFile,
   WinningRule,
 } from './lib/assess.types.ts';
 export type { AuditResult, RuleAudit, RuleRef, SelectorRef } from './lib/audit.types.ts';

@@ -117,7 +117,7 @@ function gatherCheck({ root, config }: Invocation): CheckGathered {
 
     const checked = checkCorpus(root, files, cfg.result.sectionFor(frontmatterModule));
     if (checked.kind === 'unreadable') {
-      return { kind: 'unreadable' as const, path: checked.path };
+      return checked;
     }
 
     // Composed on the same terms as the steering command, and the counts with
