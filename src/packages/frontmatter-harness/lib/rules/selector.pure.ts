@@ -51,7 +51,7 @@ export function selectorMatches(selector: Selector, path: string): boolean {
  *
  * @param rule The rule to read a selector off.
  */
-export function selectorOf(rule: FrontmatterRule): Selector {
+function selectorOf(rule: FrontmatterRule): Selector {
   return { folders: rule.folders, fileNames: rule.fileNames };
 }
 

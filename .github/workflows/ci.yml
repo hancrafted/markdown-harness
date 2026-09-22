@@ -36,13 +36,10 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
-          # Node 26, and no matrix: `glob-match.impure.ts` delegates path matching
-          # to `node:path`'s `matchesGlob`, and the segment-aware behaviour
-          # docs/vision/architecture.md measured — then wrote into the
-          # specification — is 26's. An older runtime would answer a public
-          # question differently. `engines` now declares the supported range and
-          # the command refuses outside it, so this pin picks one runtime inside
-          # that range rather than being the only place it is named.
+          # Node 26, and no matrix: `engines.node` admits 24's Active LTS line
+          # and 26 onward, while excluding end-of-life 25. This pin exercises
+          # the current line; the manifest and command refusal state the same
+          # Operator-facing support promise.
           node-version: '26'
           cache: npm
       # Lockfile-pinned install. `prepare` runs `husky`, which only rewrites this

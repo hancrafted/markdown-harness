@@ -26,7 +26,7 @@ import type { FrozenAttribution, FrozenWitness } from './lib/translation/transla
 export type { FrozenAttribution, FrozenWitness } from './lib/translation/translation.types.ts';
 
 /** The corpus tier whose config the guard is about. Spelled here once. */
-export const FRONTMATTER = 'frontmatter';
+const FRONTMATTER = 'frontmatter';
 
 /** The tier root, which is the synthetic repo root every frozen path is relative to. */
 export function translationTierRoot(): string {
