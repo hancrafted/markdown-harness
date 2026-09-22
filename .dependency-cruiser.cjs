@@ -40,8 +40,11 @@ const GATE = 'foundation';
  * covers those two homes and no wider.
  *
  * The carve-out exists because ARCH-003 Decision 1.2 forbids `vi.mock`, so a
- * suite proving a symlink case has to plant one, and planting is a builtin
- * call. It is spent on test files only, and never on a production file.
+ * suite proving a symlink or file-fixture case has to plant one, and planting
+ * is a builtin call. ARCH-003 Decision 4.2 and ARCH-004 Decision 3.2 admit
+ * platform builtins for colocated unit tests when needed for in-test file
+ * fixtures under this exemption. It is spent on test files only, and never on a
+ * production file.
  */
 const TEST_HOMES = `^${R}/[^/]+/.+/[^/]+\\.test\\.ts$`;
 
@@ -103,7 +106,7 @@ module.exports = {
     {
       name: 'colocated-test-lane',
       comment:
-        "A test colocated below a package root tests ONE unit: it may import its same-directory sibling of the same base name with a .pure.ts suffix, and no other internal — not its own package's, not any other's. A unit may be as small as a single function, and extracting complex private logic into its own file is the standard way to make it testable, so a .pure.ts file is a legitimate subject. Any wider lane is a loophole: rename a file .pure.ts and every restriction lifts.",
+        "ARCH-003 Decision 4.2 / ARCH-004 Decision 3.2: a colocated unit suite may import its same-directory sibling of the same base name with a .pure.ts suffix, Package root entry points, and platform builtins (exempted by only-the-gate-imports-a-builtin when needed for in-test file fixtures), and no other Package internals — not its own package's, not any other's. A unit may be as small as a single function, and extracting complex private logic into its own file is the standard way to make it testable, so a .pure.ts file is a legitimate subject. Any wider lane is a loophole: rename a file .pure.ts and every restriction lifts.",
       severity: 'error',
       // $1 package, $2 directory path below the package root, $3 base name. The
       // directory group is mandatory rather than optional: a colocated test is
