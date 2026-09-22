@@ -11,11 +11,12 @@
  * what was actually written.
  */
 
+import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
 import type { FrontmatterRule, NoFrontmatterPayload, UnknownKeys } from '../../section.ts';
 import { assessBlockFaults, unfireableAssessFaults } from './assess-faults.pure.ts';
 import { constraintFaults } from './constraint-faults.pure.ts';
-import { exclusionFaults, selectorFaults, tokenFaults } from './selector-faults.pure.ts';
+import { exclusionFaults, isStringList, selectorFaults, tokenFaults } from './selector-faults.pure.ts';
 
 /**
  * Every key a rule may carry, keyed by the type that declares them.
@@ -79,10 +80,6 @@ const LIST_KEYS: readonly string[] = ['folders', 'fileNames', 'exactlyOneOf', 'a
  */
 const UNKNOWN_KEYS_STATES: Record<UnknownKeys, true> = { allowed: true, forbidden: true };
 
-function isMapping(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 function invalid(location: string): ConfigFault {
   return { code: 'CONFIG_INVALID_VALUE', location };
 }
@@ -94,21 +91,6 @@ function identityFaults(rule: Record<string, unknown>, at: string): readonly Con
   if (!('intent' in rule)) faults.push({ code: 'CONFIG_MISSING_RULE_INTENT', location: at });
   else if (!rule.intent) faults.push({ code: 'CONFIG_EMPTY_INTENT', location: `${at}.intent` });
   return faults;
-}
-
-/**
- * A list of strings, which is what every list-valued key holds.
- *
- * The elements are checked and not merely the container: a non-string token
- * reaches the selector as something it can never equal, and §3.5 line 271 puts
- * a cross-field set of the wrong shape under `CONFIG_INVALID_VALUE`.
- *
- * An empty list is a list of strings. It names no folders, no names and no
- * addresses — a different thing from naming a wrong one, and a different thing
- * again from leaving the key out, which on a selector axis means every.
- */
-function isStringList(value: unknown): boolean {
-  return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 }
 
 /**

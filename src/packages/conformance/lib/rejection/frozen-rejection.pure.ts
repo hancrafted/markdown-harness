@@ -12,6 +12,7 @@
  * `node:path` — an ambient read of the host's separator — out of this file.
  */
 
+import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { FrozenFault, FrozenRejection } from './frozen-rejection.types.ts';
 
 /**
@@ -23,10 +24,6 @@ import type { FrozenFault, FrozenRejection } from './frozen-rejection.types.ts';
  * put the case's own name inside the contract it is freezing.
  */
 export const CASE_CONFIG_LOCATION = 'markdown-harness.config.yaml';
-
-function isMapping(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** A fault as frozen: two strings, both written out, neither derived. */
 function isFrozenFault(value: unknown): value is FrozenFault {

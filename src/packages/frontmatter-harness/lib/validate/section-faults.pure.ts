@@ -8,6 +8,7 @@
  * Module.
  */
 
+import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { ConfigFault } from '../../../response-contract/index.ts';
 import type { FrontmatterConfig } from '../../section.ts';
 import { assessBlockFaults } from './assess-faults.pure.ts';
@@ -37,10 +38,6 @@ const ASSESS = `${SECTION}.assess`;
  * and would answer true for `toString`.
  */
 const SECTION_KEYS: Record<keyof FrontmatterConfig, true> = { rules: true, assess: true };
-
-function isMapping(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /**
  * One fault per id already claimed by an earlier rule.
