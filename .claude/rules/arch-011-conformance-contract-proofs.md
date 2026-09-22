@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-011-conformance-contract-proofs.md

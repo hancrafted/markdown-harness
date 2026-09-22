@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-010-conformance-specification.md
