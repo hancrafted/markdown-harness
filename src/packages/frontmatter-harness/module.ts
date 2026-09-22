@@ -11,6 +11,10 @@
 // ARCH-004 bans; a fifth narrow entry point is what it asks for.
 
 import type { ModuleDescriptor } from '../config-contract/index.ts';
+import { assessPath } from './assess.ts';
+import { auditRules } from './audit.ts';
+import { checkCorpus } from './check.ts';
+import { queryPath } from './query.ts';
 import type { FrontmatterConfig } from './section.ts';
 import { validateFrontmatterSection } from './validate-config.ts';
 
@@ -27,9 +31,27 @@ import { validateFrontmatterSection } from './validate-config.ts';
  * Module's function may narrow its own argument later without the descriptor
  * changing shape.
  */
-export const frontmatterModule: ModuleDescriptor<FrontmatterConfig> = {
+export const frontmatterModule: ModuleDescriptor<
+  FrontmatterConfig,
+  ReturnType<typeof queryPath>,
+  ReturnType<typeof auditRules>,
+  ReturnType<typeof assessPath>,
+  ReturnType<typeof checkCorpus>
+> = {
   key: 'frontmatter',
   validateSection(raw: unknown) {
     return validateFrontmatterSection(raw);
+  },
+  query(path, config) {
+    return queryPath(path, config.sectionFor(frontmatterModule));
+  },
+  audit(files, config) {
+    return auditRules(files, config.sectionFor(frontmatterModule));
+  },
+  assess(file, now, config) {
+    return assessPath(file, config.sectionFor(frontmatterModule), now);
+  },
+  check(root, files, config) {
+    return checkCorpus(root, files, config.sectionFor(frontmatterModule));
   },
 };

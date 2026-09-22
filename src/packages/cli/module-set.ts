@@ -20,11 +20,12 @@ import { frontmatterModule } from '../frontmatter-harness/module.ts';
  * Every Module this tool ships, in the order their faults are reported.
  *
  * `satisfies` rather than an annotation, so each entry keeps its own section
- * type for a caller that names one descriptor while the list as a whole still
- * has to be a set of descriptors. The two are only compatible because the port
- * carries one member with its section type in RETURN position: a second member
- * taking a section as an argument would make this widening unsound, which is the
- * variance hole the one-member port exists to close.
+ * and answer types for a caller that names one descriptor while the list as a
+ * whole still has to be a set of descriptors. The two are compatible because
+ * the port keeps every type parameter in RETURN position. Its four verb members
+ * close over their own descriptor and ask `sectionFor` for the section keyed by
+ * that descriptor identity; no widened caller supplies a section argument, so
+ * the variance hole stays closed.
  *
  * ONE COMPILE-TIME GUARANTEE IS SPENT HERE. A whole-config interface could not
  * declare a key twice (`TS2300`); a list can, so two descriptors both claiming

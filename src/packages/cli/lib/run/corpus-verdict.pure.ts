@@ -30,6 +30,14 @@ interface ModuleAnswer {
   check: ModuleCheck;
 }
 
+/** A Module's complete answer about one corpus, including a read refusal. */
+interface GatheredModuleAnswer {
+  /** The Module's top-level config key, read from its descriptor. */
+  module: string;
+  /** The Module's checked extent and findings, or the first governed file it could not read. */
+  result: { kind: 'checked'; result: ModuleCheck } | { kind: 'unreadable'; path: string };
+}
+
 /** How many findings one file's blocks carry between them. */
 function countIn(blocks: readonly ModuleViolations[]): number {
   return blocks.reduce((total, block) => total + block.violations.length, 0);
@@ -96,5 +104,32 @@ export function corpusVerdict(corpus: readonly string[], answers: readonly Modul
       totalViolations: files.reduce((total, file) => total + countIn(file.modules), 0),
     },
     files,
+  };
+}
+
+/**
+ * Refuse an incomplete corpus report, or compose every Module's checked answer.
+ *
+ * A read refusal wins before the verdict is composed: returning a partial
+ * report would silently omit a governed file and could look clean. The impure
+ * shell gathers each Module's result; this pure composer decides which report
+ * shape those gathered results mean.
+ */
+export function checkVerdict(
+  corpus: readonly string[],
+  answers: readonly GatheredModuleAnswer[],
+): { kind: 'checked'; result: CheckResult } | { kind: 'unreadable'; path: string } {
+  const unreadable = answers.find((answer) => answer.result.kind === 'unreadable');
+  if (unreadable !== undefined && unreadable.result.kind === 'unreadable') return unreadable.result;
+
+  return {
+    kind: 'checked',
+    result: corpusVerdict(
+      corpus,
+      answers.map((answer) => {
+        if (answer.result.kind !== 'checked') throw new Error('unreadable Module result escaped its guard');
+        return { module: answer.module, check: answer.result.result };
+      }),
+    ),
   };
 }

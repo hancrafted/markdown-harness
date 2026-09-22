@@ -74,6 +74,18 @@ const alphaModule: ModuleDescriptor<AlphaSection> = {
     if (isMapping(raw) && typeof raw.alpha === 'string') return { section: { alpha: raw.alpha }, faults: [] };
     return { faults: [{ code: 'CONFIG_INVALID_VALUE', location: 'alpha' }] };
   },
+  query() {
+    return undefined;
+  },
+  audit() {
+    return undefined;
+  },
+  assess() {
+    return undefined;
+  },
+  check() {
+    return undefined;
+  },
 };
 
 const betaModule: ModuleDescriptor<BetaSection> = {
@@ -82,6 +94,18 @@ const betaModule: ModuleDescriptor<BetaSection> = {
     handed.push({ key: 'beta', raw });
     if (isMapping(raw) && typeof raw.beta === 'number') return { section: { beta: raw.beta }, faults: [] };
     return { faults: [{ code: 'CONFIG_INVALID_VALUE', location: 'beta' }] };
+  },
+  query() {
+    return undefined;
+  },
+  audit() {
+    return undefined;
+  },
+  assess() {
+    return undefined;
+  },
+  check() {
+    return undefined;
   },
 };
 
@@ -289,6 +313,18 @@ describe('loadConfig', () => {
           isMapping(raw)
             ? { section: raw, faults: [] }
             : { faults: [{ code: 'CONFIG_INVALID_VALUE', location: 'frontmatter' }] },
+        query() {
+          return undefined;
+        },
+        audit() {
+          return undefined;
+        },
+        assess() {
+          return undefined;
+        },
+        check() {
+          return undefined;
+        },
       };
       const noFaults = 0;
       // ACT

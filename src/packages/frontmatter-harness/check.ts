@@ -20,7 +20,7 @@ import type { CorpusCheck, GovernedRead, GovernedSource } from './lib/check/chec
 import { governedFiles } from './lib/check/corpus-governance.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
 
-export type { UnreadableGovernedFile } from './lib/check/check.types.ts';
+export type { CorpusCheck, UnreadableGovernedFile } from './lib/check/check.types.ts';
 
 /**
  * Read each governed file, or preserve the first refusal from the gate.
