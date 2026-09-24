@@ -46,7 +46,7 @@ The five canonical triage roles use their default label strings: `needs-triage`,
 
 ### Grilling rounds
 
-Every grilling round — `/grill-me`, `/grill-with-docs`, or the grilling Wayfinder runs while charting a map or resolving a `wayfinder:grilling` ticket — uses this repo's round format, which overrides the grilling skill's own. See `docs/agents/grilling-format.md`. A spoken session overrides that format in turn; see `docs/agents/grilling-voice.md`.
+Every grilling round — `/grill-me`, `/grill-with-docs`, or the grilling Wayfinder runs while charting a map or resolving a `wayfinder:grilling` ticket — uses this repo's round format, which overrides the grilling skill's own. The same file classifies each question before it reaches the user, decides which tickets a map files as `afk`, and overrides how Wayfinder dispatches them. See `docs/agents/grilling-format.md`. A spoken session overrides that format in turn; see `docs/agents/grilling-voice.md`.
 
 ### Map branches
 
