@@ -52,6 +52,9 @@ An `enumeration` must carry `minCount`, `maxCount` or both. Decisions and their 
 
 ## The catalog
 
+> Amended by [`0026`](./0026-undefined-headings-config-validation.md): one more code, `CONFIG_MAX_LEVEL_ON_CLOSED_SPINE`, taking the catalog from 20 codes to 21, and
+> `undefinedHeadings` joins the Rule's keys.
+
 Reused codes keep their meaning.
 
 | code                         | raised for                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -88,6 +91,9 @@ same reason, as `CONFIG_INVALID_VALUE`.
 > Amended by [`0022`](./0022-rule-selection-and-selector-validation-live-in-foundation.md): the selector faults named
 > below (axis shape, `excludeFiles`) are no longer mirrored from the first Module per Module but validated once in
 > `foundation`, and the order within an `excludeFiles` list is Core's.
+
+> Amended by [`0026`](./0026-undefined-headings-config-validation.md): `undefinedHeadings`, then the exclusion of `maxLevel` and `forbid`, are walked between
+> `maxLevel` and `headings`.
 
 Within the section: unrecognised section keys, an empty `rules`, duplicate `ruleId`s across the whole
 list, then each Rule in turn. Within a Rule: unrecognised keys, `ruleId`, `intent`, a missing
