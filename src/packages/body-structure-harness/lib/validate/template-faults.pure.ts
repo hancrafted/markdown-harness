@@ -23,6 +23,7 @@ import type { ConfigFault, ConfigFaultCode } from '../../../config-contract/inde
 import { invalidValue, unrecognisedKeys } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { HeadingEntry, HeadingPresence, HeadingPurpose } from '../../section.ts';
+import { closesSpine } from '../section/spine-closure.pure.ts';
 import { compiles, isAnchoredLiteral } from './pattern-dialect.pure.ts';
 
 /** Every key a heading entry may carry, keyed by the type declaring them so the two cannot drift. */
@@ -226,7 +227,7 @@ export function headingsFaults(rule: Record<string, unknown>, at: string): reado
   if (!Array.isArray(headings)) return [invalidValue(`${at}.headings`)];
   if (headings.length === 0) return [fault('CONFIG_EMPTY_CONSTRAINT', `${at}.headings`)];
 
-  const maxLevel = isLevel(rule.maxLevel) && rule.undefinedHeadings !== 'forbid' ? rule.maxLevel : undefined;
+  const maxLevel = isLevel(rule.maxLevel) && !closesSpine(rule) ? rule.maxLevel : undefined;
   return headings.flatMap((entry, index) => {
     const location = `${at}.headings[${index}]`;
     return isMapping(entry) ? headingEntryFaults(entry, location, maxLevel) : [invalidValue(location)];

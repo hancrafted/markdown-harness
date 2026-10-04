@@ -229,5 +229,24 @@ describe('sectionFaults', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('reports forbid beside an invalid maxLevel and an over-deep entry as the one invalid maxLevel', () => {
+      // ARRANGE
+      const rule = { ...SOUND, maxLevel: 9, undefinedHeadings: 'forbid', headings: [{ purpose: 'heading', level: 4 }] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: 'body-structure.rules[0].maxLevel' }];
+      // ACT
+      const actual = sectionFaults({ rules: [rule] });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('refuses undefinedHeadings written at section level: it is a Rule key', () => {
+      // ARRANGE
+      const expected = [{ code: 'CONFIG_UNRECOGNISED_KEY', location: 'body-structure.undefinedHeadings' }];
+      // ACT
+      const actual = sectionFaults({ undefinedHeadings: 'forbid', rules: [SOUND] });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 });

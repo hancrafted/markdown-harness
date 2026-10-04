@@ -24,6 +24,7 @@ import {
 } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { BodyStructureConfig, BodyStructureRule } from '../../section.ts';
+import { writesClosureBeyondDefault } from '../section/spine-closure.pure.ts';
 import { closedSpineFaults, undefinedHeadingsFaults } from './closed-spine-faults.pure.ts';
 import { headingsFaults, intentFaults, maxLevelFaults } from './template-faults.pure.ts';
 
@@ -65,15 +66,14 @@ function identityFaults(rule: Record<string, unknown>, at: string): readonly Con
 }
 
 /**
- * A Rule that writes none of `headings`, `maxLevel` and `undefinedHeadings: forbid` asks nothing of a body, and
- * `allow` alone is the default written out (design-ADR 0026). An empty list is reported at the list instead, and an
- * invalid `undefinedHeadings` at the key, so any written value but `allow` counts as a payload here.
+ * A Rule that writes none of `headings`, `maxLevel` and a closure beyond the
+ * default asks nothing of a body: `allow` alone is the default written out
+ * (design-ADR 0026). An empty list is reported at the list instead, and an
+ * invalid `undefinedHeadings` at the key, so neither is also called empty.
  */
 function payloadFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
-  const closedOrInvalid = 'undefinedHeadings' in rule && rule.undefinedHeadings !== 'allow';
-  return 'maxLevel' in rule || 'headings' in rule || closedOrInvalid
-    ? []
-    : [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: at }];
+  const payload = 'maxLevel' in rule || 'headings' in rule || writesClosureBeyondDefault(rule);
+  return payload ? [] : [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: at }];
 }
 
 /** Every fault one Rule carries, in walk order. */
