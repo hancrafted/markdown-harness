@@ -42,8 +42,8 @@ describe('auditReport', () => {
       ];
       // ACT
       const actual = auditReport([
-        { module: 'zulu', audit: ZULU_AUDIT },
-        { module: 'alpha', audit: ALPHA_AUDIT },
+        { module: 'zulu', answer: ZULU_AUDIT },
+        { module: 'alpha', answer: ALPHA_AUDIT },
       ]).modules.map((block) => ({
         module: block.module,
         ruleId: block.rules[0].rule.ruleId,
@@ -59,7 +59,7 @@ describe('auditReport', () => {
       // ARRANGE
       const expected = [{ module: 'ruleless', rules: [] }];
       // ACT
-      const actual = auditReport([{ module: 'ruleless', audit: { rules: [] } }]).modules;
+      const actual = auditReport([{ module: 'ruleless', answer: { rules: [] } }]).modules;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -92,8 +92,8 @@ describe('auditVerdict', () => {
       };
       // ACT
       const actual = auditVerdict([
-        { module: 'zulu', audit: ZULU_AUDIT },
-        { module: 'alpha', audit: ALPHA_AUDIT },
+        { module: 'zulu', answer: ZULU_AUDIT },
+        { module: 'alpha', answer: ALPHA_AUDIT },
       ]);
       // ASSERT
       expect(actual).toEqual(expected);
@@ -110,8 +110,8 @@ describe('auditVerdict', () => {
       const expected = { kind: 'unreadable', path: unreadable };
       // ACT
       const actual = auditVerdict([
-        { module: 'zulu', audit: ZULU_AUDIT },
-        { module: 'alpha', audit: { kind: 'unreadable', path: unreadable } },
+        { module: 'zulu', answer: ZULU_AUDIT },
+        { module: 'alpha', answer: { kind: 'unreadable', path: unreadable } },
       ]);
       // ASSERT
       expect(actual).toEqual(expected);
@@ -125,8 +125,8 @@ describe('auditVerdict', () => {
       const expected = { kind: 'unreadable', path: first };
       // ACT
       const actual = auditVerdict([
-        { module: 'zulu', audit: { kind: 'unreadable', path: first } },
-        { module: 'alpha', audit: { kind: 'unreadable', path: '/corpus/docs/second.md' } },
+        { module: 'zulu', answer: { kind: 'unreadable', path: first } },
+        { module: 'alpha', answer: { kind: 'unreadable', path: '/corpus/docs/second.md' } },
       ]);
       // ASSERT
       expect(actual).toEqual(expected);

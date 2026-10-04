@@ -12,34 +12,8 @@
  * only the composing Package can see that none of them claimed it.
  */
 
-import type { ModuleClaim, ModuleRequirements, QueryResult } from '../../../response-contract/index.ts';
-
-/**
- * One Module's answer, under the name the report will give it.
- *
- * A private local type beside its only consumer, on the same terms as the
- * checking command's: pairing a descriptor's key with its Module's answer is
- * `cli`'s own composition step.
- */
-interface ModuleAnswer {
-  /** The Module's top-level config key, read from its descriptor. */
-  module: string;
-  /**
-   * What that Module asks of the path, or nothing when it passed the path by.
-   *
-   * A LIST when the Module's winner depends on file content and so cannot be
-   * named before the file exists: one claim per candidate Rule, in the order
-   * the Module gave them (design-ADR 0015 amending 0011). An empty list is the
-   * Module passing the path by.
-   */
-  claim: ModuleClaim | readonly ModuleClaim[] | undefined;
-}
-
-/** One Module's answer as a list of claims, whichever way it was spelled. */
-function claimsOf(claim: ModuleAnswer['claim']): readonly ModuleClaim[] {
-  if (claim === undefined) return [];
-  return Array.isArray(claim) ? claim : [claim as ModuleClaim];
-}
+import type { ModuleRequirements, QueryResult } from '../../../response-contract/index.ts';
+import type { ModuleAnswer, QueryAnswer } from './module-answers.types.ts';
 
 /**
  * What the config asks of one path, across every Module that answered.
@@ -47,11 +21,11 @@ function claimsOf(claim: ModuleAnswer['claim']): readonly ModuleClaim[] {
  * @param path The queried path, normalised — the spelling the answer echoes back.
  * @param answers Each Module's answer under its own config key, IN DECLARED MODULE ORDER — the order the blocks are reported in.
  */
-export function pathGovernance(path: string, answers: readonly ModuleAnswer[]): QueryResult {
+export function pathGovernance(path: string, answers: readonly ModuleAnswer<QueryAnswer>[]): QueryResult {
   const modules: ModuleRequirements[] = [];
 
   for (const answer of answers) {
-    for (const claim of claimsOf(answer.claim)) {
+    for (const claim of answer.answer) {
       modules.push({ module: answer.module, rule: claim.rule, requirements: claim.requirements });
     }
   }

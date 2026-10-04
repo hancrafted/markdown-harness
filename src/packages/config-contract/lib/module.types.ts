@@ -94,7 +94,14 @@ export interface ModuleDescriptor<
    */
   validateSection(raw: unknown): SectionValidation<TSection>;
 
-  /** Answer what this Module asks of one path before that path exists. */
+  /**
+   * Answer what this Module asks of one path before that path exists.
+   *
+   * What the answer IS is pinned by `cli`, not here: this Package is type-only
+   * and may name neither `foundation` nor `response-contract` (ARCH-008 §1.3).
+   * `cli/module-set.ts` holds every declared Module to one shape per verb
+   * (design-ADR 0024), `query` always a list of claims among them.
+   */
   query(path: string, config: LoadedConfig): TQuery;
 
   /**

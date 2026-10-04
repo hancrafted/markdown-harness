@@ -78,7 +78,7 @@ describe('corpusVerdict', () => {
       const corpus = ['docs/a.md'];
       const zulu = {
         module: 'zulu',
-        check: {
+        answer: {
           governed: ['docs/a.md'],
           files: [
             { path: 'docs/a.md', ruleId: 'z-rule', ruleIntent: 'Zulu asks for a type', violations: [MISSING_TYPE] },
@@ -87,7 +87,7 @@ describe('corpusVerdict', () => {
       };
       const alpha = {
         module: 'alpha',
-        check: {
+        answer: {
           governed: ['docs/a.md'],
           files: [
             { path: 'docs/a.md', ruleId: 'a-rule', ruleIntent: 'Alpha asks for a type', violations: [MISSING_TYPE] },
@@ -131,7 +131,7 @@ describe('corpusVerdict', () => {
       const loaded = loadConfig(config, declared);
       const answers = declared.map((descriptor) => ({
         module: descriptor.key,
-        check: checkOf(corpus, loaded.config?.sectionFor(descriptor)),
+        answer: checkOf(corpus, loaded.config?.sectionFor(descriptor)),
       }));
       const actual = corpusVerdict(corpus, answers).files.flatMap((file) =>
         file.modules.map((block) => ({ module: block.module, ruleIntent: block.ruleIntent })),
@@ -148,8 +148,8 @@ describe('corpusVerdict', () => {
       const corpus = ['docs/a.md'];
       const unreadable = { kind: 'unreadable' as const, path: '/fixture/docs/a.md' };
       const answers = [
-        { module: 'zulu', result: { kind: 'checked' as const, result: { governed: [], files: [] } } },
-        { module: 'alpha', result: unreadable },
+        { module: 'zulu', answer: { kind: 'checked' as const, result: { governed: [], files: [] } } },
+        { module: 'alpha', answer: unreadable },
       ];
       // ACT
       const actual = checkVerdict(corpus, answers);
@@ -165,14 +165,14 @@ describe('corpusVerdict', () => {
       const corpus = ['docs/a.md'];
       const zulu = {
         module: 'zulu',
-        check: {
+        answer: {
           governed: ['docs/a.md'],
           files: [
             { path: 'docs/a.md', ruleId: 'z-rule', ruleIntent: 'Zulu asks for a type', violations: [MISSING_TYPE] },
           ],
         },
       };
-      const quiet = { module: 'alpha', check: { governed: ['docs/a.md'], files: [] } };
+      const quiet = { module: 'alpha', answer: { governed: ['docs/a.md'], files: [] } };
       const expected = ['zulu'];
       // ACT
       const actual = corpusVerdict(corpus, [zulu, quiet]).files.flatMap((file) =>
@@ -190,7 +190,7 @@ describe('corpusVerdict', () => {
       const corpus = ['docs/a.md', 'docs/b.md'];
       const zulu = {
         module: 'zulu',
-        check: {
+        answer: {
           governed: ['docs/b.md'],
           files: [
             { path: 'docs/b.md', ruleId: 'z-rule', ruleIntent: 'Zulu asks for a type', violations: [MISSING_TYPE] },
@@ -199,7 +199,7 @@ describe('corpusVerdict', () => {
       };
       const alpha = {
         module: 'alpha',
-        check: {
+        answer: {
           governed: ['docs/a.md'],
           files: [
             { path: 'docs/a.md', ruleId: 'a-rule', ruleIntent: 'Alpha asks for a type', violations: [MISSING_TYPE] },
@@ -225,7 +225,7 @@ describe('corpusVerdict', () => {
       const corpus = ['docs/a.md'];
       const zulu = {
         module: 'zulu',
-        check: {
+        answer: {
           governed: ['docs/a.md'],
           files: [
             { path: 'docs/a.md', ruleId: 'z-rule', ruleIntent: 'Zulu asks for a type', violations: [MISSING_TYPE] },
@@ -234,7 +234,7 @@ describe('corpusVerdict', () => {
       };
       const alpha = {
         module: 'alpha',
-        check: {
+        answer: {
           governed: ['docs/a.md'],
           files: [
             { path: 'docs/a.md', ruleId: 'a-rule', ruleIntent: 'Alpha asks for a type', violations: [MISSING_TYPE] },
@@ -254,7 +254,7 @@ describe('corpusVerdict', () => {
       // error.
       // ARRANGE
       const corpus = ['docs/a.md'];
-      const silent = { module: 'zulu', check: { governed: [], files: [] } };
+      const silent = { module: 'zulu', answer: { governed: [], files: [] } };
       const expected = { summary: { governedFiles: 0, invalidFiles: 0, totalViolations: 0 }, files: [] };
       // ACT
       const actual = corpusVerdict(corpus, [silent]);

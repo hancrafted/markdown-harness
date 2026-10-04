@@ -35,8 +35,8 @@ describe('pathGovernance', () => {
       };
       // ACT
       const actual = pathGovernance(path, [
-        { module: 'zulu', claim: ASKS_FOR_TYPE },
-        { module: 'alpha', claim: ASKS_FOR_TITLE },
+        { module: 'zulu', answer: [ASKS_FOR_TYPE] },
+        { module: 'alpha', answer: [ASKS_FOR_TITLE] },
       ]);
       // ASSERT
       expect(actual).toEqual(expected);
@@ -51,8 +51,8 @@ describe('pathGovernance', () => {
       const expected = ['zulu', 'alpha'];
       // ACT
       const answered = pathGovernance(path, [
-        { module: 'zulu', claim: ASKS_FOR_TYPE },
-        { module: 'alpha', claim: ASKS_FOR_TITLE },
+        { module: 'zulu', answer: [ASKS_FOR_TYPE] },
+        { module: 'alpha', answer: [ASKS_FOR_TITLE] },
       ]);
       const actual = answered.governance === 'governed' ? answered.modules.map((block) => block.module) : undefined;
       // ASSERT
@@ -76,8 +76,8 @@ describe('pathGovernance', () => {
       };
       // ACT
       const actual = pathGovernance(path, [
-        { module: 'zulu', claim: ASKS_FOR_TYPE },
-        { module: 'alpha', claim: [ASKS_FOR_TITLE, ASKS_FOR_TYPE] },
+        { module: 'zulu', answer: [ASKS_FOR_TYPE] },
+        { module: 'alpha', answer: [ASKS_FOR_TITLE, ASKS_FOR_TYPE] },
       ]);
       // ASSERT
       expect(actual).toEqual(expected);
@@ -92,7 +92,7 @@ describe('pathGovernance', () => {
       const path = 'docs/a.md';
       const expected = { governance: 'invisible', path: 'docs/a.md' };
       // ACT
-      const actual = pathGovernance(path, [{ module: 'alpha', claim: [] }]);
+      const actual = pathGovernance(path, [{ module: 'alpha', answer: [] }]);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -105,8 +105,8 @@ describe('pathGovernance', () => {
       const expected = { governance: 'invisible', path: 'docs/a.md' };
       // ACT
       const actual = pathGovernance(path, [
-        { module: 'zulu', claim: undefined },
-        { module: 'alpha', claim: undefined },
+        { module: 'zulu', answer: [] },
+        { module: 'alpha', answer: [] },
       ]);
       // ASSERT
       expect(actual).toEqual(expected);
@@ -123,8 +123,8 @@ describe('pathGovernance', () => {
       const expected = { governance: 'governed', path: 'docs/a.md', modules: [{ module: 'alpha', ...ASKS_FOR_TITLE }] };
       // ACT
       const actual = pathGovernance(path, [
-        { module: 'zulu', claim: undefined },
-        { module: 'alpha', claim: ASKS_FOR_TITLE },
+        { module: 'zulu', answer: [] },
+        { module: 'alpha', answer: [ASKS_FOR_TITLE] },
       ]);
       // ASSERT
       expect(actual).toEqual(expected);
