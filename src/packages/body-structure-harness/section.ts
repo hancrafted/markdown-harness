@@ -15,4 +15,5 @@ export type {
   HeadingEntry,
   HeadingPresence,
   HeadingPurpose,
+  UndefinedHeadings,
 } from './lib/section/section.types.ts';

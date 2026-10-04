@@ -1,6 +1,6 @@
 /**
  * What `--query` answers for a path not yet written: every Rule that could win
- * it (design-ADR 0019).
+ * it (design-ADR 0019, 0025).
  *
  * The command opens no file, so it cannot know the `type` a file does not yet
  * have. It answers the Rules that REACH the path — folder and file-name axes
@@ -11,7 +11,7 @@
  * ends the list.
  *
  * Each candidate is one claim (design-ADR 0019 amending 0011): the Rule, and
- * its `types`, `maxLevel` and `headings` copied verbatim, an omitted key staying
+ * its `types`, `maxLevel`, `undefinedHeadings` and `headings` copied verbatim, an omitted key staying
  * omitted — the Steering payload, every heading `intent` included.
  */
 
@@ -24,6 +24,7 @@ function requirementsOf(rule: BodyStructureRule): BodyStructureRequirements {
   return {
     ...(rule.types === undefined ? {} : { types: rule.types }),
     ...(rule.maxLevel === undefined ? {} : { maxLevel: rule.maxLevel }),
+    ...(rule.undefinedHeadings === undefined ? {} : { undefinedHeadings: rule.undefinedHeadings }),
     ...(rule.headings === undefined ? {} : { headings: rule.headings }),
   };
 }

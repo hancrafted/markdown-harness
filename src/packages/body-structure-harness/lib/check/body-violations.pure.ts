@@ -1,29 +1,24 @@
 /**
- * What one body breaks of one Rule: the whole spine check behind one function
- * (design-ADR 0017, 0018, 0019).
+ * What one body breaks of one Rule: the whole spine check behind one function (design-ADR 0017, 0018, 0019, 0025).
  *
- * Two checks run over the body's top-level headings. Depth (`maxLevel`): levels
- * are open by default, and forbidding depth is an explicit act, one violation
- * per level beyond the limit, never per heading, so a report stays bounded.
- * Spine (`headings:`): entries processed in index order with one cursor over
- * the outline. A `heading` entry claims the first unclaimed match at or after
- * the cursor and the cursor moves just past it. An `enumeration` entry owns a
- * RUN, the stretch from the cursor to the first heading any LATER entry matches,
- * and its repeats are the headings of that run it matches. Neither moves the
- * cursor on failure. GREEDY, because a backtracking subsequence check can give
- * one file two readings, and tenet 1 asks every check be one a person can
+ * Three checks run over the body's top-level headings. Depth (`maxLevel`): levels are open by default, and
+ * forbidding depth is an explicit act, one violation per level beyond the limit, never per heading, so a report
+ * stays bounded. Closure (`undefinedHeadings: forbid`): a heading no entry matches is a violation of its own, judged
+ * before the walk. Spine (`headings:`): entries processed in index order with one cursor over the outline. A
+ * `heading` entry claims the first unclaimed match at or after the cursor and the cursor moves just past it. An
+ * `enumeration` entry owns a RUN, the stretch from the cursor to the first heading any LATER entry matches, and its
+ * repeats are the headings of that run it matches. Neither moves the cursor on failure. GREEDY, because a
+ * backtracking subsequence check can give one file two readings, and tenet 1 asks every check be one a person can
  * reproduce by hand.
  *
- * Every leftover heading goes to the first rule that fits: it repeats a
- * `heading` entry that has claimed a heading, or an enumeration finds it outside
- * its run, or it belongs to `maxLevel` alone. A leftover matching a `heading`
- * entry that claimed nothing is reported by that entry as missing or out of
- * order and so never twice. Counting wherever a repeat sits and judging place
- * apart means a misplaced repeat is one violation and a missing one another,
- * and the Contributor is never told to add a heading that already exists.
+ * Every leftover heading goes to the first rule that fits: it repeats a `heading` entry that has claimed a heading,
+ * or an enumeration finds it outside its run, or it belongs to `maxLevel` alone. A leftover matching a `heading`
+ * entry that claimed nothing is reported by that entry as missing or out of order and so never twice. Counting
+ * wherever a repeat sits and judging place apart means a misplaced repeat is one violation and a missing one
+ * another, and the Contributor is never told to add a heading that already exists.
  *
- * The walk, its matchers, leftover ownership and level counting are private:
- * callers hold a Rule and a body, never a cursor.
+ * The walk, its matchers, leftover ownership and level counting are private: callers hold a Rule and a body, never a
+ * cursor.
  */
 
 import type { BodyStructureViolation } from '../../../response-contract/index.ts';
@@ -207,6 +202,22 @@ function levelViolations(
     }));
 }
 
+/** Every heading no entry matches, in document order: decided by asking each entry, never from the walk (design-ADR 0025). */
+function undefinedViolations(
+  entries: readonly HeadingEntry[],
+  outline: readonly OutlineHeading[],
+): readonly BodyStructureViolation[] {
+  const matchers = entries.map(matcherFor);
+  return outline
+    .filter((heading) => !matchers.some((matches) => matches(heading)))
+    .map(({ level, content }) => ({
+      violation: 'BODY_STRUCTURE__HEADING_UNDEFINED',
+      level,
+      content,
+      requirement: { undefinedHeadings: 'forbid' },
+    }));
+}
+
 /** Every spine violation one outline carries, in entry order. */
 function spineViolations(
   entries: readonly HeadingEntry[],
@@ -224,14 +235,16 @@ function spineViolations(
 }
 
 /**
- * Every violation one body carries against one Rule: depth first, ascending by
- * level, then spine entries in entry order, so one file's report has one
- * defined order (design-ADR 0019).
+ * Every violation one body carries against one Rule: undefined headings or
+ * levels beyond `maxLevel`, which no Rule has both of, then spine entries in
+ * entry order, so one file's report has one defined order (design-ADR 0019, 0025).
  *
  * @param rule The Rule that governs the file.
  * @param body The file's markdown below its frontmatter.
  */
 export function bodyViolations(rule: BodyStructureRule, body: string): readonly BodyStructureViolation[] {
   const outline = outlineOf(body);
-  return [...levelViolations(rule.maxLevel, outline), ...spineViolations(rule.headings ?? [], outline)];
+  const entries = rule.headings ?? [];
+  const closed = rule.undefinedHeadings === 'forbid' ? undefinedViolations(entries, outline) : [];
+  return [...closed, ...levelViolations(rule.maxLevel, outline), ...spineViolations(entries, outline)];
 }

@@ -47,9 +47,19 @@ export interface BodyStructureRule extends Selector {
    * an explicit act (design-ADR 0017).
    */
   maxLevel?: number;
+  /**
+   * Whether a heading no entry matches is permitted. `allow` is the open spine,
+   * the default written out and the same as omission; `forbid` closes the spine
+   * and reports each such heading (design-ADR 0025). Mutually exclusive with
+   * `maxLevel` when `forbid` (design-ADR 0026).
+   */
+  undefinedHeadings?: UndefinedHeadings;
   /** The document's spine: entries processed in order by the walk of design-ADR 0017. */
   headings?: readonly HeadingEntry[];
 }
+
+/** The two values of `undefinedHeadings`. */
+export type UndefinedHeadings = 'allow' | 'forbid';
 
 /** Whether an entry is one fixed heading or a counted run of repeats. */
 export type HeadingPurpose = 'heading' | 'enumeration';

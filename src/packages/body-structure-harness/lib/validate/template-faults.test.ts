@@ -162,5 +162,39 @@ describe('template faults', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('stops deciding an entry beyond maxLevel once forbid has excluded maxLevel, and still decides it beside allow', () => {
+      // ARRANGE
+      const entries = [{ purpose: 'heading', level: 4 }];
+      const expected = [[], [{ code: 'CONFIG_ENTRY_BEYOND_MAX_LEVEL', location: `${ENTRY}.level` }]];
+      // ACT
+      const actual = [
+        headingsFaults({ maxLevel: 2, undefinedHeadings: 'forbid', headings: entries }, AT),
+        headingsFaults({ maxLevel: 2, undefinedHeadings: 'allow', headings: entries }, AT),
+      ];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('still decides an entry beyond a valid maxLevel when undefinedHeadings is invalid, which excludes nothing', () => {
+      // ARRANGE
+      const expected = [{ code: 'CONFIG_ENTRY_BEYOND_MAX_LEVEL', location: `${ENTRY}.level` }];
+      // ACT
+      const actual = headingsFaults(
+        { maxLevel: 2, undefinedHeadings: 'Forbid', headings: [{ purpose: 'heading', level: 4 }] },
+        AT,
+      );
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('refuses undefinedHeadings as an entry key: it is a Rule key', () => {
+      // ARRANGE
+      const expected = [{ code: 'CONFIG_UNRECOGNISED_KEY', location: `${ENTRY}.undefinedHeadings` }];
+      // ACT
+      const actual = entryFaults({ purpose: 'heading', level: 1, undefinedHeadings: 'forbid' });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 });

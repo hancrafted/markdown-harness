@@ -1,6 +1,6 @@
 /**
  * Validate the template half of one Rule: its `maxLevel:` and its `headings:`
- * spine (design-ADR 0020).
+ * spine (design-ADR 0020, 0026).
  *
  * What a `purpose` allows decides most of it. A `heading` may never carry a
  * count, an `enumeration` may never carry `presence`, must carry at least one
@@ -50,7 +50,7 @@ function fault(code: ConfigFaultCode, location: string): ConfigFault {
 }
 
 /** An integer from 1 to 6: a heading level, or the deepest level a Rule permits. */
-function isLevel(value: unknown): value is number {
+export function isLevel(value: unknown): value is number {
   return Number.isInteger(value) && (value as number) >= 1 && (value as number) <= 6;
 }
 
@@ -213,7 +213,9 @@ export function maxLevelFaults(rule: Record<string, unknown>, at: string): reado
  * Every fault in one Rule's `headings:` list.
  *
  * An entry deeper than the Rule's `maxLevel` is a template no file can satisfy,
- * decided only when `maxLevel` and the entry's own `level` are both valid.
+ * decided only when `maxLevel` and the entry's own `level` are both valid, and
+ * not at all beside `undefinedHeadings: forbid`, where `maxLevel` is already
+ * refused and names a limit not in force (design-ADR 0026).
  *
  * @param rule One Rule, straight off the YAML.
  * @param at The Rule's address, e.g. `body-structure.rules[0]`.
@@ -224,7 +226,7 @@ export function headingsFaults(rule: Record<string, unknown>, at: string): reado
   if (!Array.isArray(headings)) return [invalidValue(`${at}.headings`)];
   if (headings.length === 0) return [fault('CONFIG_EMPTY_CONSTRAINT', `${at}.headings`)];
 
-  const maxLevel = isLevel(rule.maxLevel) ? rule.maxLevel : undefined;
+  const maxLevel = isLevel(rule.maxLevel) && rule.undefinedHeadings !== 'forbid' ? rule.maxLevel : undefined;
   return headings.flatMap((entry, index) => {
     const location = `${at}.headings[${index}]`;
     return isMapping(entry) ? headingEntryFaults(entry, location, maxLevel) : [invalidValue(location)];

@@ -23,6 +23,22 @@ describe('sectionFaults', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('accepts a closed Rule with no headings, a closed Rule with headings, and allow beside a maxLevel', () => {
+      // ARRANGE
+      const base = { ruleId: SOUND.ruleId, folders: SOUND.folders, intent: SOUND.intent };
+      const rules = [
+        { ...base, ruleId: 'a', undefinedHeadings: 'forbid' },
+        { ...base, ruleId: 'b', undefinedHeadings: 'forbid', headings: SOUND.headings },
+        { ...base, ruleId: 'c', undefinedHeadings: 'allow', maxLevel: 3 },
+        { ...base, ruleId: 'd', undefinedHeadings: 'allow', headings: SOUND.headings },
+      ];
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = sectionFaults({ rules });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
@@ -68,6 +84,45 @@ describe('sectionFaults', () => {
         { code: 'CONFIG_SELECTOR_MISSING', location: 'body-structure.rules[0]' },
         { code: 'CONFIG_INVALID_VALUE', location: 'body-structure.rules[0].excludeFiles' },
         { code: 'CONFIG_INVALID_VALUE', location: 'body-structure.rules[0].maxLevel' },
+        { code: 'CONFIG_INVALID_VALUE', location: 'body-structure.rules[0].headings[0].pattern' },
+      ];
+      // ACT
+      const actual = sectionFaults({ rules: [rule] });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('puts the exclusion after maxLevel and undefinedHeadings and before headings, beside three other faults', () => {
+      // ARRANGE
+      const rule = {
+        maxDepth: 3,
+        ...SOUND,
+        maxLevel: 3,
+        undefinedHeadings: 'forbid',
+        headings: [{ purpose: 'heading', level: 1, pattern: '' }],
+      };
+      const expected = [
+        { code: 'CONFIG_UNRECOGNISED_KEY', location: 'body-structure.rules[0].maxDepth' },
+        { code: 'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE', location: 'body-structure.rules[0].maxLevel' },
+        { code: 'CONFIG_INVALID_VALUE', location: 'body-structure.rules[0].headings[0].pattern' },
+      ];
+      // ACT
+      const actual = sectionFaults({ rules: [rule] });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports an invalid undefinedHeadings after an invalid maxLevel and before headings', () => {
+      // ARRANGE
+      const rule = {
+        ...SOUND,
+        maxLevel: 0,
+        undefinedHeadings: 'forbidden',
+        headings: [{ purpose: 'heading', level: 1, pattern: '' }],
+      };
+      const expected = [
+        { code: 'CONFIG_INVALID_VALUE', location: 'body-structure.rules[0].maxLevel' },
+        { code: 'CONFIG_INVALID_VALUE', location: 'body-structure.rules[0].undefinedHeadings' },
         { code: 'CONFIG_INVALID_VALUE', location: 'body-structure.rules[0].headings[0].pattern' },
       ];
       // ACT
@@ -133,6 +188,35 @@ describe('sectionFaults', () => {
       const actual = sectionFaults({
         rules: [{ ...SOUND, levels: [], headings: [{ purpose: 'heading', level: 1, title: 'x', prefix: 'y' }] }],
       });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('refuses allow alone as an empty Rule, since the default written out asks nothing of a body', () => {
+      // ARRANGE
+      const alone = { ruleId: SOUND.ruleId, folders: SOUND.folders, intent: SOUND.intent, undefinedHeadings: 'allow' };
+      const expected = [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: 'body-structure.rules[0]' }];
+      // ACT
+      const actual = sectionFaults({ rules: [alone] });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports an invalid undefinedHeadings alone once, with no empty-constraint fault beside it', () => {
+      // ARRANGE
+      const alone = { ruleId: SOUND.ruleId, folders: SOUND.folders, intent: SOUND.intent, undefinedHeadings: 'Forbid' };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: 'body-structure.rules[0].undefinedHeadings' }];
+      // ACT
+      const actual = sectionFaults({ rules: [alone] });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('keeps an empty headings list its own fault beside forbid', () => {
+      // ARRANGE
+      const expected = [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: 'body-structure.rules[0].headings' }];
+      // ACT
+      const actual = sectionFaults({ rules: [{ ...SOUND, undefinedHeadings: 'forbid', headings: [] }] });
       // ASSERT
       expect(actual).toEqual(expected);
     });
