@@ -6,11 +6,6 @@ Six steps, in order. They are the same six whether the config is new or already 
 this workflow entered at step 2, with step 1 spent reading the config that is there instead of the
 tree. `mh --query` is the whole validation loop, so nothing here restates the schema. Ask the tool.
 
-The steps are written for the `frontmatter:` section. A Rule that governs a document's **headings**
-belongs to the `body-structure:` section instead, and
-[`authoring-body-structure.md`](authoring-body-structure.md) is its workflow: read it when the
-Operator wants a document kind's template in the config.
-
 ## 1. Survey before asking
 
 Read the tree first, so the user reacts to their own repo instead of an abstraction. Look for
@@ -19,8 +14,8 @@ goes out of date, an `index.md` convention — and read two or three real files 
 frontmatter they already carry.
 
 A template kept as prose, such as a docs template or a skill asset listing the headings a kind of
-document has, is a candidate for `body-structure:`, so note it for that file rather than forcing it
-into `fields:`.
+document has, is a candidate for a rule over headings, covered at the end of this file, so note it
+rather than forcing it into `fields:`.
 
 Bring the candidates to the first question. "You have 34 files under `docs/research/`, 30 of which
 already carry `sources:`" is a question the user can answer; "what would you like to govern?" is not.
@@ -182,3 +177,12 @@ on the first run, and that number is the real cost of the rules they just approv
 
 _Done when_ the user has approved the change, the file is written, and they know what `mh --check`
 currently reports.
+
+## A rule over headings
+
+The steps above write the `frontmatter:` section. A rule over a document's **headings** belongs to the
+`body-structure:` section, and [`authoring-body-structure.md`](authoring-body-structure.md) is its
+workflow, entry by entry. One habit decides whether the rule says what the user meant: when a `pattern`
+names a fixed title, anchor it, `^Decision$`, with any metacharacter escaped, and drop the anchors only
+when the user asks for a substring match. A pattern is searched, so an unanchored `Decision` also
+passes `## Decision record`: the rule loosens silently and `mh --check` stays green.
