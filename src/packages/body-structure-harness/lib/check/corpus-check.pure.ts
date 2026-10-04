@@ -13,10 +13,8 @@
 import type { ModuleCheck, ModuleFinding } from '../../../response-contract/index.ts';
 import type { BodyStructureRule } from '../../section.ts';
 import { documentPartsOf } from '../document/document-parts.pure.ts';
-import { outlineOf } from '../document/outline.pure.ts';
 import { firstMatch, reaches } from '../rules/selection.pure.ts';
-import { headingEntryViolations } from './heading-entries.pure.ts';
-import { levelViolations } from './level-depth.pure.ts';
+import { bodyViolations } from './body-violations.pure.ts';
 
 /** One file the caller read, root-relative and normalised. */
 interface Source {
@@ -55,11 +53,7 @@ export function moduleCheckFor(sources: readonly Source[], rules: readonly BodyS
     if (winner === undefined) continue;
 
     governed.push(source.path);
-    const outline = outlineOf(parts.body);
-    const violations = [
-      ...levelViolations(winner.maxLevel, outline),
-      ...headingEntryViolations(winner.headings, outline),
-    ];
+    const violations = bodyViolations(winner, parts.body);
     if (violations.length > 0) {
       files.push({ path: source.path, ruleId: winner.ruleId, ruleIntent: winner.intent, violations });
     }

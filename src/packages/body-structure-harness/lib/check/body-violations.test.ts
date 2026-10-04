@@ -1,10 +1,12 @@
-// Colocated unit test for the spine walk: `heading` entries claimed one heading
+// Colocated unit test for the spine check at its one interface, `bodyViolations`:
+// the spine walk: `heading` entries claimed one heading
 // each, `enumeration` entries owning a run, and every leftover given to the
-// first rule that fits (design-ADR 0017).
+// first rule that fits (design-ADR 0017), and the `maxLevel` check, one
+// violation per level beyond the limit (design-ADR 0017).
 
 import { describe, expect, it } from 'vitest';
-import type { HeadingEntry } from '../../section.ts';
-import { headingEntryViolations } from './heading-entries.pure.ts';
+import type { BodyStructureRule, HeadingEntry } from '../../section.ts';
+import { bodyViolations } from './body-violations.pure.ts';
 
 const TITLE: HeadingEntry = { purpose: 'heading', level: 1 };
 const FINDINGS: HeadingEntry = {
@@ -20,14 +22,28 @@ const CONCLUSION: HeadingEntry = { purpose: 'heading', level: 2, pattern: '^Conc
 
 const h = (level: number, content: string) => ({ level, content });
 
-describe('headingEntryViolations', () => {
+/** The markdown body whose top-level headings are `outline`. */
+const bodyOf = (outline: readonly { level: number; content: string }[]): string =>
+  outline.map(({ level, content }) => `${'#'.repeat(level)} ${content}\n`).join('\n');
+
+/** What `bodyViolations` finds in a body made of `outline` against a Rule of `headings` and `maxLevel`. */
+const violationsOf = (
+  headings: readonly HeadingEntry[] | undefined,
+  outline: readonly { level: number; content: string }[],
+  maxLevel?: number,
+) => {
+  const rule: BodyStructureRule = { ruleId: 'r', intent: 'A test Rule.', folders: ['docs/'], headings, maxLevel };
+  return bodyViolations(rule, bodyOf(outline));
+};
+
+describe('bodyViolations', () => {
   describe('success cases', () => {
     it('claims every heading entry in order and counts the repeats of an enumeration', () => {
       // ARRANGE
       const outline = [h(1, 'Report'), h(2, 'Findings'), h(3, 'Detail'), h(2, 'Source: One'), h(2, 'Source: Two')];
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = headingEntryViolations([TITLE, FINDINGS, SOURCES], outline);
+      const actual = violationsOf([TITLE, FINDINGS, SOURCES], outline);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -37,7 +53,7 @@ describe('headingEntryViolations', () => {
       const outline = [h(2, 'Source: One'), h(3, 'Aside'), h(2, 'Other'), h(2, 'Source: Two')];
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = headingEntryViolations([SOURCES], outline);
+      const actual = violationsOf([SOURCES], outline);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -47,7 +63,7 @@ describe('headingEntryViolations', () => {
       const outline = [h(1, 'Title'), h(2, 'A'), h(2, 'B'), h(2, 'Conclusion')];
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = headingEntryViolations([TITLE, ANY_PARTS, CONCLUSION], outline);
+      const actual = violationsOf([TITLE, ANY_PARTS, CONCLUSION], outline);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -59,7 +75,7 @@ describe('headingEntryViolations', () => {
       const outline = [h(1, 'Report'), h(2, 'Source: One')];
       const expected = [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 1, requirement: FINDINGS }];
       // ACT
-      const actual = headingEntryViolations([TITLE, FINDINGS, SOURCES], outline);
+      const actual = violationsOf([TITLE, FINDINGS, SOURCES], outline);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -70,7 +86,7 @@ describe('headingEntryViolations', () => {
       const outline = [h(1, 'Report'), h(2, 'Source: One'), h(2, 'Findings')];
       const expected = [{ violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 2, requirement: source }];
       // ACT
-      const actual = headingEntryViolations([TITLE, FINDINGS, source], outline);
+      const actual = violationsOf([TITLE, FINDINGS, source], outline);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -80,7 +96,7 @@ describe('headingEntryViolations', () => {
       const outline = [h(1, 'One'), h(1, 'Two'), h(1, 'Three')];
       const expected = [{ violation: 'BODY_STRUCTURE__HEADING_REPEATED', entry: 0, found: 3, requirement: TITLE }];
       // ACT
-      const actual = headingEntryViolations([TITLE], outline);
+      const actual = violationsOf([TITLE], outline);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -95,7 +111,7 @@ describe('headingEntryViolations', () => {
       ];
       // ACT
       const actual = [none, three].map((outline) => {
-        const [violation] = headingEntryViolations([SOURCES], outline);
+        const [violation] = violationsOf([SOURCES], outline);
         return [violation?.violation, violation !== undefined && 'found' in violation ? violation.found : -1];
       });
       // ASSERT
@@ -108,7 +124,7 @@ describe('headingEntryViolations', () => {
       const parts: HeadingEntry = { purpose: 'enumeration', level: 2, pattern: '^Part', minCount: 1 };
       const expected = ['BODY_STRUCTURE__HEADING_OUT_OF_ORDER'];
       // ACT
-      const actual = headingEntryViolations([parts, CONCLUSION], outline).map((v) => v.violation);
+      const actual = violationsOf([parts, CONCLUSION], outline).map((v) => v.violation);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -122,7 +138,7 @@ describe('headingEntryViolations', () => {
       const expected = [[], ['BODY_STRUCTURE__HEADING_OUT_OF_ORDER']];
       // ACT
       const actual = [absent, misplaced].map((outline) =>
-        headingEntryViolations([FINDINGS, OPTIONAL], outline).map((v) => v.violation),
+        violationsOf([FINDINGS, OPTIONAL], outline).map((v) => v.violation),
       );
       // ASSERT
       expect(actual).toEqual(expected);
@@ -133,9 +149,7 @@ describe('headingEntryViolations', () => {
       const contains: HeadingEntry = { purpose: 'heading', level: 2, pattern: 'ecis' };
       const expected = [[], [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 0, requirement: contains }]];
       // ACT
-      const actual = [[h(2, 'A Decision')], [h(2, 'DECISION')]].map((outline) =>
-        headingEntryViolations([contains], outline),
-      );
+      const actual = [[h(2, 'A Decision')], [h(2, 'DECISION')]].map((outline) => violationsOf([contains], outline));
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -146,7 +160,7 @@ describe('headingEntryViolations', () => {
       const outline = [h(2, 'Findings')];
       const expected = [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 1, requirement: FINDINGS }];
       // ACT
-      const actual = headingEntryViolations([any2, FINDINGS], outline);
+      const actual = violationsOf([any2, FINDINGS], outline);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -156,7 +170,7 @@ describe('headingEntryViolations', () => {
       const outline = [h(3, 'Findings')];
       const expected = [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 0, requirement: FINDINGS }];
       // ACT
-      const actual = headingEntryViolations([FINDINGS], outline);
+      const actual = violationsOf([FINDINGS], outline);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -165,7 +179,59 @@ describe('headingEntryViolations', () => {
       // ARRANGE
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = headingEntryViolations(undefined, [h(1, 'x')]);
+      const actual = violationsOf(undefined, [h(1, 'x')]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});
+
+const deep = (level: number) => h(level, `L${level}`);
+
+describe('bodyViolations: maxLevel', () => {
+  describe('success cases', () => {
+    it('reports one violation per level beyond the limit, ascending, counting the headings at it', () => {
+      // ARRANGE
+      const outline = [deep(1), deep(4), deep(3), deep(4), deep(6)];
+      const expected = [
+        { violation: 'BODY_STRUCTURE__LEVEL_TOO_DEEP', level: 4, found: 2, requirement: { maxLevel: 3 } },
+        { violation: 'BODY_STRUCTURE__LEVEL_TOO_DEEP', level: 6, found: 1, requirement: { maxLevel: 3 } },
+      ];
+      // ACT
+      const actual = violationsOf(undefined, outline, 3);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('reports a level beyond the limit even when nothing else is wrong', () => {
+      // ARRANGE
+      const expected = [
+        { violation: 'BODY_STRUCTURE__LEVEL_TOO_DEEP', level: 2, found: 1, requirement: { maxLevel: 1 } },
+      ];
+      // ACT
+      const actual = violationsOf(undefined, [deep(1), deep(2)], 1);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('permits any depth when the Rule writes no maxLevel', () => {
+      // ARRANGE
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = violationsOf(undefined, [deep(6)], undefined);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('accepts a heading exactly at the limit', () => {
+      // ARRANGE
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = violationsOf(undefined, [deep(2)], 2);
       // ASSERT
       expect(actual).toEqual(expected);
     });
