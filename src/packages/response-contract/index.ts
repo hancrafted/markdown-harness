@@ -51,6 +51,7 @@ export { isConfigError } from './lib/config-error.pure.ts';
 export type { ConfigFault, ConfigFaultCode } from '../config-contract/index.ts';
 export type { ConfigErrorResult } from './lib/config-error.types.ts';
 export type {
+  BodyStructureRequirements,
   ConstrainingRequirements,
   FieldRequirement,
   GovernedPath,
@@ -78,6 +79,7 @@ export type {
 } from './lib/response.types.ts';
 export { FIELD_VIOLATION_CODES } from './lib/violation.pure.ts';
 export type {
+  BodyStructureViolation,
   CrossFieldViolation,
   CrossFieldViolationOf,
   FieldValue,
@@ -85,6 +87,10 @@ export type {
   FieldViolationCode,
   FrontmatterForbiddenViolation,
   FrontmatterUnparseableViolation,
+  HeadingCountViolation,
+  HeadingEntryViolation,
+  HeadingRequirement,
+  LevelTooDeepViolation,
   UnknownKeyViolation,
   Violation,
 } from './lib/violation.types.ts';

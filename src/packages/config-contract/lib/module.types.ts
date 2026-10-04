@@ -97,8 +97,14 @@ export interface ModuleDescriptor<
   /** Answer what this Module asks of one path before that path exists. */
   query(path: string, config: LoadedConfig): TQuery;
 
-  /** Tally how this Module's declared rules fared across one corpus. */
-  audit(files: readonly string[], config: LoadedConfig): TAudit;
+  /**
+   * Tally how this Module's declared rules fared across one corpus.
+   *
+   * Takes the corpus ROOT as `check` does, because a Module whose Rules select
+   * on file content has to open a file to learn which Rule it would fall to
+   * (design-ADR 0015). A Module selecting on paths alone ignores it.
+   */
+  audit(root: string, files: readonly string[], config: LoadedConfig): TAudit;
 
   /** Assess one path at the caller-supplied instant. */
   assess(file: { root: string; path: string }, now: string, config: LoadedConfig): TAssess;

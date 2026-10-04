@@ -51,23 +51,6 @@ const declaredCodes = [
   'CONFIG_ENTRY_BEYOND_MAX_LEVEL',
 ] as const;
 
-/**
- * The five codes the `body-structure` Module brings (#221, design-ADR 0020).
- *
- * Declared here before the contract's `ConfigFaultCode` union names them, which
- * is the order the experiment runs in: the tier is written first and the Module
- * second. Widening the pin below by exactly these five keeps `tsc --noEmit`
- * green until the union gains them, and drops out of the way after: a code the
- * union later names is simply a member of both sides. Once the union carries
- * all five, this widening is dead weight and the next editor may delete it.
- */
-type PendingCode =
-  | 'CONFIG_ENTRY_KEY_NOT_FOR_PURPOSE'
-  | 'CONFIG_ENUMERATION_WITHOUT_COUNT'
-  | 'CONFIG_ENUMERATION_PINS_TEXT'
-  | 'CONFIG_COUNT_BOUNDS_INVERTED'
-  | 'CONFIG_ENTRY_BEYOND_MAX_LEVEL';
-
 /** Whatever the catalog declares and the list above has not claimed. */
 type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
 
@@ -84,5 +67,5 @@ type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
  * conditional distributing over the union, which would make a partially
  * covered catalog answer `unknown` rather than `never`.
  */
-export const DECLARED_CODES = declaredCodes satisfies readonly (ConfigFaultCode | PendingCode)[] &
+export const DECLARED_CODES = declaredCodes satisfies readonly ConfigFaultCode[] &
   ([UnreachedCodes] extends [never] ? unknown : never);

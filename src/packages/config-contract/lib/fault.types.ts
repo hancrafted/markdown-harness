@@ -112,7 +112,31 @@ export type ConfigFaultCode =
    * constraining rule, which is what makes one expensive to adopt and worth
    * knowing before writing it.
    */
-  | 'CONFIG_ASSESS_WITHOUT_REQUIRED_FIELD';
+  | 'CONFIG_ASSESS_WITHOUT_REQUIRED_FIELD'
+  /**
+   * A `body-structure` heading entry carrying a key its `purpose` forbids:
+   * `minCount` or `maxCount` on a `heading`, `presence` on an `enumeration`
+   * (design-ADR 0020).
+   */
+  | 'CONFIG_ENTRY_KEY_NOT_FOR_PURPOSE'
+  /** A `body-structure` enumeration with neither `minCount` nor `maxCount` (design-ADR 0020). */
+  | 'CONFIG_ENUMERATION_WITHOUT_COUNT'
+  /**
+   * A `body-structure` enumeration whose `pattern` is an anchored literal: a
+   * repeating heading whose text is known is a `heading` (design-ADR 0020).
+   */
+  | 'CONFIG_ENUMERATION_PINS_TEXT'
+  /**
+   * A `body-structure` enumeration whose `minCount` exceeds its `maxCount`.
+   * Decided only when both bounds are valid, so an invalid bound is reported
+   * once (design-ADR 0020).
+   */
+  | 'CONFIG_COUNT_BOUNDS_INVERTED'
+  /**
+   * A `body-structure` heading entry whose `level` exceeds the Rule's `maxLevel`.
+   * Decided only when both are valid (design-ADR 0020).
+   */
+  | 'CONFIG_ENTRY_BEYOND_MAX_LEVEL';
 
 /** One fault: which constraint failed, and where in the config to look. */
 export interface ConfigFault {
