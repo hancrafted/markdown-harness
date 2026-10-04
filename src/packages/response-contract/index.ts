@@ -90,6 +90,7 @@ export type {
   HeadingCountViolation,
   HeadingEntryViolation,
   HeadingRequirement,
+  HeadingUndefinedViolation,
   LevelTooDeepViolation,
   UnknownKeyViolation,
   Violation,
