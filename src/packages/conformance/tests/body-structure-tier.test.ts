@@ -114,7 +114,7 @@ const corpus = casesIn(TIER.name);
 const stated = (verdict: string): string[] => [...casesStating(TIER.name, verdict)];
 
 // ---------------------------------------------------------------------------
-// The tool, spawned. Async so 195 one-file corpora can be asked in parallel. The
+// The tool, spawned. Async so every one-file corpus can be asked in parallel. The
 // spawn stays here: only a test file may import a platform builtin outside
 // `foundation` (ARCH-008 §2.1), so the shared half is `../tool-answer.ts`.
 // ---------------------------------------------------------------------------
@@ -274,7 +274,7 @@ const UNDEFINED_HEADINGS_VALUES = ['allow', 'forbid'];
 
 describe('the body-structure tier states one coherent specification', () => {
   describe('success cases', () => {
-    it('proves coverage and closure for the section, rule, entry, purpose and presence vocabularies together', () => {
+    it('proves coverage and closure for the section, rule, entry, purpose, presence and undefinedHeadings vocabularies together', () => {
       // Read off the config as WRITTEN, so this holds whatever the loader
       // answers; the suite below asks the loader and the tool.
       // ARRANGE
