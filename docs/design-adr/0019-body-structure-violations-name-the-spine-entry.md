@@ -19,6 +19,10 @@ changes, no command is added and no flag is added.
 
 ## Violations
 
+> Amended by [`0025`](./0025-a-closed-spine-is-opt-in-per-rule-and-reports-undefined-headings.md): a seventh code, `BODY_STRUCTURE__HEADING_UNDEFINED`, for a heading no entry matches in a
+> closed spine, and the order inside a file puts undefined headings first, in document order, in the slot the levels
+> beyond `maxLevel` hold.
+
 Codes are spelled `<MODULE>__<OUTCOME>`, the grammar issue #69 settled for a second Module. The
 first Module's codes keep their bare spelling; regularising them is #110.
 
@@ -44,6 +48,9 @@ are gone with `levels:`. `HEADING_REPEATED` is new, because a `heading` entry is
 second title needs a name.
 
 ## The four commands
+
+> Amended by [`0025`](./0025-a-closed-spine-is-opt-in-per-rule-and-reports-undefined-headings.md): `--query` copies `undefinedHeadings` into each candidate's requirements, beside
+> `types`, `maxLevel` and `headings`. `--audit` and `--assess` are unchanged.
 
 **A Rule reaches a path** when its folder and file-name axes both match the path and its own
 `excludeFiles` does not remove it. Reach is decided from the path alone; the `types` axis is not part

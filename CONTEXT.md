@@ -305,6 +305,27 @@ One assertion a Rule makes about one frontmatter field, keyed by field address. 
 are shape-specific by construction: `minLength` names strings, `minItems` names lists.
 _Avoid_: validation, assertion, check
 
+**spine**:
+The ordered `headings:` list of a `body-structure` Rule: the headings a document of that kind has, each entry
+either a `heading` (exactly one) or an `enumeration` (a counted run of repeats). An entry matches a heading by
+level and by pattern together. By default a spine is open: it is an ordered subsequence of the body's headings,
+and a heading no entry matches is permitted, which is what lets the Module be added to an existing knowledge
+base without a finding per page.
+_Avoid_: outline (that is the body's own list of headings, which a spine is walked against), template
+(unqualified), schema
+
+**closed spine**:
+A spine whose Rule writes `undefinedHeadings: forbid`, so a heading no entry matches is a violation. It is
+opt-in per Rule and never a default, and it excludes `maxLevel`, which is the depth floor of an open spine.
+_Avoid_: strict mode, exhaustive spine, sealed
+
+**undefined heading**:
+In a closed spine, a heading of the body that no entry of the spine matches, at any level and the title
+included. It is decided by matching and not by what the walk did with the heading: one that an entry matches
+but that repeats, is out of order or lies outside an enumeration's run is defined, and that entry reports it.
+_Avoid_: unknown heading, extra heading, unclaimed heading (the walk claims a heading, and an unclaimed one may
+still be defined)
+
 **Governed file**:
 A file matched by at least one Rule. Files nothing matches are invisible — never reported on,
 never counted — so governance is opt-in by path, and no file carries a requirement merely by

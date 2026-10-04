@@ -44,6 +44,11 @@ reported once per level. Round one inverted this, closing every level a Rule did
 
 ## The spine walk, in full
 
+> Amended by [`0025`](./0025-a-closed-spine-is-opt-in-per-rule-and-reports-undefined-headings.md): a Rule that writes `undefinedHeadings: forbid` adds a second constraint to leftover
+> rule 3, so a heading no entry matches is a violation, not only a heading beyond `maxLevel`. Decision 2 below
+> narrows for such a Rule: a heading no entry matches may no longer interleave an enumeration's repeats. The walk
+> itself is unchanged.
+
 The outline is the ordered list of top-level headings of the body, each `(level, content)`. Entries
 are processed in index order with one **cursor** that starts at the first heading. A heading is
 **claimed** when an entry takes it.
