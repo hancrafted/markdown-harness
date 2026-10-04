@@ -131,6 +131,42 @@ describe('bodyViolations', () => {
   });
 
   describe('edge cases', () => {
+    it('reports level violations before spine violations for a Rule with both maxLevel and headings', () => {
+      // ARRANGE
+      const outline = [h(1, 'One'), h(1, 'Two'), h(2, 'Deep')];
+      const expected = ['BODY_STRUCTURE__LEVEL_TOO_DEEP', 'BODY_STRUCTURE__HEADING_REPEATED'];
+      // ACT
+      const actual = violationsOf([TITLE], outline, 1).map((v) => v.violation);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('gives a leftover matching a claimed heading entry and an enumeration to the heading entry, as a repeat', () => {
+      // ARRANGE
+      const parts: HeadingEntry = { purpose: 'enumeration', level: 2, pattern: '^F', minCount: 0 };
+      const outline = [h(2, 'Findings'), h(2, 'Findings')];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_REPEATED', entry: 1, found: 2, requirement: FINDINGS }];
+      // ACT
+      const actual = violationsOf([parts, FINDINGS], outline);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('gives a leftover matching an unclaimed heading entry and an enumeration to the enumeration, out of its run', () => {
+      // ARRANGE
+      const z: HeadingEntry = { purpose: 'heading', level: 2, pattern: '^Z$' };
+      const parts: HeadingEntry = { purpose: 'enumeration', level: 2, pattern: '^F', minCount: 0 };
+      const outline = [h(2, 'Findings'), h(2, 'Z')];
+      const expected = [
+        { violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 1, requirement: FINDINGS },
+        { violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 2, requirement: parts },
+      ];
+      // ACT
+      const actual = violationsOf([z, FINDINGS, parts], outline);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('stays silent for an absent optional heading entry but reports a misplaced one as out of order', () => {
       // ARRANGE
       const absent = [h(2, 'Findings')];
