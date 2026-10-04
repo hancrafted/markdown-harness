@@ -28,6 +28,12 @@ export const CONFORMANCE_TIERS = [
     assessmentInstant: '2026-12-01T00:00:00Z',
   },
   {
+    name: 'integrated',
+    caseKind: 'markdown',
+    configFile: 'valid-test-config.yaml',
+    caseCount: 18,
+  },
+  {
     name: 'rejected-config',
     caseKind: 'rejected-config',
     configFile: 'markdown-harness.config.yaml',

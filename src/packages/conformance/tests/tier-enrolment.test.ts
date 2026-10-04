@@ -11,7 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import { declaredTierNames, enrolledTiers, tierRunners } from '../tier-enrolment.ts';
 
-/** The tier the second Module brings, named so its absence can be asserted. */
+/** The tier the second Module brings, named so its arrival on both sides can be asserted. */
 const INTEGRATED = 'integrated';
 
 describe('tier enrolment', () => {
@@ -64,18 +64,18 @@ describe('tier enrolment', () => {
       expect(counted.runners).toBeGreaterThan(empty);
     });
 
-    it('leaves the integrated tier absent on both sides, so it cannot arrive on one', () => {
-      // A corpus two Modules govern at once cannot be written while one Module
-      // exists, so the tier arrives with the second. Its absence is derived
-      // from the same two sets rather than recorded as a gap: whichever side it
-      // lands on first, the equality above goes red and the other side has to
-      // be written before the suite is green again.
+    it('holds the integrated tier on both sides, so it cannot leave by one', () => {
+      // A corpus two Modules govern at once could not be written while one
+      // Module existed, so the tier arrived with the second (#220). This used to
+      // assert its absence from both sets; it now asserts its presence in both,
+      // so deleting the fixtures or the runner alone goes red here by name
+      // rather than only through the equality above.
       // ARRANGE
-      const absentFromBoth = { tier: false, runner: false };
+      const presentInBoth = { tier: true, runner: true };
       // ACT
       const actual = { tier: enrolledTiers().includes(INTEGRATED), runner: tierRunners().includes(INTEGRATED) };
       // ASSERT
-      expect(actual).toEqual(absentFromBoth);
+      expect(actual).toEqual(presentInBoth);
     });
   });
 });
