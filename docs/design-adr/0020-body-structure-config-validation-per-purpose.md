@@ -85,6 +85,10 @@ same reason, as `CONFIG_INVALID_VALUE`.
 
 ## Walk order
 
+> Amended by [`0022`](./0022-rule-selection-and-selector-validation-live-in-foundation.md): the selector faults named
+> below (axis shape, `excludeFiles`) are no longer mirrored from the first Module per Module but validated once in
+> `foundation`, and the order within an `excludeFiles` list is Core's.
+
 Within the section: unrecognised section keys, an empty `rules`, duplicate `ruleId`s across the whole
 list, then each Rule in turn. Within a Rule: unrecognised keys, `ruleId`, `intent`, a missing
 selector, each axis's shape (`folders`, `fileNames`, `types`), `excludeFiles`, the Rule-level empty

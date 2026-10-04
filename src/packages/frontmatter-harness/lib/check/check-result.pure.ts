@@ -30,7 +30,7 @@ function countIn(finding: ModuleFinding): number {
  * governed file was read, and only the ones with findings survive into `files`.
  * That is what makes the governed list the fact not recoverable from the findings.
  *
- * @param sources Every governed file with its bytes, in walker order.
+ * @param sources Every governed file, parsed, in walker order.
  */
 export function moduleCheckFor(sources: readonly GovernedSource[]): ModuleCheck {
   const files = sources
@@ -38,7 +38,7 @@ export function moduleCheckFor(sources: readonly GovernedSource[]): ModuleCheck 
       path: source.path,
       ruleId: source.rule.ruleId,
       ruleIntent: source.rule.intent,
-      violations: violationsForFile(source.text, source.rule),
+      violations: violationsForFile(source.frontmatter, source.rule),
     }))
     .filter((finding) => countIn(finding) > 0);
 

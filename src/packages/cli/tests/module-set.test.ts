@@ -96,7 +96,7 @@ describe('the declared Module set', () => {
       const config = loaded.config;
       // ACT
       const actual = MODULE_SET.map((module) => {
-        const claims = [module.query(logPath, config) ?? []].flat();
+        const claims = module.query(logPath, config);
         return {
           key: module.key,
           queryRule: claims[0]?.rule.ruleId,

@@ -17,7 +17,7 @@
 
 import type { BodyStructureRequirements, ModuleClaim } from '../../../response-contract/index.ts';
 import type { BodyStructureRule } from '../../section.ts';
-import { reaches } from '../rules/selection.pure.ts';
+import { candidatesFor } from '../rules/body-rules.pure.ts';
 
 /** One Rule's requirements as written, a key it never wrote left out. */
 function requirementsOf(rule: BodyStructureRule): BodyStructureRequirements {
@@ -35,11 +35,7 @@ function requirementsOf(rule: BodyStructureRule): BodyStructureRequirements {
  * @param rules The section's Rules, in config order.
  */
 export function candidateClaims(path: string, rules: readonly BodyStructureRule[]): readonly ModuleClaim[] {
-  const reaching = rules.filter((rule) => reaches(rule, path));
-  const last = reaching.findIndex((rule) => rule.types === undefined);
-  const candidates = last === -1 ? reaching : reaching.slice(0, last + 1);
-
-  return candidates.map((rule) => ({
+  return candidatesFor(path, rules).map((rule) => ({
     rule: { ruleId: rule.ruleId, intent: rule.intent },
     requirements: requirementsOf(rule),
   }));

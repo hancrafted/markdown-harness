@@ -10,6 +10,16 @@
 const LITERAL_RUN = /^\^(?:[^\\^$.|?*+()[\]{}]|\\[\\^$.|?*+()[\]{}])*\$$/u;
 
 /**
+ * The one place the dialect is built: a pattern as a `RegExp` with the `u` flag
+ * and no other. Validation asks whether it compiles; matching searches with it.
+ *
+ * @param pattern The pattern as the Operator wrote it; throws when the engine refuses it.
+ */
+export function dialectPattern(pattern: string): RegExp {
+  return new RegExp(pattern, 'u');
+}
+
+/**
  * Whether a string compiles as a regular expression under the `u` flag, the
  * dialect of design-ADR 0018. A pattern the engine refuses could never fire,
  * and `^Source\-` is one: an unnecessary escape is a syntax error under `u`.
@@ -18,7 +28,7 @@ const LITERAL_RUN = /^\^(?:[^\\^$.|?*+()[\]{}]|\\[\\^$.|?*+()[\]{}])*\$$/u;
  */
 export function compiles(pattern: string): boolean {
   try {
-    new RegExp(pattern, 'u');
+    dialectPattern(pattern);
     return true;
   } catch {
     return false;

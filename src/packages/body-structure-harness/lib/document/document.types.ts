@@ -17,14 +17,3 @@ export interface OutlineHeading {
    */
   content: string;
 }
-
-/** The two things this Module reads out of one file. */
-export interface DocumentParts {
-  /**
-   * The frontmatter `type`, when the block parses and holds a string there;
-   * otherwise absent, and the file selects no Rule that writes `types`.
-   */
-  type: string | undefined;
-  /** The Markdown after the block — the whole file when there is none, empty when the block never closes. */
-  body: string;
-}

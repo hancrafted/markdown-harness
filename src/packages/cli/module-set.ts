@@ -14,8 +14,8 @@
 // a rule derived from the thing it checks could not fail.
 
 import { bodyStructureModule } from '../body-structure-harness/module.ts';
-import type { ModuleDescriptor } from '../config-contract/index.ts';
 import { frontmatterModule } from '../frontmatter-harness/module.ts';
+import type { PinnedModule } from './lib/run/module-answers.types.ts';
 
 /**
  * Every Module this tool ships, in the order their faults are reported and
@@ -29,13 +29,15 @@ import { frontmatterModule } from '../frontmatter-harness/module.ts';
  * that descriptor identity; no widened caller supplies a section argument, so
  * the variance hole stays closed.
  *
+ * The set is also held to the answers `cli` composes from (`PinnedModule`):
+ * `config-contract` is type-only and cannot name them, so this is the one place
+ * a Module answering `--query` with a bare claim, or `--audit` with a shape the
+ * composers cannot settle, stops compiling (design-ADR 0024).
+ *
  * ONE COMPILE-TIME GUARANTEE IS SPENT HERE. A whole-config interface could not
  * declare a key twice (`TS2300`); a list can, so two descriptors both claiming
  * `'frontmatter'` compile clean. A duplicate key is a COMPOSITION error rather
  * than a config error — the Operator wrote nothing wrong — so it is not a
  * `ConfigFaultCode`, and the replacement is `tests/module-set.test.ts`.
  */
-export const MODULE_SET = [
-  frontmatterModule,
-  bodyStructureModule,
-] as const satisfies readonly ModuleDescriptor<unknown>[];
+export const MODULE_SET = [frontmatterModule, bodyStructureModule] as const satisfies readonly PinnedModule[];

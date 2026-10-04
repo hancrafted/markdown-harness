@@ -14,10 +14,15 @@
  */
 
 import type { ConfigFault } from '../../../config-contract/index.ts';
+import {
+  axisFaults,
+  exclusionFaults,
+  invalidValue,
+  selectorMissingFaults,
+  unrecognisedKeys,
+} from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { BodyStructureConfig, BodyStructureRule } from '../../section.ts';
-import { invalidValue, unrecognisedKeys } from './config-fault.pure.ts';
-import { axisFaults, exclusionFaults, selectorMissingFaults } from './selector-faults.pure.ts';
 import { headingsFaults, intentFaults, maxLevelFaults } from './template-faults.pure.ts';
 
 /** The section's own address. */
@@ -39,6 +44,14 @@ const RULE_KEYS: Record<keyof BodyStructureRule, true> = {
   headings: true,
 };
 
+/**
+ * This Module's own selector axis, handed to Core's selector validation: a
+ * `type` is any non-empty string in a list of at least one, because a Rule that
+ * can never win would show in `--query` as a candidate nobody can satisfy
+ * (design-ADR 0020).
+ */
+const TYPES_AXIS = { types: (tokens: readonly string[]) => tokens.length > 0 && tokens.every((token) => token !== '') };
+
 /** The Rule's name and reason, both mandatory, each with its own way of being absent. */
 function identityFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
   const named = typeof rule.ruleId === 'string' && rule.ruleId !== '';
@@ -59,8 +72,8 @@ function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
   return [
     ...unrecognisedKeys(rule, RULE_KEYS, at),
     ...identityFaults(rule, at),
-    ...selectorMissingFaults(rule, at),
-    ...axisFaults(rule, at),
+    ...selectorMissingFaults(rule, at, TYPES_AXIS),
+    ...axisFaults(rule, at, TYPES_AXIS),
     ...exclusionFaults(rule, at),
     ...payloadFaults(rule, at),
     ...maxLevelFaults(rule, at),

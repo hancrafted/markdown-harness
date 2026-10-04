@@ -6,13 +6,14 @@
 // not open refuses the whole audit rather than leaving a row quietly short.
 
 import { normalisePath } from '../foundation/path-shape.ts';
-import { candidatePaths, tallyRules } from './lib/audit/rule-tally.pure.ts';
-import { documentPartsOf } from './lib/document/document-parts.pure.ts';
-import { readCorpusFiles } from './lib/read/corpus-read.impure.ts';
-import type { CorpusAudit } from './lib/read/corpus-read.types.ts';
+import { readCorpus } from '../foundation/read-corpus.ts';
+import type { CorpusAudit } from './lib/audit/corpus-audit.types.ts';
+import { tallyRules } from './lib/audit/rule-tally.pure.ts';
+import { documentTypeOf } from './lib/document/document-type.pure.ts';
+import { pathsToAudit } from './lib/rules/body-rules.pure.ts';
 import type { BodyStructureConfig } from './section.ts';
 
-export type { CorpusAudit } from './lib/read/corpus-read.types.ts';
+export type { CorpusAudit } from './lib/audit/corpus-audit.types.ts';
 
 /**
  * Tally this Module's ordered Rule list across a corpus.
@@ -28,10 +29,10 @@ export function auditRules(
 ): CorpusAudit {
   const rules = section?.rules ?? [];
   const paths = files.map(normalisePath);
-  const read = readCorpusFiles(root, candidatePaths(paths, rules));
+  const read = readCorpus(root, pathsToAudit(paths, rules));
   if (read.kind === 'unreadable') return read;
 
-  const types = new Map(read.sources.map((source) => [source.path, documentPartsOf(source.text).type]));
+  const types = new Map(read.documents.map((document) => [document.path, documentTypeOf(document.frontmatter)]));
   return {
     rules: tallyRules(
       paths.map((path) => ({ path, type: types.get(path) })),

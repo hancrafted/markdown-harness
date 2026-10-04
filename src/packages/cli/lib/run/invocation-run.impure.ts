@@ -20,6 +20,7 @@ import type { Invocation } from '../argv/argv.types.ts';
 import { auditVerdict } from './audit-report.pure.ts';
 import { checkVerdict } from './corpus-verdict.pure.ts';
 import { hostInstant } from './host-instant.impure.ts';
+import { gatherAnswers } from './module-answers.pure.ts';
 import { pathAssessment } from './path-assessment.pure.ts';
 import { pathGovernance } from './path-governance.pure.ts';
 import { resolvedInstant, route, terminationFor, withCorpusGuard } from './termination.pure.ts';
@@ -58,8 +59,10 @@ function gatherQuery({ path, config }: Invocation): QueryGathered {
   const cfg = gatherConfig(config);
   if (cfg.kind === 'rejected') return { kind: 'query', path, config, outcome: cfg };
 
-  const answers = MODULE_SET.map((module) => ({ module: module.key, claim: module.query(path, cfg.result) }));
-  const result = pathGovernance(normalisePath(path), answers);
+  const result = pathGovernance(
+    normalisePath(path),
+    gatherAnswers(MODULE_SET, (module) => module.query(path, cfg.result)),
+  );
   return { kind: 'query', path, config, outcome: { kind: 'answered', result } };
 }
 
@@ -72,9 +75,7 @@ function gatherAudit({ root, config }: Invocation): AuditGathered {
   const outcome = withCorpusGuard(listMarkdownFiles(root), (files) => {
     const cfg = gatherConfig(config);
     if (cfg.kind === 'rejected') return cfg;
-    const verdict = auditVerdict(
-      MODULE_SET.map((module) => ({ module: module.key, audit: module.audit(root, files, cfg.result) })),
-    );
+    const verdict = auditVerdict(gatherAnswers(MODULE_SET, (module) => module.audit(root, files, cfg.result)));
     if (verdict.kind === 'unreadable') return verdict;
     return { kind: 'answered' as const, result: verdict.result };
   });
@@ -97,6 +98,9 @@ function gatherAssess({ path, config, now, root }: Invocation): AssessGathered {
 
   // `root` is always the default here: `--root` beside `--assess` is refused as
   // conflicting input, so this is the current directory by construction.
+  // `--assess` keeps its own pair: the Conformance runner composes through
+  // `pathAssessment` with this shape, so only the other three verbs ride
+  // `gatherAnswers`.
   const answers = MODULE_SET.map((module) => ({
     module: module.key,
     assessment: module.assess({ root, path }, instant, cfg.result),
@@ -123,7 +127,7 @@ function gatherCheck({ root, config }: Invocation): CheckGathered {
     // take.
     const verdict = checkVerdict(
       files.map(normalisePath),
-      MODULE_SET.map((module) => ({ module: module.key, result: module.check(root, files, cfg.result) })),
+      gatherAnswers(MODULE_SET, (module) => module.check(root, files, cfg.result)),
     );
     if (verdict.kind === 'unreadable') return verdict;
     return { kind: 'answered' as const, result: verdict.result };

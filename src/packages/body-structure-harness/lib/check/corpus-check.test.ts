@@ -3,8 +3,9 @@
 // spine violations (design-ADRs 0012, 0017 and 0019).
 
 import { describe, expect, it } from 'vitest';
+import { parseDocument } from '../../../foundation/read-corpus.ts';
 import type { BodyStructureRule } from '../../section.ts';
-import { moduleCheckFor, pathsToRead } from './corpus-check.pure.ts';
+import { moduleCheckFor } from './corpus-check.pure.ts';
 
 const REPORTS: BodyStructureRule = {
   ruleId: 'reports',
@@ -28,13 +29,16 @@ const UNTYPED: BodyStructureRule = {
 
 const RULES = [REPORTS, UNTYPED];
 
+/** One corpus file, parsed the way the Core parses it. */
+const documentAt = (path: string, text: string) => ({ path, ...parseDocument(text) });
+
 describe('corpus check', () => {
   describe('success cases', () => {
     it('governs each file by the Rule its type selects and reports only the failing ones', () => {
       // ARRANGE
       const sources = [
-        { path: 'docs/a.md', text: '---\ntype: report\n---\n# A\n\n## Findings\n' },
-        { path: 'docs/b.md', text: '# B\n\n# Again\n' },
+        documentAt('docs/a.md', '---\ntype: report\n---\n# A\n\n## Findings\n'),
+        documentAt('docs/b.md', '# B\n\n# Again\n'),
       ];
       const expected = {
         governed: ['docs/a.md', 'docs/b.md'],
@@ -59,22 +63,12 @@ describe('corpus check', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
-
-    it('opens only files some Rule reaches from the path', () => {
-      // ARRANGE
-      const corpus = ['README.md', 'docs/a.md', 'docs/deep/b.md'];
-      const expected = ['docs/a.md'];
-      // ACT
-      const actual = pathsToRead(corpus, RULES);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
   });
 
   describe('failure cases', () => {
     it('reports depth violations before spine violations', () => {
       // ARRANGE
-      const sources = [{ path: 'docs/a.md', text: '---\ntype: report\n---\n### Deep\n' }];
+      const sources = [documentAt('docs/a.md', '---\ntype: report\n---\n### Deep\n')];
       const expected = [
         'BODY_STRUCTURE__LEVEL_TOO_DEEP',
         'BODY_STRUCTURE__HEADING_MISSING',
@@ -91,19 +85,10 @@ describe('corpus check', () => {
     it('leaves a file whose type selects no Rule ungoverned', () => {
       // ARRANGE
       const typedOnly = [REPORTS];
-      const sources = [{ path: 'docs/a.md', text: '---\ntype: memo\n---\n# A\n# B\n' }];
+      const sources = [documentAt('docs/a.md', '---\ntype: memo\n---\n# A\n# B\n')];
       const expected = { governed: [], files: [] };
       // ACT
       const actual = moduleCheckFor(sources, typedOnly);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('reads nothing when the section governs nothing', () => {
-      // ARRANGE
-      const expected: readonly string[] = [];
-      // ACT
-      const actual = pathsToRead(['docs/a.md'], []);
       // ASSERT
       expect(actual).toEqual(expected);
     });

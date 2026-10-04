@@ -6,15 +6,10 @@
  * declared Module order without inventing a second global identity.
  */
 
+import type { Unreadable } from '../../../foundation/read-corpus.ts';
 import type { AuditResult, ModuleAudit } from '../../../response-contract/index.ts';
-
-/** One Module's audit, paired with the descriptor key composition reports. */
-interface ModuleAnswer {
-  /** The Module's top-level config key. */
-  module: string;
-  /** Every rule that Module declared, including none. */
-  audit: ModuleAudit;
-}
+import { settledAnswers } from './module-answers.pure.ts';
+import type { AuditAnswer, ModuleAnswer } from './module-answers.types.ts';
 
 /**
  * Every Module's audit block, in declared Module order.
@@ -23,18 +18,10 @@ interface ModuleAnswer {
  * an attributable place in the report, and omitting it would turn "no rules"
  * into "not asked".
  */
-export function auditReport(answers: readonly ModuleAnswer[]): AuditResult {
+export function auditReport(answers: readonly ModuleAnswer<ModuleAudit>[]): AuditResult {
   return {
-    modules: answers.map((answer) => ({ module: answer.module, rules: answer.audit.rules })),
+    modules: answers.map((answer) => ({ module: answer.module, rules: answer.answer.rules })),
   };
-}
-
-/** A Module's audit, or the first candidate file it could not read. */
-type GatheredAudit = ModuleAudit | { kind: 'unreadable'; path: string };
-
-/** Whether one Module's answer is a read refusal rather than a tally. */
-function isUnreadable(audit: GatheredAudit): audit is { kind: 'unreadable'; path: string } {
-  return 'kind' in audit && audit.kind === 'unreadable';
 }
 
 /**
@@ -49,12 +36,9 @@ function isUnreadable(audit: GatheredAudit): audit is { kind: 'unreadable'; path
  * @param answers Each Module's answer under its own config key, in declared Module order.
  */
 export function auditVerdict(
-  answers: readonly { module: string; audit: GatheredAudit }[],
-): { kind: 'audited'; result: AuditResult } | { kind: 'unreadable'; path: string } {
-  const tallies: ModuleAnswer[] = [];
-  for (const answer of answers) {
-    if (isUnreadable(answer.audit)) return { kind: 'unreadable', path: answer.audit.path };
-    tallies.push({ module: answer.module, audit: answer.audit });
-  }
-  return { kind: 'audited', result: auditReport(tallies) };
+  answers: readonly ModuleAnswer<AuditAnswer>[],
+): { kind: 'audited'; result: AuditResult } | Unreadable {
+  const settled = settledAnswers<ModuleAudit>(answers);
+  if ('kind' in settled) return settled;
+  return { kind: 'audited', result: auditReport(settled) };
 }

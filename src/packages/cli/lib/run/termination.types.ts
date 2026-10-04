@@ -8,6 +8,7 @@
  * `terminationFor` what to emit.
  */
 
+import type { Unreadable } from '../../../foundation/read-corpus.ts';
 import type {
   AssessResult,
   AuditResult,
@@ -42,8 +43,7 @@ export interface AuditGathered {
   readonly kind: 'audit';
   readonly root: string;
   readonly config: string;
-  readonly outcome:
-    { readonly kind: 'no-root' } | { readonly kind: 'unreadable'; readonly path: string } | ConfigOutcome<AuditResult>;
+  readonly outcome: { readonly kind: 'no-root' } | Unreadable | ConfigOutcome<AuditResult>;
 }
 
 /** What `--assess` gathered. `now` is already resolved — see `resolvedInstant`. */
@@ -60,8 +60,7 @@ export interface CheckGathered {
   readonly kind: 'check';
   readonly root: string;
   readonly config: string;
-  readonly outcome:
-    { readonly kind: 'no-root' } | { readonly kind: 'unreadable'; readonly path: string } | ConfigOutcome<CheckResult>;
+  readonly outcome: { readonly kind: 'no-root' } | Unreadable | ConfigOutcome<CheckResult>;
 }
 
 /**

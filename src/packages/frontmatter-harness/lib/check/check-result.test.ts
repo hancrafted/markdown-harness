@@ -7,8 +7,12 @@
 // asserted here is the two facts the arithmetic is taken over.
 
 import { describe, expect, it } from 'vitest';
+import { parseDocument } from '../../../foundation/read-corpus.ts';
 import type { FrontmatterRule } from '../../section.ts';
 import { moduleCheckFor } from './check-result.pure';
+
+/** A file's frontmatter, parsed the way the Core parses it. */
+const frontmatterOf = (text: string) => parseDocument(text).frontmatter;
 
 const PLAIN: FrontmatterRule = {
   ruleId: 'plain',
@@ -24,7 +28,7 @@ describe("one Module's corpus check", () => {
   describe('success cases', () => {
     it('reports an all-conforming corpus as governed but clean', () => {
       // ARRANGE
-      const sources = [{ path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING }];
+      const sources = [{ path: 'docs/plain/notes.md', rule: PLAIN, frontmatter: frontmatterOf(CONFORMING) }];
       const expected = { governed: ['docs/plain/notes.md'], files: [] };
       // ACT
       const actual = moduleCheckFor(sources);
@@ -38,7 +42,7 @@ describe("one Module's corpus check", () => {
       // justification is not repealed by the nesting: it holds within one
       // Module, which is the level this finding becomes a block at.
       // ARRANGE
-      const sources = [{ path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED }];
+      const sources = [{ path: 'docs/plain/untyped.md', rule: PLAIN, frontmatter: frontmatterOf(UNTYPED) }];
       const expected = { ruleId: 'plain', ruleIntent: 'Everything under plain/ still has to say what it is' };
       // ACT
       const [finding] = moduleCheckFor(sources).files;
@@ -52,7 +56,7 @@ describe("one Module's corpus check", () => {
       // Module costs one descriptor plus one list entry quietly false. The
       // finding carries the rule and the path; the key comes from `cli`.
       // ARRANGE
-      const sources = [{ path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED }];
+      const sources = [{ path: 'docs/plain/untyped.md', rule: PLAIN, frontmatter: frontmatterOf(UNTYPED) }];
       const expected = ['path', 'ruleId', 'ruleIntent', 'violations'];
       // ACT
       const [finding] = moduleCheckFor(sources).files;
@@ -67,9 +71,9 @@ describe("one Module's corpus check", () => {
       // walker's.
       // ARRANGE
       const sources = [
-        { path: 'docs/plain/untyped.md', rule: PLAIN, text: UNTYPED },
-        { path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING },
-        { path: 'docs/plain/empty.md', rule: PLAIN, text: '---\ntype:\n---\n' },
+        { path: 'docs/plain/untyped.md', rule: PLAIN, frontmatter: frontmatterOf(UNTYPED) },
+        { path: 'docs/plain/notes.md', rule: PLAIN, frontmatter: frontmatterOf(CONFORMING) },
+        { path: 'docs/plain/empty.md', rule: PLAIN, frontmatter: frontmatterOf('---\ntype:\n---\n') },
       ];
       const expected = ['docs/plain/untyped.md', 'docs/plain/empty.md'];
       // ACT
@@ -86,9 +90,9 @@ describe("one Module's corpus check", () => {
       // a corpus whose files were ALL invalid could not tell the two apart.
       // ARRANGE
       const sources = [
-        { path: 'docs/plain/a.md', rule: PLAIN, text: UNTYPED },
-        { path: 'docs/plain/notes.md', rule: PLAIN, text: CONFORMING },
-        { path: 'docs/plain/b.md', rule: PLAIN, text: UNTYPED },
+        { path: 'docs/plain/a.md', rule: PLAIN, frontmatter: frontmatterOf(UNTYPED) },
+        { path: 'docs/plain/notes.md', rule: PLAIN, frontmatter: frontmatterOf(CONFORMING) },
+        { path: 'docs/plain/b.md', rule: PLAIN, frontmatter: frontmatterOf(UNTYPED) },
       ];
       const governed = ['docs/plain/a.md', 'docs/plain/notes.md', 'docs/plain/b.md'];
       const found = ['docs/plain/a.md', 'docs/plain/b.md'];
@@ -116,7 +120,7 @@ describe("one Module's corpus check", () => {
         },
       };
       const text = '---\nstatus: retired\nslug: Legacy_Reference\nreviewedBy: nobody\n---\n';
-      const sources = [{ path: 'docs/reference/legacy.md', rule: reference, text }];
+      const sources = [{ path: 'docs/reference/legacy.md', rule: reference, frontmatter: frontmatterOf(text) }];
       const findings = 1;
       const violations = 3;
       // ACT

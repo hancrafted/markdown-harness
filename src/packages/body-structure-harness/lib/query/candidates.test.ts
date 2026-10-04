@@ -55,19 +55,10 @@ describe('candidateClaims', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
-
-    it('answers a types-only Rule for a path nothing else reaches', () => {
-      // ARRANGE
-      const expected = ['guides'];
-      // ACT
-      const actual = candidateClaims('docs/elsewhere/x.md', RULES).map((claim) => claim.rule.ruleId);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
   });
 
   describe('failure cases', () => {
-    it('answers no candidate for a path no Rule reaches', () => {
+    it('answers no claim for a path no Rule reaches', () => {
       // ARRANGE
       const expected: readonly unknown[] = [];
       // ACT
@@ -75,28 +66,14 @@ describe('candidateClaims', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
-
-    it('leaves out a Rule whose exclusion removes the path, so it neither appears nor ends the list', () => {
-      // ARRANGE
-      const excludedUntyped: BodyStructureRule = { ...UNTYPED, excludeFiles: [{ fileNames: ['scratch.md'] }] };
-      const expected = ['guides'];
-      // ACT
-      const actual = candidateClaims('docs/research/scratch.md', [REPORTS, excludedUntyped, GUIDES]).map(
-        (claim) => claim.rule.ruleId,
-      );
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
   });
 
   describe('edge cases', () => {
-    it('ends at once on a first candidate that carries no types', () => {
+    it('leaves a requirement the Rule never wrote out of its claim', () => {
       // ARRANGE
-      const expected = ['untyped'];
+      const expected = [{ rule: { ruleId: 'bare', intent: 'Bare.' }, requirements: {} }];
       // ACT
-      const actual = candidateClaims('docs/research/new.md', [UNTYPED, REPORTS, GUIDES]).map(
-        (claim) => claim.rule.ruleId,
-      );
+      const actual = candidateClaims('a.md', [{ ruleId: 'bare', intent: 'Bare.' }]);
       // ASSERT
       expect(actual).toEqual(expected);
     });
