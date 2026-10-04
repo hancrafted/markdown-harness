@@ -9,7 +9,6 @@
 // every axis wins (design-ADRs 0012 and 0015).
 
 import { describe, expect, it } from 'vitest';
-import { reaches } from '../../../foundation/rule-selection.ts';
 import type { BodyStructureRule } from '../../section.ts';
 import { candidatesFor, pathsToAudit, pathsToOpen, selectionFor, winnerFor } from './body-rules.pure.ts';
 
@@ -152,11 +151,25 @@ describe('body rules', () => {
       expect(actual).toBe(expected);
     });
 
-    it('reaches every path from a Rule that writes only types, since types plays no part in reach', () => {
+    it('makes a Rule that writes only types a candidate for every path, and opens every path for it', () => {
       // ARRANGE
-      const expected = [true, true];
+      const paths = ['README.md', 'docs/a/b/c.md'];
+      const expected = [['guides'], ['guides'], paths];
       // ACT
-      const actual = [reaches(GUIDES, 'README.md'), reaches(GUIDES, 'docs/a/b/c.md')];
+      const actual = [
+        ids(candidatesFor('README.md', [GUIDES])),
+        ids(candidatesFor('docs/a/b/c.md', [GUIDES])),
+        pathsToOpen(paths, [GUIDES]),
+      ];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('answers a types-only Rule for a path no other Rule reaches', () => {
+      // ARRANGE
+      const expected = ['guides'];
+      // ACT
+      const actual = ids(candidatesFor('docs/elsewhere/x.md', [RESEARCH, GUIDES]));
       // ASSERT
       expect(actual).toEqual(expected);
     });

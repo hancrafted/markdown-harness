@@ -99,6 +99,9 @@ export function pathsToOpen(paths: readonly string[], rules: readonly BodyStruct
  * @param rules The section's Rules, in config order.
  */
 export function pathsToAudit(paths: readonly string[], rules: readonly BodyStructureRule[]): readonly string[] {
+  // A deliberate second statement of which Rules carry `types`: a typed Rule
+  // that excludes a path is no candidate for it, yet the `excluded` count needs
+  // that file's `type` (design-ADR 0015), so `candidatesFor` cannot answer this.
   return paths.filter(
     (path) =>
       candidatesFor(path, rules).length > 0 ||
