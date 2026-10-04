@@ -10,11 +10,12 @@
  * over sources the caller has already read.
  */
 
+import { reaches } from '../../../foundation/rule-selection.ts';
 import type { ModuleCheck, ModuleFinding } from '../../../response-contract/index.ts';
 import type { BodyStructureRule } from '../../section.ts';
 import { documentPartsOf } from '../document/document-parts.pure.ts';
 import { outlineOf } from '../document/outline.pure.ts';
-import { firstMatch, reaches } from '../rules/selection.pure.ts';
+import { firstMatch } from '../rules/selection.pure.ts';
 import { headingEntryViolations } from './heading-entries.pure.ts';
 import { levelViolations } from './level-depth.pure.ts';
 

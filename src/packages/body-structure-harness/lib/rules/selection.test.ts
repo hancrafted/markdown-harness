@@ -1,5 +1,6 @@
-// Colocated unit test for selection on three axes: Core's folders and file
-// names, decided from the path, and `types`, decided from the file's `type`.
+// Colocated unit test for the `types` axis composed with Core's selection:
+// folders and file names are decided from the path (tested in `foundation`),
+// `types` from the file's `type`.
 //
 // Every axis a Rule carries must match, an absent axis means every, an
 // exclusion is decided from the path alone, and the first Rule matching on
@@ -7,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { BodyStructureRule } from '../../section.ts';
-import { axesMatch, firstMatch, reaches, selectionFor } from './selection.pure.ts';
+import { firstMatch, selectionFor } from './selection.pure.ts';
 
 const RESEARCH: BodyStructureRule = {
   ruleId: 'research',
@@ -49,15 +50,6 @@ describe('selection', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
-
-    it('reaches every path from a Rule that writes only types', () => {
-      // ARRANGE
-      const expected = [true, true];
-      // ACT
-      const actual = [reaches(GUIDES, 'README.md'), reaches(GUIDES, 'docs/a/b/c.md')];
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
   });
 
   describe('failure cases', () => {
@@ -70,15 +62,6 @@ describe('selection', () => {
       );
       // ASSERT
       expect(actual).toEqual(expected);
-    });
-
-    it('does not reach a file in a subfolder of a folder token', () => {
-      // ARRANGE
-      const expected = 'unselected';
-      // ACT
-      const actual = selectionFor(UNTYPED, 'docs/research/deep/report.md', undefined);
-      // ASSERT
-      expect(actual).toBe(expected);
     });
 
     it('governs nothing when no Rule matches', () => {
@@ -108,26 +91,6 @@ describe('selection', () => {
       const actual = selectionFor(RESEARCH, 'docs/research/scratch.md', 'note');
       // ASSERT
       expect(actual).toBe(expected);
-    });
-
-    it('decides reach from the path alone, so an exclusion removes the path whatever its type', () => {
-      // ARRANGE
-      const expected = [false, true];
-      // ACT
-      const actual = [reaches(RESEARCH, 'docs/research/scratch.md'), reaches(RESEARCH, 'docs/research/x.md')];
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('matches an excluded path on the path axes, ahead of its exclusion', () => {
-      // What the audit needs to know whether a file's type could make it count
-      // as excluded.
-      // ARRANGE
-      const expected = [true, false];
-      // ACT
-      const actual = [axesMatch(RESEARCH, 'docs/research/scratch.md'), axesMatch(RESEARCH, 'docs/x.md')];
-      // ASSERT
-      expect(actual).toEqual(expected);
     });
 
     it('lets an excluded file fall through to a later Rule', () => {

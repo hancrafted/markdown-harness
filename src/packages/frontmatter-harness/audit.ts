@@ -10,8 +10,8 @@
 // than only the winner — a subset would have thrown that away upstream.
 
 import { normalisePath } from '../foundation/path-shape.ts';
+import { selectionFor, selectorRefFor, tallyRules } from '../foundation/rule-selection.ts';
 import type { ModuleAudit } from '../response-contract/index.ts';
-import { tallyRules } from './lib/audit/rule-tally.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
 
 /**
@@ -27,5 +27,5 @@ import type { FrontmatterConfig } from './section.ts';
  */
 export function auditRules(files: readonly string[], section: FrontmatterConfig | undefined): ModuleAudit {
   const normalised = files.map(normalisePath);
-  return { rules: tallyRules(normalised, section?.rules ?? []) };
+  return { rules: tallyRules(normalised, section?.rules ?? [], { selection: selectionFor, refOf: selectorRefFor }) };
 }

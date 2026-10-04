@@ -20,9 +20,9 @@
  */
 
 import type { ConfigFault, ConfigFaultCode } from '../../../config-contract/index.ts';
+import { invalidValue, unrecognisedKeys } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { HeadingEntry, HeadingPresence, HeadingPurpose } from '../../section.ts';
-import { invalidValue, unrecognisedKeys } from './config-fault.pure.ts';
 import { compiles, isAnchoredLiteral } from './pattern-dialect.pure.ts';
 
 /** Every key a heading entry may carry, keyed by the type declaring them so the two cannot drift. */

@@ -9,8 +9,8 @@
  * Nothing here sorts: the walker's order is the report's order.
  */
 
+import { firstMatch } from '../../../foundation/rule-selection.ts';
 import type { FrontmatterRule } from '../../section.ts';
-import { findFirstMatch } from '../rules/first-match.pure.ts';
 import type { GovernedFile } from './check.types.ts';
 
 /**
@@ -21,7 +21,7 @@ import type { GovernedFile } from './check.types.ts';
  */
 export function governedFiles(files: readonly string[], rules: readonly FrontmatterRule[]): readonly GovernedFile[] {
   return files.flatMap((path) => {
-    const rule = findFirstMatch(path, rules);
+    const rule = firstMatch(path, rules);
     return rule === undefined ? [] : [{ path, rule }];
   });
 }

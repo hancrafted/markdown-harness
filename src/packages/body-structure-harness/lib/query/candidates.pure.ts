@@ -15,9 +15,9 @@
  * omitted — the Steering payload, every heading `intent` included.
  */
 
+import { reaches } from '../../../foundation/rule-selection.ts';
 import type { BodyStructureRequirements, ModuleClaim } from '../../../response-contract/index.ts';
 import type { BodyStructureRule } from '../../section.ts';
-import { reaches } from '../rules/selection.pure.ts';
 
 /** One Rule's requirements as written, a key it never wrote left out. */
 function requirementsOf(rule: BodyStructureRule): BodyStructureRequirements {
