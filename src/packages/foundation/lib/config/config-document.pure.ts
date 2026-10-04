@@ -3,7 +3,7 @@
  *
  * The parse itself, the try, and the mapping gate live in `lib/yaml/`
  * (published from this Package's own `yaml-document.ts` entry point) rather
- * than here: `frontmatter-data.pure.ts` in frontmatter-harness used to
+ * than here: the first Module's own reader used to
  * hand-roll the identical three steps. The one place the two readers
  * disagree — what an empty document means — is why that seam takes an
  * explicit `EmptyDocumentPolicy` rather than a single hard-coded answer; this

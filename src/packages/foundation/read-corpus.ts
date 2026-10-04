@@ -12,9 +12,6 @@
 // single file outside a batch: `--assess`, whose absent-is-advice policy is its
 // own and so cannot go through a corpus refusal.
 
-import type { CorpusRead } from './lib/document/document.types.ts';
-import { readCorpusDocuments } from './lib/read/read-corpus.impure.ts';
-
 export type {
   CorpusDocument,
   CorpusRead,
@@ -23,14 +20,4 @@ export type {
   Unreadable,
 } from './lib/document/document.types.ts';
 export { parseDocument } from './lib/document/parse-document.pure.ts';
-
-/**
- * Read and parse each named file under `root`, in the order given, or name the
- * first that will not open.
- *
- * @param root The corpus directory exactly as the caller wrote it: never resolved.
- * @param paths Root-relative, normalised paths.
- */
-export function readCorpus(root: string, paths: readonly string[]): CorpusRead {
-  return readCorpusDocuments(root, paths);
-}
+export { readCorpus } from './lib/read/read-corpus.impure.ts';

@@ -37,7 +37,7 @@ function parsedOnce(found: FileRead & { kind: 'text' }): ParsedDocument {
  * @param root The corpus directory exactly as the caller wrote it: never resolved.
  * @param paths Root-relative, normalised paths.
  */
-export function readCorpusDocuments(root: string, paths: readonly string[]): CorpusRead {
+export function readCorpus(root: string, paths: readonly string[]): CorpusRead {
   const documents: CorpusDocument[] = [];
   for (const path of paths) {
     const found = rememberedRead(hostPathOf(root, [path]));
