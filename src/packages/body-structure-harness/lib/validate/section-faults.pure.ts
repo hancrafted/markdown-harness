@@ -10,7 +10,8 @@
  * duplicate `ruleId`s across the whole list, then each Rule in turn. Within a
  * Rule, mirroring the first Module: unrecognised keys, `ruleId`, `intent`, a
  * missing selector, each axis's shape, `excludeFiles`, the Rule-level empty
- * payload, `maxLevel`, then `headings`.
+ * payload, `maxLevel`, `undefinedHeadings`, the exclusion of `maxLevel` by
+ * `undefinedHeadings: forbid`, then `headings` (design-ADR 0026).
  */
 
 import type { ConfigFault } from '../../../config-contract/index.ts';
@@ -23,6 +24,8 @@ import {
 } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { BodyStructureConfig, BodyStructureRule } from '../../section.ts';
+import { writesClosureBeyondDefault } from '../section/spine-closure.pure.ts';
+import { closedSpineFaults, undefinedHeadingsFaults } from './closed-spine-faults.pure.ts';
 import { headingsFaults, intentFaults, maxLevelFaults } from './template-faults.pure.ts';
 
 /** The section's own address. */
@@ -41,6 +44,7 @@ const RULE_KEYS: Record<keyof BodyStructureRule, true> = {
   types: true,
   excludeFiles: true,
   maxLevel: true,
+  undefinedHeadings: true,
   headings: true,
 };
 
@@ -61,9 +65,15 @@ function identityFaults(rule: Record<string, unknown>, at: string): readonly Con
   ];
 }
 
-/** A Rule that writes neither `headings` nor `maxLevel` asks nothing of a body. An empty list is reported at the list instead. */
+/**
+ * A Rule that writes none of `headings`, `maxLevel` and a closure beyond the
+ * default asks nothing of a body: `allow` alone is the default written out
+ * (design-ADR 0026). An empty list is reported at the list instead, and an
+ * invalid `undefinedHeadings` at the key, so neither is also called empty.
+ */
 function payloadFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
-  return 'maxLevel' in rule || 'headings' in rule ? [] : [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: at }];
+  const payload = 'maxLevel' in rule || 'headings' in rule || writesClosureBeyondDefault(rule);
+  return payload ? [] : [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: at }];
 }
 
 /** Every fault one Rule carries, in walk order. */
@@ -77,6 +87,8 @@ function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
     ...exclusionFaults(rule, at),
     ...payloadFaults(rule, at),
     ...maxLevelFaults(rule, at),
+    ...undefinedHeadingsFaults(rule, at),
+    ...closedSpineFaults(rule, at),
     ...headingsFaults(rule, at),
   ];
 }

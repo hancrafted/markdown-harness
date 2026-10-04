@@ -273,3 +273,192 @@ describe('bodyViolations: maxLevel', () => {
     });
   });
 });
+
+/** What `bodyViolations` finds in a raw `body` against a Rule of `headings` and the `undefinedHeadings` key. */
+const closedViolationsOf = (
+  headings: readonly HeadingEntry[] | undefined,
+  body: string,
+  undefinedHeadings: BodyStructureRule['undefinedHeadings'] = 'forbid',
+) => {
+  const rule: BodyStructureRule = {
+    ruleId: 'r',
+    intent: 'A test Rule.',
+    folders: ['docs/'],
+    headings,
+    undefinedHeadings,
+  };
+  return bodyViolations(rule, body);
+};
+
+/** One `BODY_STRUCTURE__HEADING_UNDEFINED` as the closure reports it. */
+const undefinedHeading = (level: number, content: string) => ({
+  violation: 'BODY_STRUCTURE__HEADING_UNDEFINED',
+  level,
+  content,
+  requirement: { undefinedHeadings: 'forbid' },
+});
+
+describe('bodyViolations: undefinedHeadings', () => {
+  describe('success cases', () => {
+    it('passes a closed document whose every heading an entry matches', () => {
+      // ARRANGE
+      const outline = [h(1, 'Report'), h(2, 'Source: One'), h(2, 'Source: Two'), h(2, 'Conclusion')];
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = closedViolationsOf([TITLE, SOURCES, CONCLUSION], bodyOf(outline));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports one violation per undefined heading with its level and raw content, in document order', () => {
+      // ARRANGE
+      const outline = [h(1, 'Report'), h(2, 'Source: One'), h(2, 'Aside'), h(2, 'Conclusion'), h(2, 'Appendix')];
+      const expected = [undefinedHeading(2, 'Aside'), undefinedHeading(2, 'Appendix')];
+      // ACT
+      const actual = closedViolationsOf([TITLE, SOURCES, CONCLUSION], bodyOf(outline));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('passes the same body under allow and under no key at all', () => {
+      // ARRANGE
+      const outline = [h(1, 'Report'), h(2, 'Aside'), h(2, 'Conclusion')];
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = [
+        closedViolationsOf([TITLE, CONCLUSION], bodyOf(outline), 'allow'),
+        violationsOf([TITLE, CONCLUSION], outline),
+      ];
+      // ASSERT
+      expect(actual).toEqual([expected, expected]);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('reports undefined headings before the missing entries, so a renamed section reads undefined then missing', () => {
+      // ARRANGE
+      const outline = [h(1, 'Report'), h(2, 'Rationale')];
+      const expected = [
+        undefinedHeading(2, 'Rationale'),
+        { violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 1, requirement: FINDINGS },
+      ];
+      // ACT
+      const actual = closedViolationsOf([TITLE, FINDINGS], bodyOf(outline));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports a title when the spine names no level 1 entry', () => {
+      // ARRANGE
+      const expected = [undefinedHeading(1, 'Report')];
+      // ACT
+      const actual = closedViolationsOf([CONCLUSION], bodyOf([h(1, 'Report'), h(2, 'Conclusion')]));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports a heading whose text an entry names at a level the entry does not as undefined', () => {
+      // ARRANGE
+      const expected = [
+        undefinedHeading(3, 'Findings'),
+        { violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 1, requirement: FINDINGS },
+      ];
+      // ACT
+      const actual = closedViolationsOf([TITLE, FINDINGS], bodyOf([h(1, 'Report'), h(3, 'Findings')]));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports every heading as undefined when the Rule writes no headings', () => {
+      // ARRANGE
+      const expected = [undefinedHeading(1, 'Report'), undefinedHeading(2, 'Aside')];
+      // ACT
+      const actual = closedViolationsOf(undefined, bodyOf([h(1, 'Report'), h(2, 'Aside')]));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports two undefined headings of one level and one content as two violations', () => {
+      // ARRANGE
+      const expected = [undefinedHeading(2, 'Aside'), undefinedHeading(2, 'Aside')];
+      // ACT
+      const actual = closedViolationsOf([TITLE], bodyOf([h(1, 'Report'), h(2, 'Aside'), h(2, 'Aside')]));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('never reports a repeated or misplaced heading as undefined: its entry reports it', () => {
+      // ARRANGE
+      const outline = [h(2, 'Conclusion'), h(2, 'Findings'), h(2, 'Findings')];
+      const expected = [
+        { violation: 'BODY_STRUCTURE__HEADING_REPEATED', entry: 0, found: 2, requirement: FINDINGS },
+        { violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 1, requirement: CONCLUSION },
+      ];
+      // ACT
+      const actual = closedViolationsOf([FINDINGS, CONCLUSION], bodyOf(outline));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('never reports a repeat outside an enumeration run as undefined: it is out of order and counted', () => {
+      // ARRANGE
+      const outline = [h(2, 'Source: One'), h(2, 'Conclusion'), h(2, 'Source: Two')];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 0, requirement: SOURCES }];
+      // ACT
+      const actual = closedViolationsOf([SOURCES, CONCLUSION], bodyOf(outline));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('decides from matching and never from the walk, so a misplaced heading is out of order and not undefined', () => {
+      // ARRANGE
+      const outline = [h(2, 'Conclusion'), h(2, 'Findings')];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 1, requirement: CONCLUSION }];
+      // ACT
+      const actual = closedViolationsOf([FINDINGS, CONCLUSION], bodyOf(outline));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('does not read a heading in a fence, a blockquote or an indented code block', () => {
+      // ARRANGE
+      const body = [
+        '# Report',
+        '',
+        '```',
+        '## In a fence',
+        '```',
+        '',
+        '> ## In a quote',
+        '',
+        '    ## Indented',
+        '',
+      ].join('\n');
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = closedViolationsOf([TITLE], body);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reaches a heading at any level, down to 6', () => {
+      // ARRANGE
+      const expected = [undefinedHeading(6, 'Deep')];
+      // ACT
+      const actual = closedViolationsOf([TITLE], bodyOf([h(1, 'Report'), h(6, 'Deep')]));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports an empty body against a closed Rule with no headings as clean', () => {
+      // ARRANGE
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = closedViolationsOf(undefined, '');
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});

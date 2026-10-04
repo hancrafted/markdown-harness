@@ -91,6 +91,8 @@ export interface BodyStructureRequirements {
   types?: readonly string[];
   /** The deepest heading level permitted, as written. */
   maxLevel?: number;
+  /** `forbid` closes the spine, `allow` is the open spine written out; echoed as written (design-ADR 0025). */
+  undefinedHeadings?: 'allow' | 'forbid';
   /** The Rule's spine, verbatim, each `intent` included. */
   headings?: readonly HeadingRequirement[];
 }

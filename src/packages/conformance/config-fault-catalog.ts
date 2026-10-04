@@ -53,18 +53,6 @@ const declaredCodes = [
   'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE',
 ] as const;
 
-/**
- * The one code the closed spine brings (#225, design-ADR 0026).
- *
- * Declared here before the contract's `ConfigFaultCode` union names it, as #221's
- * Phase 2 did for its five: the tier is written first and the Module second.
- * Widening the pin below by exactly this code keeps `tsc --noEmit` green until
- * the union gains it, and drops out of the way after: a code the union later
- * names is simply a member of both sides. The implementation agent deletes this
- * bridge in the commit that adds the code to the contract.
- */
-type PendingCode = 'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE';
-
 /** Whatever the catalog declares and the list above has not claimed. */
 type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
 
@@ -81,5 +69,5 @@ type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
  * conditional distributing over the union, which would make a partially
  * covered catalog answer `unknown` rather than `never`.
  */
-export const DECLARED_CODES = declaredCodes satisfies readonly (ConfigFaultCode | PendingCode)[] &
+export const DECLARED_CODES = declaredCodes satisfies readonly ConfigFaultCode[] &
   ([UnreachedCodes] extends [never] ? unknown : never);
