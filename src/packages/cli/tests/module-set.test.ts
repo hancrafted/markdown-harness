@@ -20,6 +20,7 @@
 // never go red.
 
 import { describe, expect, it } from 'vitest';
+import { bodyStructureModule } from '../../body-structure-harness/module.ts';
 import type { ModuleDescriptor } from '../../config-contract/index.ts';
 import { loadConfig } from '../../foundation/load-config.ts';
 import { MODULE_SET } from '../module-set.ts';
@@ -47,6 +48,19 @@ function descriptorFor(key: string): ModuleDescriptor<unknown> {
   };
 }
 
+/** What one descriptor's audit answered, in the union every declared Module's answer falls in. */
+type AuditAnswer = ReturnType<(typeof MODULE_SET)[number]['audit']>;
+
+/**
+ * What one audit answered: the file it refused over, or how many rows it
+ * tallied and how many times its `log-files` row won. The row count is what
+ * tells an empty tally apart from a refusal, which has no rows to count.
+ */
+function auditAnswerOf(audit: AuditAnswer): { rows: number; wins: number | undefined } | { refused: string } {
+  if (!('rules' in audit)) return { refused: audit.path };
+  return { rows: audit.rules.length, wins: audit.rules.find((row) => row.rule.ruleId === 'log-files')?.won };
+}
+
 describe('the declared Module set', () => {
   describe('success cases', () => {
     it('reaches every read verb through each declared descriptor', () => {
@@ -56,8 +70,25 @@ describe('the declared Module set', () => {
       const stalePath = 'docs/freshness/stale.md';
       const logPath = 'docs/log.md';
       const instant = '2026-12-01T00:00:00Z';
+      // The tier's config writes only a `frontmatter:` section, so the second
+      // Module is asked every verb and answers each with nothing it governs:
+      // an audit with no rows, which is not a refusal (design-ADR 0010).
+      const frontmatterRules = 10;
       const expected = [
-        { key: 'frontmatter', queryRule: 'log-files', auditWins: 1, assessment: 'stale', check: 'checked' },
+        {
+          key: 'frontmatter',
+          queryRule: 'log-files',
+          audit: { rows: frontmatterRules, wins: 1 },
+          assessment: 'stale',
+          check: 'checked',
+        },
+        {
+          key: 'body-structure',
+          queryRule: undefined,
+          audit: { rows: 0, wins: undefined },
+          assessment: undefined,
+          check: 'checked',
+        },
       ];
       const loaded = loadConfig(configPath, MODULE_SET);
       if (loaded.config === undefined)
@@ -65,11 +96,11 @@ describe('the declared Module set', () => {
       const config = loaded.config;
       // ACT
       const actual = MODULE_SET.map((module) => {
-        const audit = module.audit([logPath], config);
+        const claims = [module.query(logPath, config) ?? []].flat();
         return {
           key: module.key,
-          queryRule: module.query(logPath, config)?.rule.ruleId,
-          auditWins: audit.rules.find((row) => row.rule.ruleId === 'log-files')?.won,
+          queryRule: claims[0]?.rule.ruleId,
+          audit: auditAnswerOf(module.audit(root, [logPath], config)),
           assessment: module.assess({ root, path: stalePath }, instant, config)?.state,
           check: module.check(root, [logPath], config).kind,
         };
@@ -100,6 +131,26 @@ describe('the declared Module set', () => {
   });
 
   describe('failure cases', () => {
+    it('keeps an audit that refused apart from one that tallied nothing', () => {
+      // The planted refusal. The body-structure tier's config reaches every
+      // file under `docs/`, so a corpus naming one that does not exist makes
+      // the second Module refuse its audit rather than tally it. Read through
+      // the same observation the row above uses, a refusal must not come out
+      // looking like the empty answer that row expects.
+      // ARRANGE
+      const root = 'fixtures/conformance/body-structure';
+      const absent = 'docs/research/absent.md';
+      const expected = { refused: `${root}/${absent}` };
+      const loaded = loadConfig(`${root}/valid-test-config.yaml`, MODULE_SET);
+      if (loaded.config === undefined)
+        throw new Error('the body-structure tier config must load for this case to mean anything');
+      const config = loaded.config;
+      // ACT
+      const actual = auditAnswerOf(bodyStructureModule.audit(root, [absent], config));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('names the key two descriptors both claim', () => {
       // The planted violation. Both descriptors compile, which is exactly the
       // guarantee that was traded away.

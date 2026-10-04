@@ -147,13 +147,19 @@ function withCorpus<T extends { readonly kind: string }>(
 }
 
 function auditTermination(gathered: AuditGathered): Termination {
-  return withCorpus(gathered.outcome, (outcome) =>
-    fromConfigOutcome(
+  return withCorpus(gathered.outcome, (outcome) => {
+    // A Module selecting on frontmatter `type` opens files to tally them, so an
+    // audit can be refused for an unreadable file on the same terms as a check.
+    if (outcome.kind === 'unreadable') {
+      return { stdout: '', stderr: unreadableGovernedFile(outcome.path), code: CANNOT_REPORT };
+    }
+
+    return fromConfigOutcome(
       outcome,
       (faults) => responseTermination(auditResponse(gathered.root, gathered.config, configError(faults))),
       (result) => responseTermination(auditResponse(gathered.root, gathered.config, result)),
-    ),
-  );
+    );
+  });
 }
 
 function assessTermination(gathered: AssessGathered): Termination {

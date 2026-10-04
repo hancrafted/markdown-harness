@@ -58,9 +58,45 @@ describe('pathGovernance', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('names one block per candidate when a Module answers with several claims, in the order it gave them', () => {
+      // A Module whose winner depends on file content cannot name one Rule
+      // before the file exists, so it hands back every candidate (design-ADR
+      // 0015 amending 0011), and each becomes a block under that Module's name.
+      // ARRANGE
+      const path = 'docs/a.md';
+      const expected = {
+        governance: 'governed',
+        path: 'docs/a.md',
+        modules: [
+          { module: 'zulu', ...ASKS_FOR_TYPE },
+          { module: 'alpha', ...ASKS_FOR_TITLE },
+          { module: 'alpha', ...ASKS_FOR_TYPE },
+        ],
+      };
+      // ACT
+      const actual = pathGovernance(path, [
+        { module: 'zulu', claim: ASKS_FOR_TYPE },
+        { module: 'alpha', claim: [ASKS_FOR_TITLE, ASKS_FOR_TYPE] },
+      ]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
+    it('answers invisible when the only Module asked hands back no candidate at all', () => {
+      // An empty candidate list is a Module passing the path by, said the
+      // other way, and must not read as governed with no blocks.
+      // ARRANGE
+      const path = 'docs/a.md';
+      const expected = { governance: 'invisible', path: 'docs/a.md' };
+      // ACT
+      const actual = pathGovernance(path, [{ module: 'alpha', claim: [] }]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('answers invisible when no Module claims the path', () => {
       // "Invisible" is a claim about the whole config rather than about a null
       // rule: not one declared Module selected this path.

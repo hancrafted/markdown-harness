@@ -13,11 +13,13 @@
 // too. The two lists are deliberately separate: one composes, one enforces, and
 // a rule derived from the thing it checks could not fail.
 
+import { bodyStructureModule } from '../body-structure-harness/module.ts';
 import type { ModuleDescriptor } from '../config-contract/index.ts';
 import { frontmatterModule } from '../frontmatter-harness/module.ts';
 
 /**
- * Every Module this tool ships, in the order their faults are reported.
+ * Every Module this tool ships, in the order their faults are reported and
+ * their blocks nest: `frontmatter`, then `body-structure` (design-ADR 0016).
  *
  * `satisfies` rather than an annotation, so each entry keeps its own section
  * and answer types for a caller that names one descriptor while the list as a
@@ -33,4 +35,7 @@ import { frontmatterModule } from '../frontmatter-harness/module.ts';
  * than a config error — the Operator wrote nothing wrong — so it is not a
  * `ConfigFaultCode`, and the replacement is `tests/module-set.test.ts`.
  */
-export const MODULE_SET = [frontmatterModule] as const satisfies readonly ModuleDescriptor<unknown>[];
+export const MODULE_SET = [
+  frontmatterModule,
+  bodyStructureModule,
+] as const satisfies readonly ModuleDescriptor<unknown>[];

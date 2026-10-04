@@ -28,3 +28,33 @@ export function auditReport(answers: readonly ModuleAnswer[]): AuditResult {
     modules: answers.map((answer) => ({ module: answer.module, rules: answer.audit.rules })),
   };
 }
+
+/** A Module's audit, or the first candidate file it could not read. */
+type GatheredAudit = ModuleAudit | { kind: 'unreadable'; path: string };
+
+/** Whether one Module's answer is a read refusal rather than a tally. */
+function isUnreadable(audit: GatheredAudit): audit is { kind: 'unreadable'; path: string } {
+  return 'kind' in audit && audit.kind === 'unreadable';
+}
+
+/**
+ * Refuse an incomplete audit, or compose every Module's tally.
+ *
+ * A Module that selects on file content has to open a file to tally it
+ * (design-ADR 0015), so an audit can now fail to read one. The first refusal
+ * in declared Module order wins before anything is composed, for the same
+ * reason `checkVerdict` refuses: a report quietly missing a file looks
+ * complete.
+ *
+ * @param answers Each Module's answer under its own config key, in declared Module order.
+ */
+export function auditVerdict(
+  answers: readonly { module: string; audit: GatheredAudit }[],
+): { kind: 'audited'; result: AuditResult } | { kind: 'unreadable'; path: string } {
+  const tallies: ModuleAnswer[] = [];
+  for (const answer of answers) {
+    if (isUnreadable(answer.audit)) return { kind: 'unreadable', path: answer.audit.path };
+    tallies.push({ module: answer.module, audit: answer.audit });
+  }
+  return { kind: 'audited', result: auditReport(tallies) };
+}

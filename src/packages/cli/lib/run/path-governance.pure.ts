@@ -24,8 +24,21 @@ import type { ModuleClaim, ModuleRequirements, QueryResult } from '../../../resp
 interface ModuleAnswer {
   /** The Module's top-level config key, read from its descriptor. */
   module: string;
-  /** What that Module asks of the path, or nothing when it passed the path by. */
-  claim: ModuleClaim | undefined;
+  /**
+   * What that Module asks of the path, or nothing when it passed the path by.
+   *
+   * A LIST when the Module's winner depends on file content and so cannot be
+   * named before the file exists: one claim per candidate Rule, in the order
+   * the Module gave them (design-ADR 0015 amending 0011). An empty list is the
+   * Module passing the path by.
+   */
+  claim: ModuleClaim | readonly ModuleClaim[] | undefined;
+}
+
+/** One Module's answer as a list of claims, whichever way it was spelled. */
+function claimsOf(claim: ModuleAnswer['claim']): readonly ModuleClaim[] {
+  if (claim === undefined) return [];
+  return Array.isArray(claim) ? claim : [claim as ModuleClaim];
 }
 
 /**
@@ -38,8 +51,9 @@ export function pathGovernance(path: string, answers: readonly ModuleAnswer[]): 
   const modules: ModuleRequirements[] = [];
 
   for (const answer of answers) {
-    if (answer.claim === undefined) continue;
-    modules.push({ module: answer.module, rule: answer.claim.rule, requirements: answer.claim.requirements });
+    for (const claim of claimsOf(answer.claim)) {
+      modules.push({ module: answer.module, rule: claim.rule, requirements: claim.requirements });
+    }
   }
 
   if (modules.length === 0) return { governance: 'invisible', path };
