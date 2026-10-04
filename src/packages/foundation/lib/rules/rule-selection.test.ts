@@ -30,6 +30,17 @@ describe('rule selection', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('reaches every path from a selector carrying neither axis', () => {
+      // A loaded config never holds one (CONFIG_SELECTOR_MISSING refuses it); the predicate stays one expression.
+      // ARRANGE
+      const bare = rule({ ruleId: 'bare' });
+      const expected = [true, true];
+      // ACT
+      const actual = [reaches(bare, 'README.md'), reaches(bare, 'docs/a/b.md')];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('intersects the two axes when a Rule carries both, and names the corpus root as ./', () => {
       // ARRANGE
       const both = rule({ ruleId: 'both', folders: ['docs/'], fileNames: ['index.md'] });

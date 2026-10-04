@@ -132,6 +132,20 @@ describe('selector faults', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('reports a wrongly shaped axis ahead of an axisless entry, one fault at the key, whichever entry comes first', () => {
+      // Core's one order: unrecognised key, wrong shape, no axis, malformed token.
+      // body-structure-harness used to report the axisless entry here; it now meets
+      // frontmatter-harness's order (design-ADR 0022).
+      // ARRANGE
+      const shapeThenAxisless = { excludeFiles: [{ folders: 'x' }, {}] };
+      const axislessThenShape = { excludeFiles: [{}, { folders: 'x' }] };
+      const expected = [[invalid(EXCLUDE_AT)], [invalid(EXCLUDE_AT)]];
+      // ACT
+      const actual = [exclusionFaults(shapeThenAxisless, AT), exclusionFaults(axislessThenShape, AT)];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses a Module axis inside an exclusion as an unrecognised key, since exclusions are Core selectors', () => {
       // ARRANGE
       const rule = { excludeFiles: [{ types: ['draft'] }] };

@@ -7,6 +7,7 @@
 // every axis wins (design-ADRs 0012 and 0015).
 
 import { describe, expect, it } from 'vitest';
+import { reaches } from '../../../foundation/rule-selection.ts';
 import type { BodyStructureRule } from '../../section.ts';
 import { firstMatch, selectionFor } from './selection.pure.ts';
 
@@ -91,6 +92,15 @@ describe('selection', () => {
       const actual = selectionFor(RESEARCH, 'docs/research/scratch.md', 'note');
       // ASSERT
       expect(actual).toBe(expected);
+    });
+
+    it('reaches every path from a Rule that writes only types, since types plays no part in reach', () => {
+      // ARRANGE
+      const expected = [true, true];
+      // ACT
+      const actual = [reaches(GUIDES, 'README.md'), reaches(GUIDES, 'docs/a/b/c.md')];
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
 
     it('lets an excluded file fall through to a later Rule', () => {

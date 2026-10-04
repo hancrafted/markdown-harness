@@ -34,8 +34,16 @@ takes the Core's vocabulary as given.
    Module's own list axes, each with the test its tokens must pass. Core never names `types`.
 3. **Exclusions remain Core selectors.** A Module's own axis inside `excludeFiles` is an unrecognised key,
    exactly as before.
-4. **No behaviour changes.** Fault order, fault location and tally rows are what the Conformance tiers
-   already pin, and none of them changed.
+4. **One fault order for `excludeFiles`, and it is frontmatter's.** An exclusion list earns at most one
+   kind of fault, found in this order: an unrecognised key, a wrongly shaped axis, an entry with no
+   axis, a malformed token. `frontmatter-harness` already reported in that order and is unchanged.
+   `body-structure-harness` reported an entry with no axis (`CONFIG_SELECTOR_MISSING`) before a wrongly
+   shaped axis (`CONFIG_INVALID_VALUE`), so its order within `excludeFiles` changes: `excludeFiles:
+[{ folders: 'x' }, {}]` used to yield `CONFIG_SELECTOR_MISSING` and now yields `CONFIG_INVALID_VALUE`,
+   both at `excludeFiles`. Neither issue 221 nor 0020 specifies the order within an exclusion list, and no
+   Conformance case reaches the difference, so one Core order is kept rather than a per-Module option;
+   the unit suite for `foundation/selector-faults.ts` pins it. Everything else, including fault order
+   across a Rule and every tally row, is unchanged.
 
 ## Placement
 
