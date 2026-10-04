@@ -38,6 +38,15 @@ describe('selector faults', () => {
   });
 
   describe('failure cases', () => {
+    it('refuses an empty types list at the axis, because a Rule that can never win is no template', () => {
+      // ARRANGE
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.types` }];
+      // ACT
+      const actual = axisFaults({ folders: ['docs/'], types: [] }, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses a Rule carrying none of the three axes', () => {
       // ARRANGE
       const expected = [{ code: 'CONFIG_SELECTOR_MISSING', location: AT }];
@@ -78,6 +87,15 @@ describe('selector faults', () => {
   });
 
   describe('edge cases', () => {
+    it('accepts a one-element types list, and leaves Core empty folders and fileNames lists alone', () => {
+      // ARRANGE
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = [...axisFaults({ types: ['research'] }, AT), ...axisFaults({ folders: [], fileNames: [] }, AT)];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses an axis that is not a list of strings once, at the axis', () => {
       // ARRANGE
       const rule = { folders: 'docs/', types: [7] };
