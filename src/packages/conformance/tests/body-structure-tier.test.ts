@@ -272,7 +272,12 @@ describe('the body-structure tier states one coherent specification', () => {
       const entries = rules.flatMap((rule) => rule.headings ?? []);
       const entryKeys = entries.flatMap((entry) => Object.keys(entry));
       const purposes = entries.map((entry) => entry.purpose);
-      const presences = entries.flatMap((entry) => entry.presence ?? []);
+      // A `heading` entry that omits `presence` is required: that is the default the
+      // spec states, so an omitted key is the written spelling of `required`. An
+      // `enumeration` may never carry `presence`, so it contributes none.
+      const presences = entries
+        .filter((entry) => entry.purpose === 'heading')
+        .map((entry) => entry.presence ?? 'required');
       // ACT
       const actual = {
         section: coverageAndClosure(SECTION_KEYS, sectionKeys, sectionKeys),
