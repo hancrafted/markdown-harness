@@ -74,6 +74,7 @@ interface HeadingEntry {
 interface RuleSpec {
   readonly ruleId: string;
   readonly intent: string;
+  readonly undefinedHeadings?: string;
   readonly folders?: readonly string[];
   readonly fileNames?: readonly string[];
   readonly types?: readonly string[];
@@ -255,10 +256,21 @@ function answerFor(path: string): CaseAnswer | undefined {
 
 /** Every key the Module's vocabulary admits (#221, the listing's vocabulary paragraph). */
 const SECTION_KEYS = ['rules'];
-const RULE_KEYS = ['ruleId', 'intent', 'folders', 'fileNames', 'types', 'excludeFiles', 'maxLevel', 'headings'];
+const RULE_KEYS = [
+  'ruleId',
+  'intent',
+  'folders',
+  'fileNames',
+  'types',
+  'excludeFiles',
+  'maxLevel',
+  'undefinedHeadings',
+  'headings',
+];
 const ENTRY_KEYS = ['purpose', 'level', 'pattern', 'presence', 'minCount', 'maxCount', 'intent'];
 const PURPOSE_VALUES = ['heading', 'enumeration'];
 const PRESENCE_VALUES = ['required', 'optional'];
+const UNDEFINED_HEADINGS_VALUES = ['allow', 'forbid'];
 
 describe('the body-structure tier states one coherent specification', () => {
   describe('success cases', () => {
@@ -278,6 +290,11 @@ describe('the body-structure tier states one coherent specification', () => {
       const presences = entries
         .filter((entry) => entry.purpose === 'heading')
         .map((entry) => entry.presence ?? 'required');
+      // `undefinedHeadings` is a Rule key with a value set of its own (#225): the config
+      // writes both values and no other, and a Rule that omits it is the open spine.
+      const undefinedHeadings = rules.flatMap((rule) =>
+        rule.undefinedHeadings === undefined ? [] : [rule.undefinedHeadings],
+      );
       // ACT
       const actual = {
         section: coverageAndClosure(SECTION_KEYS, sectionKeys, sectionKeys),
@@ -285,6 +302,7 @@ describe('the body-structure tier states one coherent specification', () => {
         entry: coverageAndClosure(ENTRY_KEYS, entryKeys, entryKeys),
         purpose: coverageAndClosure(PURPOSE_VALUES, purposes, purposes),
         presence: coverageAndClosure(PRESENCE_VALUES, presences, presences),
+        undefinedHeadings: coverageAndClosure(UNDEFINED_HEADINGS_VALUES, undefinedHeadings, undefinedHeadings),
       };
       // ASSERT
       expect(actual).toEqual({
@@ -293,15 +311,18 @@ describe('the body-structure tier states one coherent specification', () => {
         entry: complete,
         purpose: complete,
         presence: complete,
+        undefinedHeadings: complete,
       });
     });
 
-    it('writes maxLevel on some Rules and omits it on others, and writes presence: optional exactly once', () => {
+    it('writes maxLevel on some Rules and omits it on others, and writes presence: optional twice', () => {
       // The listing: "`maxLevel` both written and omitted and with `presence:
-      // optional` written once". A tier that always wrote it, or never wrote
-      // it, could not tell open depth from forbidden depth.
+      // optional` written" -- once in #221, and twice since #225 added
+      // `closed-record`'s `Consequences` entry as the second. #221's "written once"
+      // described that round's config and not a property of the Module. A tier that
+      // always wrote it, or never wrote it, could not tell open depth from forbidden depth.
       // ARRANGE
-      const expected = { writesMaxLevel: true, omitsMaxLevel: true, optionalEntries: 1 };
+      const expected = { writesMaxLevel: true, omitsMaxLevel: true, optionalEntries: 2 };
       // ACT
       const actual = {
         writesMaxLevel: rules.some((rule) => rule.maxLevel !== undefined),
@@ -369,9 +390,9 @@ describe('the body-structure tier states one coherent specification', () => {
     });
 
     it('tallies the verdicts and violations the spec states', () => {
-      // #221's expected counts: 83 PASSES, 95 FAILS, 17 UNGOVERNED, 100 violations.
+      // #221's expected counts, as #225 extends them: 91 PASSES, 110 FAILS, 17 UNGOVERNED, 123 violations.
       // ARRANGE
-      const expected = { passes: 83, fails: 95, ungoverned: 17, violations: 100 };
+      const expected = { passes: 91, fails: 110, ungoverned: 17, violations: 123 };
       // ACT
       const actual = {
         passes: stated(PASSES).length,
@@ -527,6 +548,11 @@ const AUDIT_ROWS = [
   { ruleId: 'no-dotall', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'no-multiline', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'empty-heading', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'closed-record', won: 9, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'closed-levels', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'closed-sources', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'open-sources', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'closed-bare', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
 ];
 
 /** The `--query` candidates #221 freezes, per path asked, in order. */
@@ -543,6 +569,9 @@ const QUERY_CANDIDATES: readonly (readonly [string, readonly string[]])[] = [
   ['docs/tp/two/b.md', ['guides', 'triple-plural']],
   ['docs/names/GUIDE.md', ['guides', 'plural-names']],
   ['docs/steps/new.md', ['guides', 'steps']],
+  ['docs/closed-record/x.md', ['guides', 'closed-record']],
+  ['docs/open-sources/x.md', ['guides', 'open-sources']],
+  ['docs/closed-bare/x.md', ['guides', 'closed-bare']],
 ];
 
 /** A Rule's selector as written: an axis it never wrote is left out entirely. */
@@ -557,7 +586,12 @@ function selectorOf(rule: RuleSpec): Record<string, readonly string[]> {
 /** A candidate block, its requirements copied verbatim from the Rule, an omitted key staying omitted. */
 function candidateBlock(ruleId: string): unknown {
   const rule = ruleNamed(ruleId);
-  const written = { types: rule.types, maxLevel: rule.maxLevel, headings: rule.headings };
+  const written = {
+    types: rule.types,
+    maxLevel: rule.maxLevel,
+    undefinedHeadings: rule.undefinedHeadings,
+    headings: rule.headings,
+  };
   const requirements = Object.fromEntries(Object.entries(written).filter(([, value]) => value !== undefined));
   return { module: MODULE, rule: { ruleId: rule.ruleId, intent: rule.intent }, requirements };
 }
@@ -643,7 +677,7 @@ describe('the tool answers for the whole body-structure tier', () => {
       const expected = {
         code: 1,
         refusal: undefined,
-        summary: { governedFiles: 178, invalidFiles: 95, totalViolations: 100 },
+        summary: { governedFiles: 201, invalidFiles: 110, totalViolations: 123 },
       };
       // ACT
       const actual = {
@@ -691,7 +725,7 @@ describe('the tool answers for the whole body-structure tier', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('audits the thirty-one Rules in config order, so a shadowed or excluded file is visible', () => {
+    it('audits the thirty-six Rules in config order, so a shadowed or excluded file is visible', () => {
       // ARRANGE
       const expected = {
         code: 0,
