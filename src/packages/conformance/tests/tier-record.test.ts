@@ -10,7 +10,7 @@ describe('Conformance tier records', () => {
           name: 'body-structure',
           caseKind: 'markdown',
           configFile: 'valid-test-config.yaml',
-          caseCount: 195,
+          caseCount: 218,
         },
         {
           name: 'frontmatter',
@@ -23,13 +23,13 @@ describe('Conformance tier records', () => {
           name: 'integrated',
           caseKind: 'markdown',
           configFile: 'valid-test-config.yaml',
-          caseCount: 18,
+          caseCount: 25,
         },
         {
           name: 'rejected-config',
           caseKind: 'rejected-config',
           configFile: 'markdown-harness.config.yaml',
-          caseCount: 58,
+          caseCount: 65,
         },
       ];
       // ACT
