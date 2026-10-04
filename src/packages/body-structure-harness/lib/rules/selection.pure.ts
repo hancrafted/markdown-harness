@@ -1,43 +1,19 @@
 /**
- * Selection on three axes: Core's two literal axes, decided from the path, and
- * `types`, decided from the file's frontmatter `type` (design-ADR 0012).
+ * Selection on three axes: Core's two literal axes, decided from the path by
+ * `foundation`, and `types`, decided from the file's frontmatter `type`
+ * (design-ADR 0012).
  *
- * Every axis a Rule carries must match and an absent axis means every. An
- * exclusion is Core's selector, so it too is decided from the path, and a Rule
- * whose exclusion removes a path cannot win the file whatever its `type`.
- *
- * REACH is the one definition `--check`, `--query` and `--audit` share
- * (design-ADR 0015): a Rule reaches a path when its folder and file-name axes
- * match it and its own `excludeFiles` does not remove it. The `types` axis
- * plays no part in reach, which is what lets `--query` answer before the file
- * exists.
+ * Every axis a Rule carries must match and an absent axis means every. This
+ * file owns only the `types` axis and composes it with Core's answer; the two
+ * literal axes, exclusion and REACH are Core's and are not restated here
+ * (design-ADR 0022, amending design-ADR 0020). An exclusion is Core's selector,
+ * so it is decided from the path, and a Rule whose exclusion removes a path
+ * cannot win the file whatever its `type`.
  */
 
-import type { Selector } from '../../../config-contract/index.ts';
-import { fileNameOf, folderOf } from '../../../foundation/selector-grammar.ts';
+import type { Selection } from '../../../foundation/rule-selection.ts';
+import { selectionFor as pathSelectionFor } from '../../../foundation/rule-selection.ts';
 import type { BodyStructureRule } from '../../section.ts';
-
-/** How one Rule stands towards one file, for the audit tally. */
-type Selection = 'selected' | 'excluded' | 'unselected';
-
-/**
- * Whether Core's two literal axes both match a normalised path, before any
- * exclusion is consulted — for a Rule, also the question the audit asks to
- * know whether a file's `type` could make it count as excluded.
- *
- * @param selector A Rule, or one of its exclusions.
- * @param path A normalised, root-relative path.
- */
-export function axesMatch(selector: Selector, path: string): boolean {
-  const byFolder = selector.folders === undefined || selector.folders.includes(folderOf(path));
-  const byName = selector.fileNames === undefined || selector.fileNames.includes(fileNameOf(path));
-  return byFolder && byName;
-}
-
-/** Whether the Rule's own `excludeFiles` removes the path. */
-function excludes(rule: BodyStructureRule, path: string): boolean {
-  return (rule.excludeFiles ?? []).some((exclusion) => axesMatch(exclusion, path));
-}
 
 /**
  * Whether the file's `type` satisfies the `types` axis: always when the Rule
@@ -47,17 +23,6 @@ function excludes(rule: BodyStructureRule, path: string): boolean {
 function typeMatches(rule: BodyStructureRule, type: string | undefined): boolean {
   if (rule.types === undefined) return true;
   return type !== undefined && rule.types.includes(type);
-}
-
-/**
- * Whether a Rule reaches a path: its folder and file-name axes match and its
- * exclusion does not remove it. Decided from the path alone.
- *
- * @param rule One Rule of the section.
- * @param path A normalised, root-relative path.
- */
-export function reaches(rule: BodyStructureRule, path: string): boolean {
-  return axesMatch(rule, path) && !excludes(rule, path);
 }
 
 /**
@@ -71,8 +36,7 @@ export function reaches(rule: BodyStructureRule, path: string): boolean {
  * @param type The file's frontmatter `type`, or `undefined` when it has none to read.
  */
 export function selectionFor(rule: BodyStructureRule, path: string, type: string | undefined): Selection {
-  if (!axesMatch(rule, path) || !typeMatches(rule, type)) return 'unselected';
-  return excludes(rule, path) ? 'excluded' : 'selected';
+  return typeMatches(rule, type) ? pathSelectionFor(rule, path) : 'unselected';
 }
 
 /**

@@ -17,9 +17,9 @@
 
 import { isCorpusPath } from '../foundation/corpus-membership.ts';
 import { normalisePath } from '../foundation/path-shape.ts';
+import { firstMatch } from '../foundation/rule-selection.ts';
 import type { ModuleClaim } from '../response-contract/index.ts';
 import { requirementsForRule } from './lib/query/requirements.pure.ts';
-import { findFirstMatch } from './lib/rules/first-match.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
 
 /**
@@ -42,7 +42,7 @@ export function queryPath(path: string, section: FrontmatterConfig | undefined):
   const normalised = normalisePath(path);
   if (!isCorpusPath(normalised)) return undefined;
 
-  const winner = findFirstMatch(normalised, section?.rules ?? []);
+  const winner = firstMatch(normalised, section?.rules ?? []);
 
   if (winner === undefined) return undefined;
 

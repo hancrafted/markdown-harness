@@ -11,21 +11,20 @@
  * Operator needs to see.
  */
 
+import {
+  selectorRefFor as coreSelectorRefFor,
+  tallyRules as coreTallyRules,
+  reaches,
+  selectorMatches,
+} from '../../../foundation/rule-selection.ts';
 import type { RuleAudit, SelectorRef } from '../../../response-contract/index.ts';
 import type { BodyStructureRule } from '../../section.ts';
-import { axesMatch, reaches, selectionFor } from '../rules/selection.pure.ts';
+import { selectionFor } from '../rules/selection.pure.ts';
 
 /** One corpus file and the `type` read out of it, `undefined` when there is none to read. */
 interface TypedFile {
   path: string;
   type: string | undefined;
-}
-
-interface Tally {
-  won: number;
-  shadowed: number;
-  excluded: number;
-  shadowedBy: Set<number>;
 }
 
 /**
@@ -44,68 +43,25 @@ interface Tally {
  */
 export function candidatePaths(paths: readonly string[], rules: readonly BodyStructureRule[]): readonly string[] {
   return paths.filter((path) =>
-    rules.some((rule) => reaches(rule, path) || (rule.types !== undefined && axesMatch(rule, path))),
+    rules.some((rule) => reaches(rule, path) || (rule.types !== undefined && selectorMatches(rule, path))),
   );
 }
 
-/** A Rule's selector as written: an axis it never wrote is left out entirely. */
+/** A Rule's selector as written: Core's two axes, then this Module's `types`, an axis it never wrote left out. */
 function selectorRefFor(rule: BodyStructureRule): SelectorRef {
-  return {
-    ...(rule.folders === undefined ? {} : { folders: rule.folders }),
-    ...(rule.fileNames === undefined ? {} : { fileNames: rule.fileNames }),
-    ...(rule.types === undefined ? {} : { types: rule.types }),
-  };
-}
-
-/** Which Rule won one file, which later Rules it shadowed, and which Rules excluded it, by position. */
-interface Attribution {
-  winner: number;
-  shadowed: readonly number[];
-  excluded: readonly number[];
-}
-
-/** How every Rule stands towards one file, read in config order. */
-function attributionFor(file: TypedFile, rules: readonly BodyStructureRule[]): Attribution {
-  const selections = rules.map((rule) => selectionFor(rule, file.path, file.type));
-  const selected = selections.flatMap((selection, position) => (selection === 'selected' ? [position] : []));
-  return {
-    winner: selected.length > 0 ? selected[0] : -1,
-    shadowed: selected.slice(1),
-    excluded: selections.flatMap((selection, position) => (selection === 'excluded' ? [position] : [])),
-  };
+  return { ...coreSelectorRefFor(rule), ...(rule.types === undefined ? {} : { types: rule.types }) };
 }
 
 /**
- * Tally the section's Rules across a corpus.
+ * Tally the section's Rules across a corpus: Core's tally, handed this Module's
+ * three-axis verdict and its three-axis selector report.
  *
  * @param files Every corpus file with its `type`, in walker order.
  * @param rules The section's Rules, in config order.
  */
 export function tallyRules(files: readonly TypedFile[], rules: readonly BodyStructureRule[]): readonly RuleAudit[] {
-  const tallies: readonly Tally[] = rules.map(() => ({
-    won: 0,
-    shadowed: 0,
-    excluded: 0,
-    shadowedBy: new Set<number>(),
-  }));
-
-  for (const file of files) {
-    const attribution = attributionFor(file, rules);
-    if (attribution.winner !== -1) tallies[attribution.winner].won += 1;
-    for (const position of attribution.shadowed) {
-      tallies[position].shadowed += 1;
-      tallies[position].shadowedBy.add(attribution.winner);
-    }
-    for (const position of attribution.excluded) tallies[position].excluded += 1;
-  }
-
-  return rules.map((rule, position) => ({
-    rule: { ruleId: rule.ruleId, selector: selectorRefFor(rule), intent: rule.intent },
-    won: tallies[position].won,
-    shadowed: tallies[position].shadowed,
-    shadowedBy: [...tallies[position].shadowedBy]
-      .sort((left, right) => left - right)
-      .map((index) => rules[index].ruleId),
-    excluded: tallies[position].excluded,
-  }));
+  return coreTallyRules(files, rules, {
+    selection: (rule, file) => selectionFor(rule, file.path, file.type),
+    refOf: selectorRefFor,
+  });
 }

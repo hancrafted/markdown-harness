@@ -10,10 +10,11 @@
  * over sources the caller has already read.
  */
 
+import { reaches } from '../../../foundation/rule-selection.ts';
 import type { ModuleCheck, ModuleFinding } from '../../../response-contract/index.ts';
 import type { BodyStructureRule } from '../../section.ts';
 import { documentPartsOf } from '../document/document-parts.pure.ts';
-import { firstMatch, reaches } from '../rules/selection.pure.ts';
+import { firstMatch } from '../rules/selection.pure.ts';
 import { bodyViolations } from './body-violations.pure.ts';
 
 /** One file the caller read, root-relative and normalised. */
