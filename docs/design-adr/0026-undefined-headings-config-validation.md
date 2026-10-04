@@ -43,7 +43,7 @@ else the key changes in validation.
    the first Module one, without a value having to be invented to let a Rule opt out of it. No such default
    is built, and nothing here depends on one. The precedent of measurement 1 is followed.
 2. **Only `forbid` excludes `maxLevel`.** `allow` is the open spine, and `maxLevel` is the depth floor for
-   an open spine, so a Rule that writes both is valid and a case freezes it.
+   an open spine, so a Rule that writes both is valid, and `CONFIG_ENTRY_BEYOND_MAX_LEVEL` is still decided for it: an entry deeper than that `maxLevel` is refused as it always was. A `body-structure` case freezes the valid pairing and a rejected-config case freezes the refusal.
 3. **The fault is `CONFIG_MAX_LEVEL_ON_CLOSED_SPINE`, raised at the Rule's `maxLevel` key.** It is the key
    to delete: a closed spine already forbids every depth no entry names, so `maxLevel` is the redundant
    half, and a heading beyond it would be reported twice, once as too deep and once as undefined, which
@@ -87,12 +87,13 @@ faults on one Rule. The cross-Module order and the order inside `headings` are u
 
 ## Consequences
 
-1. The rejected-config tier gains 6 cases, and its hand-written list of codes grows from 20 to 21. Its
+1. The rejected-config tier gains 7 cases, and its hand-written list of codes grows from 20 to 21. Its
    compile-time pin goes red until the configuration contract adds the code.
 2. A Rule that closes its spine and also wants a depth limit has no spelling for it, and does not need
    one: the entries name the levels that exist.
-3. The explicit-default value is one more thing for a loosening pass to read, and the value is stated
-   in 0025 consequence 4, where the direction is.
+3. The direction of the key, that `forbid` to `allow` or deleting the key widens what passes, is stated in
+   0025 consequence 4, which also records that it amends one sentence of 0017. A loosening pass, if one is
+   ever built, reads the key's two values and that direction.
 
 ## Considered options
 

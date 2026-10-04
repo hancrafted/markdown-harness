@@ -112,6 +112,10 @@ already exists.
 
 ## Consequences
 
+> Amended by [`0025`](./0025-a-closed-spine-is-opt-in-per-rule-and-reports-undefined-headings.md): consequence 2's "no loosening
+> direction anywhere" no longer holds for `undefinedHeadings`, whose direction is recorded there. No table is carried and
+> loosening detection stays out of scope.
+
 1. **The spine is flat.** A subsection that repeats under every section, a third-level heading under
    each of several second-level ones, cannot be said: an enumeration is one run at one position.
    `maxLevel` permits such headings and nothing counts them. A nested template is a later feature and

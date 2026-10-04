@@ -113,16 +113,21 @@ Read against `bodyViolations` and the 195 `body-structure` cases, on 2026-10-04:
 
 1. **The default is untouched.** A Rule that writes no `undefinedHeadings` reports nothing new, and every
    existing Conformance case keeps its verdict and frozen findings. The corpus changes are additions
-   only: 23 cases in the `body-structure` tier, 7 in the `integrated` tier, and the rejected-config
-   cases of 0026.
+   only: 23 cases in the `body-structure` tier, 7 in the `integrated` tier, and 7 rejected-config cases,
+   which 0026 describes.
 2. **The code grammar grows by one: 6 violation codes become 7.** `BodyStructureViolation` gains a
    member, which is a wire-format change the response contract owns.
 3. **A consumer that assumed every body-structure violation carries `entry` or `found` must narrow.**
    The new member has neither. It carries `level` as `LEVEL_TOO_DEEP` does and `content`, a string, where
    `found` is a count everywhere else.
-4. **The direction of the key is stated and not built on.** Deleting the key, or writing `allow`, widens
-   what passes. 0017 declined a loosening-direction table at the Operator's instruction and this record
-   adds none; a later detection pass has the direction in this sentence.
+4. **The key's loosening direction is recorded, and this amends one sentence of 0017.**
+   [`0017`](./0017-body-structure-template-is-an-ordered-spine-of-heading-and-enumeration-entries.md)
+   consequence 2 says "there is no loosening direction anywhere in this Module". That sentence is amended
+   for this one key: deleting `undefinedHeadings`, or changing `forbid` to `allow`, widens what passes, and
+   that direction is recorded here. Everything else in 0017's consequence 2 stands: no direction table is
+   carried, no other key is given a direction retroactively, and loosening detection stays out of scope, so
+   a diff pass still has nothing to read but this sentence and the strain on the architecture vision's first
+   cheap-now decision is unchanged in kind and smaller by one key.
 5. **The `markdown-harness` skill's unwired `query-hook.mjs` renders `maxLevel` and `headings` and will not
    render `undefinedHeadings`.** It is a skill asset, outside this spec, and unwired; the authoring skill
    (Phase 4) owns what an agent is told about a closed spine.
