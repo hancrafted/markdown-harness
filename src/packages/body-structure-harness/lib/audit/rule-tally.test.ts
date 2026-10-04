@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { BodyStructureRule } from '../../section.ts';
-import { candidatePaths, tallyRules } from './rule-tally.pure.ts';
+import { tallyRules } from './rule-tally.pure.ts';
 
 const INDEX: BodyStructureRule = { ruleId: 'index', intent: 'Index pages.', fileNames: ['index.md'] };
 
@@ -88,34 +88,6 @@ describe('tallyRules', () => {
       // ACT
       const row = tallyRules(files, RULES)[1];
       const actual = { excluded: row.excluded, won: row.won };
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('opens every file some Rule reaches, typed or not, so the audit refuses where --check does', () => {
-      // `other/index.md` is reached by `index` alone, which writes no `types`:
-      // its `type` changes no row, but `--check` opens it, and an audit that
-      // skipped it would answer exit 0 over a file `--check` refuses at exit 2
-      // (design-ADR 0015). `README.md` no Rule's path axes match, so neither
-      // command opens it.
-      // ARRANGE
-      const paths = ['README.md', 'docs/a.md', 'docs/scratch.md', 'other/index.md'];
-      const expected = ['docs/a.md', 'docs/scratch.md', 'other/index.md'];
-      // ACT
-      const actual = candidatePaths(paths, RULES);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('opens a file a typed Rule excludes and no Rule reaches, because its type decides that count', () => {
-      // `--check` never opens `docs/scratch.md` here, since `reports` excludes
-      // it and nothing else reaches it; the audit must, to learn whether the
-      // exclusion counts.
-      // ARRANGE
-      const paths = ['docs/scratch.md', 'other/scratch.md'];
-      const expected = ['docs/scratch.md'];
-      // ACT
-      const actual = candidatePaths(paths, [REPORTS]);
       // ASSERT
       expect(actual).toEqual(expected);
     });

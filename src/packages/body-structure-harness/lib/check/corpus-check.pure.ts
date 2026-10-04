@@ -6,15 +6,14 @@
  * bytes (design-ADR 0012, consequence 1), so governance cannot be decided
  * before a file is opened the way the first Module decides it. What CAN be
  * decided from the path is which files no Rule reaches — those are never
- * opened — and that split is `pathsToRead`. Everything else is decided here,
+ * opened — and that split is `pathsToOpen`. Everything else is decided here,
  * over sources the caller has already read.
  */
 
-import { reaches } from '../../../foundation/rule-selection.ts';
 import type { ModuleCheck, ModuleFinding } from '../../../response-contract/index.ts';
 import type { BodyStructureRule } from '../../section.ts';
 import { documentPartsOf } from '../document/document-parts.pure.ts';
-import { firstMatch } from '../rules/selection.pure.ts';
+import { winnerFor } from '../rules/body-rules.pure.ts';
 import { bodyViolations } from './body-violations.pure.ts';
 
 /** One file the caller read, root-relative and normalised. */
@@ -24,24 +23,13 @@ interface Source {
 }
 
 /**
- * Every path some Rule reaches, in corpus order — the files a check must open.
- * A path no Rule reaches is never opened.
- *
- * @param paths The corpus, normalised, in walker order.
- * @param rules The section's Rules, in config order.
- */
-export function pathsToRead(paths: readonly string[], rules: readonly BodyStructureRule[]): readonly string[] {
-  return paths.filter((path) => rules.some((rule) => reaches(rule, path)));
-}
-
-/**
  * What this Module answers about one corpus: every governed path, and a finding
  * for each governed file with a violation, both in source order.
  *
  * Violations come depth-first in ascending level order, then spine entries in
  * entry order, so one file's report has one defined order (design-ADR 0019).
  *
- * @param sources The files `pathsToRead` named, read, in corpus order.
+ * @param sources The files `pathsToOpen` named, read, in corpus order.
  * @param rules The section's Rules, in config order.
  */
 export function moduleCheckFor(sources: readonly Source[], rules: readonly BodyStructureRule[]): ModuleCheck {
@@ -50,7 +38,7 @@ export function moduleCheckFor(sources: readonly Source[], rules: readonly BodyS
 
   for (const source of sources) {
     const parts = documentPartsOf(source.text);
-    const winner = firstMatch(source.path, parts.type, rules);
+    const winner = winnerFor(source.path, parts.type, rules);
     if (winner === undefined) continue;
 
     governed.push(source.path);

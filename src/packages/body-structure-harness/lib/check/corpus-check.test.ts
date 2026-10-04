@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { BodyStructureRule } from '../../section.ts';
-import { moduleCheckFor, pathsToRead } from './corpus-check.pure.ts';
+import { moduleCheckFor } from './corpus-check.pure.ts';
 
 const REPORTS: BodyStructureRule = {
   ruleId: 'reports',
@@ -59,16 +59,6 @@ describe('corpus check', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
-
-    it('opens only files some Rule reaches from the path', () => {
-      // ARRANGE
-      const corpus = ['README.md', 'docs/a.md', 'docs/deep/b.md'];
-      const expected = ['docs/a.md'];
-      // ACT
-      const actual = pathsToRead(corpus, RULES);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
   });
 
   describe('failure cases', () => {
@@ -95,15 +85,6 @@ describe('corpus check', () => {
       const expected = { governed: [], files: [] };
       // ACT
       const actual = moduleCheckFor(sources, typedOnly);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('reads nothing when the section governs nothing', () => {
-      // ARRANGE
-      const expected: readonly string[] = [];
-      // ACT
-      const actual = pathsToRead(['docs/a.md'], []);
       // ASSERT
       expect(actual).toEqual(expected);
     });

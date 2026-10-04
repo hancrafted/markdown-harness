@@ -6,10 +6,11 @@
 // not open refuses the whole audit rather than leaving a row quietly short.
 
 import { normalisePath } from '../foundation/path-shape.ts';
-import { candidatePaths, tallyRules } from './lib/audit/rule-tally.pure.ts';
+import { tallyRules } from './lib/audit/rule-tally.pure.ts';
 import { documentPartsOf } from './lib/document/document-parts.pure.ts';
 import { readCorpusFiles } from './lib/read/corpus-read.impure.ts';
 import type { CorpusAudit } from './lib/read/corpus-read.types.ts';
+import { pathsToAudit } from './lib/rules/body-rules.pure.ts';
 import type { BodyStructureConfig } from './section.ts';
 
 export type { CorpusAudit } from './lib/read/corpus-read.types.ts';
@@ -28,7 +29,7 @@ export function auditRules(
 ): CorpusAudit {
   const rules = section?.rules ?? [];
   const paths = files.map(normalisePath);
-  const read = readCorpusFiles(root, candidatePaths(paths, rules));
+  const read = readCorpusFiles(root, pathsToAudit(paths, rules));
   if (read.kind === 'unreadable') return read;
 
   const types = new Map(read.sources.map((source) => [source.path, documentPartsOf(source.text).type]));

@@ -5,7 +5,7 @@
  * The first Module tallies from paths alone. This one cannot: whether a Rule
  * that writes `types` selected a file depends on the file's `type`, so a
  * shadowed or excluded count would be wrong without it. The caller opens the
- * files `candidatePaths` names and hands each `type` in.
+ * files `pathsToAudit` names and hands each `type` in.
  *
  * Rows in config order, a Rule that won nothing included — that is the row an
  * Operator needs to see.
@@ -14,37 +14,15 @@
 import {
   selectorRefFor as coreSelectorRefFor,
   tallyRules as coreTallyRules,
-  reaches,
-  selectorMatches,
 } from '../../../foundation/rule-selection.ts';
 import type { RuleAudit, SelectorRef } from '../../../response-contract/index.ts';
 import type { BodyStructureRule } from '../../section.ts';
-import { selectionFor } from '../rules/selection.pure.ts';
+import { selectionFor } from '../rules/body-rules.pure.ts';
 
 /** One corpus file and the `type` read out of it, `undefined` when there is none to read. */
 interface TypedFile {
   path: string;
   type: string | undefined;
-}
-
-/**
- * The audit's candidates: every file it opens, and so every file whose failure
- * to open refuses it (design-ADR 0015).
- *
- * Two kinds, in walker order. Every path some Rule reaches, which is exactly
- * the set `--check` opens, so the two commands refuse over the same unreadable
- * file. And every path a Rule writing `types` matches on its path axes even
- * where its own exclusion removes it, because an `excluded` count needs all
- * three axes to match and so needs that file's `type`. A path neither kind
- * names tallies the same whatever its bytes, and is never opened.
- *
- * @param paths The corpus, normalised, in walker order.
- * @param rules The section's Rules, in config order.
- */
-export function candidatePaths(paths: readonly string[], rules: readonly BodyStructureRule[]): readonly string[] {
-  return paths.filter((path) =>
-    rules.some((rule) => reaches(rule, path) || (rule.types !== undefined && selectorMatches(rule, path))),
-  );
 }
 
 /** A Rule's selector as written: Core's two axes, then this Module's `types`, an axis it never wrote left out. */
