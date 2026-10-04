@@ -17,13 +17,13 @@
  * arbitrary; being written down is not.
  */
 
+import type { Frontmatter } from '../../../foundation/read-corpus.ts';
 import type { Violation } from '../../../response-contract/index.ts';
 import { FIELD_VIOLATION_CODES } from '../../../response-contract/index.ts';
 import type { FrontmatterRule } from '../../section.ts';
 import { crossFieldViolations } from './cross-field.pure.ts';
 import { fieldViolations } from './field-constraint.pure.ts';
 import { evidenceFor } from './field-evidence.pure.ts';
-import { frontmatterData } from './frontmatter-data.pure.ts';
 import { unknownKeyViolations } from './unknown-key.pure.ts';
 
 /** The payload as written, the whole of what a forbidding rule asks. */
@@ -36,10 +36,9 @@ const FORBIDS = { frontmatter: 'forbidden' } as const;
  * is the block's top-level keys — OMITTED where the bytes never parsed, because
  * there are no keys to extract from them.
  */
-function forbiddenVerdict(text: string): readonly Violation[] {
-  const data = frontmatterData(text);
+function forbiddenVerdict(data: Frontmatter): readonly Violation[] {
   if (data.kind === 'absent') return [];
-  if (data.kind === 'unparseable') {
+  if (data.kind === 'unparseable' || data.kind === 'unterminated') {
     return [{ field: null, violation: FIELD_VIOLATION_CODES.FRONTMATTER_FORBIDDEN, requirement: FORBIDS }];
   }
   return [
@@ -55,14 +54,17 @@ function forbiddenVerdict(text: string): readonly Violation[] {
 /**
  * Everything one rule has to say about one file.
  *
- * @param text The file's full contents.
+ * An `unterminated` block is reported exactly as an `unparseable` one: the block
+ * exists and gives no mapping to ask anything of.
+ *
+ * @param frontmatter The file's frontmatter, as the Core parsed it.
  * @param rule The rule that won this file under first-match.
  */
-export function violationsForFile(text: string, rule: FrontmatterRule): readonly Violation[] {
-  if (rule.frontmatter === 'forbidden') return forbiddenVerdict(text);
+export function violationsForFile(data: Frontmatter, rule: FrontmatterRule): readonly Violation[] {
+  if (rule.frontmatter === 'forbidden') return forbiddenVerdict(data);
 
-  const data = frontmatterData(text);
-  if (data.kind === 'unparseable') return [{ field: null, violation: 'FRONTMATTER_UNPARSEABLE' }];
+  if (data.kind === 'unparseable' || data.kind === 'unterminated')
+    return [{ field: null, violation: 'FRONTMATTER_UNPARSEABLE' }];
 
   // A file with no fence at all reads as an empty mapping, which is what lets
   // `presence: required` fire on a file that never opened a block.

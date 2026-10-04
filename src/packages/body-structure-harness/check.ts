@@ -9,13 +9,13 @@
 // walker's refusals belong to `foundation`.
 
 import { normalisePath } from '../foundation/path-shape.ts';
+import { readCorpus } from '../foundation/read-corpus.ts';
 import { moduleCheckFor } from './lib/check/corpus-check.pure.ts';
-import { readCorpusFiles } from './lib/read/corpus-read.impure.ts';
-import type { CorpusCheck } from './lib/read/corpus-read.types.ts';
+import type { CorpusCheck } from './lib/check/corpus-check.types.ts';
 import { pathsToOpen } from './lib/rules/body-rules.pure.ts';
 import type { BodyStructureConfig } from './section.ts';
 
-export type { CorpusCheck } from './lib/read/corpus-read.types.ts';
+export type { CorpusCheck } from './lib/check/corpus-check.types.ts';
 
 /**
  * Check one corpus against this Module's ordered Rule list.
@@ -35,7 +35,7 @@ export function checkCorpus(
   section: BodyStructureConfig | undefined,
 ): CorpusCheck {
   const rules = section?.rules ?? [];
-  const read = readCorpusFiles(root, pathsToOpen(files.map(normalisePath), rules));
+  const read = readCorpus(root, pathsToOpen(files.map(normalisePath), rules));
   if (read.kind === 'unreadable') return read;
-  return { kind: 'checked', result: moduleCheckFor(read.sources, rules) };
+  return { kind: 'checked', result: moduleCheckFor(read.documents, rules) };
 }

@@ -1,4 +1,4 @@
-// Colocated unit test for turning a file into frontmatter data.
+// Colocated unit test for splitting a file into parsed frontmatter and body.
 //
 // The three outcomes are not interchangeable, and the tests below are mostly
 // about keeping them apart. A YAML reader hands back nothing for an empty block
@@ -6,16 +6,16 @@
 // would report nothing at all on a file whose rule requires a field.
 
 import { describe, expect, it } from 'vitest';
-import { frontmatterData } from './frontmatter-data.pure';
+import { parseDocument } from './parse-document.pure';
 
-describe('frontmatter data', () => {
+describe('document parse', () => {
   describe('success cases', () => {
     it('parses a block into a mapping', () => {
       // ARRANGE
       const file = '---\ntype: plain\ntitle: A file\n---\n\n# Body\n';
       const expected = { kind: 'mapping', data: { type: 'plain', title: 'A file' } };
       // ACT
-      const actual = frontmatterData(file);
+      const actual = parseDocument(file).frontmatter;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -25,7 +25,7 @@ describe('frontmatter data', () => {
       const file = '---\ngenerated:\n  by: claude-opus/5\nsources:\n  - id: spec\n---\n';
       const expected = { kind: 'mapping', data: { generated: { by: 'claude-opus/5' }, sources: [{ id: 'spec' }] } };
       // ACT
-      const actual = frontmatterData(file);
+      const actual = parseDocument(file).frontmatter;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -35,7 +35,7 @@ describe('frontmatter data', () => {
       const file = '# Notes\n\nProse only.\n';
       const expected = { kind: 'absent' };
       // ACT
-      const actual = frontmatterData(file);
+      const actual = parseDocument(file).frontmatter;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -48,7 +48,7 @@ describe('frontmatter data', () => {
       const file = '---\ntype: plain\ntags: [okf, provenance\n---\n';
       const expected = { kind: 'unparseable' };
       // ACT
-      const actual = frontmatterData(file);
+      const actual = parseDocument(file).frontmatter;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -60,7 +60,7 @@ describe('frontmatter data', () => {
       const file = '---\n- type: plain\n- title: A block that is a list\n---\n';
       const expected = { kind: 'unparseable' };
       // ACT
-      const actual = frontmatterData(file);
+      const actual = parseDocument(file).frontmatter;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -70,17 +70,18 @@ describe('frontmatter data', () => {
       const file = '---\njust a sentence\n---\n';
       const expected = { kind: 'unparseable' };
       // ACT
-      const actual = frontmatterData(file);
+      const actual = parseDocument(file).frontmatter;
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('reports a fence that never closes as unparseable', () => {
+    it('reports a fence that never closes as unterminated, and leaves no body', () => {
+      // design-ADR 0014: nothing after an unclosed fence is read as Markdown.
       // ARRANGE
-      const file = '---\ntype: plain\ntitle: The fence that never closes\n\nProse\n';
-      const expected = { kind: 'unparseable' };
+      const file = '---\ntype: plain\ntitle: The fence that never closes\n\n# Looks like a title\n';
+      const expected = { frontmatter: { kind: 'unterminated' }, body: '' };
       // ACT
-      const actual = frontmatterData(file);
+      const actual = parseDocument(file);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -95,7 +96,7 @@ describe('frontmatter data', () => {
       const file = '---\n---\n\n# Plain documents\n';
       const expected = { kind: 'mapping', data: {} };
       // ACT
-      const actual = frontmatterData(file);
+      const actual = parseDocument(file).frontmatter;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -107,7 +108,7 @@ describe('frontmatter data', () => {
       const file = '---\n# nothing but a comment\n---\n';
       const expected = { kind: 'mapping', data: {} };
       // ACT
-      const actual = frontmatterData(file);
+      const actual = parseDocument(file).frontmatter;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -119,7 +120,47 @@ describe('frontmatter data', () => {
       const file = '---\ntype:\n---\n';
       const expected = { kind: 'mapping', data: { type: null } };
       // ACT
-      const actual = frontmatterData(file);
+      const actual = parseDocument(file).frontmatter;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('keeps the body after the closing fence, line endings intact', () => {
+      // ARRANGE
+      const file = '---\ntype: research\n---\n# Report\n';
+      const expected = '# Report\n';
+      // ACT
+      const actual = parseDocument(file).body;
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+
+    it('keeps the body of an unparseable block', () => {
+      // ARRANGE
+      const file = '---\ntype: [research\n---\n# Research\n';
+      const expected = { frontmatter: { kind: 'unparseable' }, body: '# Research\n' };
+      // ACT
+      const actual = parseDocument(file);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reads a file with no block as all body, byte order mark dropped', () => {
+      // ARRANGE
+      const file = '\uFEFF# Report\n';
+      const expected = { frontmatter: { kind: 'absent' }, body: '# Report\n' };
+      // ACT
+      const actual = parseDocument(file);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reads a block behind a byte order mark', () => {
+      // ARRANGE
+      const file = '\uFEFF---\ntype: research\n---\n# Report\n';
+      const expected = { frontmatter: { kind: 'mapping', data: { type: 'research' } }, body: '# Report\n' };
+      // ACT
+      const actual = parseDocument(file);
       // ASSERT
       expect(actual).toEqual(expected);
     });

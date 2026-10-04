@@ -5,7 +5,7 @@
 // every governed file is read, then every verdict is computed. Reading inside
 // the judging loop would work identically and would put an effect between two
 // computations that could each sit on one side of it — and it is the batched
-// shape that lets `readGovernedSources` refuse the whole corpus rather than
+// shape that lets `readCorpus` refuse the whole corpus rather than
 // leave one file silently unreported.
 //
 // Enumeration is NOT here. The corpus arrives as a list of paths, because the
@@ -14,32 +14,13 @@
 // failure.
 
 import { normalisePath } from '../foundation/path-shape.ts';
-import { readTextIn } from '../foundation/read-text.ts';
+import { readCorpus } from '../foundation/read-corpus.ts';
 import { moduleCheckFor } from './lib/check/check-result.pure.ts';
-import type { CorpusCheck, GovernedRead, GovernedSource } from './lib/check/check.types.ts';
+import type { CorpusCheck } from './lib/check/check.types.ts';
 import { governedFiles } from './lib/check/corpus-governance.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
 
-export type { CorpusCheck, UnreadableGovernedFile } from './lib/check/check.types.ts';
-
-/**
- * Read each governed file, or preserve the first refusal from the gate.
- *
- * `--assess` reaches the same gate directly at its entry point. Keeping this
- * batch here gives both commands one Module-to-gate hop and leaves the gate as
- * the only code that joins a host path.
- */
-function readGovernedSources(root: string, governed: ReturnType<typeof governedFiles>): GovernedRead {
-  const sources: GovernedSource[] = [];
-
-  for (const file of governed) {
-    const found = readTextIn(root, file.path);
-    if (found.kind !== 'text') return { kind: 'unreadable', path: found.location };
-    sources.push({ path: file.path, rule: file.rule, text: found.text });
-  }
-
-  return { kind: 'read', sources };
-}
+export type { CorpusCheck } from './lib/check/check.types.ts';
 
 /**
  * Check one corpus against this Module's ordered rule list.
@@ -69,8 +50,17 @@ export function checkCorpus(
 ): CorpusCheck {
   const governed = governedFiles(files.map(normalisePath), section?.rules ?? []);
 
-  const read = readGovernedSources(root, governed);
+  const read = readCorpus(
+    root,
+    governed.map((file) => file.path),
+  );
   if (read.kind === 'unreadable') return read;
 
-  return { kind: 'checked', result: moduleCheckFor(read.sources) };
+  // `readCorpus` answers in the order asked, one document per governed file.
+  const sources = read.documents.map((document, index) => ({
+    path: document.path,
+    rule: governed[index].rule,
+    frontmatter: document.frontmatter,
+  }));
+  return { kind: 'checked', result: moduleCheckFor(sources) };
 }

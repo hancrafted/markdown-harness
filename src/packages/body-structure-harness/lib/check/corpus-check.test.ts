@@ -3,6 +3,7 @@
 // spine violations (design-ADRs 0012, 0017 and 0019).
 
 import { describe, expect, it } from 'vitest';
+import { parseDocument } from '../../../foundation/read-corpus.ts';
 import type { BodyStructureRule } from '../../section.ts';
 import { moduleCheckFor } from './corpus-check.pure.ts';
 
@@ -28,13 +29,16 @@ const UNTYPED: BodyStructureRule = {
 
 const RULES = [REPORTS, UNTYPED];
 
+/** One corpus file, parsed the way the Core parses it. */
+const documentAt = (path: string, text: string) => ({ path, ...parseDocument(text) });
+
 describe('corpus check', () => {
   describe('success cases', () => {
     it('governs each file by the Rule its type selects and reports only the failing ones', () => {
       // ARRANGE
       const sources = [
-        { path: 'docs/a.md', text: '---\ntype: report\n---\n# A\n\n## Findings\n' },
-        { path: 'docs/b.md', text: '# B\n\n# Again\n' },
+        documentAt('docs/a.md', '---\ntype: report\n---\n# A\n\n## Findings\n'),
+        documentAt('docs/b.md', '# B\n\n# Again\n'),
       ];
       const expected = {
         governed: ['docs/a.md', 'docs/b.md'],
@@ -64,7 +68,7 @@ describe('corpus check', () => {
   describe('failure cases', () => {
     it('reports depth violations before spine violations', () => {
       // ARRANGE
-      const sources = [{ path: 'docs/a.md', text: '---\ntype: report\n---\n### Deep\n' }];
+      const sources = [documentAt('docs/a.md', '---\ntype: report\n---\n### Deep\n')];
       const expected = [
         'BODY_STRUCTURE__LEVEL_TOO_DEEP',
         'BODY_STRUCTURE__HEADING_MISSING',
@@ -81,7 +85,7 @@ describe('corpus check', () => {
     it('leaves a file whose type selects no Rule ungoverned', () => {
       // ARRANGE
       const typedOnly = [REPORTS];
-      const sources = [{ path: 'docs/a.md', text: '---\ntype: memo\n---\n# A\n# B\n' }];
+      const sources = [documentAt('docs/a.md', '---\ntype: memo\n---\n# A\n# B\n')];
       const expected = { governed: [], files: [] };
       // ACT
       const actual = moduleCheckFor(sources, typedOnly);
