@@ -19,7 +19,7 @@ const missing = (location: string) => ({ code: 'CONFIG_SELECTOR_MISSING', locati
 const unrecognised = (location: string) => ({ code: 'CONFIG_UNRECOGNISED_KEY', location });
 
 /** A stand-in Module axis: a non-empty list of non-empty strings. */
-const EXTRA = { types: (tokens: readonly string[]) => tokens.length > 0 && tokens.every((token) => token !== '') };
+const EXTRA = { tags: (tokens: readonly string[]) => tokens.length > 0 && tokens.every((token) => token !== '') };
 
 describe('selector faults', () => {
   describe('success cases', () => {
@@ -28,7 +28,7 @@ describe('selector faults', () => {
       const rule = {
         folders: ['docs/', './'],
         fileNames: ['index.md'],
-        types: ['note'],
+        tags: ['note'],
         excludeFiles: [{ folders: ['docs/v/'] }],
       };
       const expected = [[], [], [], []];
@@ -48,7 +48,7 @@ describe('selector faults', () => {
       const expected: readonly unknown[] = [];
       // ACT
       const actual = [
-        ...selectorMissingFaults({ types: ['a'] }, AT, EXTRA),
+        ...selectorMissingFaults({ tags: ['a'] }, AT, EXTRA),
         ...selectorMissingFaults({ folders: [] }, AT),
       ];
       // ASSERT
@@ -100,8 +100,8 @@ describe('selector faults', () => {
 
     it('refuses a Module axis its own judge rejects, after Core axes', () => {
       // ARRANGE
-      const rule = { folders: ['docs'], types: ['ok', ''] };
-      const expected = [invalid(`${AT}.folders`), invalid(`${AT}.types`)];
+      const rule = { folders: ['docs'], tags: ['ok', ''] };
+      const expected = [invalid(`${AT}.folders`), invalid(`${AT}.tags`)];
       // ACT
       const actual = axisFaults(rule, AT, EXTRA);
       // ASSERT
@@ -148,8 +148,8 @@ describe('selector faults', () => {
 
     it('refuses a Module axis inside an exclusion as an unrecognised key, since exclusions are Core selectors', () => {
       // ARRANGE
-      const rule = { excludeFiles: [{ types: ['draft'] }] };
-      const expected = [unrecognised(`${EXCLUDE_AT}.types`)];
+      const rule = { excludeFiles: [{ tags: ['draft'] }] };
+      const expected = [unrecognised(`${EXCLUDE_AT}.tags`)];
       // ACT
       const actual = exclusionFaults(rule, AT);
       // ASSERT
@@ -199,8 +199,8 @@ describe('selector faults', () => {
 
     it('reports a non-list axis once at the axis from axisFaults and not at all from tokenFaults', () => {
       // ARRANGE
-      const rule = { folders: 'docs/', types: [7] };
-      const expected = [[invalid(`${AT}.folders`), invalid(`${AT}.types`)], []];
+      const rule = { folders: 'docs/', tags: [7] };
+      const expected = [[invalid(`${AT}.folders`), invalid(`${AT}.tags`)], []];
       // ACT
       const actual = [axisFaults(rule, AT, EXTRA), tokenFaults(rule, AT, EXTRA)];
       // ASSERT
