@@ -1,0 +1,245 @@
+# The `body-structure` Module's own Conformance tier: one config, written relative to this directory.
+#
+# The rule list is ORDERED and the first match wins outright, so the order below is part of what the
+# cases specify. A Rule's template is a spine: an ordered `headings:` list of `heading` entries (one
+# heading each) and `enumeration` entries (a counted run of repeats), plus an optional `maxLevel:`.
+# Rules above `plural-names` select by path, by type or by both; the groups after `open-template` each
+# own one folder under `docs/` and exist to isolate one behaviour. Which Rule wins a given file is
+# stated in every case's argument.
+body-structure:
+  rules:
+    - ruleId: index-pages
+      fileNames: [index.md]
+      intent: 'An index page names its folder and lists what is in it, so it has one title and nothing deeper than the second level.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+
+    - ruleId: decision-records
+      folders: [docs/decisions/]
+      types: [decision]
+      intent: 'A decision record reads the same way every time, so a reviewer finds the status and the reasoning without hunting.'
+      maxLevel: 3
+      headings:
+        - { purpose: heading, level: 1, intent: 'The decision, stated as a short noun phrase.' }
+        - { purpose: heading, level: 2, pattern: '^Status$', intent: 'Proposed, accepted or superseded, with the date.' }
+        - { purpose: heading, level: 2, pattern: '^Context$', intent: 'The forces that made a decision necessary.' }
+        - { purpose: heading, level: 2, pattern: '^Decision$', intent: 'What was decided and why.' }
+        - { purpose: heading, level: 2, pattern: '^Consequences$', presence: optional, intent: 'What gets easier and what gets harder.' }
+
+    - ruleId: research-reports
+      folders: [docs/research/]
+      types: [research]
+      excludeFiles:
+        - { fileNames: [scratch.md] }
+      intent: 'Research reads the same way every time, so a reviewer can skim it for findings and sources.'
+      maxLevel: 3
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Findings$', intent: 'What was measured, with numbers.' }
+        - { purpose: enumeration, level: 3, pattern: '^Detail', maxCount: 2, intent: 'Supporting detail under Findings, two at most.' }
+        - { purpose: enumeration, level: 2, pattern: '^Source: ', minCount: 1, intent: 'One section per source consulted.' }
+
+    - ruleId: research-notes
+      folders: [docs/research/]
+      types: [note, memo, brief]
+      intent: 'A research note is short, so it has one title and at most three sections.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, maxCount: 3 }
+
+    - ruleId: research-untyped
+      folders: [docs/research/]
+      intent: 'A research file whose type names no template here still has exactly one title and nothing beneath it.'
+      maxLevel: 1
+      headings:
+        - { purpose: heading, level: 1 }
+
+    - ruleId: guides
+      types: [guide]
+      intent: 'A guide is a title and at least two sections, wherever it lives.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 2 }
+
+    - ruleId: changelogs
+      folders: [docs/releases/]
+      fileNames: [CHANGELOG.md, HISTORY.md, RELEASES.md]
+      types: [changelog]
+      intent: 'A changelog is titled as one and carries one section per release.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1, pattern: '^Changelog$' }
+        - { purpose: enumeration, level: 2, pattern: '^Release ', minCount: 1 }
+
+    - ruleId: recognition
+      folders: [docs/recognition/]
+      intent: 'A recognition case has one title and at most one second-level heading, so a heading read wrongly flips its verdict.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, maxCount: 1 }
+
+    - ruleId: open-template
+      folders: [docs/handbook/, docs/manual/]
+      intent: 'A handbook or manual page opens with a title and an Overview, and may nest as deep as it needs.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Overview$', intent: 'What the page covers, in a paragraph.' }
+
+    - ruleId: plural-names
+      fileNames: [README.md, GUIDE.md, NOTES.md]
+      intent: 'Three named files share one shape, so the second and the third name must select as surely as the first.'
+      headings:
+        - { purpose: heading, level: 1 }
+
+    - ruleId: triple-plural
+      folders: [docs/tp/one/, docs/tp/two/, docs/tp/three/]
+      fileNames: [a.md, b.md, c.md]
+      types: [t1, t2, t3]
+      intent: 'Every axis lists three values, so a file is governed only when each axis matches and the match need not be the first listed.'
+      headings:
+        - { purpose: heading, level: 1 }
+
+    - ruleId: depth-only
+      folders: [docs/depth/]
+      intent: 'A depth-only Rule forbids nesting past the second level and asks nothing else of the outline.'
+      maxLevel: 2
+
+    - ruleId: steps
+      folders: [docs/steps/]
+      intent: 'A procedure has a title and between two and four steps.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, pattern: '^Step [0-9]+$', minCount: 2, maxCount: 4, intent: 'One action, written as an instruction.' }
+
+    - ruleId: pairs
+      folders: [docs/pairs/]
+      intent: 'A comparison has a title and exactly two sections, whatever they are called.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 2, maxCount: 2 }
+
+    - ruleId: free-sections
+      folders: [docs/free/]
+      intent: 'A free page has a title and any number of second-level sections, none included.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 0 }
+
+    - ruleId: kinds
+      folders: [docs/kinds/]
+      intent: 'A trade-off page lists at most one pro and at most one con, counted apart.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, pattern: '^Pro: ', maxCount: 1 }
+        - { purpose: enumeration, level: 2, pattern: '^Con: ', maxCount: 1 }
+
+    - ruleId: windowed
+      folders: [docs/windowed/]
+      intent: 'A chaptered page has an Intro, any number of Parts and a Conclusion, in that order.'
+      maxLevel: 3
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Intro$' }
+        - { purpose: enumeration, level: 2, pattern: '^Part: ', minCount: 1 }
+        - { purpose: heading, level: 2, pattern: '^Conclusion$' }
+
+    - ruleId: swallow
+      folders: [docs/swallow/]
+      intent: 'A page of free second-level sections that ends in a Conclusion.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 1 }
+        - { purpose: heading, level: 2, pattern: '^Conclusion$' }
+
+    - ruleId: anonymous-pair
+      folders: [docs/anon/]
+      intent: 'A page with a title and exactly two second-level headings, whatever they say.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2 }
+        - { purpose: heading, level: 2 }
+
+    - ruleId: suffix-titles
+      folders: [docs/suffix/]
+      intent: 'A report is titled as one.'
+      headings:
+        - { purpose: heading, level: 1, pattern: ' Report$' }
+
+    - ruleId: sentence-titles
+      folders: [docs/sentence/]
+      intent: 'A how-to is titled in the shape of an instruction.'
+      headings:
+        - { purpose: heading, level: 1, pattern: '^How to [a-z]+( [a-z]+)*$' }
+
+    - ruleId: short-titles
+      folders: [docs/length/]
+      intent: 'A code page has a title of two or three characters.'
+      headings:
+        - { purpose: heading, level: 1, pattern: '^.{2,3}$' }
+
+    - ruleId: substring-titles
+      folders: [docs/substring/]
+      intent: 'A log names a decision somewhere in its second-level heading.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: 'Decision' }
+
+    - ruleId: closed-set
+      folders: [docs/alternation/]
+      intent: 'An evaluation has a title and one or two sections, each a Pros or a Cons.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, pattern: '^(Pros|Cons)$', minCount: 1, maxCount: 2 }
+
+    - ruleId: loose-alternation
+      folders: [docs/loose-alternation/]
+      intent: 'An unparenthesised alternation, written as the Operator wrote it.'
+      headings:
+        - { purpose: heading, level: 1, pattern: '^Pros|Cons$' }
+
+    - ruleId: escaped-literals
+      folders: [docs/escaped/]
+      intent: 'A title with characters a regular expression gives meaning to.'
+      headings:
+        - { purpose: heading, level: 1, pattern: '^C\+\+ \(draft\)$' }
+
+    - ruleId: raw-markup
+      folders: [docs/raw/]
+      intent: 'A pattern is compared with a heading as written, inline markup included.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^\*\*Findings\*\*$' }
+
+    - ruleId: setext-lines
+      folders: [docs/setext/]
+      intent: 'A two-line setext heading keeps its line break, so a pattern can name it.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Source:\nOne$' }
+
+    - ruleId: no-dotall
+      folders: [docs/dotall/]
+      intent: 'A dot is not a line break.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Source:.One$' }
+
+    - ruleId: no-multiline
+      folders: [docs/multiline/]
+      intent: 'A caret anchors the whole heading, not each of its lines.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^One$' }
+
+    - ruleId: empty-heading
+      folders: [docs/empty/]
+      intent: 'An empty second-level heading is a heading whose content is the empty string.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^$' }

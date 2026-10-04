@@ -1,0 +1,1774 @@
+{
+  "docs/alternation/both.md": {
+    "ruleId": "closed-set",
+    "violations": []
+  },
+  "docs/alternation/only-pros.md": {
+    "ruleId": "closed-set",
+    "violations": []
+  },
+  "docs/alternation/prefix-of.md": {
+    "ruleId": "closed-set",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 1,
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^(Pros|Cons)$",
+          "minCount": 1,
+          "maxCount": 2
+        }
+      }
+    ]
+  },
+  "docs/alternation/three.md": {
+    "ruleId": "closed-set",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 1,
+        "found": 3,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^(Pros|Cons)$",
+          "minCount": 1,
+          "maxCount": 2
+        }
+      }
+    ]
+  },
+  "docs/anon/one.md": {
+    "ruleId": "anonymous-pair",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2
+        }
+      }
+    ]
+  },
+  "docs/anon/three.md": {
+    "ruleId": "anonymous-pair",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 1,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2
+        }
+      }
+    ]
+  },
+  "docs/anon/two.md": {
+    "ruleId": "anonymous-pair",
+    "violations": []
+  },
+  "docs/decisions/adr-h4.md": {
+    "ruleId": "decision-records",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 4,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 3
+        }
+      }
+    ]
+  },
+  "docs/decisions/adr-missing-context.md": {
+    "ruleId": "decision-records",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Context$",
+          "intent": "The forces that made a decision necessary."
+        }
+      }
+    ]
+  },
+  "docs/decisions/adr-no-optional.md": {
+    "ruleId": "decision-records",
+    "violations": []
+  },
+  "docs/decisions/adr-optional-misplaced.md": {
+    "ruleId": "decision-records",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 4,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Consequences$",
+          "presence": "optional",
+          "intent": "What gets easier and what gets harder."
+        }
+      }
+    ]
+  },
+  "docs/decisions/adr-optional-twice.md": {
+    "ruleId": "decision-records",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 4,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Consequences$",
+          "presence": "optional",
+          "intent": "What gets easier and what gets harder."
+        }
+      }
+    ]
+  },
+  "docs/decisions/adr-pass.md": {
+    "ruleId": "decision-records",
+    "violations": []
+  },
+  "docs/decisions/adr-status-twice.md": {
+    "ruleId": "decision-records",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 1,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Status$",
+          "intent": "Proposed, accepted or superseded, with the date."
+        }
+      }
+    ]
+  },
+  "docs/decisions/adr-swapped.md": {
+    "ruleId": "decision-records",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 3,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Decision$",
+          "intent": "What was decided and why."
+        }
+      }
+    ]
+  },
+  "docs/decisions/adr-with-h3.md": {
+    "ruleId": "decision-records",
+    "violations": []
+  },
+  "docs/depth/h3-h4-h6.md": {
+    "ruleId": "depth-only",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 3,
+        "found": 2,
+        "requirement": {
+          "maxLevel": 2
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 4,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 2
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 6,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 2
+        }
+      }
+    ]
+  },
+  "docs/depth/h3.md": {
+    "ruleId": "depth-only",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 3,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 2
+        }
+      }
+    ]
+  },
+  "docs/depth/loose-titles.md": {
+    "ruleId": "depth-only",
+    "violations": []
+  },
+  "docs/depth/no-headings.md": {
+    "ruleId": "depth-only",
+    "violations": []
+  },
+  "docs/depth/shallow.md": {
+    "ruleId": "depth-only",
+    "violations": []
+  },
+  "docs/dotall/atx.md": {
+    "ruleId": "no-dotall",
+    "violations": []
+  },
+  "docs/dotall/setext.md": {
+    "ruleId": "no-dotall",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Source:.One$"
+        }
+      }
+    ]
+  },
+  "docs/empty/empty-h2.md": {
+    "ruleId": "empty-heading",
+    "violations": []
+  },
+  "docs/empty/filled-h2.md": {
+    "ruleId": "empty-heading",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^$"
+        }
+      }
+    ]
+  },
+  "docs/escaped/draft.md": {
+    "ruleId": "escaped-literals",
+    "violations": []
+  },
+  "docs/escaped/no-parens.md": {
+    "ruleId": "escaped-literals",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^C\\+\\+ \\(draft\\)$"
+        }
+      }
+    ]
+  },
+  "docs/escaped/one-plus.md": {
+    "ruleId": "escaped-literals",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^C\\+\\+ \\(draft\\)$"
+        }
+      }
+    ]
+  },
+  "docs/free/deep.md": {
+    "ruleId": "free-sections",
+    "violations": []
+  },
+  "docs/free/many.md": {
+    "ruleId": "free-sections",
+    "violations": []
+  },
+  "docs/free/none.md": {
+    "ruleId": "free-sections",
+    "violations": []
+  },
+  "docs/free/second-title.md": {
+    "ruleId": "free-sections",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/handbook/deep.md": {
+    "ruleId": "open-template",
+    "violations": []
+  },
+  "docs/handbook/overview-only.md": {
+    "ruleId": "open-template",
+    "violations": []
+  },
+  "docs/handbook/second-title.md": {
+    "ruleId": "open-template",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/kinds/balanced.md": {
+    "ruleId": "kinds",
+    "violations": []
+  },
+  "docs/kinds/swapped.md": {
+    "ruleId": "kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Pro: ",
+          "maxCount": 1
+        }
+      }
+    ]
+  },
+  "docs/kinds/three-h2.md": {
+    "ruleId": "kinds",
+    "violations": []
+  },
+  "docs/kinds/two-cons.md": {
+    "ruleId": "kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 2,
+        "found": 2,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Con: ",
+          "maxCount": 1
+        }
+      }
+    ]
+  },
+  "docs/kinds/two-pros.md": {
+    "ruleId": "kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 1,
+        "found": 2,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Pro: ",
+          "maxCount": 1
+        }
+      }
+    ]
+  },
+  "docs/length/emoji.md": {
+    "ruleId": "short-titles",
+    "violations": []
+  },
+  "docs/length/empty.md": {
+    "ruleId": "short-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^.{2,3}$"
+        }
+      }
+    ]
+  },
+  "docs/length/four.md": {
+    "ruleId": "short-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^.{2,3}$"
+        }
+      }
+    ]
+  },
+  "docs/length/one.md": {
+    "ruleId": "short-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^.{2,3}$"
+        }
+      }
+    ]
+  },
+  "docs/length/three.md": {
+    "ruleId": "short-titles",
+    "violations": []
+  },
+  "docs/length/two.md": {
+    "ruleId": "short-titles",
+    "violations": []
+  },
+  "docs/loose-alternation/middle.md": {
+    "ruleId": "loose-alternation",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^Pros|Cons$"
+        }
+      }
+    ]
+  },
+  "docs/loose-alternation/pro-and-cons.md": {
+    "ruleId": "loose-alternation",
+    "violations": []
+  },
+  "docs/loose-alternation/prospects.md": {
+    "ruleId": "loose-alternation",
+    "violations": []
+  },
+  "docs/manual/page.md": {
+    "ruleId": "open-template",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Overview$",
+          "intent": "What the page covers, in a paragraph."
+        }
+      }
+    ]
+  },
+  "docs/multiline/atx.md": {
+    "ruleId": "no-multiline",
+    "violations": []
+  },
+  "docs/multiline/setext.md": {
+    "ruleId": "no-multiline",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^One$"
+        }
+      }
+    ]
+  },
+  "docs/names/GUIDE.md": {
+    "ruleId": "plural-names",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/names/README.md": {
+    "ruleId": "plural-names",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/notes/setup-short.md": {
+    "ruleId": "guides",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 1,
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "minCount": 2
+        }
+      }
+    ]
+  },
+  "docs/notes/setup.md": {
+    "ruleId": "guides",
+    "violations": []
+  },
+  "docs/other/NOTES.md": {
+    "ruleId": "plural-names",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/pairs/one.md": {
+    "ruleId": "pairs",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 1,
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "minCount": 2,
+          "maxCount": 2
+        }
+      }
+    ]
+  },
+  "docs/pairs/three.md": {
+    "ruleId": "pairs",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 1,
+        "found": 3,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "minCount": 2,
+          "maxCount": 2
+        }
+      }
+    ]
+  },
+  "docs/pairs/two.md": {
+    "ruleId": "pairs",
+    "violations": []
+  },
+  "docs/plain/index.md": {
+    "ruleId": "index-pages",
+    "violations": []
+  },
+  "docs/plain/nested/index.md": {
+    "ruleId": "index-pages",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 3,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 2
+        }
+      }
+    ]
+  },
+  "docs/raw/bold.md": {
+    "ruleId": "raw-markup",
+    "violations": []
+  },
+  "docs/raw/plain.md": {
+    "ruleId": "raw-markup",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^\\*\\*Findings\\*\\*$"
+        }
+      }
+    ]
+  },
+  "docs/recognition/blockquote.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/closing-hashes.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/crlf.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/empty-h2-once.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/empty-h2-twice.md": {
+    "ruleId": "recognition",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 1,
+        "found": 2,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "maxCount": 1
+        }
+      }
+    ]
+  },
+  "docs/recognition/escaped-hash.md": {
+    "ruleId": "recognition",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/recognition/fence-backtick.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/fence-nested-ticks.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/fence-tilde.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/fence-unclosed.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/frontmatter-comments.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/html-block.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/html-heading-element.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/indent-four-after-text.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/indent-three.md": {
+    "ruleId": "recognition",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 1,
+        "found": 2,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "maxCount": 1
+        }
+      }
+    ]
+  },
+  "docs/recognition/indented-code.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/list-item.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/no-space.md": {
+    "ruleId": "recognition",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/recognition/setext-h1-twice.md": {
+    "ruleId": "recognition",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/recognition/setext-h1.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/setext-h2-twice.md": {
+    "ruleId": "recognition",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 1,
+        "found": 2,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "maxCount": 1
+        }
+      }
+    ]
+  },
+  "docs/recognition/seven-hashes.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/tab-after-hash.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/recognition/thematic-break.md": {
+    "ruleId": "recognition",
+    "violations": []
+  },
+  "docs/releases/CHANGELOG.md": {
+    "ruleId": "changelogs",
+    "violations": []
+  },
+  "docs/releases/HISTORY.md": {
+    "ruleId": "changelogs",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^Changelog$"
+        }
+      }
+    ]
+  },
+  "docs/releases/RELEASES.md": {
+    "ruleId": "changelogs",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^Changelog$"
+        }
+      }
+    ]
+  },
+  "docs/releases/archive-guide.md": {
+    "ruleId": "guides",
+    "violations": []
+  },
+  "docs/research/bom-frontmatter.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/brief-short.md": {
+    "ruleId": "research-notes",
+    "violations": []
+  },
+  "docs/research/capitalised-type.md": {
+    "ruleId": "research-untyped",
+    "violations": []
+  },
+  "docs/research/guide-in-research.md": {
+    "ruleId": "research-untyped",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 2,
+        "found": 2,
+        "requirement": {
+          "maxLevel": 1
+        }
+      }
+    ]
+  },
+  "docs/research/index.md": {
+    "ruleId": "index-pages",
+    "violations": []
+  },
+  "docs/research/list-type.md": {
+    "ruleId": "research-untyped",
+    "violations": []
+  },
+  "docs/research/memo-long.md": {
+    "ruleId": "research-notes",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 1,
+        "found": 4,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "maxCount": 3
+        }
+      }
+    ]
+  },
+  "docs/research/no-type.md": {
+    "ruleId": "research-untyped",
+    "violations": []
+  },
+  "docs/research/note-memo-joined.md": {
+    "ruleId": "research-untyped",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 2,
+        "found": 4,
+        "requirement": {
+          "maxLevel": 1
+        }
+      }
+    ]
+  },
+  "docs/research/note-short.md": {
+    "ruleId": "research-notes",
+    "violations": []
+  },
+  "docs/research/null-type.md": {
+    "ruleId": "research-untyped",
+    "violations": []
+  },
+  "docs/research/number-type.md": {
+    "ruleId": "research-untyped",
+    "violations": []
+  },
+  "docs/research/order-before-title.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Findings$",
+          "intent": "What was measured, with numbers."
+        }
+      }
+    ]
+  },
+  "docs/research/order-source-first.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 3,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Source: ",
+          "minCount": 1,
+          "intent": "One section per source consulted."
+        }
+      }
+    ]
+  },
+  "docs/research/padded-type.md": {
+    "ruleId": "research-untyped",
+    "violations": []
+  },
+  "docs/research/prefix-bare.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 3,
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Source: ",
+          "minCount": 1,
+          "intent": "One section per source consulted."
+        }
+      }
+    ]
+  },
+  "docs/research/prefix-double-space.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/prefix-lowercase.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 3,
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Source: ",
+          "minCount": 1,
+          "intent": "One section per source consulted."
+        }
+      }
+    ]
+  },
+  "docs/research/prefix-many.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/prefix-markup-after.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/prefix-no-space.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 3,
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Source: ",
+          "minCount": 1,
+          "intent": "One section per source consulted."
+        }
+      }
+    ]
+  },
+  "docs/research/prefix-plural.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 3,
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Source: ",
+          "minCount": 1,
+          "intent": "One section per source consulted."
+        }
+      }
+    ]
+  },
+  "docs/research/prefix-setext-two-lines.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 3,
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Source: ",
+          "minCount": 1,
+          "intent": "One section per source consulted."
+        }
+      }
+    ]
+  },
+  "docs/research/report-detail-after-source.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 2,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 3,
+          "pattern": "^Detail",
+          "maxCount": 2,
+          "intent": "Supporting detail under Findings, two at most."
+        }
+      }
+    ]
+  },
+  "docs/research/report-h4-no-h1.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 4,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 3
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/research/report-h4.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 4,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 3
+        }
+      }
+    ]
+  },
+  "docs/research/report-h5-h6.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 5,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 3
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 6,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 3
+        }
+      }
+    ]
+  },
+  "docs/research/report-no-h1.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/research/report-pass.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/report-three-h3.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 2,
+        "found": 3,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 3,
+          "pattern": "^Detail",
+          "maxCount": 2,
+          "intent": "Supporting detail under Findings, two at most."
+        }
+      }
+    ]
+  },
+  "docs/research/report-title-only.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Findings$",
+          "intent": "What was measured, with numbers."
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 3,
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Source: ",
+          "minCount": 1,
+          "intent": "One section per source consulted."
+        }
+      }
+    ]
+  },
+  "docs/research/report-two-h1.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/research/report-unclaimed-h3.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/report-with-h3.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/scratch.md": {
+    "ruleId": "research-untyped",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 2,
+        "found": 2,
+        "requirement": {
+          "maxLevel": 1
+        }
+      }
+    ]
+  },
+  "docs/research/title-any-level-one.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/title-bold.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Findings$",
+          "intent": "What was measured, with numbers."
+        }
+      }
+    ]
+  },
+  "docs/research/title-closing-hashes.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/title-extra-leading-space.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/title-longer.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Findings$",
+          "intent": "What was measured, with numbers."
+        }
+      }
+    ]
+  },
+  "docs/research/title-lowercase.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Findings$",
+          "intent": "What was measured, with numbers."
+        }
+      }
+    ]
+  },
+  "docs/research/title-setext.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/title-shorter.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Findings$",
+          "intent": "What was measured, with numbers."
+        }
+      }
+    ]
+  },
+  "docs/research/title-trailing-spaces.md": {
+    "ruleId": "research-reports",
+    "violations": []
+  },
+  "docs/research/title-wrong-level.md": {
+    "ruleId": "research-reports",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Findings$",
+          "intent": "What was measured, with numbers."
+        }
+      }
+    ]
+  },
+  "docs/research/unparseable-frontmatter.md": {
+    "ruleId": "research-untyped",
+    "violations": []
+  },
+  "docs/research/unterminated-frontmatter.md": {
+    "ruleId": "research-untyped",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/research/untyped-h1-twice.md": {
+    "ruleId": "research-untyped",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/sentence/bare.md": {
+    "ruleId": "sentence-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^How to [a-z]+( [a-z]+)*$"
+        }
+      }
+    ]
+  },
+  "docs/sentence/capital.md": {
+    "ruleId": "sentence-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^How to [a-z]+( [a-z]+)*$"
+        }
+      }
+    ]
+  },
+  "docs/sentence/how-to.md": {
+    "ruleId": "sentence-titles",
+    "violations": []
+  },
+  "docs/setext/one-line.md": {
+    "ruleId": "setext-lines",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Source:\\nOne$"
+        }
+      }
+    ]
+  },
+  "docs/setext/two-lines.md": {
+    "ruleId": "setext-lines",
+    "violations": []
+  },
+  "docs/steps/five.md": {
+    "ruleId": "steps",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 1,
+        "found": 5,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Step [0-9]+$",
+          "minCount": 2,
+          "maxCount": 4,
+          "intent": "One action, written as an instruction."
+        }
+      }
+    ]
+  },
+  "docs/steps/four.md": {
+    "ruleId": "steps",
+    "violations": []
+  },
+  "docs/steps/h3-under-step.md": {
+    "ruleId": "steps",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 3,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 2
+        }
+      }
+    ]
+  },
+  "docs/steps/misnamed.md": {
+    "ruleId": "steps",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 1,
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Step [0-9]+$",
+          "minCount": 2,
+          "maxCount": 4,
+          "intent": "One action, written as an instruction."
+        }
+      }
+    ]
+  },
+  "docs/steps/one.md": {
+    "ruleId": "steps",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 1,
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Step [0-9]+$",
+          "minCount": 2,
+          "maxCount": 4,
+          "intent": "One action, written as an instruction."
+        }
+      }
+    ]
+  },
+  "docs/steps/other-h2.md": {
+    "ruleId": "steps",
+    "violations": []
+  },
+  "docs/steps/two.md": {
+    "ruleId": "steps",
+    "violations": []
+  },
+  "docs/steps/zero.md": {
+    "ruleId": "steps",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 1,
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Step [0-9]+$",
+          "minCount": 2,
+          "maxCount": 4,
+          "intent": "One action, written as an instruction."
+        }
+      }
+    ]
+  },
+  "docs/substring/contains.md": {
+    "ruleId": "substring-titles",
+    "violations": []
+  },
+  "docs/substring/lower.md": {
+    "ruleId": "substring-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "Decision"
+        }
+      }
+    ]
+  },
+  "docs/substring/near.md": {
+    "ruleId": "substring-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "Decision"
+        }
+      }
+    ]
+  },
+  "docs/suffix/bare.md": {
+    "ruleId": "suffix-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": " Report$"
+        }
+      }
+    ]
+  },
+  "docs/suffix/plural.md": {
+    "ruleId": "suffix-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": " Report$"
+        }
+      }
+    ]
+  },
+  "docs/suffix/q3.md": {
+    "ruleId": "suffix-titles",
+    "violations": []
+  },
+  "docs/suffix/trailing-space.md": {
+    "ruleId": "suffix-titles",
+    "violations": []
+  },
+  "docs/swallow/conclusion-first.md": {
+    "ruleId": "swallow",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "minCount": 1
+        }
+      }
+    ]
+  },
+  "docs/swallow/conclusion-middle.md": {
+    "ruleId": "swallow",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "minCount": 1
+        }
+      }
+    ]
+  },
+  "docs/swallow/no-conclusion.md": {
+    "ruleId": "swallow",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Conclusion$"
+        }
+      }
+    ]
+  },
+  "docs/swallow/no-sections.md": {
+    "ruleId": "swallow",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 1,
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "minCount": 1
+        }
+      }
+    ]
+  },
+  "docs/swallow/ok.md": {
+    "ruleId": "swallow",
+    "violations": []
+  },
+  "docs/tp/one/a.md": {
+    "ruleId": "triple-plural",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/tp/three/a.md": {
+    "ruleId": "triple-plural",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/tp/three/c.md": {
+    "ruleId": "triple-plural",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/tp/two/b.md": {
+    "ruleId": "triple-plural",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 0,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1
+        }
+      }
+    ]
+  },
+  "docs/windowed/conclusion-twice.md": {
+    "ruleId": "windowed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 3,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Conclusion$"
+        }
+      }
+    ]
+  },
+  "docs/windowed/interleaved-h2.md": {
+    "ruleId": "windowed",
+    "violations": []
+  },
+  "docs/windowed/interleaved-h3.md": {
+    "ruleId": "windowed",
+    "violations": []
+  },
+  "docs/windowed/intro-twice.md": {
+    "ruleId": "windowed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 1,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Intro$"
+        }
+      }
+    ]
+  },
+  "docs/windowed/no-conclusion.md": {
+    "ruleId": "windowed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 3,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Conclusion$"
+        }
+      }
+    ]
+  },
+  "docs/windowed/no-parts.md": {
+    "ruleId": "windowed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": 2,
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Part: ",
+          "minCount": 1
+        }
+      }
+    ]
+  },
+  "docs/windowed/ok.md": {
+    "ruleId": "windowed",
+    "violations": []
+  },
+  "docs/windowed/part-after-conclusion.md": {
+    "ruleId": "windowed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 2,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Part: ",
+          "minCount": 1
+        }
+      }
+    ]
+  },
+  "docs/windowed/part-before-intro.md": {
+    "ruleId": "windowed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 2,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Part: ",
+          "minCount": 1
+        }
+      }
+    ]
+  }
+}

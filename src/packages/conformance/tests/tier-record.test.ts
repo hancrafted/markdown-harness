@@ -7,6 +7,12 @@ describe('Conformance tier records', () => {
       // ARRANGE
       const declared = [
         {
+          name: 'body-structure',
+          caseKind: 'markdown',
+          configFile: 'valid-test-config.yaml',
+          caseCount: 195,
+        },
+        {
           name: 'frontmatter',
           caseKind: 'markdown',
           configFile: 'valid-test-config.yaml',
@@ -40,8 +46,8 @@ describe('Conformance tier records', () => {
   describe('failure cases', () => {
     it('refuses a name outside the declared tier set', () => {
       // ARRANGE
-      const unknownTier = 'integrated';
-      const refusal = 'no Conformance tier named integrated';
+      const unknownTier = 'not-a-tier';
+      const refusal = 'no Conformance tier named not-a-tier';
       // ACT
       const read = () => tierNamed(unknownTier);
       // ASSERT
