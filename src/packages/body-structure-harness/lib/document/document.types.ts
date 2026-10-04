@@ -1,0 +1,30 @@
+/**
+ * What this Module reads out of one file: its `type`, its body, and the body's
+ * outline — its top-level headings in document order (design-ADR 0014).
+ *
+ * Only a heading that is a DIRECT child of the document counts; one nested in
+ * a blockquote or a list item belongs to the container.
+ */
+
+/** One heading of the outline. */
+export interface OutlineHeading {
+  /** 1 to 6: the count of `#`, or 1 for a `===` and 2 for a `---` underline. */
+  level: number;
+  /**
+   * The heading's RAW inline source: ATX markers, the closing sequence and the
+   * surrounding whitespace removed, never rendered. A multi-line setext
+   * heading keeps its line breaks as `\n`.
+   */
+  content: string;
+}
+
+/** The two things this Module reads out of one file. */
+export interface DocumentParts {
+  /**
+   * The frontmatter `type`, when the block parses and holds a string there;
+   * otherwise absent, and the file selects no Rule that writes `types`.
+   */
+  type: string | undefined;
+  /** The Markdown after the block — the whole file when there is none, empty when the block never closes. */
+  body: string;
+}

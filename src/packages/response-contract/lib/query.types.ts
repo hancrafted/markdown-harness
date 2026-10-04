@@ -16,6 +16,7 @@
  */
 
 import type { FieldConstraints } from '../../config-contract/index.ts';
+import type { HeadingRequirement } from './violation.types.ts';
 
 /** Either some Module claimed the path, or the whole config passed it by. */
 export type QueryResult = GovernedPath | InvisiblePath;
@@ -26,16 +27,28 @@ export interface GovernedPath {
   governance: 'governed';
   /** Normalised: `/`-separated, no leading `./` or `/`. */
   path: string;
-  /** One block per governing Module, in declared Module order. Never empty. */
+  /**
+   * One block per claim, in declared Module order. Never empty.
+   *
+   * A Module whose winning Rule depends on file content contributes one block
+   * per candidate Rule, in config order (design-ADR 0019 amending 0011), so one
+   * Module may name several blocks here.
+   */
   modules: readonly ModuleRequirements[];
 }
 
 /** What one Module asks of one path, before composition names the Module. */
 export interface ModuleClaim {
-  /** The rule that won under first-match, and its intent verbatim (§3.4). */
+  /**
+   * The rule that won under first-match, and its intent verbatim (§3.4) — or,
+   * for a Module whose winner depends on file content, one candidate Rule.
+   */
   rule: { ruleId: string; intent: string };
-  /** Everything that winning rule asks of this path. */
-  requirements: Requirements;
+  /**
+   * Everything that rule asks of this path: a `frontmatter` Rule's
+   * `Requirements`, or a `body-structure` candidate's.
+   */
+  requirements: Requirements | BodyStructureRequirements;
 }
 
 /** One Module's claim on the path, named by the Module making it. */
@@ -64,6 +77,23 @@ export interface InvisiblePath {
 
 /** Either the rule forbids frontmatter outright, or it constrains it. */
 export type Requirements = NoFrontmatterRequirements | ConstrainingRequirements;
+
+/**
+ * What one `body-structure` candidate Rule asks of a path, copied verbatim
+ * from the Rule, a key it never wrote staying omitted (design-ADR 0019).
+ *
+ * `types` is here because `--query` cannot know a file's `type` before the file
+ * exists: a block carrying `types` applies only when the file's `type` is one of
+ * them, and a block without applies to every type.
+ */
+export interface BodyStructureRequirements {
+  /** The frontmatter `type` values this Rule needs, as written. */
+  types?: readonly string[];
+  /** The deepest heading level permitted, as written. */
+  maxLevel?: number;
+  /** The Rule's spine, verbatim, each `intent` included. */
+  headings?: readonly HeadingRequirement[];
+}
 
 /** The answer for a rule that declares its paths frontmatter-free. */
 export interface NoFrontmatterRequirements {

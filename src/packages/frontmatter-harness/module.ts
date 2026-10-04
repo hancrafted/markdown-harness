@@ -45,7 +45,9 @@ export const frontmatterModule: ModuleDescriptor<
   query(path, config) {
     return queryPath(path, config.sectionFor(frontmatterModule));
   },
-  audit(files, config) {
+  // The corpus root goes unused: this Module's Rules select on paths alone, so
+  // its audit never opens a file (design-ADR 0015).
+  audit(_root, files, config) {
     return auditRules(files, config.sectionFor(frontmatterModule));
   },
   assess(file, now, config) {

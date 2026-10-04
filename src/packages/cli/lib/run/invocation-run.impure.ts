@@ -17,7 +17,7 @@ import { loadConfig } from '../../../foundation/load-config.ts';
 import { normalisePath } from '../../../foundation/path-shape.ts';
 import { MODULE_SET } from '../../module-set.ts';
 import type { Invocation } from '../argv/argv.types.ts';
-import { auditReport } from './audit-report.pure.ts';
+import { auditVerdict } from './audit-report.pure.ts';
 import { checkVerdict } from './corpus-verdict.pure.ts';
 import { hostInstant } from './host-instant.impure.ts';
 import { pathAssessment } from './path-assessment.pure.ts';
@@ -72,8 +72,11 @@ function gatherAudit({ root, config }: Invocation): AuditGathered {
   const outcome = withCorpusGuard(listMarkdownFiles(root), (files) => {
     const cfg = gatherConfig(config);
     if (cfg.kind === 'rejected') return cfg;
-    const answers = MODULE_SET.map((module) => ({ module: module.key, audit: module.audit(files, cfg.result) }));
-    return { kind: 'answered' as const, result: auditReport(answers) };
+    const verdict = auditVerdict(
+      MODULE_SET.map((module) => ({ module: module.key, audit: module.audit(root, files, cfg.result) })),
+    );
+    if (verdict.kind === 'unreadable') return verdict;
+    return { kind: 'answered' as const, result: verdict.result };
   });
   return { kind: 'audit', root, config, outcome };
 }

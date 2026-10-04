@@ -344,6 +344,27 @@ describe('termination', () => {
       expect(actual.stderr).toContain(unreadablePath);
     });
 
+    it('terminates audit with an unreadable candidate file as exit 2 with message on stderr and empty stdout', () => {
+      // A Module selecting on frontmatter `type` must open a file to tally it,
+      // so an audit can now be refused the way a check is (design-ADR 0015).
+      // ARRANGE
+      const cannotReport = 2;
+      const empty = '';
+      const unreadablePath = 'docs/locked.md';
+      const gathered = {
+        kind: 'audit' as const,
+        root: '.',
+        config: 'mh.yaml',
+        outcome: { kind: 'unreadable' as const, path: unreadablePath },
+      };
+      // ACT
+      const actual = terminationFor(gathered);
+      // ASSERT
+      expect(actual.code).toBe(cannotReport);
+      expect(actual.stdout).toBe(empty);
+      expect(actual.stderr).toContain(unreadablePath);
+    });
+
     it('terminates check with invalid files as exit 1 (CORPUS_IS_WRONG)', () => {
       // ARRANGE
       const corpusIsWrong = 1;
