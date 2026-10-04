@@ -99,8 +99,8 @@ export interface ModuleDescriptor<
    *
    * What the answer IS is pinned by `cli`, not here: this Package is type-only
    * and may name neither `foundation` nor `response-contract` (ARCH-008 §1.3).
-   * `cli/module-set.ts` holds every declared Module to one shape per verb
-   * (design-ADR 0024), `query` always a list of claims among them.
+   * `cli/module-set.ts` holds every declared Module to (design-ADR 0024):
+   * one shape per verb, `query` always answers a list of claims.
    */
   query(path: string, config: LoadedConfig): TQuery;
 

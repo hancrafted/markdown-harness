@@ -5,10 +5,11 @@ status: accepted
 
 # The Module port states its answers: one `Unreadable`, `query` always a list, answers pinned in `cli`
 
-Amends design-ADR 0015 (the Module's `query` is a list of claims; the lists were not written down as the one shape) and
-[`0011`](./0011-claim-is-what-a-module-asks-of-a-path.md) (a claim may come back alone). Builds on
-[`0023`](./0023-core-reads-each-document-once.md), whose `Unreadable` this adopts. The `ModuleDescriptor` stays at
-six members.
+Amends [`0019`](./0019-body-structure-violations-name-the-spine-entry.md) (consequence 3: `--query` composition
+accepts a list of claims; it now accepts only a list, and each Module's `query` answers one). Builds on
+[`0011`](./0011-claim-is-what-a-module-asks-of-a-path.md), which defines a claim and is not amended, and on
+[`0023`](./0023-core-reads-each-document-once.md), whose `Unreadable` this adopts. design-ADR 0015 is the
+round-one record 0019 superseded; it is named here as history only. The `ModuleDescriptor` stays at six members.
 
 ## What was measured
 
