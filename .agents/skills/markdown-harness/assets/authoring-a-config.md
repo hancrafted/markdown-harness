@@ -6,12 +6,21 @@ Six steps, in order. They are the same six whether the config is new or already 
 this workflow entered at step 2, with step 1 spent reading the config that is there instead of the
 tree. `mh --query` is the whole validation loop, so nothing here restates the schema. Ask the tool.
 
+The steps are written for the `frontmatter:` section. A Rule that governs a document's **headings**
+belongs to the `body-structure:` section instead, and
+[`authoring-body-structure.md`](authoring-body-structure.md) is its workflow: read it when the
+Operator wants a document kind's template in the config.
+
 ## 1. Survey before asking
 
 Read the tree first, so the user reacts to their own repo instead of an abstraction. Look for
 directories that already share a shape — a `research/` whose files cite sources, a `runbooks/` that
 goes out of date, an `index.md` convention — and read two or three real files from each to see what
 frontmatter they already carry.
+
+A template kept as prose, such as a docs template or a skill asset listing the headings a kind of
+document has, is a candidate for `body-structure:`, so note it for that file rather than forcing it
+into `fields:`.
 
 Bring the candidates to the first question. "You have 34 files under `docs/research/`, 30 of which
 already carry `sources:`" is a question the user can answer; "what would you like to govern?" is not.

@@ -3,8 +3,8 @@ name: markdown-harness
 description: Govern a folder of markdown with markdown-harness — set it up in a repository, author or change a
   markdown-harness.config.yaml, put `mh --check` in the gate, or wire the Claude Code hook that reads a freshness
   sentence back to an agent. Use when installing or setting up markdown-harness, deciding what a document must declare
-  about its provenance or freshness, adding or changing a rule, working out why a rule governs nothing, or demonstrating
-  what the tool does.
+  about its provenance or freshness, adding or changing a rule, converting a document template into a rule over its
+  headings, working out why a rule governs nothing, or demonstrating what the tool does.
 compatibility: Requires @hancrafted/markdown-harness >= 0.0.2, as `mh` or `npx mh`. Confirm with `mh --help`.
 ---
 
@@ -38,25 +38,26 @@ else the repository has already answered that question and the user is mid-task.
 
 ## 3. Offer the numbered options for that state
 
-| Config  | `docs/markdown-harness/` | State              | Offer                                                                                 |
-| ------- | ------------------------ | ------------------ | ------------------------------------------------------------------------------------- |
-| absent  | absent                   | not set up         | 1. set it up · 2. see it work on throwaway files first                                |
-| absent  | present                  | set up, ungoverned | 1. author the first config · 2. see the demo · 3. finish setup                        |
-| present | either                   | governed           | 1. add or change a rule · 2. why a rule governs nothing · 3. gate · 4. hook · 5. demo |
+| Config  | `docs/markdown-harness/` | State              | Offer                                                                                                                  |
+| ------- | ------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| absent  | absent                   | not set up         | 1. set it up · 2. see it work on throwaway files first                                                                 |
+| absent  | present                  | set up, ungoverned | 1. author the first config · 2. convert a document template · 3. see the demo · 4. finish setup                        |
+| present | either                   | governed           | 1. add or change a rule · 2. convert a document template · 3. why a rule governs nothing · 4. gate · 5. hook · 6. demo |
 
 **Options are numbered, never bulleted.** That is a house rule for this skill and it holds in
-`init.md`, `demo.md` and `authoring-a-config.md` too: a user answering a menu should be able to type
+`init.md`, `demo.md`, `authoring-a-config.md` and `authoring-body-structure.md` too: a user answering a menu should be able to type
 one digit.
 
 ## 4. Read the file for the option they picked
 
-| To do this                                                | Read this                                                      |
-| --------------------------------------------------------- | -------------------------------------------------------------- |
-| Set it up — install, gate and hook in one pass            | [`assets/init.md`](assets/init.md)                             |
-| See it work on throwaway files before committing to rules | [`assets/demo.md`](assets/demo.md)                             |
-| Author the first config, or add, change or debug one rule | [`assets/authoring-a-config.md`](assets/authoring-a-config.md) |
-| Put `mh --check` in the gate on its own                   | [`assets/wiring-the-gate.md`](assets/wiring-the-gate.md)       |
-| Wire the freshness hook on its own, on Claude Code        | [`assets/wiring-the-hook.md`](assets/wiring-the-hook.md)       |
+| To do this                                                | Read this                                                                  |
+| --------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Set it up — install, gate and hook in one pass            | [`assets/init.md`](assets/init.md)                                         |
+| See it work on throwaway files before committing to rules | [`assets/demo.md`](assets/demo.md)                                         |
+| Author the first config, or add, change or debug one rule | [`assets/authoring-a-config.md`](assets/authoring-a-config.md)             |
+| Convert a document template into a rule over its headings | [`assets/authoring-body-structure.md`](assets/authoring-body-structure.md) |
+| Put `mh --check` in the gate on its own                   | [`assets/wiring-the-gate.md`](assets/wiring-the-gate.md)                   |
+| Wire the freshness hook on its own, on Claude Code        | [`assets/wiring-the-hook.md`](assets/wiring-the-hook.md)                   |
 
 `init.md` covers the last two through a script; reach for them directly when init has already run, or
 when the repository needs one without the other. Read the file you picked before acting — each
