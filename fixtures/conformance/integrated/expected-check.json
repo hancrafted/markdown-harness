@@ -4,11 +4,116 @@
   "config": "fixtures/conformance/integrated/valid-test-config.yaml",
   "result": {
     "summary": {
-      "governedFiles": 17,
-      "invalidFiles": 12,
-      "totalViolations": 18
+      "governedFiles": 23,
+      "invalidFiles": 16,
+      "totalViolations": 24
     },
     "files": [
+      {
+        "path": "docs/closed-typed/typed-undefined.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-typed",
+            "ruleIntent": "A typed closed note has one title and no other heading.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Extra",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/closed/body-fails.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-notes",
+            "ruleIntent": "A closed note has one title and no other heading, whatever its frontmatter does.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Extra",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/closed/both-fail.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "closed",
+            "ruleIntent": "A closed note says what it is about.",
+            "violations": [
+              {
+                "field": "description",
+                "violation": "MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required"
+                }
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "closed-notes",
+            "ruleIntent": "A closed note has one title and no other heading, whatever its frontmatter does.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Extra",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/closed/mangled.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "closed",
+            "ruleIntent": "A closed note says what it is about.",
+            "violations": [
+              {
+                "field": null,
+                "violation": "FRONTMATTER_UNPARSEABLE"
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "closed-notes",
+            "ruleIntent": "A closed note has one title and no other heading, whatever its frontmatter does.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Extra",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
       {
         "path": "docs/mixed/mangled.md",
         "modules": [
