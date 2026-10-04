@@ -37,7 +37,7 @@ export const CONFORMANCE_TIERS = [
     name: 'rejected-config',
     caseKind: 'rejected-config',
     configFile: 'markdown-harness.config.yaml',
-    caseCount: 58,
+    caseCount: 65,
   },
 ] as const satisfies readonly ConformanceTier[];
 
