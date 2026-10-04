@@ -1,0 +1,13 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_EMPTY_INTENT",
+      "location": "frontmatter.rules[0].intent"
+    },
+    {
+      "code": "CONFIG_MISSING_RULE_INTENT",
+      "location": "body-structure.rules[0]"
+    }
+  ]
+}

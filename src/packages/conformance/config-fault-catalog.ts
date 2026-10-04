@@ -18,7 +18,7 @@ import type { ConfigFaultCode } from '../config-contract/index.ts';
  * The `satisfies` check holds one direction — a code spelled wrong, or one the
  * catalog never had, does not compile. Its intersection holds the other.
  *
- * Fifteen. It was fourteen: `CONFIG_SELECTOR_AMBIGUOUS` was retired with the
+ * Twenty. It was fifteen, before the five `body-structure` codes below; and fourteen before that: `CONFIG_SELECTOR_AMBIGUOUS` was retired with the
  * grammar that made it reachable — `folders:` and `fileNames:` intersect rather
  * than exclude, so a rule carrying both is spelling an exact path rather than
  * asking two questions at once — and its case directory was deleted in the same
@@ -44,7 +44,29 @@ const declaredCodes = [
   'CONFIG_EMPTY_CONSTRAINT',
   'CONFIG_FRONTMATTER_FORBIDDEN_WITH_PAYLOAD',
   'CONFIG_ASSESS_WITHOUT_REQUIRED_FIELD',
+  'CONFIG_ENTRY_KEY_NOT_FOR_PURPOSE',
+  'CONFIG_ENUMERATION_WITHOUT_COUNT',
+  'CONFIG_ENUMERATION_PINS_TEXT',
+  'CONFIG_COUNT_BOUNDS_INVERTED',
+  'CONFIG_ENTRY_BEYOND_MAX_LEVEL',
 ] as const;
+
+/**
+ * The five codes the `body-structure` Module brings (#221, design-ADR 0020).
+ *
+ * Declared here before the contract's `ConfigFaultCode` union names them, which
+ * is the order the experiment runs in: the tier is written first and the Module
+ * second. Widening the pin below by exactly these five keeps `tsc --noEmit`
+ * green until the union gains them, and drops out of the way after: a code the
+ * union later names is simply a member of both sides. Once the union carries
+ * all five, this widening is dead weight and the next editor may delete it.
+ */
+type PendingCode =
+  | 'CONFIG_ENTRY_KEY_NOT_FOR_PURPOSE'
+  | 'CONFIG_ENUMERATION_WITHOUT_COUNT'
+  | 'CONFIG_ENUMERATION_PINS_TEXT'
+  | 'CONFIG_COUNT_BOUNDS_INVERTED'
+  | 'CONFIG_ENTRY_BEYOND_MAX_LEVEL';
 
 /** Whatever the catalog declares and the list above has not claimed. */
 type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
@@ -62,5 +84,5 @@ type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
  * conditional distributing over the union, which would make a partially
  * covered catalog answer `unknown` rather than `never`.
  */
-export const DECLARED_CODES = declaredCodes satisfies readonly ConfigFaultCode[] &
+export const DECLARED_CODES = declaredCodes satisfies readonly (ConfigFaultCode | PendingCode)[] &
   ([UnreachedCodes] extends [never] ? unknown : never);

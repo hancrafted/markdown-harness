@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_SELECTOR_MISSING",
+      "location": "body-structure.rules[0]"
+    }
+  ]
+}

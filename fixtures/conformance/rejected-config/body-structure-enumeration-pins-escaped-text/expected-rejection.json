@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_ENUMERATION_PINS_TEXT",
+      "location": "body-structure.rules[0].headings[0].pattern"
+    }
+  ]
+}

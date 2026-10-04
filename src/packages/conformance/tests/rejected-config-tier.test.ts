@@ -154,6 +154,20 @@ describe('the rejected-config tier', () => {
       expect(actual).toEqual(complete);
     });
 
+    it('freezes only codes the catalog declares, and every one of them', () => {
+      // Tool-free, so it holds whatever the loader answers: a misspelled code
+      // in any frozen expectation is red here even when the loader is broken,
+      // and the test above cannot tell one wrong answer from another. Coverage
+      // over the FROZEN side too, so a catalog code no case freezes is just as
+      // red.
+      // ARRANGE
+      const complete = { unreached: [], undeclared: [] };
+      // ACT
+      const actual = coverageAndClosure(DECLARED_CODES, codesFrozen(), codesFrozen());
+      // ASSERT
+      expect(actual).toEqual(complete);
+    });
+
     it('enumerates every case the suite declares', () => {
       // Stated by hand rather than counted back off the tree it is checking.
       // ARCH-002 §3.1 makes adding or removing a case a contract change, so the
