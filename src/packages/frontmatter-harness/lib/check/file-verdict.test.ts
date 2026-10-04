@@ -173,7 +173,7 @@ describe('one file verdict', () => {
         '---\norigin: s3://bucket/quarterly usage.parquet\nretrieved:\n  by: human/hancrafted\n  at: 2026-08-24\n---\n';
       const expected = ['retrieved.by', 'retrieved.at', 'origin'];
       // ACT
-      const actual = violationsForFile(file, rule).map((found) => found.field);
+      const actual = violationsForFile(file, rule).map((found) => ('field' in found ? found.field : undefined));
       // ASSERT
       expect(actual).toEqual(expected);
     });

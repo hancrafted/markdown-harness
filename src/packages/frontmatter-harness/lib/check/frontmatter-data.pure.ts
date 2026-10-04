@@ -20,9 +20,9 @@
  * disagreement is kept explicit rather than settled one way for both readers.
  */
 
+import { frontmatterBlock } from '../../../foundation/frontmatter-block.ts';
 import { parseYamlDocument } from '../../../foundation/yaml-document.ts';
 import type { FrontmatterData } from './check.types.ts';
-import { frontmatterBlock } from './frontmatter-block.pure.ts';
 
 /**
  * Read a file's frontmatter.
