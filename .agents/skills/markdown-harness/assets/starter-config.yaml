@@ -127,6 +127,8 @@ frontmatter:
           # `pattern` is the escape valve for anything the named formats cannot
           # express. A sibling `intent` is MANDATORY beside it — without one the
           # raw regex leaks into the violation, which is the reason the key exists.
+          # Searched, never anchored, and compiled with the `u` flag in every Module,
+          # so an escape `u` refuses (`\-` outside a class) fails the config load.
           pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
           intent: Slugs are lowercase words joined by single hyphens
 

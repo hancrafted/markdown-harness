@@ -1,0 +1,16 @@
+# A frontmatter `pattern` that compiles without the `u` flag and not with it.
+#
+# Every `pattern` in the config is compiled with the `u` flag, in both Modules,
+# so one regular-expression dialect holds across the file: `\p{Lu}` means an
+# uppercase letter wherever it is written. `^Source\-` is the shape the flag
+# breaks: an unnecessary escape is a syntax error under `u`. The config is
+# refused at the pattern's own location rather than half-read.
+frontmatter:
+  rules:
+    - ruleId: every-document
+      folders: ['docs/']
+      intent: A sound rule, so the only fault reported is the pattern below.
+      fields:
+        source:
+          pattern: '^Source\-'
+          intent: A source names where it came from.

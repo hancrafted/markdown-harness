@@ -40,7 +40,7 @@ one at a time and point at the one they want to change:
 1. **Which paths** — `folders:`, one repo-root-relative folder per token with no recursion, or
    `fileNames:`, one literal basename matched at any depth. At least one axis is required; an absent
    axis means every, so folders alone is every file in those folders and names alone is that name
-   anywhere in the corpus.
+   anywhere in the corpus. An axis written as an empty list is refused, never read as none.
 2. **Why, in one sentence** — `intent:`, mandatory, in their words. It travels back with every
    violation this rule reports, so the failure says why the rule exists rather than only which check
    fired.

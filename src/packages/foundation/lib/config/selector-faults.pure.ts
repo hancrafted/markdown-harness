@@ -50,17 +50,21 @@ export function unrecognisedKeys(written: Record<string, unknown>, known: object
 
 /**
  * A list of strings, the elements checked and not merely the container. An
- * empty list is a list of strings: it names nothing wrong, and is a different
- * thing from leaving the key out, which on a selector axis means every.
+ * empty list is a list of strings; whether a selector axis may be empty is
+ * the axis's own grammar to answer, and none admits it.
  */
 export function isStringList(value: unknown): value is readonly string[] {
   return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 }
 
-/** Whether every token of one axis is one its grammar admits. */
+/**
+ * Whether one axis names at least one token and every token is one its grammar
+ * admits. An empty Core axis names nothing, so a selector carrying it selects
+ * no file; it is refused like a Module's empty axis, never read as "every".
+ */
 function wellFormed(axis: string, tokens: readonly string[], extraAxes: ExtraAxes): boolean {
-  if (axis === 'folders') return tokens.every(isFolderToken);
-  if (axis === 'fileNames') return tokens.every(isFileNameToken);
+  if (axis === 'folders') return tokens.length > 0 && tokens.every(isFolderToken);
+  if (axis === 'fileNames') return tokens.length > 0 && tokens.every(isFileNameToken);
   return extraAxes[axis](tokens);
 }
 

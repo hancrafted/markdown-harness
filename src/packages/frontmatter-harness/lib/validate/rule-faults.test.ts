@@ -377,16 +377,17 @@ describe('ruleFaults', () => {
       expect(actual).toEqual([]);
     });
 
-    it('accepts an empty axis, which selects nothing rather than everything', () => {
+    it('refuses an empty axis, which would select nothing, at the axis', () => {
       // ARRANGE
-      // An empty list is a list. It names no folders, which is a different
-      // thing from naming a wrong one — and a different thing again from
-      // leaving the axis out, which means every.
+      // An empty list names no folders, so the Rule would govern no file and a
+      // green run over it would read compliance out of absence. Leaving the
+      // axis out is what means every.
       const rule = { ruleId: 'r', intent: 'i', folders: [] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.folders` }];
       // ACT
       const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
       // ASSERT
-      expect(actual).toEqual([]);
+      expect(actual).toEqual(expected);
     });
   });
 });
