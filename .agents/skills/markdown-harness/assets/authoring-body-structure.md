@@ -23,8 +23,9 @@ page of a folder of look-alikes. Read two or three real documents of the kind an
 headings. The Operator confirms which headings are the template and which are one author's habit.
 
 _Done when_ you can state the template as a numbered list: each heading's level, what it may say,
-whether it may be absent, whether it repeats, which kinds of block sit under it (paragraphs, a
-numbered list, a bulleted list), and how the kind is told apart, by its folder or by its `type`.
+whether it may be absent, whether it repeats, whether its title is one of a fixed set that repeats
+under other sections, which kinds of block sit under it (paragraphs, a numbered list, a bulleted
+list), and how the kind is told apart, by its folder or by its `type`.
 
 ## 2. Choose what the Rule selects
 
@@ -84,7 +85,8 @@ body-structure:
 A key an entry may not carry, or a count range turned around, comes back from the exit-2 loop with its
 location; let it say so rather than guessing.
 
-_Done when_ every line of the template from step 1 is an entry, or the Operator has dropped it.
+_Done when_ every line of the template from step 1 is an entry, is set aside for step 5's vocabulary
+(a title from a fixed set that repeats), or the Operator has dropped it.
 
 ## 4. Anchor every title
 
@@ -116,8 +118,8 @@ Two keys decide which titles a heading may carry, and each answers a different q
 
 A vocabulary is a Rule key beside `headings:`, a list of `{ level, allowed }` items with one item per
 level. It is a **set**: any order, any number of times. "`Added` before `Changed`" and "one `### Added`
-per release" cannot be said, and an Operator who wants either has asked for a convention this key does
-not hold. A title matches whole, exactly and case-sensitively, so `### added` fails against `Added`,
+per release" are conventions this key leaves out, and an Operator who wants either has asked for more
+than a set. A title matches whole, exactly and case-sensitively, so `### added` fails against `Added`,
 and a title is compared as the heading's raw source, so `### **Added**` is `**Added**`.
 
 ```yaml
@@ -141,17 +143,19 @@ body-structure:
 
 A third-level heading outside the list is one `BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY`, carrying
 its `level`, its `content` and the `requirement`, which is the vocabulary item, so the Contributor
-reads the six titles in the finding that names the seventh. It is never `HEADING_OUT_OF_ORDER`.
+reads the six titles in the finding that names the seventh. Whatever its position, the heading is
+reported as `HEADING_NOT_IN_VOCABULARY` and as nothing else. Under `undefinedHeadings: forbid`
+(step 7), a heading the vocabulary admits counts as claimed, so it is never also undefined.
 
-**A level is walked by entries or held to a vocabulary, never both.** An entry at level 3 beside a
+**Give a level entries or a vocabulary, one of the two.** An entry at level 3 beside a
 vocabulary for level 3 is `CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES` at the vocabulary's `level`, and
 `allowed:` written on an entry is `CONFIG_UNRECOGNISED_KEY`: the list belongs to `vocabulary:`. The
 workaround an enumeration invites, six enumerations each pinned to one title as `^Added$`, is
-`CONFIG_ENUMERATION_PINS_TEXT`, which is why a vocabulary exists. A vocabulary heading's section is
-judged by nothing: `vocabulary` carries no `mayHold`.
+`CONFIG_ENUMERATION_PINS_TEXT`, which is why a vocabulary exists. A vocabulary heading's section stays
+unconstrained, since a `vocabulary` item takes no `mayHold`.
 
 _Done when_ each level whose titles are a fixed set is a vocabulary item, each fixed title elsewhere is
-an anchored `pattern`, and no level is in both.
+an anchored `pattern`, and every level has entries or a vocabulary.
 
 ## 6. Say what a section may hold
 
@@ -190,7 +194,7 @@ body-structure:
             level: 2,
             pattern: '^Consequences$',
             mayHold: [prose, ordered-list],
-            intent: 'What gets easier and harder, with a bold label ahead of each list.',
+            intent: 'What gets easier and harder, under a bold label per list.',
           }
         - {
             purpose: heading,
@@ -216,28 +220,29 @@ What the Operator should hear before approving a `mayHold`:
 
 - **A bold label is prose.** `**Positive:**` ahead of a list is a paragraph, so a section that lists
   only `ordered-list` fails on it, and a section with captioned lists lists both kinds, as
-  `Consequences` and `Compliance and Enforcement` do above.
+  `Consequences` does above.
 - **Fences, tables, quotes, HTML, thematic breaks and link definitions are neither allowed nor refused.**
   The kinds have no name for them, so a section that lists only `ordered-list` may still hold a fence or
   a table without a finding.
 - **A list inside a list item belongs to the outer list.** A paragraph at the left margin splits one
   list into two, and the paragraph is reported.
-- **An empty section passes**, because `mayHold` is a permission and never a requirement. `mayHold: []`
+- **An empty section passes**: `mayHold` is a permission, not a requirement. `mayHold: []`
   is `CONFIG_EMPTY_CONSTRAINT` and a kind outside the three, `code` included, is `CONFIG_INVALID_VALUE`
   at the element. A section meant to hold nothing but subsections, such as `## Decision` above, has
   no spelling, so it carries no `mayHold` and a paragraph there passes.
-- **A section no entry claims is judged by nobody**, and a parent's `mayHold` never reaches its
-  subsections: each anchor's section belongs to the anchor's entry. Blocks before the first heading
-  belong to no section.
-- **Item shape is not checkable.** The contract's `**DO**` prefix on every item is a convention inside
-  a list, and no key reads it.
+- **A section answers to the entry that claimed its heading.** A section no entry claims stays
+  unconstrained, a parent's `mayHold` stops at the parent's own blocks, and each anchor's section
+  belongs to the anchor's entry. Blocks before the first heading sit outside every section.
+- **Item shape stays with the Contributor.** The contract's `**DO**` prefix on every item is a
+  convention inside a list, and no key reads it.
 
 A section that holds a block of an unlisted kind is one `BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED` per
 kind, with `entry`, `content`, `kind` and `found`, the count of blocks of that kind in the section. A
 list counts once however many items it has.
 
 _Done when_ every section the Operator wants held to a kind has a `mayHold`, every permissive section
-has none, and the Operator has heard the bold-label and transparent-block limits.
+has none, and the Operator has heard each caveat above, the bold label and the blocks no kind names
+included.
 
 ## 7. Decide open or closed
 
@@ -280,11 +285,7 @@ body-structure:
           }
 ```
 
-A heading some entry matches, or a vocabulary admits, is never undefined, and a heading outside a
-vocabulary is reported as that and never also as undefined. That is how a closed spine governs a
-changelog: the release headings are claimed by an enumeration and the interleaved third-level headings
-by the vocabulary from step 5, so `undefinedHeadings: forbid` beside it adds only the strangers at
-other levels. A second `## Decision` is `HEADING_REPEATED` and a
+A heading some entry matches, or a vocabulary admits (step 5), is not undefined. A second `## Decision` is `HEADING_REPEATED` and a
 misplaced `## Context` is `HEADING_OUT_OF_ORDER`, each reported by its entry. In a closed spine an
 enumeration's run holds its repeats and nothing else. `mh --query` copies `undefinedHeadings` into its
 answer, so an agent about to write the file hears that no other heading is welcome.
