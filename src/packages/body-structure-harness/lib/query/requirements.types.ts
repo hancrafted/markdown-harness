@@ -12,7 +12,7 @@ import type { HeadingRequirement } from '../check/violation.types.ts';
  * What one `body-structure` candidate Rule asks of a path, copied verbatim
  * from the Rule, a key it never wrote staying omitted.
  *
- * `types` is here because `--query` cannot know a file's `type` before the file
+ * `types` is here because `query` cannot know a file's `type` before the file
  * exists: a block carrying `types` applies only when the file's `type` is one of
  * them, and a block without applies to every type.
  */

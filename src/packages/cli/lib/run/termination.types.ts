@@ -15,7 +15,9 @@ import type { DeclaredCheckResult, DeclaredQueryResult } from './declared-module
 
 /** Refused before a command could even be identified. */
 export type Refusal =
-  { readonly kind: 'runtime-refused'; readonly refusal: string } | { readonly kind: 'argv-refused' };
+  | { readonly kind: 'runtime-refused'; readonly refusal: string }
+  /** `reason` is empty when the synopsis alone explains the refusal. */
+  | { readonly kind: 'argv-refused'; readonly reason: string };
 
 /** Where `route` got to, given only the runtime version and the raw argv. */
 export type Route = Refusal | { readonly kind: 'routed'; readonly invocation: Invocation };
@@ -25,34 +27,42 @@ export type ConfigOutcome<Result> =
   | { readonly kind: 'rejected'; readonly faults: readonly ConfigFault<string>[] }
   | { readonly kind: 'answered'; readonly result: Result };
 
-/** What `--query` gathered. */
+/** What `query` gathered. */
 export interface QueryGathered {
   readonly kind: 'query';
+  /** The keys of the Modules asked, in declared order — echoed as the response's `modules`. */
+  readonly modules: readonly string[];
   readonly path: string;
   readonly config: string;
   readonly outcome: ConfigOutcome<DeclaredQueryResult>;
 }
 
-/** What `--audit` gathered. */
+/** What `audit` gathered. */
 export interface AuditGathered {
   readonly kind: 'audit';
+  /** The keys of the Modules asked, in declared order — echoed as the response's `modules`. */
+  readonly modules: readonly string[];
   readonly root: string;
   readonly config: string;
   readonly outcome: { readonly kind: 'no-root' } | Unreadable | ConfigOutcome<AuditResult>;
 }
 
-/** What `--assess` gathered. `now` is already resolved — see `resolvedInstant`. */
+/** What `assess` gathered. `now` is already resolved — see `resolvedInstant`. */
 export interface AssessGathered {
   readonly kind: 'assess';
+  /** The keys of the Modules asked, in declared order — echoed as the response's `modules`. */
+  readonly modules: readonly string[];
   readonly path: string;
   readonly now: string;
   readonly config: string;
   readonly outcome: ConfigOutcome<AssessResult>;
 }
 
-/** What `--check` gathered. */
+/** What `check` gathered. */
 export interface CheckGathered {
   readonly kind: 'check';
+  /** The keys of the Modules asked, in declared order — echoed as the response's `modules`. */
+  readonly modules: readonly string[];
   readonly root: string;
   readonly config: string;
   readonly outcome: { readonly kind: 'no-root' } | Unreadable | ConfigOutcome<DeclaredCheckResult>;

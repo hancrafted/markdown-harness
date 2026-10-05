@@ -1,5 +1,5 @@
 /**
- * Compose every Module's claim on one path into the answer `--query` returns.
+ * Compose every Module's claim on one path into the answer `query` returns.
  *
  * The mirror of `corpus-verdict.pure.ts`, and deliberately its shape: an agent
  * that learned to read one report should not have to learn a second one. What

@@ -16,11 +16,11 @@
 //
 // 1. Per-case governance is asked of a corpus of ONE, and that rests on one
 //    premise: A BODY-STRUCTURE VERDICT IS A FUNCTION OF THE CONFIG PLUS ONE
-//    FILE'S PATH AND BYTES. A `--check` response lists only failing files and
+//    FILE'S PATH AND BYTES. A `check` response lists only failing files and
 //    counts the governed ones, so it cannot tell a PASSES file from an
 //    UNGOVERNED one. Each case is therefore copied byte for byte into a root of
 //    its own and asked there: `governedFiles` is then that file's governance,
-//    the `--check` block its violations, and the one `--audit` row that won it
+//    the `check` block its violations, and the one `audit` row that won it
 //    names its Rule. A Module whose verdict read a second file would break the
 //    premise, and this seam with it.
 // 2. Build before running this file alone (trap 9 in
@@ -176,14 +176,14 @@ const answers = new Map<string, CaseAnswer>();
 let tierCheck: ToolRun;
 let tierAudit: ToolRun;
 
-/** This Module's violations in one `--check` run, across every file it reports. */
+/** This Module's violations in one `check` run, across every file it reports. */
 function violationsIn(check: ToolRun): readonly unknown[] {
   const files = envelopeOf(check).result?.files ?? [];
   const blocks = files.flatMap((file) => file.modules).filter((block) => block.module === MODULE);
   return blocks.flatMap((block) => block.violations ?? []);
 }
 
-/** Every Rule of this Module that won a file in one `--audit` run, joined in config order. */
+/** Every Rule of this Module that won a file in one `audit` run, joined in config order. */
 function winnersIn(audit: ToolRun): string {
   const blocks = (envelopeOf(audit).result?.modules ?? []).filter((block) => block.module === MODULE);
   const rows = blocks.flatMap((block) => block.rules ?? []);
@@ -667,10 +667,10 @@ describe('the tool answers the verbatim body-structure case as it states', () =>
 });
 
 // ---------------------------------------------------------------------------
-// The whole tier at the process boundary: --check, --audit, --query, --assess.
+// The whole tier at the process boundary: check, audit, query, assess.
 // ---------------------------------------------------------------------------
 
-/** The `--audit` rows #221 freezes for this tier, in config order. */
+/** The `audit` rows #221 freezes for this tier, in config order. */
 const AUDIT_ROWS = [
   { ruleId: 'index-pages', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'decision-records', won: 9, shadowed: 0, shadowedBy: [], excluded: 0 },
@@ -725,7 +725,7 @@ const AUDIT_ROWS = [
   { ruleId: 'adr-contract', won: 14, shadowed: 0, shadowedBy: [], excluded: 0 },
 ];
 
-/** The `--query` candidates #221 freezes, per path asked, in order. */
+/** The `query` candidates #221 freezes, per path asked, in order. */
 const QUERY_CANDIDATES: readonly (readonly [string, readonly string[]])[] = [
   ['docs/research/anything.md', ['research-reports', 'research-notes', 'research-untyped']],
   ['docs/research/index.md', ['index-pages']],
@@ -772,7 +772,7 @@ function candidateBlock(ruleId: string): unknown {
 }
 
 /**
- * The instant handed to `--assess`. This tier carries no `assess:` marker and its
+ * The instant handed to `assess`. This tier carries no `assess:` marker and its
  * tier record states no instant (#221), because the Module makes no freshness
  * claim; `--now` is supplied only so that no clock is read. The answer below is
  * the same at every instant.
@@ -832,7 +832,7 @@ describe('the tool answers for the whole body-structure tier', () => {
       expect(actual).toEqual(expected);
     });
 
-    it.each(QUERY_CANDIDATES)('answers --query %s with every candidate Rule in config order', async (path, ids) => {
+    it.each(QUERY_CANDIDATES)('answers query %s with every candidate Rule in config order', async (path, ids) => {
       // ARRANGE
       const expected = { refusal: undefined, governance: 'governed', modules: ids.map(candidateBlock) };
       const answered = 0;
@@ -865,7 +865,7 @@ describe('the tool answers for the whole body-structure tier', () => {
     });
 
     it.each(['docs/research/report-pass.md', 'docs/research/report-h4-no-h1.md', 'docs/upper/INDEX.md'])(
-      'answers --assess %s as ungoverned, because this Module implements no assess',
+      'answers assess %s as ungoverned, because this Module implements no assess',
       async (path) => {
         // A known imprecision, not a claim that the file is
         // outside every Rule: this Module makes no freshness claim, so a file it

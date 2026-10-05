@@ -1,9 +1,9 @@
 /**
- * What `--check` answers about one corpus, and what one Module contributes to
+ * What `check` answers about one corpus, and what one Module contributes to
  * that answer.
  *
  * The only command that opens a file, and the only one that can exit 1. Its
- * reader is the Contributor's agent, which is why none of `--audit`'s
+ * reader is the Contributor's agent, which is why none of `audit`'s
  * rule-level diagnostics ride along here: an agent about to edit a document can
  * act on none of it.
  *

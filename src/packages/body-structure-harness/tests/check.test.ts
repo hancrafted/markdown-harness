@@ -1,4 +1,4 @@
-// Integration suite for `--check`, at the grain a caller sees.
+// Integration suite for `check`, at the grain a caller sees.
 //
 // Exercises the entry point against real files in a tmpdir, which makes the
 // read edge observable: the pure units below are handed text, but only this

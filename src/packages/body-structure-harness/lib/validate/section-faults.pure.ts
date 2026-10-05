@@ -52,7 +52,7 @@ const RULE_KEYS: Record<keyof BodyStructureRule, true> = {
 /**
  * This Module's own selector axis, handed to Core's selector validation: a
  * `type` is any non-empty string in a list of at least one, because a Rule that
- * can never win would show in `--query` as a candidate nobody can satisfy.
+ * can never win would show in `query` as a candidate nobody can satisfy.
  */
 const TYPES_AXIS = { types: (tokens: readonly string[]) => tokens.length > 0 && tokens.every((token) => token !== '') };
 

@@ -1,5 +1,5 @@
 /**
- * Compose every Module's answer about one corpus into the verdict `--check`
+ * Compose every Module's answer about one corpus into the verdict `check`
  * returns.
  *
  * This is where a file's findings NEST: each Module hands back what it found,

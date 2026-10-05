@@ -1,5 +1,5 @@
 /**
- * Compose every Module's rule tallies into the answer `--audit` returns.
+ * Compose every Module's rule tallies into the answer `audit` returns.
  *
  * A rule id is unique only inside one Module section. Keeping every Module's
  * rows under the descriptor key that owns them preserves that scope and keeps

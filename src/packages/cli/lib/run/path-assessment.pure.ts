@@ -1,5 +1,5 @@
 /**
- * Compose every Module's answer about one path into `--assess`'s result.
+ * Compose every Module's answer about one path into `assess`'s result.
  *
  * A Module may assess a path or pass it by. Only this composing Package can see
  * every answer, so only this function can claim the path is ungoverned.

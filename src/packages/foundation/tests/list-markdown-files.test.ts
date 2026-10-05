@@ -123,7 +123,7 @@ describe('listMarkdownFiles', () => {
 
   describe('failure cases', () => {
     it('refuses a root that does not exist, rather than answering empty', () => {
-      // This is the answer `--check` must never turn into `invalidFiles: 0`.
+      // This is the answer `check` must never turn into `invalidFiles: 0`.
       // ARRANGE
       const missing = join(root, 'no-such-directory');
       // ACT

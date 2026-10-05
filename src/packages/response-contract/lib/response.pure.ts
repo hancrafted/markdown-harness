@@ -24,36 +24,46 @@ export function configError(faults: readonly ConfigFault<string>[]): ConfigError
   return { error: 'CONFIG_REJECTED', faults };
 }
 
-/** Construct the envelope for `--check`. */
+/**
+ * Construct the envelope for `check`.
+ *
+ * Every constructor takes what was asked as one object and copies only the
+ * fields its envelope names, so a caller can hand over everything it gathered
+ * without an extra key reaching the wire.
+ */
 export function checkResponse<TViolation>(
-  root: string,
-  config: string,
+  invocation: Pick<CheckResponse, 'modules' | 'root' | 'config'>,
   result: CheckResult<TViolation> | ConfigErrorResult,
 ): CheckResponse<TViolation> {
-  return { command: 'check', root, config, result };
+  const { modules, root, config } = invocation;
+  return { command: 'check', modules, root, config, result };
 }
 
-/** Construct the envelope for `--query`. */
+/** Construct the envelope for `query`. */
 export function queryResponse<TRequirements>(
-  path: string,
-  config: string,
+  invocation: Pick<QueryResponse, 'modules' | 'path' | 'config'>,
   result: QueryResult<TRequirements> | ConfigErrorResult,
 ): QueryResponse<TRequirements> {
-  return { command: 'query', path, config, result };
+  const { modules, path, config } = invocation;
+  return { command: 'query', modules, path, config, result };
 }
 
-/** Construct the envelope for `--audit`. */
-export function auditResponse(root: string, config: string, result: AuditResult | ConfigErrorResult): AuditResponse {
-  return { command: 'audit', root, config, result };
+/** Construct the envelope for `audit`. */
+export function auditResponse(
+  invocation: Pick<AuditResponse, 'modules' | 'root' | 'config'>,
+  result: AuditResult | ConfigErrorResult,
+): AuditResponse {
+  const { modules, root, config } = invocation;
+  return { command: 'audit', modules, root, config, result };
 }
 
-/** Construct the envelope for `--assess`. */
+/** Construct the envelope for `assess`. */
 export function assessResponse(
-  invocation: Pick<AssessResponse, 'path' | 'now' | 'config'>,
+  invocation: Pick<AssessResponse, 'modules' | 'path' | 'now' | 'config'>,
   result: AssessResult | ConfigErrorResult,
 ): AssessResponse {
-  const { path, now, config } = invocation;
-  return { command: 'assess', path, now, config, result };
+  const { modules, path, now, config } = invocation;
+  return { command: 'assess', modules, path, now, config, result };
 }
 
 /** Serialize one response with the contract's two-space indentation and trailing newline. */

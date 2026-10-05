@@ -1,5 +1,5 @@
 /**
- * What `--query` answers about one path, and what one Module contributes to
+ * What `query` answers about one path, and what one Module contributes to
  * that answer.
  *
  * `git check-attr` semantics: the entire input is a path string and the config.

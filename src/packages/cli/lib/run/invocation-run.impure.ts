@@ -21,7 +21,8 @@ import { auditVerdict } from './audit-report.pure.ts';
 import { checkVerdict } from './corpus-verdict.pure.ts';
 import type { DeclaredRequirements, DeclaredViolation } from './declared-module.types.ts';
 import { hostInstant } from './host-instant.impure.ts';
-import { gatherAnswers, implementing } from './module-answers.pure.ts';
+import { gatherAnswers, implementing, inScope, moduleCommands } from './module-answers.pure.ts';
+import type { Verb } from './module-answers.types.ts';
 import { pathAssessment } from './path-assessment.pure.ts';
 import { pathGovernance } from './path-governance.pure.ts';
 import { resolvedInstant, route, terminationFor, withCorpusGuard } from './termination.pure.ts';
@@ -35,6 +36,24 @@ import type {
 } from './termination.types.ts';
 
 type LoadedConfiguration = NonNullable<ReturnType<typeof loadConfig>['config']>;
+
+/**
+ * The Modules one invocation asks, narrowed to those carrying the verb.
+ *
+ * The parser already resolved the scope against the same declared set — the
+ * named Module, or every implementer — so this narrows the descriptors to what
+ * it resolved rather than deciding anything again. The config is still loaded
+ * against the WHOLE set: it is one file and fails whole, so a fault under
+ * another Module's key refuses a scoped run too.
+ */
+function asked<TVerb extends Verb>(invocation: Invocation, verb: TVerb) {
+  return implementing(inScope(MODULE_SET, invocation.modules), verb);
+}
+
+/** The keys of the Modules asked, read off their own descriptors — the response's `modules`. */
+function keysOf(modules: readonly { readonly key: string }[]): string[] {
+  return modules.map((module) => module.key);
+}
 
 /**
  * Load the config once.
@@ -57,15 +76,18 @@ function gatherConfig(config: string): ConfigOutcome<LoadedConfiguration> {
  * named by the key on ITS OWN DESCRIPTOR rather than by a string written here.
  * A Module without the verb is skipped, never asked.
  */
-function gatherQuery({ path, config }: Invocation): QueryGathered {
+function gatherQuery(invocation: Invocation): QueryGathered {
+  const { path, config } = invocation;
+  const querying = asked(invocation, 'query');
+  const modules = keysOf(querying);
   const cfg = gatherConfig(config);
-  if (cfg.kind === 'rejected') return { kind: 'query', path, config, outcome: cfg };
+  if (cfg.kind === 'rejected') return { kind: 'query', modules, path, config, outcome: cfg };
 
   const result = pathGovernance<DeclaredRequirements>(
     normalisePath(path),
-    gatherAnswers(implementing(MODULE_SET, 'query'), (module) => module.query(path, cfg.result)),
+    gatherAnswers(querying, (module) => module.query(path, cfg.result)),
   );
-  return { kind: 'query', path, config, outcome: { kind: 'answered', result } };
+  return { kind: 'query', modules, path, config, outcome: { kind: 'answered', result } };
 }
 
 /**
@@ -73,17 +95,17 @@ function gatherQuery({ path, config }: Invocation): QueryGathered {
  *
  * The corpus is enumerated BEFORE the config is read via `withCorpusGuard`.
  */
-function gatherAudit({ root, config }: Invocation): AuditGathered {
+function gatherAudit(invocation: Invocation): AuditGathered {
+  const { root, config } = invocation;
+  const auditing = asked(invocation, 'audit');
   const outcome = withCorpusGuard(listMarkdownFiles(root), (files) => {
     const cfg = gatherConfig(config);
     if (cfg.kind === 'rejected') return cfg;
-    const verdict = auditVerdict(
-      gatherAnswers(implementing(MODULE_SET, 'audit'), (module) => module.audit(root, files, cfg.result)),
-    );
+    const verdict = auditVerdict(gatherAnswers(auditing, (module) => module.audit(root, files, cfg.result)));
     if (verdict.kind === 'unreadable') return verdict;
     return { kind: 'answered' as const, result: verdict.result };
   });
-  return { kind: 'audit', root, config, outcome };
+  return { kind: 'audit', modules: keysOf(auditing), root, config, outcome };
 }
 
 /**
@@ -95,23 +117,26 @@ function gatherAudit({ root, config }: Invocation): AuditGathered {
  * runs. Reading it lazily would put the rule back behind a conditional in this
  * file instead of in the composer.
  */
-function gatherAssess({ path, config, now, root }: Invocation): AssessGathered {
+function gatherAssess(invocation: Invocation): AssessGathered {
+  const { path, config, now, root } = invocation;
   const instant = resolvedInstant(now, hostInstant());
+  const assessing = asked(invocation, 'assess');
+  const modules = keysOf(assessing);
   const cfg = gatherConfig(config);
-  if (cfg.kind === 'rejected') return { kind: 'assess', path, now: instant, config, outcome: cfg };
+  if (cfg.kind === 'rejected') return { kind: 'assess', modules, path, now: instant, config, outcome: cfg };
 
-  // `root` is always the default here: `--root` beside `--assess` is refused as
+  // `root` is always the default here: `--root` beside `assess` is refused as
   // conflicting input, so this is the current directory by construction.
-  // `--assess` keeps its own pair: the Conformance runner composes through
+  // `assess` keeps its own pair: the Conformance runner composes through
   // `pathAssessment` with this shape, so only the other three verbs ride
   // `gatherAnswers`. A Module without `assess` is skipped, exactly as one that
   // passes the path by is dropped there.
-  const answers = implementing(MODULE_SET, 'assess').map((module) => ({
+  const answers = assessing.map((module) => ({
     module: module.key,
     assessment: module.assess({ root, path }, instant, cfg.result),
   }));
   const result = pathAssessment(answers);
-  return { kind: 'assess', path, now: instant, config, outcome: { kind: 'answered', result } };
+  return { kind: 'assess', modules, path, now: instant, config, outcome: { kind: 'answered', result } };
 }
 
 /**
@@ -122,7 +147,9 @@ function gatherAssess({ path, config, now, root }: Invocation): AssessGathered {
  * as a usage error — nothing at all on stdout. `withCorpusGuard` enforces that
  * `gatherConfig` is never evaluated when the corpus root is invalid.
  */
-function gatherCheck({ root, config }: Invocation): CheckGathered {
+function gatherCheck(invocation: Invocation): CheckGathered {
+  const { root, config } = invocation;
+  const checking = asked(invocation, 'check');
   const outcome = withCorpusGuard(listMarkdownFiles(root), (files) => {
     const cfg = gatherConfig(config);
     if (cfg.kind === 'rejected') return cfg;
@@ -132,12 +159,12 @@ function gatherCheck({ root, config }: Invocation): CheckGathered {
     // take.
     const verdict = checkVerdict<DeclaredViolation>(
       files.map(normalisePath),
-      gatherAnswers(implementing(MODULE_SET, 'check'), (module) => module.check(root, files, cfg.result)),
+      gatherAnswers(checking, (module) => module.check(root, files, cfg.result)),
     );
     if (verdict.kind === 'unreadable') return verdict;
     return { kind: 'answered' as const, result: verdict.result };
   });
-  return { kind: 'check', root, config, outcome };
+  return { kind: 'check', modules: keysOf(checking), root, config, outcome };
 }
 
 /** Compile-time exhaustiveness: reached only if a switch left a case unhandled. */
@@ -184,7 +211,7 @@ function gatherCommand(invocation: Invocation): Gathered {
  * @param argv The arguments after the executable and script.
  */
 export function run(argv: readonly string[]) {
-  const routed = route(process.versions.node, argv);
+  const routed = route(process.versions.node, argv, moduleCommands(MODULE_SET));
   if (routed.kind !== 'routed') return terminationFor(routed);
 
   return terminationFor(gatherCommand(routed.invocation));

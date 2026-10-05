@@ -10,7 +10,7 @@
 // A PROCESS-BOUNDARY test by specification (#221): it spawns the compiled `mh`
 // with `--root` and `--config` written exactly as below, because the response
 // echoes both as typed, and compares the response with `expected-check.json`.
-// It then asks `--query` for every path `expected-query.json` freezes, which is
+// It then asks `query` for every path `expected-query.json` freezes, which is
 // composition seen from the Steering side.
 // Parsed and deep-compared rather than byte-compared: the listing states that key
 // order inside an object is not part of the contract. Build before running this
@@ -61,7 +61,7 @@ function answered(): ToolEnvelope {
 
 describe('the integrated tier at the process boundary', () => {
   describe('success cases', () => {
-    it('answers --check with the frozen whole-corpus response and exits 1', () => {
+    it('answers check with the frozen whole-corpus response and exits 1', () => {
       // ARRANGE
       const expected = { code: 1, refusal: undefined, response: frozen };
       // ACT
@@ -70,7 +70,7 @@ describe('the integrated tier at the process boundary', () => {
       expect(actual).toEqual(expected);
     });
 
-    it.each(Object.keys(frozenQueries))('answers --query %s with the frozen response and exits 0', (path) => {
+    it.each(Object.keys(frozenQueries))('answers query %s with the frozen response and exits 0', (path) => {
       // ARRANGE
       const expected = { code: 0, refusal: undefined, response: frozenQueries[path] };
       // ACT

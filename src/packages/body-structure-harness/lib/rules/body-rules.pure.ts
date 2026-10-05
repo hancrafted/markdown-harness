@@ -90,7 +90,7 @@ export function pathsToOpen(paths: readonly string[], rules: readonly BodyStruct
 
 /**
  * Every path an audit must open, in corpus order: all `pathsToOpen` names, so
- * `--check` and the audit refuse over the same unreadable file, and every path
+ * `check` and the audit refuse over the same unreadable file, and every path
  * a Rule writing `types` matches on its path axes even where its own exclusion
  * removes it, because an `excluded` count needs all three axes to match and so
  * needs that file's `type`.

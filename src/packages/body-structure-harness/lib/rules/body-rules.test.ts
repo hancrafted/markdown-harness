@@ -76,7 +76,7 @@ describe('body rules', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('audits every file `--check` opens, typed or not, so both refuse over the same unreadable file', () => {
+    it('audits every file `check` opens, typed or not, so both refuse over the same unreadable file', () => {
       // `other/index.md` is reached by `index` alone, which writes no `types`.
       // ARRANGE
       const corpus = ['README.md', 'docs/research/a.md', 'other/index.md'];
@@ -202,7 +202,7 @@ describe('body rules', () => {
     });
 
     it('audits a file a typed Rule excludes and no Rule reaches, because its type decides that count', () => {
-      // `--check` never opens `docs/research/scratch.md` here; the audit must,
+      // `check` never opens `docs/research/scratch.md` here; the audit must,
       // to learn whether the exclusion counts.
       // ARRANGE
       const corpus = ['docs/research/scratch.md', 'other/scratch.md'];

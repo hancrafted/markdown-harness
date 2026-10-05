@@ -8,6 +8,8 @@
  */
 
 import type { Unreadable } from '../../../foundation/read-corpus.ts';
+import type { ModuleCommands } from '../argv/argv.types.ts';
+import { REPORTING_COMMANDS } from '../argv/parse-argv.pure.ts';
 import type { Implementing, ModuleAnswer, Verb } from './module-answers.types.ts';
 
 /**
@@ -38,6 +40,39 @@ export function implementing<TModule extends Partial<Record<Verb, unknown>>, TVe
   verb: TVerb,
 ): Implementing<TModule, TVerb>[] {
   return modules.filter((module): module is Implementing<TModule, TVerb> => module[verb] !== undefined);
+}
+
+/**
+ * Every Module's command-line name and the commands it implements, in declared
+ * Module order — what the argv parser needs to scope a run and to name the
+ * alternatives when it refuses one.
+ *
+ * The name is the key on each Module's OWN descriptor, so the command line,
+ * the config and the response's `module` field share one name and no list of
+ * Module names is written anywhere.
+ *
+ * @param modules The declared Module set.
+ */
+export function moduleCommands<TModule extends { readonly key: string } & Partial<Record<Verb, unknown>>>(
+  modules: readonly TModule[],
+): ModuleCommands[] {
+  return modules.map((module) => ({
+    key: module.key,
+    commands: REPORTING_COMMANDS.filter((verb) => module[verb] !== undefined),
+  }));
+}
+
+/**
+ * The Modules one run asks, in declared Module order.
+ *
+ * @param modules The declared Module set.
+ * @param keys The keys the parsed invocation resolved: one for a scoped run, every implementer otherwise.
+ */
+export function inScope<TModule extends { readonly key: string }>(
+  modules: readonly TModule[],
+  keys: readonly string[],
+): TModule[] {
+  return modules.filter((module) => keys.includes(module.key));
 }
 
 /** Whether one answer is a read refusal rather than something to compose. */

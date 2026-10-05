@@ -7,7 +7,7 @@
  * the Rules that reached nothing, still have a row.
  *
  * Selection is not decided here. The caller hands in the verdict function, so
- * the tally explains exactly the first-match `--query` and `--check` run on
+ * the tally explains exactly the first-match `query` and `check` run on
  * and a Module's extra axis (`types`) counts without this file naming it.
  */
 

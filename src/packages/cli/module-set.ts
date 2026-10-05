@@ -31,7 +31,7 @@ import type { PinnedModule } from './lib/run/module-answers.types.ts';
  *
  * The set is also held to the answers `cli` composes from (`PinnedModule`):
  * `config-contract` is type-only and cannot name them, so this is the one place
- * a Module answering `--query` with a bare claim, or `--audit` with a shape the
+ * a Module answering `query` with a bare claim, or `audit` with a shape the
  * composers cannot settle, stops compiling.
  *
  * ONE COMPILE-TIME GUARANTEE IS SPENT HERE. A whole-config interface could not
