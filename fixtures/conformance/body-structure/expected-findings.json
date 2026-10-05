@@ -45,6 +45,10 @@
     "ruleId": "adr-contract",
     "violations": []
   },
+  "docs/adr/compliance-numbered.md": {
+    "ruleId": "adr-contract",
+    "violations": []
+  },
   "docs/adr/consequences-bullets.md": {
     "ruleId": "adr-contract",
     "violations": [

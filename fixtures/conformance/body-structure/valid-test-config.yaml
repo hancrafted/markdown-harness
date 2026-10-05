@@ -383,5 +383,5 @@ body-structure:
         - { purpose: heading, level: 3, pattern: "^Do's$", mayHold: [ordered-list] }
         - { purpose: heading, level: 3, pattern: "^Don'ts$", mayHold: [ordered-list] }
         - { purpose: heading, level: 2, pattern: '^Consequences$', mayHold: [prose, ordered-list] }
-        - { purpose: heading, level: 2, pattern: '^Compliance and Enforcement$', mayHold: [prose] }
+        - { purpose: heading, level: 2, pattern: '^Compliance and Enforcement$', mayHold: [prose, ordered-list] }
         - { purpose: heading, level: 2, pattern: '^References$', mayHold: [unordered-list] }
