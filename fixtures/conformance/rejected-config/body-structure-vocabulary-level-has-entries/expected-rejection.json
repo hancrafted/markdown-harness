@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES",
+      "location": "body-structure.rules[0].vocabulary[0].level"
+    }
+  ]
+}

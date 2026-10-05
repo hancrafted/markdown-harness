@@ -18,7 +18,7 @@ export const CONFORMANCE_TIERS = [
     name: 'body-structure',
     caseKind: 'markdown',
     configFile: 'valid-test-config.yaml',
-    caseCount: 218,
+    caseCount: 294,
   },
   {
     name: 'frontmatter',
@@ -31,13 +31,13 @@ export const CONFORMANCE_TIERS = [
     name: 'integrated',
     caseKind: 'markdown',
     configFile: 'valid-test-config.yaml',
-    caseCount: 25,
+    caseCount: 29,
   },
   {
     name: 'rejected-config',
     caseKind: 'rejected-config',
     configFile: 'markdown-harness.config.yaml',
-    caseCount: 65,
+    caseCount: 82,
   },
 ] as const satisfies readonly ConformanceTier[];
 
