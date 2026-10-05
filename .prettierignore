@@ -38,8 +38,8 @@ fixtures/conformance/rejected-config/**
 # not to today's offending files, on the same grounds as the entries above.
 fixtures/conformance/body-structure/**
 
-# The integrated tier holds no byte trick, but its cases are whole-corpus and its
-# `expected-check.json` and `expected-query.json` are frozen, and lint-staged runs
-# `prettier --write` on every staged `.md` and `.json`. Ignoring the directory
-# keeps the commit hook from reformatting a frozen file.
+# The integrated tier holds no byte trick, but every spec folder's
+# `expected-check.json` and `expected-query.json` are frozen as the exact bytes `mh`
+# prints, and lint-staged runs `prettier --write` on every staged `.md` and `.json`.
+# Ignoring the directory keeps the commit hook from reformatting a frozen file.
 fixtures/conformance/integrated/**

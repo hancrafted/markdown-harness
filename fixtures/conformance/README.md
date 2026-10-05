@@ -4,19 +4,19 @@ This directory is not a corpus. It holds **tiers**, one directory each, and a ti
 runner points at. The runner Package is `src/packages/conformance/`, and `ARCH-002` is the
 governing record.
 
-| tier               | holds                                                                             | runner                               |
-| ------------------ | --------------------------------------------------------------------------------- | ------------------------------------ |
-| `body-structure/`  | the `body-structure` Module's spec folders, each a config plus its cases          | `tests/body-structure-tier.test.ts`  |
-| `frontmatter/`     | the `frontmatter` Module's config plus its Conformance cases                      | `tests/frontmatter-tier.test.ts`     |
-| `integrated/`      | one config both Modules govern at once, its cases, and the frozen check and query | `tests/integrated-tier.test.ts`      |
-| `rejected-config/` | config bytes a load must refuse, and no markdown at all                           | `tests/rejected-config-tier.test.ts` |
+| tier               | holds                                                                    | runner                               |
+| ------------------ | ------------------------------------------------------------------------ | ------------------------------------ |
+| `body-structure/`  | the `body-structure` Module's spec folders, each a config plus its cases | `tests/body-structure-tier.test.ts`  |
+| `frontmatter/`     | the `frontmatter` Module's config plus its Conformance cases             | `tests/frontmatter-tier.test.ts`     |
+| `integrated/`      | spec folders whose config both Modules govern at once, plus their cases  | `tests/integrated-tier.test.ts`      |
+| `rejected-config/` | config bytes a load must refuse, and no markdown at all                  | `tests/rejected-config-tier.test.ts` |
 
 One tier per Module, one where every Module governs one tree together, and one for config the loader
 refuses. The two sets — the directories here and the `*-tier.test.ts` files there — are derived from
 the tree and asserted equal by `tests/tier-enrolment.test.ts`, so a tier added without a runner
 fails rather than sitting unnoticed.
 
-**A spec folder is a synthetic repo root.** The `body-structure` tier is split into spec folders:
+**A spec folder is a synthetic repo root.** The `body-structure` and `integrated` tiers are split into spec folders:
 each directory directly under its `docs/` holds `markdown-harness.config.yaml`, whose first line is
 `# Spec: <sentence>`, the frozen `expected-check.json` (plus `expected-audit.json` and
 `expected-query.json` where Rules compete), and its cases. A folder is named `<key>__<behaviour>`
@@ -29,9 +29,9 @@ npm run conformance -- body-structure/docs/minCount__zero
 
 Build first: both run the compiled `mh` under `dist/`.
 
-**A tier root is a synthetic repo root** in a tier not yet split. The `frontmatter` and `integrated`
-tiers hold one `valid-test-config.yaml` whose selectors are written relative to the tier directory,
-which is why such a tier moves as a unit.
+**A tier root is a synthetic repo root** in a tier not yet split. The `frontmatter` tier holds one
+`valid-test-config.yaml` whose selectors are written relative to the tier directory, which is why
+such a tier moves as a unit.
 
 **This file is markdown and is not a Conformance case.** It carries no `expect:` marker and none is
 wanted: the enforcement rule's case glob reaches `<tier>/docs/**/*.md` and stops there. It is also

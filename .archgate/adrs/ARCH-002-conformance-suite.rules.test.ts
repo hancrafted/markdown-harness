@@ -522,15 +522,16 @@ describe('spec-folder-passes', () => {
 
 // REACH over the real tree. A hand-built context proves what a rule decides
 // and nothing about whether its globs reach the committed corpus, so each rule
-// also runs here against the repository itself: every body-structure spec
-// folder must be enumerated, and every one must pass.
+// also runs here against the repository itself: every spec folder of every
+// spec-folder tier must be enumerated, and every one must pass.
 describe('the spec-folder rules reach the real tree', () => {
   const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
   const realFiles = (dir: string): string[] =>
     readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((entry) =>
       entry.isDirectory() ? realFiles(`${dir}/${entry.name}`) : [`${dir}/${entry.name}`],
     );
-  const tree = [...realFiles('fixtures/conformance/body-structure'), 'CONTEXT.md'];
+  const SPEC_TIERS = ['body-structure', 'integrated'];
+  const tree = [...SPEC_TIERS.flatMap((tier) => realFiles(`fixtures/conformance/${tier}`)), 'CONTEXT.md'];
 
   function realCtx() {
     const violations: Reported[] = [];
@@ -550,7 +551,7 @@ describe('the spec-folder rules reach the real tree', () => {
     return { ctx, violations };
   }
 
-  const folders = readdirSync(join(ROOT, 'fixtures/conformance/body-structure/docs'));
+  const foldersOf = (tier: string): string[] => readdirSync(join(ROOT, `fixtures/conformance/${tier}/docs`));
 
   it.each(['spec-line', 'spec-folder-key', 'spec-folder-passes', 'expect-marker'] as const)(
     '%s passes every committed spec folder',
@@ -564,14 +565,21 @@ describe('the spec-folder rules reach the real tree', () => {
     },
   );
 
-  it('enumerates more than forty spec folders, so no rule above passed over nothing', () => {
+  it('enumerates every spec folder of both spec-folder tiers, so no rule above passed over nothing', () => {
     // ARRANGE
-    const fewest = 40;
-    const configs = tree.filter((f) => f.endsWith('/markdown-harness.config.yaml'));
+    const fewest = { 'body-structure': 40, integrated: 9 };
     // ACT
-    const actual = { folders: folders.length, configs: configs.length };
+    const actual = SPEC_TIERS.map((tier) => ({
+      tier,
+      folders: foldersOf(tier).length,
+      configs: tree.filter(
+        (f) => f.startsWith(`fixtures/conformance/${tier}/`) && f.endsWith('/markdown-harness.config.yaml'),
+      ).length,
+    }));
     // ASSERT
-    expect(actual.folders).toBeGreaterThan(fewest);
-    expect(actual.configs).toBe(actual.folders);
+    for (const row of actual) {
+      expect(row.folders).toBeGreaterThan(fewest[row.tier as keyof typeof fewest]);
+      expect(row.configs).toBe(row.folders);
+    }
   });
 });

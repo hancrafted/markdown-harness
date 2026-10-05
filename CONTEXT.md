@@ -452,8 +452,8 @@ One directory directly under a corpus tier's `docs/`, and the synthetic repo roo
 the config under the adopter's own file name, opening with a sentence that states the spec, the
 Conformance cases that sentence is about, and the output the tool must print there. Named
 `<key>__<behaviour>` after the config key it exercises, so a human can find, read and run one
-behaviour alone. The `body-structure` tier is split into spec folders; a tier root is the
-synthetic repo root only in a tier that is not.
+behaviour alone. The `body-structure` and `integrated` tiers are split into spec folders; a tier
+root is the synthetic repo root only in the `frontmatter` tier, which is not.
 _Avoid_: test folder, case folder, scenario, the spec (for the folder)
 
 **Conformance case**:
@@ -466,7 +466,7 @@ at all, and a **verbatim case** is a document whose bytes may not change.
 _Avoid_ as a name for this: fixture, test file, example doc
 
 **integrated**:
-The corpus tier where one config names more than one Module over one tree. A disagreement
+The corpus tier where every config names more than one Module over one tree. A disagreement
 between two Modules is expressible as a case nowhere else, which is why it is a frozen tier rather
 than a demo.
 _Avoid_ as a name for this: end-to-end, e2e, combined, the whole suite
