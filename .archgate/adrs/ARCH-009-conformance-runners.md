@@ -42,6 +42,7 @@ The failure this record exists to prevent is a suite that is green over nothing.
 1. A spec-folder tier's record MUST name its config through `ADOPTER_CONFIG_FILE`, the one constant for the adopter's file name.
 2. Its runner MUST compare each spec folder through `compareSpecFolder` in `spec-folder.ts`, one test per folder named after it; `npm run conformance` MUST call the same function, never a copy.
 3. The comparison MUST run the compiled `mh` inside the folder with no flag and hold stdout byte for byte against each frozen file.
+4. The rejected-config runner and `npm run conformance` MUST compare each case directory through `compareRejectedCase` in `rejected-config-case.ts`: `mh` inside the case, `result` against `expected-rejection.json`, stdout byte for byte against `expected-check-response.json` where frozen.
 
 ## Do's and Don'ts
 
@@ -92,7 +93,7 @@ The failure this record exists to prevent is a suite that is green over nothing.
 
 **§3's pinned instant** is the `assessmentInstant` in the tier record, the only instant that tier's Assessment half is judged against. An unpinned suite is non-existent because a wall-clock assertion is green tomorrow for a different reason.
 
-**§4** is held by the `body-structure` runner, one test per spec folder through `compareSpecFolder`, and by `tests/conformance-script.test.ts`, which runs the script on a passing folder, a mismatched scratch copy and a refused `frontmatter` subfolder.
+**§4** is held by the `body-structure` runner, one test per spec folder through `compareSpecFolder`, and by `tests/conformance-script.test.ts`, which runs the script on a passing folder, a mismatched scratch copy and a refused `frontmatter` subfolder. §4.4 is held by the rejected-config runner, one process-boundary test per case plus a hand-stated list of envelope cases, so a deleted frozen file fails.
 
 **Manual review duties** (never linted): a reviewed tier-record count was actually re-counted rather than incremented on faith (§1.1); this Package was not quietly enrolled in the declared Module set (§1.4).
 
