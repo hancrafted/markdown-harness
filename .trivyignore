@@ -1,0 +1,8 @@
+# Read by both Trivy gates in .github/workflows/security.yml and publish.yml.
+# One line per suppressed finding, each with an expiry so it is re-examined.
+
+# braces@3.0.3 (devDependency, via eslint-plugin-check-file -> micromatch).
+# Stack overflow from deeply nested patterns; no fixed version published,
+# 3.0.3 is the latest release. Input is our own eslint glob patterns, never
+# untrusted. Re-check `npm view braces version` before extending.
+CVE-2026-93687 exp:2027-01-05
