@@ -8,10 +8,11 @@
  * violation is caught. That is measurement rather than tidiness, and it is why
  * these declarations moved out of `config-contract`.
  *
- * What `config-contract` still holds is the vocabulary a section is BUILT from
- * — `Selector`, `FieldAddress`, `FieldConstraints` — plus the port and the
- * fault type. Those are Core's, taken as given, and this Module builds no
- * translation layer over them.
+ * What `config-contract` still holds is the Module-free part of the vocabulary
+ * a section is built from — `Selector` — plus the port and the fault type.
+ * Those are Core's, taken as given, and this Module builds no translation layer
+ * over them. `FieldAddress` and `FieldConstraints` are this Module's own, in
+ * `./constraints.types.ts`.
  *
  * Below the root rather than at it: ARCH-004 §2.4 fails a classified file at a
  * Package root, so the declarations sit here and `../../section.ts` re-exports
@@ -21,7 +22,7 @@
  *
  * There is no Floor. `type` is an ordinary field, so a repo's vocabulary is the
  * union of `allowed` values across its rules — derivable, no longer declared.
- * What a rule asserts about one field lives in `config-contract`.
+ * What a rule asserts about one field lives in `./constraints.types.ts`.
  */
 
 import type { Selector } from '../../../config-contract/index.ts';

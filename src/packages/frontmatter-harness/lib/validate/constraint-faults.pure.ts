@@ -39,12 +39,12 @@ const CONSTRAINT_KEYS: Record<keyof FieldConstraints, true> = {
  * A `Record` keyed by the type rather than a list of strings, because a type
  * union is erased before any of this runs and a runtime check cannot read one.
  * Keying by the union is the only thing that keeps the shadow honest: widening
- * `Format` in `config-contract` and forgetting this file leaves a missing key,
+ * `Format` in `constraints.types.ts` and forgetting this file leaves a missing key,
  * and a misspelt spelling an excess one, so neither compiles.
  *
  * The type is the source and these follow it. That is the opposite direction
  * from the const-object pattern, which is for a vocabulary with no home — this
- * one has one, in `config-contract`, and it stays the source.
+ * one has one, in this Module's `constraints.types.ts`, and it stays the source.
  */
 const PRESENCE_STATES: Record<NonNullable<FieldConstraints['presence']>, true> = {
   required: true,
