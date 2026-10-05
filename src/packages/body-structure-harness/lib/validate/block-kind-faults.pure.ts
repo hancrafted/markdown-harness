@@ -9,10 +9,10 @@
  * decided over valid kinds only so one mistake is reported once.
  */
 
-import type { ConfigFault } from '../../../config-contract/index.ts';
 import { invalidValue } from '../../../foundation/selector-faults.ts';
 import type { BlockKind } from '../../section.ts';
 import { fault } from './fault.pure.ts';
+import type { BodyStructureFault } from './fault.types.ts';
 
 /** The three kinds, keyed by the union they shadow so a kind added there cannot be forgotten here. */
 const BLOCK_KINDS: Record<BlockKind, true> = { prose: true, 'ordered-list': true, 'unordered-list': true };
@@ -23,12 +23,12 @@ function isBlockKind(value: unknown): value is BlockKind {
 }
 
 /** One fault per element that is no kind, at the element. */
-function invalidKindFaults(kinds: readonly unknown[], at: string): readonly ConfigFault[] {
+function invalidKindFaults(kinds: readonly unknown[], at: string): readonly BodyStructureFault[] {
   return kinds.flatMap((kind, index) => (isBlockKind(kind) ? [] : [invalidValue(`${at}.mayHold[${index}]`)]));
 }
 
 /** One fault per kind an earlier valid element already holds, at the later one. */
-function repeatedKindFaults(kinds: readonly unknown[], at: string): readonly ConfigFault[] {
+function repeatedKindFaults(kinds: readonly unknown[], at: string): readonly BodyStructureFault[] {
   const seen = new Set<unknown>();
   return kinds.flatMap((kind, index) => {
     if (!isBlockKind(kind)) return [];
@@ -44,7 +44,7 @@ function repeatedKindFaults(kinds: readonly unknown[], at: string): readonly Con
  * @param entry One heading entry, straight off the YAML.
  * @param at The entry's address, e.g. `body-structure.rules[0].headings[1]`.
  */
-export function mayHoldFaults(entry: Record<string, unknown>, at: string): readonly ConfigFault[] {
+export function mayHoldFaults(entry: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   if (!('mayHold' in entry)) return [];
   const written = entry.mayHold;
   if (!Array.isArray(written)) return [invalidValue(`${at}.mayHold`)];

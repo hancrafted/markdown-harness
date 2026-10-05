@@ -21,8 +21,11 @@ import type { ModuleAnswer, QueryAnswer } from './module-answers.types.ts';
  * @param path The queried path, normalised — the spelling the answer echoes back.
  * @param answers Each Module's answer under its own config key, IN DECLARED MODULE ORDER — the order the blocks are reported in.
  */
-export function pathGovernance(path: string, answers: readonly ModuleAnswer<QueryAnswer>[]): QueryResult {
-  const modules: ModuleRequirements[] = [];
+export function pathGovernance<TRequirements>(
+  path: string,
+  answers: readonly ModuleAnswer<QueryAnswer<TRequirements>>[],
+): QueryResult<TRequirements> {
+  const modules: ModuleRequirements<TRequirements>[] = [];
 
   for (const answer of answers) {
     for (const claim of answer.answer) {

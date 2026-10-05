@@ -13,13 +13,13 @@
  * and the table's order is the reporting order.
  */
 
-import type { FieldConstraints } from '../../../config-contract/index.ts';
-import type { FieldViolation, FieldViolationCode } from '../../../response-contract/index.ts';
-import { FIELD_VIOLATION_CODES } from '../../../response-contract/index.ts';
+import type { FieldConstraints } from '../section/constraints.types.ts';
 import type { AddressSite, FrontmatterMapping } from './check.types.ts';
 import { resolveAddress } from './field-address.pure.ts';
 import { evidenceFor, isEmptyValue } from './field-evidence.pure.ts';
 import { matchesFormat } from './value-format.pure.ts';
+import { FIELD_VIOLATION_CODES } from './violation.pure.ts';
+import type { FieldViolation, FieldViolationCode } from './violation.types.ts';
 
 /** Constraints that name STRINGS, in §3.3's own table order. */
 const STRING_KEYS = ['minLength', 'maxLength', 'format', 'pattern'] as const;

@@ -1,9 +1,8 @@
 // The selector vocabulary: how a rule says which files it is about.
 //
-// Its own file rather than a section of `config.types.ts`, because it is the
-// one part of the config language a second Module would reach for unchanged —
-// a selector is Core vocabulary, while the rest of that file is the frontmatter
-// Module's own section shape.
+// Core vocabulary: the one part of the config language every Module reaches
+// for unchanged. Everything else a section is built from belongs to the Module
+// whose section it is.
 
 /**
  * How a rule says which files it is about: two axes of literal tokens, and no

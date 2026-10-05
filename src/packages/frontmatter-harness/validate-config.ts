@@ -17,6 +17,7 @@
 // nothing below describes a config this Module was never named in.
 
 import type { SectionValidation } from '../config-contract/index.ts';
+import type { FrontmatterFaultCode } from './lib/validate/fault.types.ts';
 import { sectionFaults } from './lib/validate/section-faults.pure.ts';
 import { isFrontmatterConfig } from './lib/validate/section-narrowing.pure.ts';
 import type { FrontmatterConfig } from './section.ts';
@@ -32,7 +33,9 @@ import type { FrontmatterConfig } from './section.ts';
  *
  * @param section The value written under `frontmatter:`, whatever it parsed to.
  */
-export function validateFrontmatterSection(section: unknown): SectionValidation<FrontmatterConfig> {
+export function validateFrontmatterSection(
+  section: unknown,
+): SectionValidation<FrontmatterConfig, FrontmatterFaultCode> {
   if (isFrontmatterConfig(section)) return { section, faults: [] };
   return { faults: sectionFaults(section) };
 }

@@ -44,35 +44,16 @@ export type {
 } from './lib/check.types.ts';
 export { isConfigError } from './lib/config-error.pure.ts';
 // `ConfigFault` and `ConfigFaultCode` are re-exported from `config-contract`
-// rather than declared here. They moved to repair a cycle — the Module port
-// names a validation result, which names a fault, while this Package names
-// `FieldConstraints` back out of `config-contract` — and they are re-exported so
+// rather than declared here: the Module port names a validation result, which
+// names a fault, so the fault lives beside the port. They are re-exported so
 // that every consumer that already reached for them at this address still can.
+//
+// Nothing a single Module owns is exported here — no requirement shape, no
+// violation shape, no violation code. Each lives in its Module's Package, and
+// `cli` derives the concrete response from the declared Module set.
 export type { ConfigFault, ConfigFaultCode } from '../config-contract/index.ts';
-export type {
-  BlockKindNotAllowedViolation,
-  BodyStructureViolation,
-  HeadingCountViolation,
-  HeadingEntryViolation,
-  HeadingNotInVocabularyViolation,
-  HeadingRequirement,
-  HeadingUndefinedViolation,
-  LevelTooDeepViolation,
-  VocabularyRequirement,
-} from './lib/body-structure-violation.types.ts';
 export type { ConfigErrorResult } from './lib/config-error.types.ts';
-export type {
-  BodyStructureRequirements,
-  ConstrainingRequirements,
-  FieldRequirement,
-  GovernedPath,
-  InvisiblePath,
-  ModuleClaim,
-  ModuleRequirements,
-  NoFrontmatterRequirements,
-  QueryResult,
-  Requirements,
-} from './lib/query.types.ts';
+export type { GovernedPath, InvisiblePath, ModuleClaim, ModuleRequirements, QueryResult } from './lib/query.types.ts';
 export {
   assessResponse,
   auditResponse,
@@ -88,15 +69,3 @@ export type {
   MarkdownHarnessResponse,
   QueryResponse,
 } from './lib/response.types.ts';
-export { FIELD_VIOLATION_CODES } from './lib/violation.pure.ts';
-export type {
-  CrossFieldViolation,
-  CrossFieldViolationOf,
-  FieldValue,
-  FieldViolation,
-  FieldViolationCode,
-  FrontmatterForbiddenViolation,
-  FrontmatterUnparseableViolation,
-  UnknownKeyViolation,
-  Violation,
-} from './lib/violation.types.ts';

@@ -14,7 +14,6 @@
  * `undefinedHeadings: forbid`, `vocabulary`, then `headings`.
  */
 
-import type { ConfigFault } from '../../../config-contract/index.ts';
 import {
   axisFaults,
   exclusionFaults,
@@ -26,6 +25,7 @@ import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { BodyStructureConfig, BodyStructureRule } from '../../section.ts';
 import { writesClosureBeyondDefault } from '../section/spine-closure.pure.ts';
 import { closedSpineFaults, undefinedHeadingsFaults } from './closed-spine-faults.pure.ts';
+import type { BodyStructureFault } from './fault.types.ts';
 import { headingsFaults, intentFaults, maxLevelFaults } from './template-faults.pure.ts';
 import { vocabularyFaults } from './vocabulary-faults.pure.ts';
 
@@ -58,7 +58,7 @@ const RULE_KEYS: Record<keyof BodyStructureRule, true> = {
 const TYPES_AXIS = { types: (tokens: readonly string[]) => tokens.length > 0 && tokens.every((token) => token !== '') };
 
 /** The Rule's name and reason, both mandatory, each with its own way of being absent. */
-function identityFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function identityFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   const named = typeof rule.ruleId === 'string' && rule.ruleId !== '';
   return [
     ...(named ? [] : [invalidValue(`${at}.ruleId`)]),
@@ -73,13 +73,13 @@ function identityFaults(rule: Record<string, unknown>, at: string): readonly Con
  * instead, and an invalid `undefinedHeadings` at the key, so neither is also
  * called empty.
  */
-function payloadFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function payloadFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   const payload = 'maxLevel' in rule || 'headings' in rule || 'vocabulary' in rule || writesClosureBeyondDefault(rule);
   return payload ? [] : [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: at }];
 }
 
 /** Every fault one Rule carries, in walk order. */
-function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
+function ruleFaults(rule: unknown, at: string): readonly BodyStructureFault[] {
   if (!isMapping(rule)) return [invalidValue(at)];
   return [
     ...unrecognisedKeys(rule, RULE_KEYS, at),
@@ -97,9 +97,9 @@ function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
 }
 
 /** One fault per id an earlier Rule already claimed, pointing at the LATER occurrence. */
-function duplicateIdFaults(rules: readonly unknown[]): readonly ConfigFault[] {
+function duplicateIdFaults(rules: readonly unknown[]): readonly BodyStructureFault[] {
   const claimed = new Set<string>();
-  const faults: ConfigFault[] = [];
+  const faults: BodyStructureFault[] = [];
   rules.forEach((rule, index) => {
     if (!isMapping(rule) || typeof rule.ruleId !== 'string') return;
     if (claimed.has(rule.ruleId))
@@ -114,7 +114,7 @@ function duplicateIdFaults(rules: readonly unknown[]): readonly ConfigFault[] {
  *
  * @param section The value written under `body-structure:`, whatever it parsed to.
  */
-export function sectionFaults(section: unknown): readonly ConfigFault[] {
+export function sectionFaults(section: unknown): readonly BodyStructureFault[] {
   if (!isMapping(section)) return [invalidValue(SECTION)];
 
   const keys = unrecognisedKeys(section, SECTION_KEYS, SECTION);

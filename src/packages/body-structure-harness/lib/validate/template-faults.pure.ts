@@ -19,13 +19,13 @@
  * `CONFIG_INVALID_VALUE`, a key written with a value outside its declared type.
  */
 
-import type { ConfigFault } from '../../../config-contract/index.ts';
 import { invalidValue, unrecognisedKeys } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { HeadingEntry, HeadingPresence, HeadingPurpose } from '../../section.ts';
 import { closesSpine } from '../section/spine-closure.pure.ts';
 import { mayHoldFaults } from './block-kind-faults.pure.ts';
 import { fault } from './fault.pure.ts';
+import type { BodyStructureFault } from './fault.types.ts';
 import { compiles, isAnchoredLiteral } from './pattern-dialect.pure.ts';
 
 /** Every key a heading entry may carry, keyed by the type declaring them so the two cannot drift. */
@@ -70,17 +70,17 @@ function isPurpose(value: unknown): value is HeadingPurpose {
 }
 
 /** A `level` that is not an integer from 1 to 6. */
-function levelFaults(entry: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function levelFaults(entry: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   return isLevel(entry.level) ? [] : [invalidValue(`${at}.level`)];
 }
 
 /** A `purpose` that is absent or not one of its two spellings. */
-function purposeFaults(entry: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function purposeFaults(entry: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   return isPurpose(entry.purpose) ? [] : [invalidValue(`${at}.purpose`)];
 }
 
 /** A `pattern` that is not a non-empty string, or does not compile under the `u` flag. */
-function patternFaults(entry: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function patternFaults(entry: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   if (!('pattern' in entry)) return [];
   const written = entry.pattern;
   return isFilled(written) && compiles(written) ? [] : [invalidValue(`${at}.pattern`)];
@@ -97,14 +97,14 @@ function forbiddenKeyFaults(
   entry: Record<string, unknown>,
   purpose: HeadingPurpose,
   at: string,
-): readonly ConfigFault[] {
+): readonly BodyStructureFault[] {
   return FORBIDDEN_KEYS[purpose]
     .filter((key) => key in entry)
     .map((key) => fault('CONFIG_ENTRY_KEY_NOT_FOR_PURPOSE', `${at}.${key}`));
 }
 
 /** A `presence` outside its two spellings. Only a `heading` may write one. */
-function presenceFaults(entry: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function presenceFaults(entry: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   if (!('presence' in entry)) return [];
   const written = entry.presence;
   return typeof written === 'string' && Object.hasOwn(PRESENCE, written) ? [] : [invalidValue(`${at}.presence`)];
@@ -115,7 +115,7 @@ function countFaults(
   entry: Record<string, unknown>,
   key: keyof typeof COUNT_FLOORS,
   at: string,
-): readonly ConfigFault[] {
+): readonly BodyStructureFault[] {
   if (!(key in entry) || isCount(entry[key], COUNT_FLOORS[key])) return [];
   return [invalidValue(`${at}.${key}`)];
 }
@@ -124,26 +124,30 @@ function countFaults(
  * `minCount` above `maxCount`, so no count satisfies the entry. Decided only
  * when both bounds are written and valid, so an invalid bound is reported once.
  */
-function invertedFaults(entry: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function invertedFaults(entry: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   const { minCount, maxCount } = entry;
   if (!isCount(minCount, COUNT_FLOORS.minCount) || !isCount(maxCount, COUNT_FLOORS.maxCount)) return [];
   return minCount > maxCount ? [fault('CONFIG_COUNT_BOUNDS_INVERTED', at)] : [];
 }
 
 /** An enumeration with neither count written: with nothing to count it states nothing. */
-function missingCountFaults(entry: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function missingCountFaults(entry: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   return 'minCount' in entry || 'maxCount' in entry ? [] : [fault('CONFIG_ENUMERATION_WITHOUT_COUNT', at)];
 }
 
 /** An enumeration whose valid pattern can only match one string. */
-function pinnedTextFaults(entry: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function pinnedTextFaults(entry: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   const written = entry.pattern;
   if (!isFilled(written) || !compiles(written)) return [];
   return isAnchoredLiteral(written) ? [fault('CONFIG_ENUMERATION_PINS_TEXT', `${at}.pattern`)] : [];
 }
 
 /** Every check that depends on a valid `purpose`, in walk order. */
-function purposeFaultsFor(entry: Record<string, unknown>, purpose: HeadingPurpose, at: string): readonly ConfigFault[] {
+function purposeFaultsFor(
+  entry: Record<string, unknown>,
+  purpose: HeadingPurpose,
+  at: string,
+): readonly BodyStructureFault[] {
   const forbidden = forbiddenKeyFaults(entry, purpose, at);
   if (purpose === 'heading') return [...forbidden, ...presenceFaults(entry, at)];
   return [
@@ -165,7 +169,7 @@ function purposeFaultsFor(entry: Record<string, unknown>, purpose: HeadingPurpos
  * @param carrier A Rule or a heading entry, straight off the YAML.
  * @param at The carrier's address.
  */
-export function intentFaults(carrier: Record<string, unknown>, at: string): readonly ConfigFault[] {
+export function intentFaults(carrier: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   if (!('intent' in carrier)) return [];
   const written = carrier.intent;
   if (written === '' || written === null) return [fault('CONFIG_EMPTY_INTENT', `${at}.intent`)];
@@ -177,7 +181,7 @@ function beyondMaxLevelFaults(
   entry: Record<string, unknown>,
   at: string,
   maxLevel: number | undefined,
-): readonly ConfigFault[] {
+): readonly BodyStructureFault[] {
   if (maxLevel === undefined || !isLevel(entry.level) || entry.level <= maxLevel) return [];
   return [fault('CONFIG_ENTRY_BEYOND_MAX_LEVEL', `${at}.level`)];
 }
@@ -187,7 +191,7 @@ function headingEntryFaults(
   entry: Record<string, unknown>,
   at: string,
   maxLevel: number | undefined,
-): readonly ConfigFault[] {
+): readonly BodyStructureFault[] {
   return [
     ...unrecognisedKeys(entry, HEADING_KEYS, at),
     ...purposeFaults(entry, at),
@@ -206,7 +210,7 @@ function headingEntryFaults(
  * @param rule One Rule, straight off the YAML.
  * @param at The Rule's address, e.g. `body-structure.rules[0]`.
  */
-export function maxLevelFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+export function maxLevelFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   return 'maxLevel' in rule && !isLevel(rule.maxLevel) ? [invalidValue(`${at}.maxLevel`)] : [];
 }
 
@@ -221,7 +225,7 @@ export function maxLevelFaults(rule: Record<string, unknown>, at: string): reado
  * @param rule One Rule, straight off the YAML.
  * @param at The Rule's address, e.g. `body-structure.rules[0]`.
  */
-export function headingsFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+export function headingsFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   if (!('headings' in rule)) return [];
   const headings = rule.headings;
   if (!Array.isArray(headings)) return [invalidValue(`${at}.headings`)];

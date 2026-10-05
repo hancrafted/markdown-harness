@@ -20,17 +20,25 @@ import type {
 } from './response.types.ts';
 
 /** The result every command returns when it cannot trust the config. */
-export function configError(faults: readonly ConfigFault[]): ConfigErrorResult {
+export function configError(faults: readonly ConfigFault<string>[]): ConfigErrorResult {
   return { error: 'CONFIG_REJECTED', faults };
 }
 
 /** Construct the envelope for `--check`. */
-export function checkResponse(root: string, config: string, result: CheckResult | ConfigErrorResult): CheckResponse {
+export function checkResponse<TViolation>(
+  root: string,
+  config: string,
+  result: CheckResult<TViolation> | ConfigErrorResult,
+): CheckResponse<TViolation> {
   return { command: 'check', root, config, result };
 }
 
 /** Construct the envelope for `--query`. */
-export function queryResponse(path: string, config: string, result: QueryResult | ConfigErrorResult): QueryResponse {
+export function queryResponse<TRequirements>(
+  path: string,
+  config: string,
+  result: QueryResult<TRequirements> | ConfigErrorResult,
+): QueryResponse<TRequirements> {
   return { command: 'query', path, config, result };
 }
 
@@ -49,6 +57,8 @@ export function assessResponse(
 }
 
 /** Serialize one response with the contract's two-space indentation and trailing newline. */
-export function serializeResponse(response: MarkdownHarnessResponse): string {
+export function serializeResponse<TRequirements, TViolation>(
+  response: MarkdownHarnessResponse<TRequirements, TViolation>,
+): string {
   return `${JSON.stringify(response, null, 2)}\n`;
 }

@@ -10,7 +10,9 @@ import { resolvedInstant, route, terminationFor, withCorpusGuard } from './termi
 
 const SAMPLE_FAULTS: readonly ConfigFault[] = [{ code: 'CONFIG_NOT_FOUND', location: 'markdown-harness.config.yaml' }];
 
-const EMPTY_QUERY_RESULT: QueryResult = {
+// `never` for the Module-owned parameter: these results carry no claim and no
+// finding, so they fit whatever the declared Module set derives.
+const EMPTY_QUERY_RESULT: QueryResult<never> = {
   governance: 'invisible',
   path: 'docs/a.md',
 };
@@ -19,12 +21,12 @@ const EMPTY_AUDIT_RESULT: AuditResult = {
   modules: [],
 };
 
-const CLEAN_CHECK_RESULT: CheckResult = {
+const CLEAN_CHECK_RESULT: CheckResult<never> = {
   summary: { governedFiles: 1, invalidFiles: 0, totalViolations: 0 },
   files: [],
 };
 
-const DIRTY_CHECK_RESULT: CheckResult = {
+const DIRTY_CHECK_RESULT: CheckResult<never> = {
   summary: { governedFiles: 1, invalidFiles: 1, totalViolations: 1 },
   files: [],
 };

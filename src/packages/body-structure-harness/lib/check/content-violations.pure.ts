@@ -6,9 +6,9 @@
  * claimed: that is the walk's, in `body-violations.pure.ts`.
  */
 
-import type { BodyStructureViolation } from '../../../response-contract/index.ts';
 import type { BlockKind, OutlineSection } from '../document/document.types.ts';
 import type { Claim } from './body-check.types.ts';
+import type { BodyStructureViolation } from './violation.types.ts';
 
 /** How many blocks of each kind a section holds, in the order each kind first appears. */
 function countsByKind(blocks: readonly BlockKind[]): ReadonlyMap<BlockKind, number> {

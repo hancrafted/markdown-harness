@@ -9,14 +9,9 @@
  */
 
 import type { Unreadable } from '../../../foundation/read-corpus.ts';
-import type {
-  AssessResult,
-  AuditResult,
-  CheckResult,
-  ConfigFault,
-  QueryResult,
-} from '../../../response-contract/index.ts';
+import type { AssessResult, AuditResult, ConfigFault } from '../../../response-contract/index.ts';
 import type { Invocation } from '../argv/argv.types.ts';
+import type { DeclaredCheckResult, DeclaredQueryResult } from './declared-module.types.ts';
 
 /** Refused before a command could even be identified. */
 export type Refusal =
@@ -27,7 +22,7 @@ export type Route = Refusal | { readonly kind: 'routed'; readonly invocation: In
 
 /** A config load's outcome, once a command is already known to want one. */
 export type ConfigOutcome<Result> =
-  | { readonly kind: 'rejected'; readonly faults: readonly ConfigFault[] }
+  | { readonly kind: 'rejected'; readonly faults: readonly ConfigFault<string>[] }
   | { readonly kind: 'answered'; readonly result: Result };
 
 /** What `--query` gathered. */
@@ -35,7 +30,7 @@ export interface QueryGathered {
   readonly kind: 'query';
   readonly path: string;
   readonly config: string;
-  readonly outcome: ConfigOutcome<QueryResult>;
+  readonly outcome: ConfigOutcome<DeclaredQueryResult>;
 }
 
 /** What `--audit` gathered. */
@@ -60,7 +55,7 @@ export interface CheckGathered {
   readonly kind: 'check';
   readonly root: string;
   readonly config: string;
-  readonly outcome: { readonly kind: 'no-root' } | Unreadable | ConfigOutcome<CheckResult>;
+  readonly outcome: { readonly kind: 'no-root' } | Unreadable | ConfigOutcome<DeclaredCheckResult>;
 }
 
 /**

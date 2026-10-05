@@ -7,8 +7,7 @@
  * are a complete basis for every sentence a consumer could compose.
  */
 
-import type { FieldConstraints } from '../../config-contract/index.ts';
-import type { BodyStructureViolation } from './body-structure-violation.types.ts';
+import type { FieldConstraints } from '../section/constraints.types.ts';
 import type { FIELD_VIOLATION_CODES } from './violation.pure.ts';
 
 /**
@@ -56,20 +55,19 @@ export type FieldValue =
   | { keys: readonly string[] };
 
 /**
- * Everything that can be wrong with one file.
+ * Everything this Module can find wrong with one file's frontmatter.
  *
- * Five families. The first four are `frontmatter`'s and each carries `field`;
- * the fifth is `body-structure`'s and carries none, because no frontmatter
- * field is at fault. A consumer that read `field` off every
- * member must now narrow on `violation` first.
+ * Every member carries `field`, `null` when no single address is at fault. The
+ * shapes and their codes are this Module's own (ARCH-008): the response
+ * contract is generic over a finding, and `cli` unions this with every other
+ * declared Module's findings.
  */
-export type Violation =
+export type FrontmatterViolation =
   | FieldViolation
   | UnknownKeyViolation
   | FrontmatterForbiddenViolation
   | FrontmatterUnparseableViolation
-  | CrossFieldViolation
-  | BodyStructureViolation;
+  | CrossFieldViolation;
 
 /** A constraint on one field failed. */
 export interface FieldViolation {
@@ -97,7 +95,7 @@ export interface UnknownKeyViolation {
   /** What was found under it. */
   value?: FieldValue;
   /** The one outcome this shape reports. */
-  violation: 'UNKNOWN_KEY_FORBIDDEN';
+  violation: 'FRONTMATTER__UNKNOWN_KEY_FORBIDDEN';
   /**
    * The one non-verbatim requirement in any response: `allowedKeys` is derived
    * — the top-level segments of the rule's addresses, deduped, in config order
@@ -119,7 +117,7 @@ export interface FrontmatterForbiddenViolation {
    */
   value?: FieldValue;
   /** The one outcome this shape reports. */
-  violation: 'FRONTMATTER_FORBIDDEN';
+  violation: 'FRONTMATTER__FRONTMATTER_FORBIDDEN';
   /** The payload as written. */
   requirement: { frontmatter: 'forbidden' };
 }
@@ -135,7 +133,7 @@ export interface FrontmatterUnparseableViolation {
   /** No single field: the fault is the block's bytes. */
   field: null;
   /** The one outcome this shape reports. */
-  violation: 'FRONTMATTER_UNPARSEABLE';
+  violation: 'FRONTMATTER__FRONTMATTER_UNPARSEABLE';
 }
 
 /** A set constraint failed. `satisfied` is the set, not a count. */
@@ -158,6 +156,9 @@ export interface CrossFieldViolationOf<Key extends string, Code extends string> 
  * only one way, so one code is the whole of either.
  */
 export type CrossFieldViolation =
-  | CrossFieldViolationOf<'exactlyOneOf', 'EXACTLY_ONE_OF_NONE_PRESENT' | 'EXACTLY_ONE_OF_MULTIPLE_PRESENT'>
-  | CrossFieldViolationOf<'anyOf', 'ANY_OF_UNSATISFIED'>
-  | CrossFieldViolationOf<'allOf', 'ALL_OF_UNSATISFIED'>;
+  | CrossFieldViolationOf<
+      'exactlyOneOf',
+      'FRONTMATTER__EXACTLY_ONE_OF_NONE_PRESENT' | 'FRONTMATTER__EXACTLY_ONE_OF_MULTIPLE_PRESENT'
+    >
+  | CrossFieldViolationOf<'anyOf', 'FRONTMATTER__ANY_OF_UNSATISFIED'>
+  | CrossFieldViolationOf<'allOf', 'FRONTMATTER__ALL_OF_UNSATISFIED'>;

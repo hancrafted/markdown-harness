@@ -21,7 +21,7 @@ import type { ConfigFault } from './fault.types.ts';
  * absent whenever any fault was found. A config fails whole (§3.5), so the
  * caller concatenates rather than stopping at the first thing wrong.
  */
-export interface SectionValidation<TSection> {
+export interface SectionValidation<TSection, TFaultCode extends string = string> {
   /**
    * The section, typed, absent whenever a fault was found.
    *
@@ -31,8 +31,14 @@ export interface SectionValidation<TSection> {
    */
   section?: TSection;
 
-  /** Every fault the section carries, in reporting order; empty when it carries none. */
-  faults: readonly ConfigFault[];
+  /**
+   * Every fault the section carries, in reporting order; empty when it carries none.
+   *
+   * Typed against the Module's own catalog — the Core's codes plus whatever its
+   * grammar adds — which is what lets `cli` derive the whole fault catalog from
+   * the declared Module set.
+   */
+  faults: readonly ConfigFault<TFaultCode>[];
 }
 
 /**
@@ -70,6 +76,7 @@ export interface ModuleDescriptor<
   TAudit = unknown,
   TAssess = unknown,
   TCheck = unknown,
+  TFaultCode extends string = string,
 > {
   /**
    * The Module's one top-level config key.
@@ -92,7 +99,7 @@ export interface ModuleDescriptor<
    *
    * @param raw The value written under this Module's key, exactly as parsed.
    */
-  validateSection(raw: unknown): SectionValidation<TSection>;
+  validateSection(raw: unknown): SectionValidation<TSection, TFaultCode>;
 
   /**
    * Answer what this Module asks of one path before that path exists.

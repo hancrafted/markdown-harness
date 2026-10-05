@@ -6,6 +6,7 @@
 // loader's answer, decided once against the whole declared Module set.
 
 import type { SectionValidation } from '../config-contract/index.ts';
+import type { BodyStructureFaultCode } from './lib/validate/fault.types.ts';
 import { isBodyStructureConfig, sectionFaults } from './lib/validate/section-faults.pure.ts';
 import type { BodyStructureConfig } from './section.ts';
 
@@ -15,7 +16,9 @@ import type { BodyStructureConfig } from './section.ts';
  *
  * @param section The value written under `body-structure:`, whatever it parsed to.
  */
-export function validateBodyStructureSection(section: unknown): SectionValidation<BodyStructureConfig> {
+export function validateBodyStructureSection(
+  section: unknown,
+): SectionValidation<BodyStructureConfig, BodyStructureFaultCode> {
   if (isBodyStructureConfig(section)) return { section, faults: [] };
   return { faults: sectionFaults(section) };
 }

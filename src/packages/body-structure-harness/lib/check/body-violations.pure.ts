@@ -17,7 +17,6 @@
  * callers hold a Rule and a body, never a cursor.
  */
 
-import type { BodyStructureViolation } from '../../../response-contract/index.ts';
 import type { BodyStructureRule, HeadingEntry } from '../../section.ts';
 import type { OutlineSection } from '../document/document.types.ts';
 import { sectionsOf } from '../document/outline.pure.ts';
@@ -26,6 +25,7 @@ import type { Claim, EntryFinding, Spine, Walk } from './body-check.types.ts';
 import { contentViolations } from './content-violations.pure.ts';
 import { levelViolations, unlistedViolations } from './outline-violations.pure.ts';
 import { matcherFor, walkSpine } from './spine-walk.pure.ts';
+import type { BodyStructureViolation } from './violation.types.ts';
 
 /** One entry and its index in the spine. */
 interface Slot {

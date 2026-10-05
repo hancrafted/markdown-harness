@@ -34,7 +34,7 @@ export function validateDeclaredSections(
   modules: readonly ModuleDescriptor<unknown>[],
 ): SectionOutcome {
   const sections = new Map<ModuleDescriptor<unknown>, unknown>();
-  const faults: ConfigFault[] = [];
+  const faults: ConfigFault<string>[] = [];
 
   for (const module of modules) {
     if (!Object.hasOwn(document, module.key)) continue;

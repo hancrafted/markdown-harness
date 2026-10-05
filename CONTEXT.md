@@ -81,9 +81,10 @@ translation.
 _Avoid_: LRM-wiki, wiki (unqualified), vault
 
 **config contract**:
-The vocabulary every config section is built from — selectors, Constraints, the fault a
-rejected config reports — plus the port a Module declares itself through. It names no Module and
-describes no file: a Module's own section type belongs to that Module. It is the **portable** half of
+The vocabulary every config section is built from — selectors, the fault a rejected config
+reports — plus the port a Module declares itself through. It names no Module and describes no file:
+a Module's own section type, the vocabulary only that section uses (the Constraints are
+`frontmatter`'s) and the config faults only its grammar can earn all belong to that Module. It is the **portable** half of
 the product — adopters and any reimplementation receive it and never receive `.archgate/`, which is
 why an ADR must not hold it.
 _Avoid_ as a name for this: schema, config types, the config API, the contract (unqualified — this
@@ -96,7 +97,10 @@ Package. This is what `docs/vision/architecture.md` calls **the report format**;
 named for the frozen type names — `QueryResponse`, `CheckResponse`, `AuditResponse` — rather than
 for the prose, so the phrase is bound here instead of either side being renamed. Portable on the
 same terms as the config contract, and it stores no prose of ours: a code, the value found and the
-Operator's verbatim `intent`, never a sentence this repo wrote.
+Operator's verbatim `intent`, never a sentence this repo wrote. Like the config contract it names no
+Module: what a claim requires and what a finding looks like are generic parameters here, each
+Module declares its own requirement shapes, violation shapes and `<MODULE>__<OUTCOME>` codes in its
+own Package, and `cli` derives the concrete response from the declared Module set.
 _Avoid_: report contract (as a Package name), output schema, the response type (unqualified)
 
 **Core**:

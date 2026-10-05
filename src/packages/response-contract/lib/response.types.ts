@@ -9,6 +9,11 @@
  * `config: string` written per variant costs two lines and saves every reader a
  * hop, and a base named after what the variants share ends up named after
  * nothing.
+ *
+ * Generic in the two things a Module owns that reach the wire: what a claim
+ * requires (`TRequirements`) and what a finding is (`TViolation`). `cli`
+ * instantiates both from the declared Module set, so this Package describes the
+ * envelope without naming a Module.
  */
 
 import type { AssessResult } from './assess.types.ts';
@@ -18,7 +23,7 @@ import type { ConfigErrorResult } from './config-error.types.ts';
 import type { QueryResult } from './query.types.ts';
 
 /** The `--check` envelope. */
-export interface CheckResponse {
+export interface CheckResponse<TViolation = unknown> {
   /** The discriminant, naming what was asked. */
   command: 'check';
   /** The corpus directory, echoed exactly as the caller wrote it — never resolved. */
@@ -26,11 +31,11 @@ export interface CheckResponse {
   /** The config path, echoed exactly as the caller wrote it — never resolved. */
   config: string;
   /** Every governed file's findings, or the reason the config could not be trusted. */
-  result: CheckResult | ConfigErrorResult;
+  result: CheckResult<TViolation> | ConfigErrorResult;
 }
 
 /** The `--query` envelope. */
-export interface QueryResponse {
+export interface QueryResponse<TRequirements = unknown> {
   /** The discriminant, naming what was asked. */
   command: 'query';
   /** The path asked about, echoed exactly as the caller wrote it. It need not exist. */
@@ -38,7 +43,7 @@ export interface QueryResponse {
   /** The config path, echoed exactly as the caller wrote it — never resolved. */
   config: string;
   /** The answer, or the reason the config could not be trusted. */
-  result: QueryResult | ConfigErrorResult;
+  result: QueryResult<TRequirements> | ConfigErrorResult;
 }
 
 /** The `--audit` envelope. */
@@ -89,4 +94,5 @@ export interface AssessResponse {
  * thing, and only after that is `result` worth reading — with `isConfigError`
  * to separate an answer from a rejection.
  */
-export type MarkdownHarnessResponse = CheckResponse | QueryResponse | AuditResponse | AssessResponse;
+export type MarkdownHarnessResponse<TRequirements = unknown, TViolation = unknown> =
+  CheckResponse<TViolation> | QueryResponse<TRequirements> | AuditResponse | AssessResponse;

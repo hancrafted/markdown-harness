@@ -87,7 +87,7 @@ describe('field constraints', () => {
       // ARRANGE
       const constraints = { presence: 'required' } as const;
       const data = { title: 'No type here' };
-      const expected = [{ field: 'type', violation: 'MISSING_REQUIRED_FIELD', requirement: constraints }];
+      const expected = [{ field: 'type', violation: 'FRONTMATTER__MISSING_REQUIRED_FIELD', requirement: constraints }];
       // ACT
       const actual = fieldViolations('type', constraints, data);
       // ASSERT
@@ -100,7 +100,9 @@ describe('field constraints', () => {
       // ARRANGE
       const constraints = { presence: 'required' } as const;
       const data = { type: null };
-      const expected = [{ field: 'type', value: null, violation: 'EMPTY_REQUIRED_FIELD', requirement: constraints }];
+      const expected = [
+        { field: 'type', value: null, violation: 'FRONTMATTER__EMPTY_REQUIRED_FIELD', requirement: constraints },
+      ];
       // ACT
       const actual = fieldViolations('type', constraints, data);
       // ASSERT
@@ -113,7 +115,7 @@ describe('field constraints', () => {
       const constraints = { presence: 'required', maxLength: 200 } as const;
       const data = { description: null };
       const expected = [
-        { field: 'description', value: null, violation: 'EMPTY_REQUIRED_FIELD', requirement: constraints },
+        { field: 'description', value: null, violation: 'FRONTMATTER__EMPTY_REQUIRED_FIELD', requirement: constraints },
       ];
       // ACT
       const actual = fieldViolations('description', constraints, data);
@@ -125,7 +127,9 @@ describe('field constraints', () => {
       // ARRANGE
       const constraints = { presence: 'required', minItems: 1 } as const;
       const data = { tags: null };
-      const expected = [{ field: 'tags', value: null, violation: 'EMPTY_REQUIRED_FIELD', requirement: constraints }];
+      const expected = [
+        { field: 'tags', value: null, violation: 'FRONTMATTER__EMPTY_REQUIRED_FIELD', requirement: constraints },
+      ];
       // ACT
       const actual = fieldViolations('tags', constraints, data);
       // ASSERT
@@ -137,7 +141,7 @@ describe('field constraints', () => {
       const constraints = { presence: 'forbidden', intent: 'Reference material ships finished' } as const;
       const data = { draft: true };
       const expected = [
-        { field: 'draft', value: true, violation: 'FORBIDDEN_FIELD_PRESENT', requirement: constraints },
+        { field: 'draft', value: true, violation: 'FRONTMATTER__FORBIDDEN_FIELD_PRESENT', requirement: constraints },
       ];
       // ACT
       const actual = fieldViolations('draft', constraints, data);
@@ -150,7 +154,7 @@ describe('field constraints', () => {
       const constraints = { allowed: [{ value: 'draft' }, { value: 'stable' }] };
       const data = { status: 'retired' };
       const expected = [
-        { field: 'status', value: 'retired', violation: 'VALUE_NOT_ALLOWED', requirement: constraints },
+        { field: 'status', value: 'retired', violation: 'FRONTMATTER__VALUE_NOT_ALLOWED', requirement: constraints },
       ];
       // ACT
       const actual = fieldViolations('status', constraints, data);
@@ -163,7 +167,12 @@ describe('field constraints', () => {
       const constraints = { format: 'actor' } as const;
       const data = { generated: { by: 'human/hancrafted' } };
       const expected = [
-        { field: 'generated.by', value: 'human/hancrafted', violation: 'FORMAT_MISMATCH', requirement: constraints },
+        {
+          field: 'generated.by',
+          value: 'human/hancrafted',
+          violation: 'FRONTMATTER__FORMAT_MISMATCH',
+          requirement: constraints,
+        },
       ];
       // ACT
       const actual = fieldViolations('generated.by', constraints, data);
@@ -181,7 +190,12 @@ describe('field constraints', () => {
       } as const;
       const data = { slug: 'Legacy_Reference' };
       const expected = [
-        { field: 'slug', value: 'Legacy_Reference', violation: 'PATTERN_MISMATCH', requirement: constraints },
+        {
+          field: 'slug',
+          value: 'Legacy_Reference',
+          violation: 'FRONTMATTER__PATTERN_MISMATCH',
+          requirement: constraints,
+        },
       ];
       // ACT
       const actual = fieldViolations('slug', constraints, data);
@@ -194,9 +208,16 @@ describe('field constraints', () => {
       // opposite and an agent should not have to compare value against bound.
       // ARRANGE
       const constraints = { minLength: 3, maxLength: 8 } as const;
-      const short = [{ field: 'title', value: 'ci', violation: 'VALUE_TOO_SHORT', requirement: constraints }];
+      const short = [
+        { field: 'title', value: 'ci', violation: 'FRONTMATTER__VALUE_TOO_SHORT', requirement: constraints },
+      ];
       const long = [
-        { field: 'title', value: 'a much longer title', violation: 'VALUE_TOO_LONG', requirement: constraints },
+        {
+          field: 'title',
+          value: 'a much longer title',
+          violation: 'FRONTMATTER__VALUE_TOO_LONG',
+          requirement: constraints,
+        },
       ];
       // ACT
       const tooShort = fieldViolations('title', constraints, { title: 'ci' });
@@ -209,8 +230,12 @@ describe('field constraints', () => {
     it('reports the two entry-count bounds as opposite codes, with the count as evidence', () => {
       // ARRANGE
       const constraints = { minItems: 2, maxItems: 3 } as const;
-      const few = [{ field: 'tags', value: { items: 1 }, violation: 'TOO_FEW_ITEMS', requirement: constraints }];
-      const many = [{ field: 'tags', value: { items: 4 }, violation: 'TOO_MANY_ITEMS', requirement: constraints }];
+      const few = [
+        { field: 'tags', value: { items: 1 }, violation: 'FRONTMATTER__TOO_FEW_ITEMS', requirement: constraints },
+      ];
+      const many = [
+        { field: 'tags', value: { items: 4 }, violation: 'FRONTMATTER__TOO_MANY_ITEMS', requirement: constraints },
+      ];
       // ACT
       const tooFew = fieldViolations('tags', constraints, { tags: ['a'] });
       const tooMany = fieldViolations('tags', constraints, { tags: ['a', 'b', 'c', 'd'] });
@@ -224,7 +249,7 @@ describe('field constraints', () => {
       const constraints = { itemMaxLength: 5 } as const;
       const data = { tags: ['okf', 'far-too-long'] };
       const expected = [
-        { field: 'tags[1]', value: 'far-too-long', violation: 'ITEM_TOO_LONG', requirement: constraints },
+        { field: 'tags[1]', value: 'far-too-long', violation: 'FRONTMATTER__ITEM_TOO_LONG', requirement: constraints },
       ];
       // ACT
       const actual = fieldViolations('tags', constraints, data);
@@ -260,7 +285,7 @@ describe('field constraints', () => {
         {
           field: 'tags',
           value: 'okf, provenance, frontmatter',
-          violation: 'CONSTRAINT_SHAPE_MISMATCH',
+          violation: 'FRONTMATTER__CONSTRAINT_SHAPE_MISMATCH',
           requirement: constraints,
         },
       ];
@@ -276,7 +301,12 @@ describe('field constraints', () => {
       const constraints = { maxLength: 3 } as const;
       const data = { title: ['a', 'b', 'c', 'd'] };
       const expected = [
-        { field: 'title', value: { items: 4 }, violation: 'CONSTRAINT_SHAPE_MISMATCH', requirement: constraints },
+        {
+          field: 'title',
+          value: { items: 4 },
+          violation: 'FRONTMATTER__CONSTRAINT_SHAPE_MISMATCH',
+          requirement: constraints,
+        },
       ];
       // ACT
       const actual = fieldViolations('title', constraints, data);
@@ -295,7 +325,9 @@ describe('field constraints', () => {
       // ARRANGE
       const constraints = { presence: 'required' } as const;
       const data = { sources: 'text' };
-      const expected = [{ field: 'sources[].id', violation: 'CONSTRAINT_SHAPE_MISMATCH', requirement: constraints }];
+      const expected = [
+        { field: 'sources[].id', violation: 'FRONTMATTER__CONSTRAINT_SHAPE_MISMATCH', requirement: constraints },
+      ];
       // ACT
       const actual = fieldViolations('sources[].id', constraints, data);
       // ASSERT
@@ -310,7 +342,7 @@ describe('field constraints', () => {
         {
           field: 'sources[1].resource',
           value: 'has a space in it',
-          violation: 'FORMAT_MISMATCH',
+          violation: 'FRONTMATTER__FORMAT_MISMATCH',
           requirement: constraints,
         },
       ];
@@ -328,7 +360,7 @@ describe('field constraints', () => {
       const data = {
         tags: ['okf', 'provenance', 'frontmatter', 'governance', 'steering', 'a-tag-far-longer-than-twenty'],
       };
-      const expected = ['TOO_MANY_ITEMS', 'ITEM_TOO_LONG'];
+      const expected = ['FRONTMATTER__TOO_MANY_ITEMS', 'FRONTMATTER__ITEM_TOO_LONG'];
       // ACT
       const actual = fieldViolations('tags', constraints, data).map((violation) => violation.violation);
       // ASSERT

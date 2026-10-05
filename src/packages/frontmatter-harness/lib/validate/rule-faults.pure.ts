@@ -19,10 +19,10 @@ import {
   unrecognisedKeys,
 } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
-import type { ConfigFault } from '../../../response-contract/index.ts';
 import type { FrontmatterRule, NoFrontmatterPayload, UnknownKeys } from '../../section.ts';
 import { assessBlockFaults, unfireableAssessFaults } from './assess-faults.pure.ts';
 import { constraintFaults } from './constraint-faults.pure.ts';
+import type { FrontmatterFault } from './fault.types.ts';
 
 /**
  * Every key a rule may carry, keyed by the type that declares them.
@@ -87,8 +87,8 @@ const LIST_KEYS: readonly string[] = ['folders', 'fileNames', 'exactlyOneOf', 'a
 const UNKNOWN_KEYS_STATES: Record<UnknownKeys, true> = { allowed: true, forbidden: true };
 
 /** The rule's own name and reason, both mandatory, each with its own way of being absent. */
-function identityFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
-  const faults: ConfigFault[] = [];
+function identityFaults(rule: Record<string, unknown>, at: string): readonly FrontmatterFault[] {
+  const faults: FrontmatterFault[] = [];
   if (typeof rule.ruleId !== 'string' || rule.ruleId === '') faults.push(invalidValue(`${at}.ruleId`));
   if (!('intent' in rule)) faults.push({ code: 'CONFIG_MISSING_RULE_INTENT', location: at });
   else if (!rule.intent) faults.push({ code: 'CONFIG_EMPTY_INTENT', location: `${at}.intent` });
@@ -118,7 +118,7 @@ function misnamesUnknownKeys(rule: Record<string, unknown>): boolean {
  * bad element makes the whole list unusable, so an indexed fault would ask for
  * the same repair once per element.
  */
-function shapeFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function shapeFaults(rule: Record<string, unknown>, at: string): readonly FrontmatterFault[] {
   const lists = LIST_KEYS.filter((key) => key in rule && !isStringList(rule[key])).map((key) =>
     invalidValue(`${at}.${key}`),
   );
@@ -129,14 +129,14 @@ function shapeFaults(rule: Record<string, unknown>, at: string): readonly Config
 }
 
 /** `frontmatter: forbidden` is exclusive of every payload key. */
-function payloadFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function payloadFaults(rule: Record<string, unknown>, at: string): readonly FrontmatterFault[] {
   if (rule.frontmatter !== 'forbidden') return [];
   if (!Object.keys(PAYLOAD_KEYS).some((key) => key in rule)) return [];
   return [{ code: 'CONFIG_FRONTMATTER_FORBIDDEN_WITH_PAYLOAD', location: at }];
 }
 
 /** Each field address, delegated to the constraint tier. */
-function fieldsFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function fieldsFaults(rule: Record<string, unknown>, at: string): readonly FrontmatterFault[] {
   if (!('fields' in rule)) return [];
   if (!isMapping(rule.fields)) return [invalidValue(`${at}.fields`)];
   return Object.entries(rule.fields).flatMap(([address, constraint]) =>
@@ -156,7 +156,7 @@ function fieldsFaults(rule: Record<string, unknown>, at: string): readonly Confi
  * @param at The rule's address in the config's own notation, e.g. `frontmatter.rules[3]`.
  * @param moduleAssess The value written under `frontmatter.assess:`, if any.
  */
-export function ruleFaults(rule: unknown, at: string, moduleAssess: unknown): readonly ConfigFault[] {
+export function ruleFaults(rule: unknown, at: string, moduleAssess: unknown): readonly FrontmatterFault[] {
   if (!isMapping(rule)) return [invalidValue(at)];
 
   return [

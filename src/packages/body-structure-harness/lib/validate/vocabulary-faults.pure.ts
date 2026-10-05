@@ -12,12 +12,12 @@
  * only, so one mistake is reported once.
  */
 
-import type { ConfigFault } from '../../../config-contract/index.ts';
 import { invalidValue, unrecognisedKeys } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { VocabularyItem } from '../../section.ts';
 import { closesSpine } from '../section/spine-closure.pure.ts';
 import { fault } from './fault.pure.ts';
+import type { BodyStructureFault } from './fault.types.ts';
 import { isLevel } from './template-faults.pure.ts';
 
 /** Every key a vocabulary item may carry, keyed by the type declaring them so the two cannot drift. */
@@ -43,7 +43,7 @@ function entryLevelsOf(rule: Record<string, unknown>): ReadonlySet<number> {
 }
 
 /** The level repeated across the list, at the later item, over valid levels only. */
-function repeatedLevelFaults(items: readonly unknown[], at: string): readonly ConfigFault[] {
+function repeatedLevelFaults(items: readonly unknown[], at: string): readonly BodyStructureFault[] {
   const seen = new Set<number>();
   return items.flatMap((item, index) => {
     if (!isMapping(item) || !isLevel(item.level)) return [];
@@ -54,7 +54,7 @@ function repeatedLevelFaults(items: readonly unknown[], at: string): readonly Co
 }
 
 /** The titles of one `allowed` list: invalid ones, then repeated ones over the valid. */
-function titleFaults(titles: readonly unknown[], at: string): readonly ConfigFault[] {
+function titleFaults(titles: readonly unknown[], at: string): readonly BodyStructureFault[] {
   const invalid = titles.flatMap((title, index) => (isTitle(title) ? [] : [invalidValue(`${at}.allowed[${index}]`)]));
   const seen = new Set<string>();
   const repeated = titles.flatMap((title, index) => {
@@ -67,7 +67,7 @@ function titleFaults(titles: readonly unknown[], at: string): readonly ConfigFau
 }
 
 /** An item's `allowed`: its shape, its emptiness, then its titles. */
-function allowedFaults(item: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function allowedFaults(item: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   const written = item.allowed;
   if (!Array.isArray(written)) return [invalidValue(`${at}.allowed`)];
   if (written.length === 0) return [fault('CONFIG_EMPTY_CONSTRAINT', `${at}.allowed`)];
@@ -75,7 +75,11 @@ function allowedFaults(item: Record<string, unknown>, at: string): readonly Conf
 }
 
 /** The two cross-key checks of one item with a valid level, each raised at the item's `level`. */
-function crossKeyFaults(item: Record<string, unknown>, at: string, context: RuleContext): readonly ConfigFault[] {
+function crossKeyFaults(
+  item: Record<string, unknown>,
+  at: string,
+  context: RuleContext,
+): readonly BodyStructureFault[] {
   const { level } = item;
   if (!isLevel(level)) return [];
   return [
@@ -87,7 +91,7 @@ function crossKeyFaults(item: Record<string, unknown>, at: string, context: Rule
 }
 
 /** One item, in walk order. */
-function itemFaults(item: unknown, at: string, context: RuleContext): readonly ConfigFault[] {
+function itemFaults(item: unknown, at: string, context: RuleContext): readonly BodyStructureFault[] {
   if (!isMapping(item)) return [invalidValue(at)];
   return [
     ...unrecognisedKeys(item, ITEM_KEYS, at),
@@ -107,7 +111,7 @@ function itemFaults(item: unknown, at: string, context: RuleContext): readonly C
  * @param rule One Rule, straight off the YAML.
  * @param at The Rule's address, e.g. `body-structure.rules[0]`.
  */
-export function vocabularyFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+export function vocabularyFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   if (!('vocabulary' in rule)) return [];
   const items = rule.vocabulary;
   if (!Array.isArray(items)) return [invalidValue(`${at}.vocabulary`)];

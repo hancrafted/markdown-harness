@@ -10,6 +10,7 @@ import { isCorpusPath } from '../foundation/corpus-membership.ts';
 import { normalisePath } from '../foundation/path-shape.ts';
 import type { ModuleClaim } from '../response-contract/index.ts';
 import { candidateClaims } from './lib/query/candidates.pure.ts';
+import type { BodyStructureRequirements } from './lib/query/requirements.types.ts';
 import type { BodyStructureConfig } from './section.ts';
 
 /**
@@ -22,7 +23,10 @@ import type { BodyStructureConfig } from './section.ts';
  * @param path The path asked about, exactly as the caller wrote it.
  * @param section This Module's validated section, or `undefined` when its key was not written — then it claims nothing.
  */
-export function queryPath(path: string, section: BodyStructureConfig | undefined): readonly ModuleClaim[] {
+export function queryPath(
+  path: string,
+  section: BodyStructureConfig | undefined,
+): readonly ModuleClaim<BodyStructureRequirements>[] {
   const normalised = normalisePath(path);
   if (!isCorpusPath(normalised)) return [];
   return candidateClaims(normalised, section?.rules ?? []);

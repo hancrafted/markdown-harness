@@ -15,12 +15,14 @@
  * before anything nests it. They are named here rather than in a Module because
  * every Module answers in the same shape, and a per-Module spelling of it is how
  * two Modules end up contributing two different things.
+ *
+ * What one finding IS belongs to the Module that made it, so every shape here is
+ * generic over `TViolation`. `cli` derives the concrete union from the declared
+ * Module set, and this Package names no Module and none of their codes.
  */
 
-import type { Violation } from './violation.types.ts';
-
 /** Every governed file that has something wrong with it, and the counts over them. */
-export interface CheckResult {
+export interface CheckResult<TViolation = unknown> {
   /** The arithmetic, stored so a consumer never has to sum an array to find out. */
   summary: CheckSummary;
   /**
@@ -29,7 +31,7 @@ export interface CheckResult {
    * Conforming files are absent; invisible files are absent for the stronger
    * reason that nothing ever read them.
    */
-  files: readonly FileViolations[];
+  files: readonly FileViolations<TViolation>[];
 }
 
 /**
@@ -63,11 +65,11 @@ export interface CheckSummary {
  * is not something it can act on — the steering command is where every
  * governing Module is listed whether or not it is complaining.
  */
-export interface FileViolations {
+export interface FileViolations<TViolation = unknown> {
   /** Root-relative, `/`-separated, no leading `./` or `/`. */
   path: string;
   /** One block per Module with a finding here, in declared Module order. */
-  modules: readonly ModuleViolations[];
+  modules: readonly ModuleViolations<TViolation>[];
 }
 
 /**
@@ -78,17 +80,17 @@ export interface FileViolations {
  * is not repealed by the nesting, it is RELOCATED: it holds within one Module,
  * which is exactly the level this block sits at.
  */
-export interface RuleFindings {
+export interface RuleFindings<TViolation = unknown> {
   /** The rule that won this file under first-match (§3.1). */
   ruleId: string;
   /** That rule's `intent`, verbatim — the instruction every fix here is made against (§3.4). */
   ruleIntent: string;
   /** Everything this rule found wrong, in the order §4.6 fixes. */
-  violations: readonly Violation[];
+  violations: readonly TViolation[];
 }
 
 /** One Module's findings about one file, named by the Module that made them. */
-export interface ModuleViolations extends RuleFindings {
+export interface ModuleViolations<TViolation = unknown> extends RuleFindings<TViolation> {
   /**
    * The top-level config key the Operator typed.
    *
@@ -108,15 +110,15 @@ export interface ModuleViolations extends RuleFindings {
  * findings say what is wrong, and `governed` says which files were looked at —
  * which is what the union behind `governedFiles` is taken over.
  */
-export interface ModuleCheck {
+export interface ModuleCheck<TViolation = unknown> {
   /** Every path this Module governs, in walker order, whether or not it found anything. */
   governed: readonly string[];
   /** One entry per governed file this Module found something wrong with, in walker order. */
-  files: readonly ModuleFinding[];
+  files: readonly ModuleFinding<TViolation>[];
 }
 
 /** One Module's findings about one file, before composition names the Module. */
-export interface ModuleFinding extends RuleFindings {
+export interface ModuleFinding<TViolation = unknown> extends RuleFindings<TViolation> {
   /** Root-relative, `/`-separated, no leading `./` or `/`. */
   path: string;
 }

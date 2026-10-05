@@ -24,7 +24,6 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { pathAssessment } from '../../cli/assessment.ts';
 import { MODULE_SET } from '../../cli/module-set.ts';
-import type { AllowedValue, FieldConstraints, Format } from '../../config-contract/index.ts';
 import { loadConfig } from '../../foundation/load-config.ts';
 import { assessPath } from '../../frontmatter-harness/assess.ts';
 import { checkCorpus } from '../../frontmatter-harness/check.ts';
@@ -52,6 +51,13 @@ if (loaded.config === undefined) throw new Error(`the tier config was refused: $
 const section = loaded.config.sectionFor(frontmatterModule);
 if (section === undefined) throw new Error('the tier config must name the frontmatter Module');
 const rules = section.rules;
+
+// The constraint vocabulary belongs to the frontmatter Module (ARCH-008), so
+// this runner reads its shapes off the section the Module validated rather than
+// naming the Module's declarations.
+type FieldConstraints = NonNullable<(typeof rules)[number]['fields']>[string];
+type AllowedValue = NonNullable<FieldConstraints['allowed']>[number];
+type Format = NonNullable<FieldConstraints['format']>;
 
 /** Every key a rule may carry. Grows only by deliberate amendment. */
 const RULE_KEYS = [
