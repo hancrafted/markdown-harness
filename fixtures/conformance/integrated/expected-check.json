@@ -1,5 +1,6 @@
 {
   "command": "check",
+  "modules": ["frontmatter", "body-structure"],
   "root": "fixtures/conformance/integrated",
   "config": "fixtures/conformance/integrated/valid-test-config.yaml",
   "result": {

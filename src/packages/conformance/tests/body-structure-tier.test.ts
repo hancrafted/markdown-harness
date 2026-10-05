@@ -199,8 +199,8 @@ function winnersIn(audit: ToolRun): string {
  */
 async function answerSeeded(root: string): Promise<CaseAnswer> {
   const [check, audit] = await Promise.all([
-    mh(['--check', '--root', root, '--config', TYPED_CONFIG]),
-    mh(['--audit', '--root', root, '--config', TYPED_CONFIG]),
+    mh(['check', '--root', root, '--config', TYPED_CONFIG]),
+    mh(['audit', '--root', root, '--config', TYPED_CONFIG]),
   ]);
   const refusal = refusalOf(check) ?? refusalOf(audit);
   if (refusal !== undefined) return { refusal };
@@ -226,8 +226,8 @@ beforeAll(async () => {
   const alone = await inPool(corpus, width, (path) => answerAlone(path, corpus.indexOf(path)));
   corpus.forEach((path, index) => answers.set(path, alone[index]));
   [tierCheck, tierAudit] = await Promise.all([
-    mh(['--check', '--root', TYPED_ROOT, '--config', TYPED_CONFIG]),
-    mh(['--audit', '--root', TYPED_ROOT, '--config', TYPED_CONFIG]),
+    mh(['check', '--root', TYPED_ROOT, '--config', TYPED_CONFIG]),
+    mh(['audit', '--root', TYPED_ROOT, '--config', TYPED_CONFIG]),
   ]);
 }, 120_000);
 
@@ -837,7 +837,7 @@ describe('the tool answers for the whole body-structure tier', () => {
       const expected = { refusal: undefined, governance: 'governed', modules: ids.map(candidateBlock) };
       const answered = 0;
       // ACT
-      const run = await mh(['--query', path, '--config', TYPED_CONFIG]);
+      const run = await mh(['query', path, '--config', TYPED_CONFIG]);
       const result = envelopeOf(run).result;
       const actual = { refusal: refusalOf(run), governance: result?.governance, modules: result?.modules };
       // ASSERT
@@ -873,7 +873,7 @@ describe('the tool answers for the whole body-structure tier', () => {
         // ARRANGE
         const expected = { code: 0, refusal: undefined, agentAction: 'PROCEED', state: 'ungoverned' };
         // ACT
-        const run = await mh(['--assess', path, '--config', TIER.configFile, '--now', ASSESSMENT_INSTANT], CORPUS_ROOT);
+        const run = await mh(['assess', path, '--config', TIER.configFile, '--now', ASSESSMENT_INSTANT], CORPUS_ROOT);
         const result = envelopeOf(run).result;
         const actual = {
           code: run.code,

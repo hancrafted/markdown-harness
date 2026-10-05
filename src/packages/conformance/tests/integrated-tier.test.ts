@@ -49,7 +49,7 @@ const frozenQueries = JSON.parse(queryText.text) as Record<string, ToolEnvelope>
 const corpus = casesIn(TIER.name);
 const stated = (verdict: string): string[] => [...casesStating(TIER.name, verdict)];
 
-const spawned = spawnSync(process.execPath, [toolEntry(), '--check', '--root', TYPED_ROOT, '--config', TYPED_CONFIG], {
+const spawned = spawnSync(process.execPath, [toolEntry(), 'check', '--root', TYPED_ROOT, '--config', TYPED_CONFIG], {
   encoding: 'utf8',
 });
 const run: ToolRun = { stdout: spawned.stdout, stderr: spawned.stderr, code: spawned.status };
@@ -74,7 +74,7 @@ describe('the integrated tier at the process boundary', () => {
       // ARRANGE
       const expected = { code: 0, refusal: undefined, response: frozenQueries[path] };
       // ACT
-      const asked = spawnSync(process.execPath, [toolEntry(), '--query', path, '--config', TYPED_CONFIG], {
+      const asked = spawnSync(process.execPath, [toolEntry(), 'query', path, '--config', TYPED_CONFIG], {
         encoding: 'utf8',
       });
       const queried: ToolRun = { stdout: asked.stdout, stderr: asked.stderr, code: asked.status };
