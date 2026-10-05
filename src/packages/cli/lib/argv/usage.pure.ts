@@ -23,7 +23,7 @@ export const DEFAULT_ROOT = '.';
  * Printed on stderr for any usage error, and nothing else ever is — save the one
  * line `usageRefusal` appends when a Module name was involved.
  */
-export const USAGE = `usage: mh [<module>] [check] [--root <dir>] [--config <file>]
+export const USAGE = `usage: mh [[<module>] check] [--root <dir>] [--config <file>]
        mh [<module>]  query  <path>          [--config <file>]
        mh [<module>]  audit  [--root <dir>]  [--config <file>]
        mh [<module>]  assess <path> [--now <iso>] [--config <file>]
@@ -36,8 +36,8 @@ export const USAGE = `usage: mh [<module>] [check] [--root <dir>] [--config <fil
             Never exits 1.
   assess    what one file is worth believing, at one instant. Reads the file and
             answers PROCEED, REVIEW or FIX_FILE. Never exits 1.
-  <module>  one Module's top-level config key, to run that Module alone. Without
-            one, every Module implementing the command runs.
+  <module>  one Module's top-level config key, to run that Module alone. A command
+            always follows it. Without one, every Module implementing the command runs.
   --help    this text, plus the flag defaults and the exit-code contract. Exits 0.
 `;
 
@@ -106,9 +106,10 @@ Reading the output:
   usage error puts the synopsis above on stderr and nothing on stdout, while a
   config it could not trust puts a CONFIG_REJECTED response on stdout and nothing
   on stderr. Read the channel and you can always tell which happened. A usage
-  error about a Module — an unknown name, a name with no command, or a command
-  the named Module does not implement — adds one line after the synopsis naming
-  the Modules or commands that would have worked.
+  error about a Module — an unknown name, a name with no command, a command
+  the named Module does not implement, or a command no Module implements — adds
+  one line after the synopsis naming the Modules or commands that would have
+  worked.
 
 Authoring a config:
   Nothing generates a config for you, and nothing here writes to your tree.

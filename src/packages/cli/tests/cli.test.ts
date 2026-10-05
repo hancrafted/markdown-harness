@@ -1002,6 +1002,36 @@ describe('mh --help', () => {
       expect(refusal.length).toBeGreaterThan(0);
       expect(help.slice(0, refusal.length)).toBe(refusal);
     });
+
+    it('never offers a Module name without a command, which the parser refuses', () => {
+      // `mh frontmatter` alone is a usage error, so no synopsis line may read as
+      // though the command after a Module name were optional.
+      // ARRANGE
+      const optionalAfterModule = /\[<module>\]\s+\[check\]/;
+      const defaultCommand = 'check';
+      // ACT
+      const help = mh('--help').stdout;
+      const synopsis = help.slice(0, help.indexOf('\n\n'));
+      // ASSERT
+      expect(synopsis).toContain(defaultCommand);
+      expect(synopsis).not.toMatch(optionalAfterModule);
+    });
+
+    it('names all four refusals about a Module that add a line after the synopsis', () => {
+      // The parser names the alternatives for exactly these four; the help text
+      // promising fewer would leave a caller unable to read the fourth.
+      // ARRANGE
+      const refusals = [
+        'an unknown name',
+        'a name with no command',
+        'a command the named Module does not implement',
+        'a command no Module implements',
+      ];
+      // ACT
+      const help = mh('--help').stdout.replaceAll(/\s+/g, ' ');
+      // ASSERT
+      for (const refusal of refusals) expect(help).toContain(refusal);
+    });
   });
 });
 
