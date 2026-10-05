@@ -19,9 +19,9 @@
  * section-content claims, so it is walked once and handed to both.
  */
 
+import { dialectPattern } from '../../../foundation/pattern-dialect.ts';
 import type { HeadingEntry } from '../../section.ts';
 import type { OutlineHeading } from '../document/document.types.ts';
-import { dialectPattern } from '../validate/pattern-dialect.pure.ts';
 import type { EntryFinding, HeadingMatcher, Spine, Walk } from './body-check.types.ts';
 
 /** The mutable position of a walk: the cursor, and every outline position an entry has taken. */

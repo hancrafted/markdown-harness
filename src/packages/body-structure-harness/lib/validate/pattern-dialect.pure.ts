@@ -6,9 +6,6 @@
 
 import { compiles } from '../../../foundation/pattern-dialect.ts';
 
-// Passed through for this Module's own check, which imports it from here.
-export { dialectPattern } from '../../../foundation/pattern-dialect.ts';
-
 /**
  * One literal character of an anchored literal: any character the dialect gives
  * no meaning to, or a backslash followed by one it does.
