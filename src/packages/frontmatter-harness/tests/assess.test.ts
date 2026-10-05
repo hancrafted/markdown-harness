@@ -1,4 +1,4 @@
-// Integration suite for `--assess`, at the grain a caller sees.
+// Integration suite for `assess`, at the grain a caller sees.
 //
 // Every case runs against the committed Conformance config, anchored at the
 // Conformance root, so what is asserted here is the same surface the
@@ -100,7 +100,7 @@ describe('assessPath', () => {
     it('answers about a governed path with nothing at it, naming the rule that will judge it', () => {
       // THE CASE THE CONFORMANCE SUITE CANNOT HOLD. An agent about to create a
       // governed file is told to proceed and told what will judge it, which is
-      // the same courtesy `--query` extends to a path that does not exist yet.
+      // the same courtesy `query` extends to a path that does not exist yet.
       // ARRANGE
       const expected = {
         agentAction: 'PROCEED',

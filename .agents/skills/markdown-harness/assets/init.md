@@ -13,7 +13,7 @@ whichever command CI actually runs, which is not reliably the one named `verify`
 Read `.github/workflows/*.yml` (or the equivalent) for the command it invokes, then read that script
 in `package.json`. A repository scaffolded by `@hancrafted/typescript-ai-harness` already has
 `verify`, so extending it is the common case. One that runs `npm test` and has no `verify` should get
-`mh --check` in `test` instead.
+`mh check` in `test` instead.
 
 **A repository with both `verify` and `verify:commit` has already made this decision, and it is not
 yours to re-make.** They are different gates: `verify:commit` is the fast pre-commit pass and
@@ -37,13 +37,13 @@ change before it changes — it reports the same steps and writes nothing.
 It reports JSON, one entry per step, and every step is skipped when already done. That makes it safe
 to re-run after a partial failure, and safe to run on a repository somebody else already set up.
 
-| Step         | What it does                                                                        |
-| ------------ | ----------------------------------------------------------------------------------- |
-| `dependency` | `npm install --save-dev @hancrafted/markdown-harness`, unless `package.json` has it |
-| `gate`       | Appends `&& mh --check` to the named script, or creates it if absent                |
-| `folder`     | Creates `docs/markdown-harness/.gitkeep`, so the folder survives a clone            |
-| `log`        | Gitignores `docs/markdown-harness/activity.csv`, and writes its first row           |
-| `hook`       | Merges a `PostToolUse` entry into `.claude/settings.json`                           |
+| Step         | What it does                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| `dependency` | `npm install --save-dev @hancrafted/markdown-harness`, unless `package.json` has it                                             |
+| `gate`       | Appends `&& mh check` to the named script, or creates it if absent; rewrites a retired `mh --check` there in place (`migrated`) |
+| `folder`     | Creates `docs/markdown-harness/.gitkeep`, so the folder survives a clone                                                        |
+| `log`        | Gitignores `docs/markdown-harness/activity.csv`, and writes its first row                                                       |
+| `hook`       | Merges a `PostToolUse` entry into `.claude/settings.json`                                                                       |
 
 Two things it deliberately does **not** do. It writes no config — that is the user's, and
 [`authoring-a-config.md`](authoring-a-config.md) is how it gets written. And it wires the hook only
@@ -92,8 +92,8 @@ gate is honest about not being able to report rather than passing vacuously.
 
 That is also why the next step matters. Offer both, numbered:
 
-1. **See it work first** — [`demo.md`](demo.md) lays down throwaway files that make `--check`,
-   `--assess` and the hook all visible in about a minute, then removes itself.
+1. **See it work first** — [`demo.md`](demo.md) lays down throwaway files that make `check`,
+   `assess` and the hook all visible in about a minute, then removes itself.
 2. **Go straight to real rules** — [`authoring-a-config.md`](authoring-a-config.md).
 
 Offer the demo to anyone meeting the tool for the first time. Reading what a freshness sentence does

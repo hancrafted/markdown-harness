@@ -1,12 +1,12 @@
 // The corpus: every markdown file under one root, flat and in one order.
 //
-// A Package of its own because enumeration is not resolution. `--audit`
+// A Package of its own because enumeration is not resolution. `audit`
 // resolves rules against PATHS and never opens a file, so the walker had to be
 // separable from everything that reads one — and the refusals it holds are
 // worth proving on their own, before frontmatter parsing can confuse a failure.
 //
 // It returns a flat list and deliberately not a governed subset: "governed" is
-// per-Module, and `--audit` needs every rule that selected each file rather
+// per-Module, and `audit` needs every rule that selected each file rather
 // than only the winner.
 
 import { inTreeOrder } from './lib/tree/tree-path.pure.ts';

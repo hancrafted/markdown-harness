@@ -1,4 +1,4 @@
-// The `PreToolUse` hook that puts `mh --query`'s body-structure candidates in
+// The `PreToolUse` hook that puts `mh query`'s body-structure candidates in
 // front of an agent about to create a file, exercised at the process boundary
 // an agent reaches it through (#221's stretch: mechanism 1).
 //

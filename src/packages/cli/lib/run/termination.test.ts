@@ -8,6 +8,9 @@ import type {
 } from '../../../response-contract/index.ts';
 import { resolvedInstant, route, terminationFor, withCorpusGuard } from './termination.pure.ts';
 
+/** A stand-in for the declared Module set, as the argv parser sees it. */
+const MODULES = [{ key: 'frontmatter', commands: ['check', 'query', 'audit', 'assess'] }] as const;
+
 const SAMPLE_FAULTS: readonly ConfigFault[] = [{ code: 'CONFIG_NOT_FOUND', location: 'markdown-harness.config.yaml' }];
 
 // `never` for the Module-owned parameter: these results carry no claim and no
@@ -41,12 +44,12 @@ describe('termination', () => {
     it('routes a valid query under a supported runtime to a parsed invocation', () => {
       // ARRANGE
       const nodeVersion = '24.0.0';
-      const argv = ['--query', 'docs/a.md'];
+      const argv = ['query', 'docs/a.md'];
       const expectedKind = 'routed';
       const expectedCommand = 'query';
       const expectedPath = 'docs/a.md';
       // ACT
-      const actual = route(nodeVersion, argv);
+      const actual = route(nodeVersion, argv, MODULES);
       const actualCommand = actual.kind === 'routed' ? actual.invocation.command : '';
       const actualPath =
         actual.kind === 'routed' && actual.invocation.command === 'query' ? actual.invocation.path : '';
@@ -63,7 +66,7 @@ describe('termination', () => {
       const expectedKind = 'routed';
       const expectedCommand = 'help';
       // ACT
-      const actual = route(nodeVersion, argv);
+      const actual = route(nodeVersion, argv, MODULES);
       const actualCommand = actual.kind === 'routed' ? actual.invocation.command : '';
       // ASSERT
       expect(actual.kind).toBe(expectedKind);
@@ -110,6 +113,7 @@ describe('termination', () => {
       const queryCommand = 'query';
       const gathered = {
         kind: 'query' as const,
+        modules: ['frontmatter'],
         path: 'docs/a.md',
         config: 'mh.yaml',
         outcome: { kind: 'answered' as const, result: EMPTY_QUERY_RESULT },
@@ -131,6 +135,7 @@ describe('termination', () => {
       const auditCommand = 'audit';
       const gathered = {
         kind: 'audit' as const,
+        modules: ['frontmatter'],
         root: '.',
         config: 'mh.yaml',
         outcome: { kind: 'answered' as const, result: EMPTY_AUDIT_RESULT },
@@ -153,6 +158,7 @@ describe('termination', () => {
       const now = '2026-09-22T10:00:00.000Z';
       const gathered = {
         kind: 'assess' as const,
+        modules: ['frontmatter'],
         path: 'docs/a.md',
         now,
         config: 'mh.yaml',
@@ -176,6 +182,7 @@ describe('termination', () => {
       const checkCommand = 'check';
       const gathered = {
         kind: 'check' as const,
+        modules: ['frontmatter'],
         root: '.',
         config: 'mh.yaml',
         outcome: { kind: 'answered' as const, result: CLEAN_CHECK_RESULT },
@@ -199,7 +206,7 @@ describe('termination', () => {
       const invalidArgv = ['--not-a-valid-flag'];
       const expectedKind = 'runtime-refused';
       // ACT
-      const actual = route(unsupportedNode, invalidArgv);
+      const actual = route(unsupportedNode, invalidArgv, MODULES);
       // ASSERT
       expect(actual.kind).toBe(expectedKind);
     });
@@ -210,7 +217,7 @@ describe('termination', () => {
       const invalidArgv = ['--bogus-flag'];
       const expectedKind = 'argv-refused';
       // ACT
-      const actual = route(supportedNode, invalidArgv);
+      const actual = route(supportedNode, invalidArgv, MODULES);
       // ASSERT
       expect(actual.kind).toBe(expectedKind);
     });
@@ -228,13 +235,46 @@ describe('termination', () => {
       expect(actual.stderr).toBe(refusalText);
     });
 
+    it('appends the reason naming the alternatives after the synopsis', () => {
+      // ARRANGE
+      const reason = 'body-structure does not implement assess; frontmatter does';
+      const expected = { code: 2, stdout: '', opens: 'usage: mh', closes: `mh: ${reason}\n` };
+      // ACT
+      const actual = terminationFor({ kind: 'argv-refused', reason });
+      const observed = {
+        code: actual.code,
+        stdout: actual.stdout,
+        opens: actual.stderr.slice(0, expected.opens.length),
+        closes: actual.stderr.slice(-expected.closes.length),
+      };
+      // ASSERT
+      expect(observed).toEqual(expected);
+    });
+
+    it('echoes the Modules asked on a rejected config', () => {
+      // ARRANGE
+      const expected = { code: 2, modules: ['body-structure'], error: 'CONFIG_REJECTED' };
+      const gathered = {
+        kind: 'check' as const,
+        modules: ['body-structure'],
+        root: '.',
+        config: 'mh.yaml',
+        outcome: { kind: 'rejected' as const, faults: SAMPLE_FAULTS },
+      };
+      // ACT
+      const actual = terminationFor(gathered);
+      const parsed = JSON.parse(actual.stdout);
+      // ASSERT
+      expect({ code: actual.code, modules: parsed.modules, error: parsed.result.error }).toEqual(expected);
+    });
+
     it('terminates argv-refused with exit 2, usage on stderr, and empty stdout', () => {
       // ARRANGE
       const cannotReport = 2;
       const empty = '';
       const usageSynopsis = 'usage: mh';
       // ACT
-      const actual = terminationFor({ kind: 'argv-refused' });
+      const actual = terminationFor({ kind: 'argv-refused', reason: '' });
       // ASSERT
       expect(actual.code).toBe(cannotReport);
       expect(actual.stdout).toBe(empty);
@@ -248,6 +288,7 @@ describe('termination', () => {
       const expectedError = 'CONFIG_REJECTED';
       const gathered = {
         kind: 'query' as const,
+        modules: ['frontmatter'],
         path: 'docs/a.md',
         config: 'mh.yaml',
         outcome: { kind: 'rejected' as const, faults: SAMPLE_FAULTS },
@@ -269,6 +310,7 @@ describe('termination', () => {
       const expectedError = 'CONFIG_REJECTED';
       const gathered = {
         kind: 'audit' as const,
+        modules: ['frontmatter'],
         root: '.',
         config: 'mh.yaml',
         outcome: { kind: 'rejected' as const, faults: SAMPLE_FAULTS },
@@ -291,6 +333,7 @@ describe('termination', () => {
       const now = '2026-09-22T10:00:00.000Z';
       const gathered = {
         kind: 'assess' as const,
+        modules: ['frontmatter'],
         path: 'docs/a.md',
         now,
         config: 'mh.yaml',
@@ -313,6 +356,7 @@ describe('termination', () => {
       const expectedError = 'CONFIG_REJECTED';
       const gathered = {
         kind: 'check' as const,
+        modules: ['frontmatter'],
         root: '.',
         config: 'mh.yaml',
         outcome: { kind: 'rejected' as const, faults: SAMPLE_FAULTS },
@@ -334,6 +378,7 @@ describe('termination', () => {
       const unreadablePath = 'docs/locked.md';
       const gathered = {
         kind: 'check' as const,
+        modules: ['frontmatter'],
         root: '.',
         config: 'mh.yaml',
         outcome: { kind: 'unreadable' as const, path: unreadablePath },
@@ -355,6 +400,7 @@ describe('termination', () => {
       const unreadablePath = 'docs/locked.md';
       const gathered = {
         kind: 'audit' as const,
+        modules: ['frontmatter'],
         root: '.',
         config: 'mh.yaml',
         outcome: { kind: 'unreadable' as const, path: unreadablePath },
@@ -374,6 +420,7 @@ describe('termination', () => {
       const checkCommand = 'check';
       const gathered = {
         kind: 'check' as const,
+        modules: ['frontmatter'],
         root: '.',
         config: 'mh.yaml',
         outcome: { kind: 'answered' as const, result: DIRTY_CHECK_RESULT },
@@ -398,6 +445,7 @@ describe('termination', () => {
       const usageSynopsis = 'usage: mh';
       const gathered = {
         kind: 'audit' as const,
+        modules: ['frontmatter'],
         root: 'nonexistent-dir',
         config: 'bad-config.yaml',
         outcome: { kind: 'no-root' as const },
@@ -417,6 +465,7 @@ describe('termination', () => {
       const usageSynopsis = 'usage: mh';
       const gathered = {
         kind: 'check' as const,
+        modules: ['frontmatter'],
         root: 'nonexistent-dir',
         config: 'bad-config.yaml',
         outcome: { kind: 'no-root' as const },
@@ -468,6 +517,7 @@ describe('termination', () => {
       const prefixLength = 2;
       const gathered = {
         kind: 'query' as const,
+        modules: ['frontmatter'],
         path: 'docs/a.md',
         config: 'mh.yaml',
         outcome: { kind: 'answered' as const, result: EMPTY_QUERY_RESULT },

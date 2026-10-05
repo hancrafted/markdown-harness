@@ -1,4 +1,4 @@
-// Integration suite for `--audit`'s tallies, through the entry point.
+// Integration suite for `audit`'s tallies, through the entry point.
 //
 // What this adds over the unit suite is the whole entry point: normalisation,
 // the rule list off this Module's own section, and the selector echoed back onto

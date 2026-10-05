@@ -120,7 +120,7 @@ function collectInto(walk: Walk, absolute: string, relative: string): boolean {
  * `undefined` means the tree could not be read or could not be trusted — the
  * root does not exist, it is not a directory, a directory inside it refused to
  * open, or a symlink inside it reaches outside the corpus. It is NEVER an empty
- * corpus, which `--check` would otherwise report as `invalidFiles: 0`.
+ * corpus, which `check` would otherwise report as `invalidFiles: 0`.
  *
  * @param root The corpus directory, exactly as the caller wrote it.
  */

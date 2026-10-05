@@ -32,7 +32,7 @@ import type { FieldAddress, FieldConstraints } from './constraints.types.ts';
  *
  * ONE condition ships. `stale` is the only one that needs a clock, and
  * therefore the only one that needs a command of its own: `unverified`,
- * `unsourced` and `invalid` are all answerable by `--check` today through
+ * `unsourced` and `invalid` are all answerable by `check` today through
  * `presence` and `minItems`, and restating them here would move work out of the
  * tier that already covers it. Any other key under `assess:` is
  * `CONFIG_UNRECOGNISED_KEY`.
@@ -200,7 +200,7 @@ export interface ConstrainingPayload {
    * make now and expensive to defer. Three reasons it is replacement:
    * §3's "the first matching rule is the complete set" survives replacement and
    * dies under merge; per-key merging recreates the silent-provenance problem
-   * `--audit` exists to solve; and deleting a rule's block is then one visible
+   * `audit` exists to solve; and deleting a rule's block is then one visible
    * act rather than a one-line diff that silently reactivates a global.
    *
    * A rule with no block of its own gets the Module default whole. Which of the

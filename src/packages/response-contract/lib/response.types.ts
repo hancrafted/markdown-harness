@@ -22,10 +22,16 @@ import type { CheckResult } from './check.types.ts';
 import type { ConfigErrorResult } from './config-error.types.ts';
 import type { QueryResult } from './query.types.ts';
 
-/** The `--check` envelope. */
+/** The `check` envelope. */
 export interface CheckResponse<TViolation = unknown> {
   /** The discriminant, naming what was asked. */
   command: 'check';
+  /**
+   * The keys of the Modules that ran, in declared Module order: the one Module
+   * a scoped run named, or every Module implementing the command. Echoed on a
+   * config rejection too, naming the scope that was asked.
+   */
+  modules: readonly string[];
   /** The corpus directory, echoed exactly as the caller wrote it — never resolved. */
   root: string;
   /** The config path, echoed exactly as the caller wrote it — never resolved. */
@@ -34,10 +40,16 @@ export interface CheckResponse<TViolation = unknown> {
   result: CheckResult<TViolation> | ConfigErrorResult;
 }
 
-/** The `--query` envelope. */
+/** The `query` envelope. */
 export interface QueryResponse<TRequirements = unknown> {
   /** The discriminant, naming what was asked. */
   command: 'query';
+  /**
+   * The keys of the Modules that ran, in declared Module order: the one Module
+   * a scoped run named, or every Module implementing the command. Echoed on a
+   * config rejection too, naming the scope that was asked.
+   */
+  modules: readonly string[];
   /** The path asked about, echoed exactly as the caller wrote it. It need not exist. */
   path: string;
   /** The config path, echoed exactly as the caller wrote it — never resolved. */
@@ -46,10 +58,16 @@ export interface QueryResponse<TRequirements = unknown> {
   result: QueryResult<TRequirements> | ConfigErrorResult;
 }
 
-/** The `--audit` envelope. */
+/** The `audit` envelope. */
 export interface AuditResponse {
   /** The discriminant, naming what was asked. */
   command: 'audit';
+  /**
+   * The keys of the Modules that ran, in declared Module order: the one Module
+   * a scoped run named, or every Module implementing the command. Echoed on a
+   * config rejection too, naming the scope that was asked.
+   */
+  modules: readonly string[];
   /** The corpus directory, echoed exactly as the caller wrote it — never resolved. */
   root: string;
   /** The config path, echoed exactly as the caller wrote it — never resolved. */
@@ -59,7 +77,7 @@ export interface AuditResponse {
 }
 
 /**
- * The `--assess` envelope.
+ * The `assess` envelope.
  *
  * Carries `now` beside `path`, and both are echoed exactly as the caller wrote
  * them. Echoing the instant is the whole reason this command can read a clock
@@ -77,6 +95,12 @@ export interface AuditResponse {
 export interface AssessResponse {
   /** The discriminant, naming what was asked. */
   command: 'assess';
+  /**
+   * The keys of the Modules that ran, in declared Module order: the one Module
+   * a scoped run named, or every Module implementing the command. Echoed on a
+   * config rejection too, naming the scope that was asked.
+   */
+  modules: readonly string[];
   /** The path asked about, echoed exactly as the caller wrote it. It need not exist. */
   path: string;
   /** The Assessment instant, echoed exactly as it was supplied — or as the host clock gave it. */

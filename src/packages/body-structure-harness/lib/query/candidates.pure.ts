@@ -1,5 +1,5 @@
 /**
- * What `--query` answers for a path not yet written: every Rule that could win
+ * What `query` answers for a path not yet written: every Rule that could win
  * it.
  *
  * The command opens no file, so it cannot know the `type` a file does not yet

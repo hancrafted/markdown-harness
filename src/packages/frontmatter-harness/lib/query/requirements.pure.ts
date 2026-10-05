@@ -1,5 +1,5 @@
 /**
- * Project a winning rule into the answer `--query` returns.
+ * Project a winning rule into the answer `query` returns.
  *
  * The requirements re-expose the config's own vocabulary verbatim, down to
  * which keys the Operator did and did not write. Nothing here composes a

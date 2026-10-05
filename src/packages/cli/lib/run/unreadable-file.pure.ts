@@ -7,7 +7,7 @@
  * SPLIT, that stdout carries the response and stderr never does, and a refusal
  * with no response to carry belongs on the failure channel or nowhere.
  *
- * Printing the usage text here instead, which is what `--check` did until now,
+ * Printing the usage text here instead, which is what `check` did until now,
  * makes the two exit-2 flavours §2 rule 3 separates by channel report the same
  * thing on the same channel: an Operator whose invocation was fine is sent to
  * read a synopsis of the flags they got right, and nothing anywhere names the

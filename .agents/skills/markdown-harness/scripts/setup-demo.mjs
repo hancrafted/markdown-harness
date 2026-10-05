@@ -12,7 +12,7 @@
 // Measured 2026-09-09. Marked blocks in the root config avoid that entirely.
 //
 // INSERTING INTO YAML BY TEXT IS BRITTLE, SO THIS DOES NOT TRUST ITSELF. After
-// writing, it asks `mh --query` which rule actually wins for a demo path, and
+// writing, it asks `mh query` which rule actually wins for a demo path, and
 // fails loudly unless the answer is the demo rule. A silent mis-insert would
 // look exactly like a working demo that never fires.
 
@@ -163,8 +163,8 @@ if (!existsSync(configPath)) {
 // 3. THE PROOF. Text surgery on YAML is not trusted until the tool agrees.
 const cli = join(root, 'node_modules', '@hancrafted', 'markdown-harness', 'dist', 'packages', 'cli', 'cli.js');
 const run = existsSync(cli)
-  ? spawnSync(process.execPath, [cli, '--query', PROBE], { cwd: root, encoding: 'utf8' })
-  : spawnSync('npx', ['mh', '--query', PROBE], { cwd: root, encoding: 'utf8' });
+  ? spawnSync(process.execPath, [cli, 'query', PROBE], { cwd: root, encoding: 'utf8' })
+  : spawnSync('npx', ['mh', 'query', PROBE], { cwd: root, encoding: 'utf8' });
 
 let won;
 try {
@@ -176,7 +176,7 @@ try {
 if (won !== DEMO_RULE) {
   report(false, {
     error: 'DEMO_RULE_DOES_NOT_WIN',
-    detail: `Expected \`${DEMO_RULE}\` to govern ${PROBE}, got ${won ?? 'no answer'}. The block is in the config but something above it matches first — run \`mh --audit\` and move it up.`,
+    detail: `Expected \`${DEMO_RULE}\` to govern ${PROBE}, got ${won ?? 'no answer'}. The block is in the config but something above it matches first — run \`mh audit\` and move it up.`,
     configAction,
   });
 }

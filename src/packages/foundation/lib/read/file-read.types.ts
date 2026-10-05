@@ -7,8 +7,8 @@
  * on, which is a repair someone owes. Collapsing them would tell a caller to
  * proceed against a file that is really there.
  *
- * What each state MEANS is deliberately not settled here. `--assess` turns
- * `absent` into ordinary advice and `unreadable` into a finding; `--check`
+ * What each state MEANS is deliberately not settled here. `assess` turns
+ * `absent` into ordinary advice and `unreadable` into a finding; `check`
  * refuses the whole corpus on either; the config loader maps them onto two
  * different catalog codes. The gate reports what it found and the caller owns
  * the policy.

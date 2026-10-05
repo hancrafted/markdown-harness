@@ -4,12 +4,12 @@
 // each heading's `intent` and `pattern` included, in front of it.
 //
 // This is round two's stretch prototype of mechanism 1 from issue #221: the
-// `mh --query` answer as it stands, delivered by a shim. It adds no command, no
+// `mh query` answer as it stands, delivered by a shim. It adds no command, no
 // flag and no contract surface; everything below is composition over an answer
 // the CLI already gives.
 //
 // IT SPEAKS ON CREATION ONLY. A file that already exists has been written once
-// and `--check` judges it; steering belongs to the first write. It never denies
+// and `check` judges it; steering belongs to the first write. It never denies
 // and never edits the call: `additionalContext` rides along, so a first draft
 // that ignores it is still written and the gate is where it is caught. The cost
 // of that is named in the write-up on #221.
@@ -107,7 +107,7 @@ function main() {
   if (entry === undefined) return undefined;
 
   const asked = relative(root, file).split(sep).join('/');
-  const run = spawnSync(process.execPath, [entry, '--query', asked], {
+  const run = spawnSync(process.execPath, [entry, 'query', asked], {
     cwd: root,
     encoding: 'utf8',
     timeout: GIVE_UP_AFTER_MS,

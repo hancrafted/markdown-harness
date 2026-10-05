@@ -23,7 +23,7 @@
 #
 # Verify any edit with the query loop, which needs no file to exist yet:
 #
-#   mh --query docs/research/whatever.md --config markdown-harness.config.yaml
+#   mh query docs/research/whatever.md --config markdown-harness.config.yaml
 #
 # Exit 0 prints the winning rule and what it asks for. Exit 2 prints a fault
 # whose `location` is the exact key to fix.
@@ -33,7 +33,7 @@ frontmatter:
   # For any file the harness walks top-down and stops at the first rule whose
   # selector matches. Nothing merges and nothing is inherited, so the most
   # specific rules go first and the broadest goes last. Reversed, a narrow rule
-  # silently governs zero files — `mh --audit` is what makes that visible.
+  # silently governs zero files — `mh audit` is what makes that visible.
   rules:
     # ── 1. A rule that forbids frontmatter outright ───────────────────────────
     # `fileNames` on its own matches the basename ANYWHERE in the corpus — the
@@ -58,7 +58,7 @@ frontmatter:
     # A selector and an `intent` with NO payload is legal and is the point: the
     # rule claims the path so that first-match stops here, and then asserts
     # nothing. That is the difference between "exempt" and "ungoverned" — this
-    # exemption is written down, and `mh --audit` will show it winning.
+    # exemption is written down, and `mh audit` will show it winning.
     #
     # Not `frontmatter: forbidden`, which is what rule 1 can say because §8 says
     # index files carry none. §9 says no such thing about `log.md`, so forbidding
@@ -161,7 +161,7 @@ frontmatter:
     # "Broadest" is an ENUMERATION now, not a wildcard, so this is the rule that
     # carries the cost of the grammar: every folder you want reached is named,
     # including the ones the rules above already claim. Keep it in step with
-    # your tree — `mh --audit` shows what each rule actually won.
+    # your tree — `mh audit` shows what each rule actually won.
     - ruleId: everything-else
       folders: [docs/, docs/reference/, docs/research/, docs/runbooks/]
       intent: Every document under docs/ still has to say what it is

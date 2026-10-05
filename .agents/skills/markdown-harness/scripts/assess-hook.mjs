@@ -16,7 +16,7 @@
 // is exactly what its absence would look like.
 //
 // It speaks on `REVIEW` alone. `PROCEED` is silence by contract, and `FIX_FILE`
-// is a repair `mh --check` already reports once in the gate — reporting it here
+// is a repair `mh check` already reports once in the gate — reporting it here
 // would fire on every read of every governed file in a corpus that has not
 // adopted `stale_after` yet, and a governance tool that talks that much gets
 // switched off.
@@ -52,11 +52,11 @@ const NOT_INSTALLED = 'not-installed';
 const CONFIG_REJECTED = 'config-rejected';
 const NO_ANSWER = 'no-answer';
 
-/** Where `--assess` looks when no `--config` is given, and so where the root is. */
+/** Where `assess` looks when no `--config` is given, and so where the root is. */
 const CONFIG_NAME = 'markdown-harness.config.yaml';
 
 /**
- * How long `mh --assess` gets before this hook gives up on it.
+ * How long `mh assess` gets before this hook gives up on it.
  *
  * Not a budget — a single-file assessment answers in milliseconds. It bounds the
  * one failure that is not a refusal: every branch below exits 0 deliberately,
@@ -178,7 +178,7 @@ function main() {
   const root = rootHolding(file);
   if (root === undefined) return undefined;
 
-  // THE PATH MUST BE RELATIVE TO THE ROOT. `--assess` anchors the config's globs
+  // THE PATH MUST BE RELATIVE TO THE ROOT. `assess` anchors the config's globs
   // at the working directory and refuses `--root`, so the absolute path Claude
   // Code sends answers `ungoverned` on a corpus that is fully governed — silence
   // that looks identical to a hook working correctly. Measured 2026-09-09. It is
@@ -188,14 +188,14 @@ function main() {
   const entry = installedEntry(root);
   if (entry === undefined) return { root, file: asked, result: NOT_INSTALLED };
 
-  const run = spawnSync(process.execPath, [entry, '--assess', asked], {
+  const run = spawnSync(process.execPath, [entry, 'assess', asked], {
     cwd: root,
     encoding: 'utf8',
     timeout: GIVE_UP_AFTER_MS,
   });
 
   // NO EXIT-CODE CHECK, AND THAT IS DELIBERATE. A check on `run.status` reads
-  // like diligence and measures nothing: `--assess` never exits 1, and its exit 2
+  // like diligence and measures nothing: `assess` never exits 1, and its exit 2
   // answers either a rejection envelope or an empty stdout that does not parse.
   // Both are told apart below by shape, which is what the log needs anyway —
   // `config-rejected` and `no-answer` are different problems. Measured by

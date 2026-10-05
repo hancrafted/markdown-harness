@@ -17,7 +17,7 @@ import type { BodyStructureConfig } from './section.ts';
  * Every candidate Rule for one path, as claims, in config order.
  *
  * Corpus membership is asked first: a selector carries no extension, so this
- * is what keeps a `.txt` path from being promised a template `--check` will
+ * is what keeps a `.txt` path from being promised a template `check` will
  * never apply.
  *
  * @param path The path asked about, exactly as the caller wrote it.

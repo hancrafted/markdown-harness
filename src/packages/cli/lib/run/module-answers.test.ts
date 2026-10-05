@@ -4,7 +4,7 @@
 // sorted, or wrote a key as a literal, cannot pass.
 
 import { describe, expect, it } from 'vitest';
-import { gatherAnswers, implementing, settledAnswers } from './module-answers.pure.ts';
+import { gatherAnswers, implementing, inScope, moduleCommands, settledAnswers } from './module-answers.pure.ts';
 
 const ZULU = { key: 'zulu' };
 const ALPHA = { key: 'alpha' };
@@ -145,6 +145,88 @@ describe('settledAnswers', () => {
       const actual = settledAnswers<{ kind: string; result: number }>(answers);
       // ASSERT
       expect(actual).toEqual(answers);
+    });
+  });
+});
+
+describe('moduleCommands', () => {
+  describe('success cases', () => {
+    it('names each Module by its own key, with the commands it carries, in declared order', () => {
+      // ARRANGE
+      const answer = () => undefined;
+      const modules = [
+        { key: 'zulu', check: answer, assess: answer },
+        { key: 'alpha', query: answer, audit: answer, check: answer },
+      ];
+      const expected = [
+        { key: 'zulu', commands: ['check', 'assess'] },
+        { key: 'alpha', commands: ['check', 'query', 'audit'] },
+      ];
+      // ACT
+      const actual = moduleCommands(modules);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('lists no command for a Module carrying a verb member set to undefined', () => {
+      // Presence of a defined member is the whole test, as in `implementing`.
+      // ARRANGE
+      const modules = [{ key: 'zulu', check: undefined }];
+      const expected = [{ key: 'zulu', commands: [] }];
+      // ACT
+      const actual = moduleCommands(modules);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('answers nothing for an empty Module set', () => {
+      // ARRANGE
+      const modules: { key: string }[] = [];
+      // ACT
+      const actual = moduleCommands(modules);
+      // ASSERT
+      expect(actual).toEqual([]);
+    });
+  });
+});
+
+describe('inScope', () => {
+  describe('success cases', () => {
+    it('keeps declared order, whatever order the keys arrive in', () => {
+      // ARRANGE
+      const modules = [{ key: 'zulu' }, { key: 'alpha' }];
+      const expected = [{ key: 'zulu' }, { key: 'alpha' }];
+      // ACT
+      const actual = inScope(modules, ['alpha', 'zulu']);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('drops a key no declared Module carries', () => {
+      // ARRANGE
+      const modules = [{ key: 'zulu' }, { key: 'alpha' }];
+      const expected = [{ key: 'alpha' }];
+      // ACT
+      const actual = inScope(modules, ['alpha', 'yankee']);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('asks no Module when no key was resolved', () => {
+      // ARRANGE
+      const modules = [{ key: 'zulu' }];
+      // ACT
+      const actual = inScope(modules, []);
+      // ASSERT
+      expect(actual).toEqual([]);
     });
   });
 });

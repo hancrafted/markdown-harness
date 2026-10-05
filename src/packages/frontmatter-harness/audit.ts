@@ -1,6 +1,6 @@
 // How every rule fared across one corpus.
 //
-// `--audit` resolves rules against PATHS and never opens a file, which is why
+// `audit` resolves rules against PATHS and never opens a file, which is why
 // this takes a file list rather than a root: enumeration belongs to
 // `foundation`, and keeping it out of here is what lets the walker's
 // refusals be proven before frontmatter parsing can confuse a failure.

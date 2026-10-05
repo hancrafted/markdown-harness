@@ -1,7 +1,7 @@
 /**
  * Which corpus files are governed, and by which rule.
  *
- * Runs BEFORE any file is opened. That order is what lets `--check` read only
+ * Runs BEFORE any file is opened. That order is what lets `check` read only
  * the files it will report on, and it is why an invisible file is absent from
  * the result for the stronger reason that nothing ever read it — rather than
  * being read, found conforming, and quietly dropped.

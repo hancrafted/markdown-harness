@@ -1,5 +1,5 @@
 /**
- * The seams inside `--check`.
+ * The seams inside `check`.
  *
  * Each shape below names one thing the stage before it could not decide.
  * Frontmatter arrives as bytes, becomes a block, becomes data, and only then

@@ -7,7 +7,7 @@
 //
 // SPECIFICATION: every Conformance case states its own expected outcome in an
 // `<!-- expect: -->` marker, and the last suite in this file holds the
-// implementation to it. That half could not exist before `--check` did; the
+// implementation to it. That half could not exist before `check` did; the
 // coverage half above ran alone until then.
 //
 // ARCH-002 makes a changed marker a CONTRACT CHANGE rather than a test fix, so
@@ -440,7 +440,7 @@ describe('the harness reports the verdict each Conformance case states', () => {
       // rather than against the corpus size, so adding a case with no marker
       // cannot quietly satisfy it.
       //
-      // This Module's own tally rather than the response summary: `--check`
+      // This Module's own tally rather than the response summary: `check`
       // counts governed files as a UNION across Modules, and a tier with one
       // Module in it cannot tell a union from a sum. The summary itself is
       // asserted at the process boundary, where the composition it comes from
