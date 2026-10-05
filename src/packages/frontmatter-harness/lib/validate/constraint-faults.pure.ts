@@ -7,6 +7,8 @@
  * caller concatenates.
  */
 
+import { intentFaults } from '../../../foundation/intent-faults.ts';
+import { compiles } from '../../../foundation/pattern-dialect.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { AllowedValue, FieldConstraints, Format } from '../section/constraints.types.ts';
 import type { FrontmatterFault } from './fault.types.ts';
@@ -37,12 +39,12 @@ const CONSTRAINT_KEYS: Record<keyof FieldConstraints, true> = {
  * A `Record` keyed by the type rather than a list of strings, because a type
  * union is erased before any of this runs and a runtime check cannot read one.
  * Keying by the union is the only thing that keeps the shadow honest: widening
- * `Format` in `config-contract` and forgetting this file leaves a missing key,
+ * `Format` in `constraints.types.ts` and forgetting this file leaves a missing key,
  * and a misspelt spelling an excess one, so neither compiles.
  *
  * The type is the source and these follow it. That is the opposite direction
  * from the const-object pattern, which is for a vocabulary with no home — this
- * one has one, in `config-contract`, and it stays the source.
+ * one has one, in this Module's `constraints.types.ts`, and it stays the source.
  */
 const PRESENCE_STATES: Record<NonNullable<FieldConstraints['presence']>, true> = {
   required: true,
@@ -60,12 +62,6 @@ const BOUND_KEYS: readonly (keyof FieldConstraints)[] = [
   'maxItems',
   'itemMaxLength',
 ];
-
-/** An intent key written and left blank, wherever it sits. */
-function emptyIntentAt(carrier: Record<string, unknown>, location: string): readonly FrontmatterFault[] {
-  if (!('intent' in carrier) || carrier.intent) return [];
-  return [{ code: 'CONFIG_EMPTY_INTENT', location: `${location}.intent` }];
-}
 
 /** Every key an `allowed` entry may carry, keyed by the type that declares them. */
 const ALLOWED_KEYS: Record<keyof AllowedValue, true> = { value: true, intent: true };
@@ -91,7 +87,7 @@ function allowedEntryFaults(entry: unknown, at: string): readonly FrontmatterFau
   const valueless: readonly FrontmatterFault[] =
     'value' in entry ? [] : [{ code: 'CONFIG_INVALID_VALUE', location: `${at}.value` }];
 
-  return [...unrecognised, ...valueless, ...emptyIntentAt(entry, at)];
+  return [...unrecognised, ...valueless, ...intentFaults(entry, at)];
 }
 
 /** The closed set of permitted values, if the constraint states one. */
@@ -102,21 +98,6 @@ function allowedFaults(constraint: Record<string, unknown>, location: string): r
   if (!Array.isArray(entries)) return [{ code: 'CONFIG_INVALID_VALUE', location: `${location}.allowed` }];
 
   return entries.flatMap((entry: unknown, index: number) => allowedEntryFaults(entry, `${location}.allowed[${index}]`));
-}
-
-/**
- * Whether a string compiles as a regular expression under the `u` flag, the
- * dialect every `pattern` in the config is read in, in both Modules. A pattern
- * that compiles only without the flag, such as `^Source\-`, is refused here
- * rather than read in a second dialect at check time.
- */
-function compiles(pattern: string): boolean {
-  try {
-    new RegExp(pattern, 'u');
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -142,7 +123,7 @@ function patternFaults(constraint: Record<string, unknown>, location: string): r
 /**
  * Whether a written key holds something its closed vocabulary does not name.
  *
- * PRESENCE, not truthiness, for the same reason `emptyIntentAt` is not: a bare
+ * PRESENCE, not truthiness, for the same reason `intentFaults` is not: a bare
  * `presence:` parses to `null`, which is outside the vocabulary and so is the
  * Operator saying something wrong rather than saying nothing. A key never
  * written is not a fault here.
@@ -209,7 +190,7 @@ export function constraintFaults(constraint: unknown, location: string): readonl
       .filter((key) => !Object.hasOwn(CONSTRAINT_KEYS, key))
       .map((key): FrontmatterFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${location}.${key}` })),
     ...vocabularyFaults(constraint, location),
-    ...emptyIntentAt(constraint, location),
+    ...intentFaults(constraint, location),
     ...allowedFaults(constraint, location),
     ...patternFaults(constraint, location),
   ];

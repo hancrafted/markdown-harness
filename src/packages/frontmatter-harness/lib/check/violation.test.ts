@@ -26,7 +26,7 @@ describe('FIELD_VIOLATION_CODES', () => {
         'ITEM_TOO_LONG',
         'CONSTRAINT_SHAPE_MISMATCH',
         'UNKNOWN_KEY_FORBIDDEN',
-        'FRONTMATTER_FORBIDDEN',
+        'FORBIDDEN',
         'EXACTLY_ONE_OF_NONE_PRESENT',
         'EXACTLY_ONE_OF_MULTIPLE_PRESENT',
         'ANY_OF_UNSATISFIED',
@@ -58,7 +58,7 @@ describe('FIELD_VIOLATION_CODES', () => {
   describe('failure cases', () => {
     it('withholds the unparseable-frontmatter code, which is file-level and outside the eighteen', () => {
       // ARRANGE
-      const outsideTheEighteen = 'FRONTMATTER__FRONTMATTER_UNPARSEABLE';
+      const outsideTheEighteen = 'FRONTMATTER__UNPARSEABLE';
       // ACT
       const shipped = Object.values(FIELD_VIOLATION_CODES);
       // ASSERT
@@ -83,7 +83,7 @@ describe('FIELD_VIOLATION_CODES', () => {
       // ARRANGE
       const fieldlessDiscriminants = [
         'UNKNOWN_KEY_FORBIDDEN',
-        'FRONTMATTER_FORBIDDEN',
+        'FORBIDDEN',
         'EXACTLY_ONE_OF_NONE_PRESENT',
         'EXACTLY_ONE_OF_MULTIPLE_PRESENT',
         'ANY_OF_UNSATISFIED',

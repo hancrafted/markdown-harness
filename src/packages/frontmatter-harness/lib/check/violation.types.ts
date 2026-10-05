@@ -117,7 +117,7 @@ export interface FrontmatterForbiddenViolation {
    */
   value?: FieldValue;
   /** The one outcome this shape reports. */
-  violation: 'FRONTMATTER__FRONTMATTER_FORBIDDEN';
+  violation: 'FRONTMATTER__FORBIDDEN';
   /** The payload as written. */
   requirement: { frontmatter: 'forbidden' };
 }
@@ -133,7 +133,7 @@ export interface FrontmatterUnparseableViolation {
   /** No single field: the fault is the block's bytes. */
   field: null;
   /** The one outcome this shape reports. */
-  violation: 'FRONTMATTER__FRONTMATTER_UNPARSEABLE';
+  violation: 'FRONTMATTER__UNPARSEABLE';
 }
 
 /** A set constraint failed. `satisfied` is the set, not a count. */

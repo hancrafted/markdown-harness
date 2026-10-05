@@ -312,6 +312,16 @@ describe('ruleFaults', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('reports a rule intent of the wrong type as an invalid value, never as blank', () => {
+      // ARRANGE
+      const rule = { ruleId: 'r', intent: false, folders: ['docs/'] };
+      const expected = [{ code: 'CONFIG_INVALID_VALUE', location: `${AT}.intent` }];
+      // ACT
+      const actual = ruleFaults(rule, AT, NO_MODULE_ASSESS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('reports a folder axis that is not a list', () => {
       // ARRANGE
       const rule = { ruleId: 'r', intent: 'i', folders: 'docs/' };

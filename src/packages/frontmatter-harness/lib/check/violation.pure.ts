@@ -26,7 +26,7 @@
  *
  * The order is the specification's (§4.7), not alphabetical: the constraint
  * codes run in the order the constraints are declared, and the set constraints
- * close the list. `FRONTMATTER__FRONTMATTER_UNPARSEABLE` is deliberately absent — it is
+ * close the list. `FRONTMATTER__UNPARSEABLE` is deliberately absent — it is
  * file-level and outside the eighteen, because no field address is at fault.
  *
  * These carry no `CONFIG_` prefix by design: the audience is the Contributor's
@@ -66,7 +66,7 @@ export const FIELD_VIOLATION_CODES = {
   /** `unknownKeys: forbidden` — a top-level key the rule does not name. */
   UNKNOWN_KEY_FORBIDDEN: 'FRONTMATTER__UNKNOWN_KEY_FORBIDDEN',
   /** `frontmatter: forbidden` — and the file has frontmatter. */
-  FRONTMATTER_FORBIDDEN: 'FRONTMATTER__FRONTMATTER_FORBIDDEN',
+  FORBIDDEN: 'FRONTMATTER__FORBIDDEN',
   /** `exactlyOneOf`, failing because none of the named addresses is satisfied. */
   EXACTLY_ONE_OF_NONE_PRESENT: 'FRONTMATTER__EXACTLY_ONE_OF_NONE_PRESENT',
   /** `exactlyOneOf`, failing because more than one is. */

@@ -58,7 +58,7 @@ describe('one file verdict', () => {
         {
           field: null,
           value: { keys: ['type', 'description'] },
-          violation: 'FRONTMATTER__FRONTMATTER_FORBIDDEN',
+          violation: 'FRONTMATTER__FORBIDDEN',
           requirement: { frontmatter: 'forbidden' },
         },
       ];
@@ -74,7 +74,7 @@ describe('one file verdict', () => {
       // value out of the source text by eye is not available to the harness.
       // ARRANGE
       const file = '---\ntype: plain\ntags: [okf, provenance\n---\n';
-      const expected = [{ field: null, violation: 'FRONTMATTER__FRONTMATTER_UNPARSEABLE' }];
+      const expected = [{ field: null, violation: 'FRONTMATTER__UNPARSEABLE' }];
       // ACT
       const actual = violationsForFile(frontmatterOf(file), PLAIN);
       // ASSERT
@@ -83,14 +83,14 @@ describe('one file verdict', () => {
 
     it('reports a broken block under a forbidding rule with its value key omitted', () => {
       // The rule's complaint — that there is a block at all — is true whether or
-      // not the bytes are well-formed, so `FRONTMATTER_FORBIDDEN` fires and
-      // `FRONTMATTER_UNPARSEABLE` is not additionally reported: deletion is the
+      // not the bytes are well-formed, so `FRONTMATTER__FORBIDDEN` fires and
+      // `FRONTMATTER__UNPARSEABLE` is not additionally reported: deletion is the
       // fix either way. The keys cannot be extracted from bytes that never
       // parsed, so there is no evidence to carry.
       // ARRANGE
       const file = '---\ntype: plain\n  title: indented under a scalar\n---\n';
       const expected = [
-        { field: null, violation: 'FRONTMATTER__FRONTMATTER_FORBIDDEN', requirement: { frontmatter: 'forbidden' } },
+        { field: null, violation: 'FRONTMATTER__FORBIDDEN', requirement: { frontmatter: 'forbidden' } },
       ];
       // ACT
       const actual = violationsForFile(frontmatterOf(file), INDEX);
@@ -121,7 +121,7 @@ describe('one file verdict', () => {
         {
           field: null,
           value: { keys: [] },
-          violation: 'FRONTMATTER__FRONTMATTER_FORBIDDEN',
+          violation: 'FRONTMATTER__FORBIDDEN',
           requirement: { frontmatter: 'forbidden' },
         },
       ];

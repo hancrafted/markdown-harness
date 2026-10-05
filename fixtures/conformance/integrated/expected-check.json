@@ -94,7 +94,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER__FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__UNPARSEABLE"
               }
             ]
           },
@@ -125,7 +125,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER__FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__UNPARSEABLE"
               }
             ]
           },
@@ -157,7 +157,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER__FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__UNPARSEABLE"
               }
             ]
           },
@@ -263,7 +263,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER__FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__UNPARSEABLE"
               }
             ]
           }
@@ -363,7 +363,7 @@
                     "type"
                   ]
                 },
-                "violation": "FRONTMATTER__FRONTMATTER_FORBIDDEN",
+                "violation": "FRONTMATTER__FORBIDDEN",
                 "requirement": {
                   "frontmatter": "forbidden"
                 }

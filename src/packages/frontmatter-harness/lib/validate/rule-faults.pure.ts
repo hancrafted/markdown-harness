@@ -10,6 +10,7 @@
  * what was actually written.
  */
 
+import { intentFaults } from '../../../foundation/intent-faults.ts';
 import {
   exclusionFaults,
   invalidValue,
@@ -91,8 +92,7 @@ function identityFaults(rule: Record<string, unknown>, at: string): readonly Fro
   const faults: FrontmatterFault[] = [];
   if (typeof rule.ruleId !== 'string' || rule.ruleId === '') faults.push(invalidValue(`${at}.ruleId`));
   if (!('intent' in rule)) faults.push({ code: 'CONFIG_MISSING_RULE_INTENT', location: at });
-  else if (!rule.intent) faults.push({ code: 'CONFIG_EMPTY_INTENT', location: `${at}.intent` });
-  return faults;
+  return [...faults, ...intentFaults(rule, at)];
 }
 
 /**

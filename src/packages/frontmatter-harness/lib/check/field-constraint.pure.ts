@@ -13,6 +13,7 @@
  * and the table's order is the reporting order.
  */
 
+import { dialectPattern } from '../../../foundation/pattern-dialect.ts';
 import type { FieldConstraints } from '../section/constraints.types.ts';
 import type { AddressSite, FrontmatterMapping } from './check.types.ts';
 import { resolveAddress } from './field-address.pure.ts';
@@ -99,7 +100,7 @@ function formatViolations(field: string, constraints: FieldConstraints, value: s
   // A `pattern` that will not compile under the `u` flag is a config fault
   // caught at load time, so reaching one here would mean validation let it
   // through. Searched, never anchored, in the dialect load validated it in.
-  if (pattern !== undefined && !new RegExp(pattern, 'u').test(value)) {
+  if (pattern !== undefined && !dialectPattern(pattern).test(value)) {
     failures.push(report(field, FIELD_VIOLATION_CODES.PATTERN_MISMATCH, { of: value }));
   }
   return failures;

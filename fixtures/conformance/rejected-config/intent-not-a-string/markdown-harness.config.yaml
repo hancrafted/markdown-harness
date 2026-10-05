@@ -1,0 +1,19 @@
+# An `intent` key written with something other than a string, on each of the
+# three carriers frontmatter admits one: the rule, a field constraint, and an
+# item of a constraint's `allowed` list.
+#
+# None of the three is BLANK, so none is `CONFIG_EMPTY_INTENT` — that code
+# means a key written and left empty (`''` or nothing after the colon). `false`,
+# `0` and a list are values of the wrong type, the same `CONFIG_INVALID_VALUE`
+# body-structure reports for the same mistake, so one config meets one judgement
+# of what an intent is.
+frontmatter:
+  rules:
+    - ruleId: intent-of-the-wrong-type
+      folders: ['docs/']
+      intent: false
+      fields:
+        status:
+          intent: 0
+          allowed:
+            - { value: draft, intent: [a list] }

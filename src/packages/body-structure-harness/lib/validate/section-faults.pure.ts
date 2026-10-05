@@ -14,6 +14,7 @@
  * `undefinedHeadings: forbid`, then `headings`, at every depth.
  */
 
+import { intentFaults } from '../../../foundation/intent-faults.ts';
 import {
   axisFaults,
   exclusionFaults,
@@ -27,7 +28,6 @@ import { writesClosureBeyondDefault } from '../section/spine-closure.pure.ts';
 import { closedSpineFaults, undefinedHeadingsFaults } from './closed-spine-faults.pure.ts';
 import { fault } from './fault.pure.ts';
 import type { BodyStructureFault } from './fault.types.ts';
-import { intentFaults } from './intent-faults.pure.ts';
 import { headingsFaults, maxLevelFaults } from './spine-faults.pure.ts';
 
 /** The section's own address. */

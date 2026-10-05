@@ -29,7 +29,7 @@ describe('Conformance tier records', () => {
           name: 'rejected-config',
           caseKind: 'rejected-config',
           configFile: 'markdown-harness.config.yaml',
-          caseCount: 84,
+          caseCount: 85,
         },
       ];
       // ACT

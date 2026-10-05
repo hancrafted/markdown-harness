@@ -9,12 +9,12 @@
  * reported once.
  */
 
+import { intentFaults } from '../../../foundation/intent-faults.ts';
 import { invalidValue, unrecognisedKeys } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { AllowedTitle } from '../../section.ts';
 import { fault } from './fault.pure.ts';
 import type { BodyStructureFault } from './fault.types.ts';
-import { intentFaults } from './intent-faults.pure.ts';
 
 /** Every key an `allowed` item may carry, keyed by the type declaring them so the two cannot drift. */
 const ITEM_KEYS: Record<keyof AllowedTitle, true> = { title: true, intent: true };
