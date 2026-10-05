@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // A Claude Code `PreToolUse` hook for `Write`: when the agent is about to CREATE
-// a markdown file that `body-structure` governs, put the candidate templates,
-// each heading's `intent` and `pattern` included, in front of it.
+// a markdown file that `body-structure` governs, put each candidate Rule's
+// spine in front of it: every entry's `pattern` or `allowed` titles, `intent`
+// and `mayHold`, and every nested spine indented under its parent.
 //
 // This is round two's stretch prototype of mechanism 1 from issue #221: the
 // `mh query` answer as it stands, delivered by a shim. It adds no command, no
@@ -54,10 +55,28 @@ function installedEntry(root) {
   return existsSync(entry) ? entry : undefined;
 }
 
-/** One spine entry as a line a person can read: the level, the shape, the count, then the Operator's own words. */
-function entryLine(entry) {
+/** One `allowed` title, quoted, its intent beside it when the Operator wrote one. */
+function allowedTitle({ title, intent }) {
+  return intent === undefined ? `"${title}"` : `"${title}" (${intent})`;
+}
+
+/** What a matching heading's text must be: a pattern, a fixed set of titles, or anything. */
+function titleShape(entry) {
+  if (entry.pattern !== undefined) return `text matching /${entry.pattern}/`;
+  if (entry.allowed === undefined) return 'any text';
+  const titles = entry.allowed.map(allowedTitle).join(', ');
+  return entry.allowed.length === 1 ? titles : `one of ${titles}`;
+}
+
+/**
+ * One spine entry as lines a person can read: the level, the shape, the count,
+ * the blocks its section may hold, then the Operator's own words; its nested
+ * spine follows, one indent step deeper per level of nesting.
+ */
+function entryLines(entry, depth) {
+  const indent = '  '.repeat(depth);
   const heading = `${'#'.repeat(entry.level)}`;
-  const shape = entry.pattern === undefined ? 'any text' : `text matching /${entry.pattern}/`;
+  const shape = titleShape(entry);
   const counts = [
     entry.minCount === undefined ? undefined : `at least ${entry.minCount}`,
     entry.maxCount === undefined ? undefined : `at most ${entry.maxCount}`,
@@ -68,24 +87,28 @@ function entryLine(entry) {
       : entry.presence === 'optional'
         ? 'optional, once'
         : 'once';
+  const holds =
+    entry.mayHold === undefined ? '' : `, holding only ${entry.mayHold.join(' or ')} before any sub-heading`;
   const intent = entry.intent === undefined ? '' : ` - ${entry.intent}`;
-  return `  ${heading} ${shape}, ${kind}${intent}`;
+  const own = `${indent}${heading} ${shape}, ${kind}${holds}${intent}`;
+  return [own, ...(entry.headings ?? []).flatMap((child) => entryLines(child, depth + 1))];
 }
 
-/** One candidate Rule: who it applies to, how deep it lets the document go, and the spine. */
+/** One candidate Rule: who it applies to, how deep it lets the document go, whether its spine is closed, and the spine. */
 function candidateBlock(block) {
-  const { types, maxLevel, headings } = block.requirements;
+  const { types, maxLevel, undefinedHeadings, headings } = block.requirements;
   const applies = types === undefined ? 'any type' : `type ${types.join(' or ')}`;
   const lines = [`Rule "${block.rule.ruleId}" (${applies}): ${block.rule.intent}`];
   if (maxLevel !== undefined) lines.push(`  no heading deeper than level ${maxLevel}`);
-  for (const entry of headings ?? []) lines.push(entryLine(entry));
+  if (undefinedHeadings === 'forbid') lines.push('  no heading outside these entries (undefinedHeadings: forbid)');
+  for (const entry of headings ?? []) lines.push(...entryLines(entry, 1));
   return lines.join('\n');
 }
 
 /** What the agent is told, built only from what the tool reported. */
 function notice(path, blocks) {
   return [
-    `markdown-harness: ${path} is a new file that Module "${MODULE}" governs. Headings must follow the first of these templates whose type matches the frontmatter type you give the file:`,
+    `markdown-harness: ${path} is a new file that Module "${MODULE}" governs. Headings must follow the spine of the first of these Rules whose type matches the frontmatter type you give the file. An indented entry is a nested spine: it applies again under every heading its parent matches, up to the next heading at the parent's level or shallower.`,
     '',
     blocks.map(candidateBlock).join('\n\n'),
   ].join('\n');
