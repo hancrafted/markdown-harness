@@ -59,7 +59,7 @@
             "violations": [
               {
                 "field": "description",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required"
                 }
@@ -93,7 +93,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__FRONTMATTER_UNPARSEABLE"
               }
             ]
           },
@@ -124,7 +124,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__FRONTMATTER_UNPARSEABLE"
               }
             ]
           },
@@ -156,7 +156,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__FRONTMATTER_UNPARSEABLE"
               }
             ]
           },
@@ -208,7 +208,7 @@
             "violations": [
               {
                 "field": "description",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required"
                 }
@@ -243,7 +243,7 @@
             "violations": [
               {
                 "field": "description",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required"
                 }
@@ -262,7 +262,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__FRONTMATTER_UNPARSEABLE"
               }
             ]
           }
@@ -279,7 +279,7 @@
               {
                 "field": "type",
                 "value": "reserch",
-                "violation": "VALUE_NOT_ALLOWED",
+                "violation": "FRONTMATTER__VALUE_NOT_ALLOWED",
                 "requirement": {
                   "presence": "required",
                   "allowed": [
@@ -304,7 +304,7 @@
             "violations": [
               {
                 "field": "type",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required",
                   "allowed": [
@@ -317,7 +317,7 @@
               },
               {
                 "field": "description",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required"
                 }
@@ -362,7 +362,7 @@
                     "type"
                   ]
                 },
-                "violation": "FRONTMATTER_FORBIDDEN",
+                "violation": "FRONTMATTER__FRONTMATTER_FORBIDDEN",
                 "requirement": {
                   "frontmatter": "forbidden"
                 }
@@ -442,7 +442,7 @@
             "violations": [
               {
                 "field": "description",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required"
                 }
@@ -496,7 +496,7 @@
               {
                 "field": "type",
                 "value": "research-report",
-                "violation": "VALUE_NOT_ALLOWED",
+                "violation": "FRONTMATTER__VALUE_NOT_ALLOWED",
                 "requirement": {
                   "presence": "required",
                   "allowed": [

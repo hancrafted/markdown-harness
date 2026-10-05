@@ -12,6 +12,7 @@
 import type { Frontmatter, Unreadable } from '../../../foundation/read-corpus.ts';
 import type { ModuleCheck } from '../../../response-contract/index.ts';
 import type { FrontmatterRule } from '../../section.ts';
+import type { FrontmatterViolation } from './violation.types.ts';
 
 /** A YAML mapping, before any key of it has been read. */
 export type FrontmatterMapping = Record<string, unknown>;
@@ -77,4 +78,4 @@ export interface GovernedSource {
  */
 export type CorpusCheck =
   /** Every governed file was read and judged. */
-  { kind: 'checked'; result: ModuleCheck } | Unreadable;
+  { kind: 'checked'; result: ModuleCheck<FrontmatterViolation> } | Unreadable;

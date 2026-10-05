@@ -18,13 +18,13 @@
  */
 
 import type { Frontmatter } from '../../../foundation/read-corpus.ts';
-import type { Violation } from '../../../response-contract/index.ts';
-import { FIELD_VIOLATION_CODES } from '../../../response-contract/index.ts';
 import type { FrontmatterRule } from '../../section.ts';
 import { crossFieldViolations } from './cross-field.pure.ts';
 import { fieldViolations } from './field-constraint.pure.ts';
 import { evidenceFor } from './field-evidence.pure.ts';
 import { unknownKeyViolations } from './unknown-key.pure.ts';
+import { FIELD_VIOLATION_CODES } from './violation.pure.ts';
+import type { FrontmatterViolation as Violation } from './violation.types.ts';
 
 /** The payload as written, the whole of what a forbidding rule asks. */
 const FORBIDS = { frontmatter: 'forbidden' } as const;
@@ -64,7 +64,7 @@ export function violationsForFile(data: Frontmatter, rule: FrontmatterRule): rea
   if (rule.frontmatter === 'forbidden') return forbiddenVerdict(data);
 
   if (data.kind === 'unparseable' || data.kind === 'unterminated')
-    return [{ field: null, violation: 'FRONTMATTER_UNPARSEABLE' }];
+    return [{ field: null, violation: 'FRONTMATTER__FRONTMATTER_UNPARSEABLE' }];
 
   // A file with no fence at all reads as an empty mapping, which is what lets
   // `presence: required` fire on a file that never opened a block.

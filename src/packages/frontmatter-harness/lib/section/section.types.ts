@@ -24,7 +24,8 @@
  * What a rule asserts about one field lives in `config-contract`.
  */
 
-import type { FieldAddress, FieldConstraints, Selector } from '../../../config-contract/index.ts';
+import type { Selector } from '../../../config-contract/index.ts';
+import type { FieldAddress, FieldConstraints } from './constraints.types.ts';
 
 /**
  * The conditions a file can be assessed against.

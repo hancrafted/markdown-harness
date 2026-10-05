@@ -2,8 +2,9 @@
  * What `body-structure` can find wrong with one file, and the Rule fragments
  * those findings carry.
  *
- * Split from `violation.types.ts` so each stays under the file-length limit; the
- * union `Violation` there names `BodyStructureViolation` from here.
+ * This Module's own shapes and codes (ARCH-008). The response contract is
+ * generic over a finding, and `cli` unions `BodyStructureViolation` with every
+ * other declared Module's findings — so nothing outside this Package names them.
  */
 
 /** The kinds of block a section may hold, as written in `mayHold` and as reported in a finding. */
@@ -12,9 +13,8 @@ type BlockKindName = 'prose' | 'ordered-list' | 'unordered-list';
 /**
  * One heading entry of a `body-structure` Rule, as the Operator wrote it, `intent` included.
  *
- * Declared here rather than imported from the Module on purpose: this is the
- * wire format, a Module's section type belongs to its Module (ARCH-008 §1.4),
- * and a response is read by tools that never see a config type.
+ * Declared apart from the section's `HeadingEntry` on purpose: this is the
+ * wire format, and a response is read by tools that never see a config type.
  */
 export interface HeadingRequirement {
   /** `heading` is exactly one heading; `enumeration` is a counted run of repeats. */

@@ -13,7 +13,7 @@
  */
 
 import { isMapping } from '../../../foundation/yaml-document.ts';
-import type { FieldValue } from '../../../response-contract/index.ts';
+import type { FieldValue } from './violation.types.ts';
 
 /**
  * Describe a value for a report.

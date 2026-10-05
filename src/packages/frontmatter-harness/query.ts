@@ -20,6 +20,7 @@ import { normalisePath } from '../foundation/path-shape.ts';
 import { firstMatch } from '../foundation/rule-selection.ts';
 import type { ModuleClaim } from '../response-contract/index.ts';
 import { requirementsForRule } from './lib/query/requirements.pure.ts';
+import type { FrontmatterRequirements } from './lib/query/requirements.types.ts';
 import type { FrontmatterConfig } from './section.ts';
 
 /**
@@ -38,7 +39,10 @@ import type { FrontmatterConfig } from './section.ts';
  * @param path The path asked about, exactly as the caller wrote it.
  * @param section This Module's validated section, or `undefined` when its key was not written — a Module governing nothing claims no path here either.
  */
-export function queryPath(path: string, section: FrontmatterConfig | undefined): ModuleClaim | undefined {
+export function queryPath(
+  path: string,
+  section: FrontmatterConfig | undefined,
+): ModuleClaim<FrontmatterRequirements> | undefined {
   const normalised = normalisePath(path);
   if (!isCorpusPath(normalised)) return undefined;
 

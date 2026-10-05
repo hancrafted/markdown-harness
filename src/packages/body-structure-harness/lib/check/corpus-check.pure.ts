@@ -16,6 +16,7 @@ import type { BodyStructureRule } from '../../section.ts';
 import { documentTypeOf } from '../document/document-type.pure.ts';
 import { winnerFor } from '../rules/body-rules.pure.ts';
 import { bodyViolations } from './body-violations.pure.ts';
+import type { BodyStructureViolation } from './violation.types.ts';
 
 /**
  * What this Module answers about one corpus: every governed path, and a finding
@@ -27,9 +28,12 @@ import { bodyViolations } from './body-violations.pure.ts';
  * @param documents The files `pathsToOpen` named, read, in corpus order.
  * @param rules The section's Rules, in config order.
  */
-export function moduleCheckFor(documents: readonly CorpusDocument[], rules: readonly BodyStructureRule[]): ModuleCheck {
+export function moduleCheckFor(
+  documents: readonly CorpusDocument[],
+  rules: readonly BodyStructureRule[],
+): ModuleCheck<BodyStructureViolation> {
   const governed: string[] = [];
-  const files: ModuleFinding[] = [];
+  const files: ModuleFinding<BodyStructureViolation>[] = [];
 
   for (const document of documents) {
     const winner = winnerFor(document.path, documentTypeOf(document.frontmatter), rules);

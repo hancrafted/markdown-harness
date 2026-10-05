@@ -3,7 +3,7 @@
  * Module so none writes its own.
  */
 
-import type { ConfigFault, ConfigFaultCode } from '../../../config-contract/index.ts';
+import type { BodyStructureFault, BodyStructureFaultCode } from './fault.types.ts';
 
 /**
  * A fault of one code at one address.
@@ -11,6 +11,6 @@ import type { ConfigFault, ConfigFaultCode } from '../../../config-contract/inde
  * @param code The catalog code.
  * @param location The config's own notation, e.g. `body-structure.rules[0].mayHold`.
  */
-export function fault(code: ConfigFaultCode, location: string): ConfigFault {
+export function fault(code: BodyStructureFaultCode, location: string): BodyStructureFault {
   return { code, location };
 }

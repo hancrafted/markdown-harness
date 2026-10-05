@@ -17,12 +17,12 @@
  * would erase exactly the discrimination §4.6 declares the shape for.
  */
 
-import type { CrossFieldViolation } from '../../../response-contract/index.ts';
-import { FIELD_VIOLATION_CODES } from '../../../response-contract/index.ts';
 import type { FrontmatterRule } from '../../section.ts';
 import type { FrontmatterMapping } from './check.types.ts';
 import { resolveAddress } from './field-address.pure.ts';
 import { isEmptyValue } from './field-evidence.pure.ts';
+import { FIELD_VIOLATION_CODES } from './violation.pure.ts';
+import type { CrossFieldViolation } from './violation.types.ts';
 
 /**
  * Whether one address in a set counts as satisfied.

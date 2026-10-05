@@ -11,7 +11,7 @@
  * it in the opposite direction: `2026-02-30T00:00:00Z` passes.
  */
 
-import type { Format } from '../../../config-contract/index.ts';
+import type { Format } from '../section/constraints.types.ts';
 
 /**
  * A date, `T`, a time to full seconds, an optional fractional part, then an

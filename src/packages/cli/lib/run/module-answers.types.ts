@@ -13,8 +13,14 @@ import type { ModuleDescriptor } from '../../../config-contract/index.ts';
 import type { Unreadable } from '../../../foundation/read-corpus.ts';
 import type { ModuleAssess, ModuleAudit, ModuleCheck, ModuleClaim } from '../../../response-contract/index.ts';
 
-/** Every claim a Module makes on a path, in the order it gave them; empty when it passes the path by. */
-export type QueryAnswer = readonly ModuleClaim[];
+/**
+ * Every claim a Module makes on a path, in the order it gave them; empty when it passes the path by.
+ *
+ * Generic in what a claim requires, because that shape is the Module's own; the
+ * port pins only that a claim is a claim, and `declared-module.types.ts` reads
+ * the concrete union back off the declared set.
+ */
+export type QueryAnswer<TRequirements = unknown> = readonly ModuleClaim<TRequirements>[];
 
 /** A Module's rule tallies, or the first file it had to open and could not. */
 export type AuditAnswer = ModuleAudit | Unreadable;
@@ -23,7 +29,8 @@ export type AuditAnswer = ModuleAudit | Unreadable;
 export type AssessAnswer = ModuleAssess | undefined;
 
 /** A Module's checked extent and findings, or the first governed file it could not read. */
-export type CheckAnswer = { readonly kind: 'checked'; readonly result: ModuleCheck } | Unreadable;
+export type CheckAnswer<TViolation = unknown> =
+  { readonly kind: 'checked'; readonly result: ModuleCheck<TViolation> } | Unreadable;
 
 /** The Module port with every verb's answer pinned: what each declared descriptor must satisfy. */
 export type PinnedModule = ModuleDescriptor<unknown, QueryAnswer, AuditAnswer, AssessAnswer, CheckAnswer>;

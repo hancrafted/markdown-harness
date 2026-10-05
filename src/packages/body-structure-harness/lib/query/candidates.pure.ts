@@ -16,9 +16,10 @@
  * about to write the file learns the titles a level may take and what each section may hold.
  */
 
-import type { BodyStructureRequirements, ModuleClaim } from '../../../response-contract/index.ts';
+import type { ModuleClaim } from '../../../response-contract/index.ts';
 import type { BodyStructureRule } from '../../section.ts';
 import { candidatesFor } from '../rules/body-rules.pure.ts';
+import type { BodyStructureRequirements } from './requirements.types.ts';
 
 /** One Rule's requirements as written, a key it never wrote left out. */
 function requirementsOf(rule: BodyStructureRule): BodyStructureRequirements {
@@ -37,7 +38,10 @@ function requirementsOf(rule: BodyStructureRule): BodyStructureRequirements {
  * @param path A normalised, root-relative corpus path.
  * @param rules The section's Rules, in config order.
  */
-export function candidateClaims(path: string, rules: readonly BodyStructureRule[]): readonly ModuleClaim[] {
+export function candidateClaims(
+  path: string,
+  rules: readonly BodyStructureRule[],
+): readonly ModuleClaim<BodyStructureRequirements>[] {
   return candidatesFor(path, rules).map((rule) => ({
     rule: { ruleId: rule.ruleId, intent: rule.intent },
     requirements: requirementsOf(rule),

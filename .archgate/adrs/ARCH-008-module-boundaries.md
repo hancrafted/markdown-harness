@@ -24,7 +24,7 @@ A Module is a bounded context, conformist to the Core (Evans): it declares what 
 1. A Module Package MUST NOT import another Module Package, at any depth, through any entry point.
 2. `foundation` MUST NOT import a Module Package.
 3. Any Package MAY import `config-contract`, type-only. A Module imports that shared vocabulary and no other Module's entry point.
-4. A Module's config section type MUST live in that Module's Package; no Package outside it may name that type.
+4. A Module's section type, requirement and violation shapes and codes MUST live in its Package; no Package outside it may name them, by import or by writing them out (`ARCH-012-module-free-contracts`).
 5. `validateSection` MUST be handed only the value written under its own Module's key (`src/packages/foundation/lib/config/module-sections.pure.ts` lines 39-44), and `LoadedConfig.sectionFor` MUST return only the validated section stored under that descriptor's identity (lines 60-68), so no Module can project an extent derived from a document's content.
 
 ### 2. The platform gate
@@ -41,28 +41,27 @@ A Module is a bounded context, conformist to the Core (Evans): it declares what 
 ### 4. Composition
 
 1. `cli` MUST be the only Package that composes a Module with the Core.
+2. `cli` MUST derive the concrete response from the declared Module set, so a Module costs one Package plus one entry in that set.
 
 ### 5. Where a cross-Module comparison runs
 
 1. A comparison both of whose extents are written in the config MUST run once, at load, in Core.
 2. A comparison either of whose extents is derived from a file's content MUST NOT run in Core: it is one Module's finding about one file, reported as a violation on that file under that Module's own codes.
 
-The words claim and extent in Decision 5 and the consequence saying Core compares claims are the superseded projection in design-ADR 0008, not the glossary's claim. That comparison is a target, not a check the code holds. This does not retract Decision 5.
-
 ## Do's and Don'ts
 
 ### Do's
 
 1. **DO** declare a Module's needs in the Core's vocabulary, and take that vocabulary as given. (Decision 1)
-2. **DO** keep a Module's section type inside that Module's Package. (Decision 1)
+2. **DO** keep a Module's section type, requirement and violation shapes and codes inside that Module's Package. (Decision 1)
 3. **DO** reach the filesystem through `foundation`, whose builtin imports sit in `lib/platform/`. (Decision 2)
 4. **DO** register a Module by adding a `ModuleDescriptor` to the declared Module set, and derive the recognised top-level keys from it. (Decision 3)
-5. **DO** compose Modules with the Core in `cli`, nowhere else. (Decision 4)
+5. **DO** compose Modules with the Core in `cli`, nowhere else, deriving the concrete response from the declared Module set. (Decision 4)
 6. **DO** report a content-derived finding as that Module's violation on the file. (Decision 5)
 
 ### Don'ts
 
-1. **DON'T** import another Module Package, or name another Module's section type. (Decision 1)
+1. **DON'T** import another Module Package, or name another Module's section type or shapes — Core included. (Decision 1)
 2. **DON'T** let `foundation` import a Module. (Decision 1)
 3. **DON'T** hand `validateSection` anything but its own Module's raw section, or return a section through `LoadedConfig.sectionFor` under another descriptor's identity. (Decision 1)
 4. **DON'T** import a platform builtin outside `foundation`, type-only imports included. (Decision 2)
@@ -73,7 +72,7 @@ The words claim and extent in Decision 5 and the consequence saying Core compare
 
 **Positive:**
 
-1. **A Module is addable without editing Core.** Core compares claims and never parses a section, so a fourth Module costs its own Package plus one list entry. The words claim and extent in that comparison are the superseded projection in design-ADR 0008, not the glossary's claim. That comparison is a target, not a check the code holds.
+1. **A Module is addable without editing Core.** Core compares claims, never parses a section and names no Module's shape, so a fourth Module costs its own Package plus one entry in the Module set. The words claim and extent in that comparison, and in Decision 5, are the superseded projection in design-ADR 0008, not the glossary's claim. That comparison is a target, not a check the code holds; this does not retract Decision 5.
 2. **The check stays hermetic.** Decision 5 keeps every config comparison a function of config text.
 
 **Negative:**
@@ -99,3 +98,4 @@ The words claim and extent in Decision 5 and the consequence saying Core compare
 - [Testing](./ARCH-003-testing.md) — Decision 4's two test homes, which the builtin carve-out matches.
 - [The impure Classifier](./ARCH-007-file-suffix-impure.md) — `pure-imports-no-builtin`, the neighbouring rule.
 - [Eric Evans — DDD Reference](https://www.domainlanguage.com/wp-content/uploads/2016/05/DDD_Reference_2015-03.pdf) — _Conformist_: adhere to the upstream model rather than translate it.
+- [Module-Free Contracts](./ARCH-012-module-free-contracts.md) — Decision 1.4's written-out half, held by `contracts-name-no-module`.

@@ -1,10 +1,15 @@
 /**
  * What a rule can assert about one frontmatter field.
  *
- * Split from `./config.types` at a real seam: that module answers "which files does
- * this rule select, and what kind of thing does it assert", this one answers
- * "what must be true of one value". The two change for different reasons — a
- * new selector touches the resolver, a new constraint touches the checker.
+ * Split from `./section.types` at a real seam: that file answers "which files
+ * does this rule select, and what kind of thing does it assert", this one
+ * answers "what must be true of one value". The two change for different
+ * reasons — a new selector touches the resolver, a new constraint touches the
+ * checker.
+ *
+ * This Module's own vocabulary (ARCH-008). It used to sit in `config-contract`,
+ * which made the Core name one Module's grammar; no other Module's section uses
+ * it, so it lives beside the section that does.
  */
 
 /**

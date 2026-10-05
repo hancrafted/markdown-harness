@@ -17,9 +17,10 @@
 import type { ModuleCheck, ModuleFinding } from '../../../response-contract/index.ts';
 import type { GovernedSource } from './check.types.ts';
 import { violationsForFile } from './file-verdict.pure.ts';
+import type { FrontmatterViolation } from './violation.types.ts';
 
 /** How many findings one file contributed. */
-function countIn(finding: ModuleFinding): number {
+function countIn(finding: ModuleFinding<FrontmatterViolation>): number {
   return finding.violations.length;
 }
 
@@ -32,7 +33,7 @@ function countIn(finding: ModuleFinding): number {
  *
  * @param sources Every governed file, parsed, in walker order.
  */
-export function moduleCheckFor(sources: readonly GovernedSource[]): ModuleCheck {
+export function moduleCheckFor(sources: readonly GovernedSource[]): ModuleCheck<FrontmatterViolation> {
   const files = sources
     .map((source) => ({
       path: source.path,

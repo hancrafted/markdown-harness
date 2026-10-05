@@ -15,14 +15,17 @@
  * it has not met yet.
  */
 
-import type { FieldConstraints } from '../../config-contract/index.ts';
-import type { HeadingRequirement, VocabularyRequirement } from './body-structure-violation.types.ts';
-
-/** Either some Module claimed the path, or the whole config passed it by. */
-export type QueryResult = GovernedPath | InvisiblePath;
+/**
+ * Either some Module claimed the path, or the whole config passed it by.
+ *
+ * Generic in what a claim's requirements are, because those belong to the
+ * Module making the claim. `cli` derives the concrete union from the declared
+ * Module set; this Package names no Module and none of their shapes.
+ */
+export type QueryResult<TRequirements = unknown> = GovernedPath<TRequirements> | InvisiblePath;
 
 /** A path at least one Module claims, and everything each of them asks of it. */
-export interface GovernedPath {
+export interface GovernedPath<TRequirements = unknown> {
   /** The discriminant. */
   governance: 'governed';
   /** Normalised: `/`-separated, no leading `./` or `/`. */
@@ -34,25 +37,28 @@ export interface GovernedPath {
    * per candidate Rule, in config order (design-ADR 0011), so one
    * Module may name several blocks here.
    */
-  modules: readonly ModuleRequirements[];
+  modules: readonly ModuleRequirements<TRequirements>[];
 }
 
-/** What one Module asks of one path, before composition names the Module. */
-export interface ModuleClaim {
+/**
+ * What one Module asks of one path, before composition names the Module.
+ *
+ * `TRequirements` is the asking Module's own requirement shape, declared in its
+ * Package. A claim is generic over it rather than a union of every Module's,
+ * which is what keeps this contract free of Module names.
+ */
+export interface ModuleClaim<TRequirements = unknown> {
   /**
    * The rule that won under first-match, and its intent verbatim (§3.4) — or,
    * for a Module whose winner depends on file content, one candidate Rule.
    */
   rule: { ruleId: string; intent: string };
-  /**
-   * Everything that rule asks of this path: a `frontmatter` Rule's
-   * `Requirements`, or a `body-structure` candidate's.
-   */
-  requirements: Requirements | BodyStructureRequirements;
+  /** Everything that rule asks of this path, in the asking Module's own shape. */
+  requirements: TRequirements;
 }
 
 /** One Module's claim on the path, named by the Module making it. */
-export interface ModuleRequirements extends ModuleClaim {
+export interface ModuleRequirements<TRequirements = unknown> extends ModuleClaim<TRequirements> {
   /**
    * The top-level config key the Operator typed.
    *
@@ -74,55 +80,3 @@ export interface InvisiblePath {
   /** Normalised the same way, so the caller can key on what it gets back. */
   path: string;
 }
-
-/** Either the rule forbids frontmatter outright, or it constrains it. */
-export type Requirements = NoFrontmatterRequirements | ConstrainingRequirements;
-
-/**
- * What one `body-structure` candidate Rule asks of a path, copied verbatim
- * from the Rule, a key it never wrote staying omitted.
- *
- * `types` is here because `--query` cannot know a file's `type` before the file
- * exists: a block carrying `types` applies only when the file's `type` is one of
- * them, and a block without applies to every type.
- */
-export interface BodyStructureRequirements {
-  /** The frontmatter `type` values this Rule needs, as written. */
-  types?: readonly string[];
-  /** The deepest heading level permitted, as written. */
-  maxLevel?: number;
-  /** `forbid` closes the spine, `allow` is the open spine written out; echoed as written. */
-  undefinedHeadings?: 'allow' | 'forbid';
-  /** The Rule's heading vocabulary, verbatim: the exact titles each named level may take. */
-  vocabulary?: readonly VocabularyRequirement[];
-  /** The Rule's spine, verbatim, each `intent` and `mayHold` included. */
-  headings?: readonly HeadingRequirement[];
-}
-
-/** The answer for a rule that declares its paths frontmatter-free. */
-export interface NoFrontmatterRequirements {
-  /** The rule declares its paths frontmatter-free; there is nothing else to ask. */
-  frontmatter: 'forbidden';
-}
-
-/** The answer for a rule that constrains fields. */
-export interface ConstrainingRequirements {
-  /** Absent by construction — this variant is the one that constrains fields. */
-  frontmatter?: never;
-  /** One entry per address the rule names, SORTED BY ADDRESS. Always present, `[]` when none. */
-  fields: readonly FieldRequirement[];
-  /** Present only if the Operator wrote it. Absent is not `'allowed'` spelled differently. */
-  unknownKeys?: 'allowed' | 'forbidden';
-  /** Present only if the rule carries at least one set constraint. */
-  crossField?: {
-    /** Exactly one of these addresses must be present. */
-    exactlyOneOf?: readonly string[];
-    /** At least one of these addresses must be present. */
-    anyOf?: readonly string[];
-    /** All of these addresses must be present. */
-    allOf?: readonly string[];
-  };
-}
-
-/** One address and everything the rule asks of it — flat, the constraints spread beside `field`. */
-export type FieldRequirement = { field: string } & FieldConstraints;

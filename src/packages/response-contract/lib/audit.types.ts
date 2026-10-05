@@ -68,6 +68,6 @@ export interface SelectorRef {
   folders?: readonly string[];
   /** The literal basenames the rule listed. */
   fileNames?: readonly string[];
-  /** The frontmatter `type` values a `body-structure` Rule listed. */
+  /** The frontmatter `type` values the rule listed, for a Module whose rules also select on a file's `type`. */
   types?: readonly string[];
 }

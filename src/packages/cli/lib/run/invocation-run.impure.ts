@@ -19,6 +19,7 @@ import { MODULE_SET } from '../../module-set.ts';
 import type { Invocation } from '../argv/argv.types.ts';
 import { auditVerdict } from './audit-report.pure.ts';
 import { checkVerdict } from './corpus-verdict.pure.ts';
+import type { DeclaredRequirements, DeclaredViolation } from './declared-module.types.ts';
 import { hostInstant } from './host-instant.impure.ts';
 import { gatherAnswers } from './module-answers.pure.ts';
 import { pathAssessment } from './path-assessment.pure.ts';
@@ -59,7 +60,7 @@ function gatherQuery({ path, config }: Invocation): QueryGathered {
   const cfg = gatherConfig(config);
   if (cfg.kind === 'rejected') return { kind: 'query', path, config, outcome: cfg };
 
-  const result = pathGovernance(
+  const result = pathGovernance<DeclaredRequirements>(
     normalisePath(path),
     gatherAnswers(MODULE_SET, (module) => module.query(path, cfg.result)),
   );
@@ -125,7 +126,7 @@ function gatherCheck({ root, config }: Invocation): CheckGathered {
     // Composed on the same terms as the steering command, and the counts with
     // it: `governedFiles` is a union over Modules, which no Module can see to
     // take.
-    const verdict = checkVerdict(
+    const verdict = checkVerdict<DeclaredViolation>(
       files.map(normalisePath),
       gatherAnswers(MODULE_SET, (module) => module.check(root, files, cfg.result)),
     );

@@ -10,7 +10,7 @@ import { FIELD_VIOLATION_CODES } from './violation.pure';
 
 describe('FIELD_VIOLATION_CODES', () => {
   describe('success cases', () => {
-    it('ships the eighteen codes the specification names, in specification order', () => {
+    it('ships the eighteen outcomes the specification names, in specification order', () => {
       // ARRANGE
       const eighteenCodes = [
         'MISSING_REQUIRED_FIELD',
@@ -38,22 +38,29 @@ describe('FIELD_VIOLATION_CODES', () => {
       expect(shipped).toEqual(eighteenCodes);
     });
 
-    it('answers every key with its own name, so a lookup and a literal are interchangeable', () => {
+    it('answers every outcome with its wire code under the frontmatter Module prefix', () => {
+      // The `<MODULE>__<OUTCOME>` grammar: the key is the outcome, the value is
+      // what a response carries, so two Modules can never mint the same code.
       // ARRANGE
+      const sample = {
+        VALUE_TOO_SHORT: 'FRONTMATTER__VALUE_TOO_SHORT',
+        ANY_OF_UNSATISFIED: 'FRONTMATTER__ANY_OF_UNSATISFIED',
+      };
       const entries = Object.entries(FIELD_VIOLATION_CODES);
       // ACT
-      const disagreeing = entries.filter(([key, value]) => key !== value).map(([key]) => key);
+      const disagreeing = entries.filter(([key, value]) => value !== `FRONTMATTER__${key}`).map(([key]) => key);
       // ASSERT
       expect(disagreeing).toEqual([]);
+      expect(FIELD_VIOLATION_CODES).toMatchObject(sample);
     });
   });
 
   describe('failure cases', () => {
     it('withholds the unparseable-frontmatter code, which is file-level and outside the eighteen', () => {
       // ARRANGE
-      const outsideTheEighteen = 'FRONTMATTER_UNPARSEABLE';
+      const outsideTheEighteen = 'FRONTMATTER__FRONTMATTER_UNPARSEABLE';
       // ACT
-      const shipped = Object.keys(FIELD_VIOLATION_CODES);
+      const shipped = Object.values(FIELD_VIOLATION_CODES);
       // ASSERT
       expect(shipped).not.toContain(outsideTheEighteen);
     });
@@ -62,7 +69,7 @@ describe('FIELD_VIOLATION_CODES', () => {
       // ARRANGE
       const operatorPrefix = 'CONFIG_';
       // ACT
-      const prefixed = Object.keys(FIELD_VIOLATION_CODES).filter((code) => code.startsWith(operatorPrefix));
+      const prefixed = Object.values(FIELD_VIOLATION_CODES).filter((code) => code.startsWith(operatorPrefix));
       // ASSERT
       expect(prefixed).toEqual([]);
     });

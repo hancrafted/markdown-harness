@@ -7,9 +7,9 @@
  * caller concatenates.
  */
 
-import type { AllowedValue, FieldConstraints, Format } from '../../../config-contract/index.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
-import type { ConfigFault } from '../../../response-contract/index.ts';
+import type { AllowedValue, FieldConstraints, Format } from '../section/constraints.types.ts';
+import type { FrontmatterFault } from './fault.types.ts';
 
 /**
  * Every key a constraint may carry, keyed by the type that declares them.
@@ -62,7 +62,7 @@ const BOUND_KEYS: readonly (keyof FieldConstraints)[] = [
 ];
 
 /** An intent key written and left blank, wherever it sits. */
-function emptyIntentAt(carrier: Record<string, unknown>, location: string): readonly ConfigFault[] {
+function emptyIntentAt(carrier: Record<string, unknown>, location: string): readonly FrontmatterFault[] {
   if (!('intent' in carrier) || carrier.intent) return [];
   return [{ code: 'CONFIG_EMPTY_INTENT', location: `${location}.intent` }];
 }
@@ -81,21 +81,21 @@ const ALLOWED_KEYS: Record<keyof AllowedValue, true> = { value: true, intent: tr
  * truncated half is what the tool would go on to quote. Naming the vocabulary
  * turns that into a fault at the exact address.
  */
-function allowedEntryFaults(entry: unknown, at: string): readonly ConfigFault[] {
+function allowedEntryFaults(entry: unknown, at: string): readonly FrontmatterFault[] {
   if (!isMapping(entry)) return [{ code: 'CONFIG_INVALID_VALUE', location: at }];
 
   const unrecognised = Object.keys(entry)
     .filter((key) => !Object.hasOwn(ALLOWED_KEYS, key))
-    .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${at}.${key}` }));
+    .map((key): FrontmatterFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${at}.${key}` }));
 
-  const valueless: readonly ConfigFault[] =
+  const valueless: readonly FrontmatterFault[] =
     'value' in entry ? [] : [{ code: 'CONFIG_INVALID_VALUE', location: `${at}.value` }];
 
   return [...unrecognised, ...valueless, ...emptyIntentAt(entry, at)];
 }
 
 /** The closed set of permitted values, if the constraint states one. */
-function allowedFaults(constraint: Record<string, unknown>, location: string): readonly ConfigFault[] {
+function allowedFaults(constraint: Record<string, unknown>, location: string): readonly FrontmatterFault[] {
   if (!('allowed' in constraint)) return [];
 
   const entries = constraint.allowed;
@@ -125,7 +125,7 @@ function compiles(pattern: string): boolean {
  * The mandatory intent is what the violation reports; without it the raw regex
  * leaks into the message.
  */
-function patternFaults(constraint: Record<string, unknown>, location: string): readonly ConfigFault[] {
+function patternFaults(constraint: Record<string, unknown>, location: string): readonly FrontmatterFault[] {
   const pattern = constraint.pattern;
   if (pattern === undefined) return [];
   if (typeof pattern !== 'string' || !compiles(pattern)) {
@@ -182,8 +182,8 @@ function lacksFiniteBound(constraint: Record<string, unknown>, key: string): boo
  * and so left the field silently ungoverned. §3.5 names that exact config as
  * `CONFIG_INVALID_VALUE`.
  */
-function vocabularyFaults(constraint: Record<string, unknown>, location: string): readonly ConfigFault[] {
-  const at = (key: string): ConfigFault => ({ code: 'CONFIG_INVALID_VALUE', location: `${location}.${key}` });
+function vocabularyFaults(constraint: Record<string, unknown>, location: string): readonly FrontmatterFault[] {
+  const at = (key: string): FrontmatterFault => ({ code: 'CONFIG_INVALID_VALUE', location: `${location}.${key}` });
 
   return [
     ...(outsideVocabulary(constraint, 'presence', PRESENCE_STATES) ? [at('presence')] : []),
@@ -198,7 +198,7 @@ function vocabularyFaults(constraint: Record<string, unknown>, location: string)
  * @param constraint The value written under one field address.
  * @param location The constraint's address in the config's own notation.
  */
-export function constraintFaults(constraint: unknown, location: string): readonly ConfigFault[] {
+export function constraintFaults(constraint: unknown, location: string): readonly FrontmatterFault[] {
   if (!isMapping(constraint)) return [{ code: 'CONFIG_INVALID_VALUE', location }];
 
   const keys = Object.keys(constraint);
@@ -207,7 +207,7 @@ export function constraintFaults(constraint: unknown, location: string): readonl
   return [
     ...keys
       .filter((key) => !Object.hasOwn(CONSTRAINT_KEYS, key))
-      .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${location}.${key}` })),
+      .map((key): FrontmatterFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${location}.${key}` })),
     ...vocabularyFaults(constraint, location),
     ...emptyIntentAt(constraint, location),
     ...allowedFaults(constraint, location),

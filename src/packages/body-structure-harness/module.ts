@@ -8,6 +8,7 @@
 import type { ModuleDescriptor } from '../config-contract/index.ts';
 import { auditRules } from './audit.ts';
 import { checkCorpus } from './check.ts';
+import type { BodyStructureFaultCode } from './lib/validate/fault.types.ts';
 import { queryPath } from './query.ts';
 import type { BodyStructureConfig } from './section.ts';
 import { validateBodyStructureSection } from './validate-config.ts';
@@ -25,7 +26,8 @@ export const bodyStructureModule: ModuleDescriptor<
   ReturnType<typeof queryPath>,
   ReturnType<typeof auditRules>,
   undefined,
-  ReturnType<typeof checkCorpus>
+  ReturnType<typeof checkCorpus>,
+  BodyStructureFaultCode
 > = {
   key: 'body-structure',
   validateSection(raw: unknown) {

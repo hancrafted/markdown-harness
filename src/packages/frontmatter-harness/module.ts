@@ -15,6 +15,8 @@ import type { ModuleClaim } from '../response-contract/index.ts';
 import { assessPath } from './assess.ts';
 import { auditRules } from './audit.ts';
 import { checkCorpus } from './check.ts';
+import type { FrontmatterRequirements } from './lib/query/requirements.types.ts';
+import type { FrontmatterFaultCode } from './lib/validate/fault.types.ts';
 import { queryPath } from './query.ts';
 import type { FrontmatterConfig } from './section.ts';
 import { validateFrontmatterSection } from './validate-config.ts';
@@ -34,10 +36,11 @@ import { validateFrontmatterSection } from './validate-config.ts';
  */
 export const frontmatterModule: ModuleDescriptor<
   FrontmatterConfig,
-  readonly ModuleClaim[],
+  readonly ModuleClaim<FrontmatterRequirements>[],
   ReturnType<typeof auditRules>,
   ReturnType<typeof assessPath>,
-  ReturnType<typeof checkCorpus>
+  ReturnType<typeof checkCorpus>,
+  FrontmatterFaultCode
 > = {
   key: 'frontmatter',
   validateSection(raw: unknown) {

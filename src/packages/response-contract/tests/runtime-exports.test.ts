@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FIELD_VIOLATION_CODES, isConfigError } from '../index.ts';
+import { configError, isConfigError } from '../index.ts';
 
 describe('response-contract runtime exports', () => {
   describe('success cases', () => {
@@ -27,11 +27,12 @@ describe('response-contract runtime exports', () => {
   });
 
   describe('edge cases', () => {
-    it('publishes the field code a consumer compares from JSON', () => {
+    it('identifies a rejection that carries no fault as a config error all the same', () => {
       // ARRANGE
-      const expected = 'MISSING_REQUIRED_FIELD';
+      const result = configError([]);
+      const expected = true;
       // ACT
-      const actual = FIELD_VIOLATION_CODES.MISSING_REQUIRED_FIELD;
+      const actual = isConfigError(result);
       // ASSERT
       expect(actual).toBe(expected);
     });

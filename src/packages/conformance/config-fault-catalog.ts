@@ -8,7 +8,10 @@
 //
 // The cost of writing it by hand is drift, and the pin below is what pays it.
 
-import type { ConfigFaultCode } from '../config-contract/index.ts';
+// The contract is the WHOLE catalog: the Core's codes and every declared
+// Module's own. `config-contract` holds only the Core's, so the union is the one
+// `cli` derives from the declared Module set.
+import type { DeclaredFaultCode as ConfigFaultCode } from '../cli/declared-module.ts';
 
 /**
  * Every code the tier undertakes to reach, in the order §3.5's catalog declares

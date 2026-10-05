@@ -39,8 +39,13 @@ export interface SectionOutcome {
    * answers `undefined` without anyone storing one.
    */
   sections: ReadonlyMap<ModuleDescriptor<unknown>, unknown>;
-  /** Every fault the Modules reported, in declared order; empty when they reported none. */
-  faults: readonly ConfigFault[];
+  /**
+   * Every fault the Modules reported, in declared order; empty when they reported none.
+   *
+   * Each Module types its faults against its own catalog; gathered here they are
+   * the union, which only `cli` can name, so the code is held as a string.
+   */
+  faults: readonly ConfigFault<string>[];
 }
 
 /** The outcome of the whole load: a config to trust, or every reason not to. */
@@ -54,5 +59,5 @@ export interface ConfigLoad {
    */
   config?: LoadedConfig;
   /** Every fault found across every stage, in reporting order. */
-  faults: readonly ConfigFault[];
+  faults: readonly ConfigFault<string>[];
 }

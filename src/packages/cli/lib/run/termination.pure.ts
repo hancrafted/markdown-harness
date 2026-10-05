@@ -5,7 +5,7 @@
  * rejection payloads, and deterministic rules pure and assertable without host I/O.
  */
 
-import type { ConfigFault, MarkdownHarnessResponse } from '../../../response-contract/index.ts';
+import type { ConfigFault } from '../../../response-contract/index.ts';
 import {
   assessResponse,
   auditResponse,
@@ -18,6 +18,7 @@ import {
 import { parseArgv } from '../argv/parse-argv.pure.ts';
 import { HELP, USAGE } from '../argv/usage.pure.ts';
 import { unsupportedRuntime } from '../runtime/node-support.pure.ts';
+import type { DeclaredResponse } from './declared-module.types.ts';
 import type {
   AssessGathered,
   AuditGathered,
@@ -54,12 +55,12 @@ const USAGE_ERROR: Termination = { stdout: '', stderr: USAGE, code: CANNOT_REPOR
 const HELP_ANSWER: Termination = { stdout: HELP, stderr: '', code: NOTHING_WRONG };
 
 /** JSON on stdout: 2-space indentation, trailing newline. */
-function emit(response: MarkdownHarnessResponse, code: number): Termination {
+function emit(response: DeclaredResponse, code: number): Termination {
   return { stdout: serializeResponse(response), stderr: '', code };
 }
 
 /** Every response uses the rejection guard to keep failure exit policy central. */
-function responseTermination(response: MarkdownHarnessResponse, answeredCode = NOTHING_WRONG): Termination {
+function responseTermination(response: DeclaredResponse, answeredCode = NOTHING_WRONG): Termination {
   return emit(response, isConfigError(response.result) ? CANNOT_REPORT : answeredCode);
 }
 
@@ -104,7 +105,7 @@ function assertNever(value: never): never {
  */
 function fromConfigOutcome<Result>(
   outcome: ConfigOutcome<Result>,
-  onRejected: (faults: readonly ConfigFault[]) => Termination,
+  onRejected: (faults: readonly ConfigFault<string>[]) => Termination,
   onAnswered: (result: Result) => Termination,
 ): Termination {
   return outcome.kind === 'rejected' ? onRejected(outcome.faults) : onAnswered(outcome.result);

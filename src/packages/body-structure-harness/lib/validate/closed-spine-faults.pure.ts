@@ -3,10 +3,10 @@
  * exclusion of `maxLevel:`.
  */
 
-import type { ConfigFault } from '../../../config-contract/index.ts';
 import { invalidValue } from '../../../foundation/selector-faults.ts';
 import type { UndefinedHeadings } from '../../section.ts';
 import { closesSpine } from '../section/spine-closure.pure.ts';
+import type { BodyStructureFault } from './fault.types.ts';
 import { isLevel } from './template-faults.pure.ts';
 
 /** The two spellings of `undefinedHeadings`, keyed by the union they shadow. */
@@ -25,7 +25,7 @@ function isUndefinedHeadings(value: unknown): value is UndefinedHeadings {
  * @param rule One Rule, straight off the YAML.
  * @param at The Rule's address, e.g. `body-structure.rules[0]`.
  */
-export function undefinedHeadingsFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+export function undefinedHeadingsFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   return 'undefinedHeadings' in rule && !isUndefinedHeadings(rule.undefinedHeadings)
     ? [invalidValue(`${at}.undefinedHeadings`)]
     : [];
@@ -39,7 +39,7 @@ export function undefinedHeadingsFaults(rule: Record<string, unknown>, at: strin
  * @param rule One Rule, straight off the YAML.
  * @param at The Rule's address, e.g. `body-structure.rules[0]`.
  */
-export function closedSpineFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+export function closedSpineFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   return isLevel(rule.maxLevel) && closesSpine(rule)
     ? [{ code: 'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE', location: `${at}.maxLevel` }]
     : [];

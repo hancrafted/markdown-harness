@@ -4,9 +4,9 @@
  * (`undefinedHeadings: forbid`) and the heading vocabulary.
  */
 
-import type { BodyStructureViolation } from '../../../response-contract/index.ts';
 import type { OutlineHeading } from '../document/document.types.ts';
 import type { Listing } from './body-check.types.ts';
+import type { BodyStructureViolation } from './violation.types.ts';
 
 /**
  * Every level deeper than `maxLevel` the outline uses, ascending, each with how

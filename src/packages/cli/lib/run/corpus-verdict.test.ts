@@ -17,7 +17,7 @@ import { checkVerdict, corpusVerdict } from './corpus-verdict.pure';
 /** One thing wrong, written out once so the fixtures stay about the nesting. */
 const MISSING_TYPE = {
   field: 'type',
-  violation: 'MISSING_REQUIRED_FIELD',
+  violation: 'FRONTMATTER__MISSING_REQUIRED_FIELD',
   requirement: { presence: 'required' },
 } as const;
 

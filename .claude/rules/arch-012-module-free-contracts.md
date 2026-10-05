@@ -1,0 +1,1 @@
+../../.archgate/adrs/ARCH-012-module-free-contracts.md
