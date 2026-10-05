@@ -1,6 +1,6 @@
 <!-- expect: PASSES -->
 
-A decision record whose `Options` section holds two options and whose `Consequences` section holds `Positive` then `Negative`, each a bulleted list. Each sub-template is judged inside its own section only.
+A decision record whose `Options` section holds two options and whose `Consequences` section holds `Positive` then `Negative`, each a bulleted list. Each sub-template is judged over the headings under its own heading only.
 
 # Use a queue
 

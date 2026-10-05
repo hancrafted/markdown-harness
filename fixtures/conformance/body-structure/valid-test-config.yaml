@@ -297,8 +297,8 @@ body-structure:
     #
     # `nested-changelog` is a strict Keep a Changelog file: a closed spine whose release enumeration
     # carries one optional entry per change type, in the order the convention lists them. Its nested
-    # list is walked once under every release heading the enumeration claims, and covers only that
-    # release's section.
+    # spine is walked once under every release heading the enumeration claims, over the headings under
+    # that release alone.
     - ruleId: nested-changelog
       folders: [docs/nested-changelog/]
       intent: 'A changelog has one title and a heading per release, and each release lists its changes under at most one heading per change type, in the order Keep a Changelog gives them.'
