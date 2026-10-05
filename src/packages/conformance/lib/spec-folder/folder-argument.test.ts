@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { folderRequestOf } from './folder-argument.pure.ts';
 
 const TIERS = [
-  { name: 'body-structure', specFolders: true },
-  { name: 'frontmatter', specFolders: false },
-];
+  { name: 'body-structure', unit: 'spec-folder' },
+  { name: 'frontmatter', unit: 'none' },
+  { name: 'rejected-config', unit: 'case-directory' },
+] as const;
 
 describe('folderRequestOf', () => {
   describe('success cases', () => {
@@ -26,6 +27,27 @@ describe('folderRequestOf', () => {
       const expected = { kind: 'spec-tier', tier: 'body-structure' };
       // ACT
       const actual = folderRequestOf('fixtures/conformance/body-structure', TIERS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it.each([
+      'rejected-config/frontmatter__duplicate-rule-id',
+      'fixtures/conformance/rejected-config/file__config-not-found/',
+    ])('reads %s as one case directory', (argument) => {
+      // ARRANGE
+      const expected = { kind: 'case-directory', tier: 'rejected-config', caseName: expect.stringMatching(/__/u) };
+      // ACT
+      const actual = folderRequestOf(argument, TIERS);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reads a case-directory tier root as every case in it', () => {
+      // ARRANGE
+      const expected = { kind: 'case-tier', tier: 'rejected-config' };
+      // ACT
+      const actual = folderRequestOf('fixtures/conformance/rejected-config', TIERS);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -61,16 +83,19 @@ describe('folderRequestOf', () => {
   });
 
   describe('edge cases', () => {
-    it.each([undefined, '', 'body-structure/docs', 'body-structure/docs/minCount__zero/passes.md'])(
-      'refuses %s, which names no single spec folder',
-      (argument) => {
-        // ARRANGE
-        const refused = 'refused';
-        // ACT
-        const actual = folderRequestOf(argument, TIERS);
-        // ASSERT
-        expect(actual.kind).toBe(refused);
-      },
-    );
+    it.each([
+      undefined,
+      '',
+      'body-structure/docs',
+      'body-structure/docs/minCount__zero/passes.md',
+      'rejected-config/file__config-not-found/expected-rejection.json',
+    ])('refuses %s, which names no single spec folder or case directory', (argument) => {
+      // ARRANGE
+      const refused = 'refused';
+      // ACT
+      const actual = folderRequestOf(argument, TIERS);
+      // ASSERT
+      expect(actual.kind).toBe(refused);
+    });
   });
 });

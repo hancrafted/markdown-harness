@@ -5,8 +5,11 @@
 // when one disagrees — then exits 1 on any disagreement. It runs the same
 // comparison each spec-folder tier runner runs, `./spec-folder.ts`, so the
 // script and the suite cannot disagree about a folder. A tier root runs every
-// spec folder in it; the root of a tier without spec folders runs that tier's
-// runner; a directory outside every tier that holds the adopter's config — a
+// spec folder in it. A `rejected-config` case directory runs the same way
+// through `./rejected-config-case.ts`, the comparison its tier runner calls:
+// the opening comment of its config, then each frozen file against what `mh`
+// prints inside it. The root of a tier with neither runs that tier's runner;
+// a directory outside every tier that holds the adopter's config — a
 // scratch copy of a folder, say — is compared as a spec folder of its own;
 // anything else is refused with the reason.
 //
@@ -19,15 +22,29 @@ import { readTextIn } from '../foundation/read-text.ts';
 import { runEntry } from '../foundation/run-entry.ts';
 import { conformanceRoot } from './case-corpus.ts';
 import { folderRequestOf } from './lib/spec-folder/folder-argument.pure.ts';
+import type { RunnableUnit } from './lib/spec-folder/folder-argument.types.ts';
 import { runnerFileFor } from './lib/tier/tier-name.pure.ts';
+import {
+  compareRejectedCase,
+  rejectedCasePath,
+  rejectedConfigCases,
+  renderRejectedCase,
+} from './rejected-config-case.ts';
 import { compareSpecFolder, renderReport, specFolderPath, specFoldersIn } from './spec-folder.ts';
-import { ADOPTER_CONFIG_FILE, CONFORMANCE_TIERS } from './tier-record.ts';
+import { ADOPTER_CONFIG_FILE, CONFORMANCE_TIERS, tierNamed } from './tier-record.ts';
 
 const REPOSITORY = hostPath(conformanceRoot(), '..', '..');
 
+/** What a tier's case kind makes runnable alone. */
+const UNIT_OF: Record<(typeof CONFORMANCE_TIERS)[number]['caseKind'], RunnableUnit> = {
+  'spec-folder': 'spec-folder',
+  'rejected-config': 'case-directory',
+  markdown: 'none',
+};
+
 const request = folderRequestOf(
   process.argv[2],
-  CONFORMANCE_TIERS.map((tier) => ({ name: tier.name, specFolders: tier.caseKind === 'spec-folder' })),
+  CONFORMANCE_TIERS.map((tier) => ({ name: tier.name, unit: UNIT_OF[tier.caseKind] })),
 );
 
 function compareAll(tier: string, folders: readonly string[]): number {
@@ -39,6 +56,18 @@ function compareAll(tier: string, folders: readonly string[]): number {
   }
   if (folders.length > 1)
     process.stdout.write(`\n${folders.length - disagreeing} of ${folders.length} spec folders agree\n`);
+  return disagreeing === 0 ? 0 : 1;
+}
+
+function compareCases(tier: string, caseNames: readonly string[]): number {
+  let disagreeing = 0;
+  for (const caseName of caseNames) {
+    const report = compareRejectedCase(rejectedCasePath(tier, caseName), `${tier}/${caseName}`);
+    process.stdout.write(renderRejectedCase(report));
+    if (!report.agrees) disagreeing++;
+  }
+  if (caseNames.length > 1)
+    process.stdout.write(`\n${caseNames.length - disagreeing} of ${caseNames.length} cases agree\n`);
   return disagreeing === 0 ? 0 : 1;
 }
 
@@ -66,6 +95,14 @@ switch (request.kind) {
     process.exitCode = report.agrees ? 0 : 1;
     break;
   }
+  case 'case-directory':
+    process.exitCode = rejectedConfigCases(tierNamed(request.tier)).includes(request.caseName)
+      ? compareCases(request.tier, [request.caseName])
+      : (process.stderr.write(`conformance: no case directory ${request.caseName} in the ${request.tier} tier\n`), 2);
+    break;
+  case 'case-tier':
+    process.exitCode = compareCases(request.tier, rejectedConfigCases(tierNamed(request.tier)));
+    break;
   case 'spec-tier':
     process.exitCode = compareAll(request.tier, specFoldersIn(request.tier));
     break;

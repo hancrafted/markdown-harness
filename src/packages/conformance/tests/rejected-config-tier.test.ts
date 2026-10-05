@@ -12,6 +12,18 @@
 // case-relative and this runner supplies the prefix, so moving the tier stays a
 // rename rather than a rewrite of every case.
 //
+// Each case is ALSO asked at the process boundary (#231): the compiled `mh` run
+// inside the case directory with no flag, as a human runs it, through the same
+// comparison `npm run conformance -- rejected-config/<case>` prints. Inside the
+// case the config is named by its bare file name, so the case-relative payload
+// compares with no prefix at all, and a case that freezes the whole envelope
+// freezes it byte for byte. That comparison spawns `dist/`, so build first
+// (trap 9 in docs/agents/verification.md).
+//
+// A case directory is named `<module>__<behaviour>`, or `file__<behaviour>` for
+// a fault outside every Module section, so the directory listing says which
+// section a fault sits in and what it refuses.
+//
 // Three properties are asserted over the fault catalog. COVERAGE: every member
 // is reached by at least one case, read off what the loader actually emitted.
 // CLOSURE: no expectation names a code outside the declared list, read off the
@@ -24,27 +36,46 @@
 // deciding which of the two is wrong — never by editing the frozen file to agree
 // with the code.
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { MODULE_SET } from '../../cli/module-set.ts';
 import { loadConfig } from '../../foundation/load-config.ts';
-import { readTextIn } from '../../foundation/read-text.ts';
-import { checkResponse, configError, serializeResponse } from '../../response-contract/index.ts';
-import { casesIn, tierRoot } from '../case-corpus.ts';
+import { configError } from '../../response-contract/index.ts';
+import { casesIn } from '../case-corpus.ts';
 import { DECLARED_CODES } from '../config-fault-catalog.ts';
 import { coverageAndClosure } from '../coverage-closure.ts';
-import { configPathOf, expectedRejectionOf, rejectedConfigCases } from '../rejected-config-case.ts';
+import type { RejectedCaseReport } from '../rejected-config-case.ts';
+import {
+  compareRejectedCase,
+  configPathOf,
+  EXPECTED_CHECK_RESPONSE,
+  expectedRejectionOf,
+  rejectedCasePath,
+  rejectedConfigCases,
+} from '../rejected-config-case.ts';
 import { tierForRunner } from '../tier-record.ts';
 
 const TIER = tierForRunner(import.meta.url);
 if (TIER.caseKind !== 'rejected-config') throw new Error(`${TIER.name} is not a rejected-config tier`);
 const cases = rejectedConfigCases(TIER);
-const CONFIG_NOT_FOUND = 'config-not-found';
-const TIER_ROOT = tierRoot(TIER.name);
-const REJECTED_CONFIG_ROOT = `fixtures/conformance/${TIER.name}`;
-const CONFIG_NOT_FOUND_PATH = `${REJECTED_CONFIG_ROOT}/${CONFIG_NOT_FOUND}/${TIER.configFile}`;
-const SERIALIZED_RESPONSE = 'expected-check-response.json';
-/** What an unscoped `check` names as the Modules that ran: every declared Module implementing it, in order. */
-const CHECKING_MODULES = MODULE_SET.filter((module) => module.check !== undefined).map((module) => module.key);
+/** The one case that freezes the whole `check` envelope beside its payload. */
+const CONFIG_NOT_FOUND = 'file__config-not-found';
+
+/** The cases whose whole envelope is frozen, stated by hand so a deleted file fails rather than skips. */
+const ENVELOPE_CASES = [CONFIG_NOT_FOUND];
+
+/** Each case compared once at the process boundary, by case name. */
+const reports = new Map<string, RejectedCaseReport>();
+
+beforeAll(() => {
+  for (const caseName of cases)
+    reports.set(caseName, compareRejectedCase(rejectedCasePath(TIER.name, caseName), caseName));
+}, 120_000);
+
+function reportFor(caseName: string): RejectedCaseReport {
+  const report = reports.get(caseName);
+  if (report === undefined) throw new Error(`no process-boundary report for ${caseName}`);
+  return report;
+}
 
 /**
  * The whole config-error response one case produces.
@@ -59,15 +90,6 @@ const CHECKING_MODULES = MODULE_SET.filter((module) => module.check !== undefine
  */
 function rejectionFor(caseName: string) {
   return configError(loadConfig(configPathOf(TIER, caseName), MODULE_SET).faults);
-}
-
-/** The frozen whole-envelope bytes for the config-not-found Conformance case. */
-function expectedCheckResponse(): string {
-  const found = readTextIn(TIER_ROOT, `${CONFIG_NOT_FOUND}/${SERIALIZED_RESPONSE}`);
-  if (found.kind !== 'text') {
-    throw new Error(`${CONFIG_NOT_FOUND} must contain ${SERIALIZED_RESPONSE}`);
-  }
-  return found.text;
 }
 
 /** Every code the frozen files name, across the tier, with repeats. */
@@ -90,19 +112,28 @@ describe('the rejected-config tier', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('freezes the serialized check envelope for config-not-found', () => {
+    it.each(cases)('answers %s at the process boundary exactly as its frozen files state', (caseName) => {
+      // The disagreeing comparisons, diffs included, so a red run names the
+      // frozen file and the lines that moved.
       // ARRANGE
-      const expected = expectedCheckResponse();
+      const none: readonly unknown[] = [];
       // ACT
-      const faults = loadConfig(CONFIG_NOT_FOUND_PATH, MODULE_SET).faults;
-      const actual = serializeResponse(
-        checkResponse(
-          { modules: CHECKING_MODULES, root: REJECTED_CONFIG_ROOT, config: CONFIG_NOT_FOUND_PATH },
-          configError(faults),
-        ),
+      const actual = reportFor(caseName).frozen.filter((comparison) => !comparison.agrees);
+      // ASSERT
+      expect(actual).toEqual(none);
+    });
+
+    it('freezes the serialized check envelope for exactly the cases that state one', () => {
+      // Without this, deleting an envelope file would drop its comparison
+      // silently and the case would still agree (ARCH-010).
+      // ARRANGE
+      const expected = ENVELOPE_CASES;
+      // ACT
+      const actual = cases.filter((caseName) =>
+        reportFor(caseName).frozen.some((comparison) => comparison.label === EXPECTED_CHECK_RESPONSE),
       );
       // ASSERT
-      expect(actual).toBe(expected);
+      expect(actual).toEqual(expected);
     });
 
     it('points at its own tier rather than at the directory holding every tier', () => {
@@ -190,7 +221,7 @@ describe('the rejected-config tier', () => {
 
     it('freezes one case carrying several faults, so fault order is not stated vacuously', () => {
       // Deep equality over a one-fault list says nothing whatever about order.
-      // `fault-order/` is the case that makes the contract real, and this is
+      // `frontmatter__fault-order/` is the case that makes the contract real, and this is
       // what stops it being deleted down to a set of singletons.
       // ARRANGE
       const single = 1;

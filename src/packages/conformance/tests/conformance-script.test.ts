@@ -1,6 +1,7 @@
 // `npm run conformance -- <path>`, asked at the process boundary a human uses:
-// one passing spec folder, one deliberately mismatched scratch copy, and one
-// refused subfolder of a tier that has no spec folders (#231).
+// one passing spec folder, one passing rejected-config case directory, one
+// deliberately mismatched scratch copy, and refused paths below a tier's
+// runnable unit (#231).
 //
 // The script spawns the compiled `mh`, so build first (trap 9 in
 // docs/agents/verification.md).
@@ -47,6 +48,23 @@ describe('npm run conformance', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+    it('prints a rejected-config case, the fault its config opens with and its identical frozen files, and exits 0', () => {
+      // ARRANGE
+      const expected = {
+        code: 0,
+        lines: [
+          'case  rejected-config/frontmatter__duplicate-rule-id',
+          '  # Two rules sharing a `ruleId`.',
+          '  expected-rejection.json  identical',
+          'agrees',
+        ],
+      };
+      // ACT
+      const run = conformance('fixtures/conformance/rejected-config/frontmatter__duplicate-rule-id');
+      const actual = { code: run.code, lines: run.stdout.trimEnd().split('\n') };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
@@ -78,6 +96,15 @@ describe('npm run conformance', () => {
   });
 
   describe('edge cases', () => {
+    it('refuses a file inside a rejected-config case with the reason, and exits 2', () => {
+      // ARRANGE
+      const expected = { code: 2, stdout: '', stderr: expect.stringContaining('is not a case directory') };
+      // ACT
+      const actual = conformance('rejected-config/file__config-not-found/expected-rejection.json');
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses a frontmatter subfolder with the reason, and exits 2', () => {
       // ARRANGE
       const expected = {

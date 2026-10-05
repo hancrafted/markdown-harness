@@ -4,9 +4,10 @@
  *
  * The path is repository-relative, with or without its `fixtures/conformance/`
  * prefix. A spec-folder tier answers for one spec folder, or for every one of
- * them when the tier root is named. Any other tier has no spec folders: its
- * root runs that tier's runner, and a path below its root is refused with the
- * reason, because nothing below it is a unit the tool can run alone. A path
+ * them when the tier root is named; a case-directory tier (`rejected-config`)
+ * answers the same way for its case directories. Any other tier has neither:
+ * its root runs that tier's runner, and a path below its root is refused with
+ * the reason, because nothing below it is a unit the tool can run alone. A path
  * outside every tier is read as a directory to compare as a spec folder in its
  * own right — a scratch copy, say — and the caller refuses it when it holds no
  * config.
@@ -30,7 +31,19 @@ export function folderRequestOf(argument: string | undefined, tiers: readonly Ti
   const [tierName, ...rest] = relative.split('/');
   const tier = tiers.find((candidate) => candidate.name === tierName);
   if (tier === undefined) return { kind: 'directory', path: argument.replace(/\/+$/u, '') };
-  return tier.specFolders ? inSpecTier(argument, tier.name, rest) : inPlainTier(tier.name, rest);
+  if (tier.unit === 'spec-folder') return inSpecTier(argument, tier.name, rest);
+  if (tier.unit === 'case-directory') return inCaseTier(argument, tier.name, rest);
+  return inPlainTier(tier.name, rest);
+}
+
+/** A path inside a case-directory tier: its root, one case directory straight under it, or refused. */
+function inCaseTier(argument: string, tier: string, rest: readonly string[]): FolderRequest {
+  if (rest.length === 0) return { kind: 'case-tier', tier };
+  if (rest.length === 1 && rest[0] !== '') return { kind: 'case-directory', tier, caseName: rest[0] };
+  return {
+    kind: 'refused',
+    reason: `${argument} is not a case directory — a ${tier} case is one directory straight under ${PREFIX}${tier}/`,
+  };
 }
 
 /** A path inside a tier without spec folders: its root runs the runner, anything below is refused. */
