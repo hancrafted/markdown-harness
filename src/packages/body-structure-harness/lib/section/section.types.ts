@@ -14,6 +14,7 @@
  */
 
 import type { Selector } from '../../../config-contract/index.ts';
+import type { BlockKind } from '../document/document.types.ts';
 
 /** Everything the `body-structure` section holds. */
 export interface BodyStructureConfig {
@@ -54,12 +55,26 @@ export interface BodyStructureRule extends Selector {
    * `maxLevel` when `forbid` (design-ADR 0026).
    */
   undefinedHeadings?: UndefinedHeadings;
+  /**
+   * The exact titles each named heading level may take, wherever the heading
+   * sits and however often it repeats (design-ADR 0027). A level is held to a
+   * vocabulary or walked by entries, never both.
+   */
+  vocabulary?: readonly VocabularyItem[];
   /** The document's spine: entries processed in order by the walk of design-ADR 0017. */
   headings?: readonly HeadingEntry[];
 }
 
 /** The two values of `undefinedHeadings`. */
 export type UndefinedHeadings = 'allow' | 'forbid';
+
+/** One level's heading vocabulary: a set of exact titles, matched whole and case-sensitively against a heading's raw content. */
+export interface VocabularyItem {
+  /** An integer from 1 to 6. */
+  level: number;
+  /** The titles a heading at `level` may take: a set, in any order. */
+  allowed: readonly string[];
+}
 
 /** Whether an entry is one fixed heading or a counted run of repeats. */
 export type HeadingPurpose = 'heading' | 'enumeration';
@@ -89,6 +104,11 @@ export interface HeadingEntry {
   minCount?: number;
   /** `enumeration` only: an integer of 1 or more. */
   maxCount?: number;
+  /**
+   * The kinds of block this entry's section may hold, an allowed set: any mix,
+   * order and count (design-ADR 0028). Absent leaves the section unconstrained.
+   */
+  mayHold?: readonly BlockKind[];
   /** What the section should contain: Steering only, never enforced. */
   intent?: string;
 }

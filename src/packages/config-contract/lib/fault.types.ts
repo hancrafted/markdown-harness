@@ -141,7 +141,35 @@ export type ConfigFaultCode =
    * A `body-structure` Rule writing `maxLevel` beside `undefinedHeadings: forbid`,
    * raised at `maxLevel`. Decided only when both keys are valid (design-ADR 0026).
    */
-  | 'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE';
+  | 'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE'
+  /**
+   * A `body-structure` vocabulary whose `level` an earlier item already names,
+   * raised at the later item's `level`. The `yaml` parser refuses a repeated
+   * mapping key, so a list of items needs its own fault (design-ADR 0029).
+   */
+  | 'CONFIG_DUPLICATE_VOCABULARY_LEVEL'
+  /**
+   * A title an earlier element of the same `allowed` list already holds, raised
+   * at the later element. Decided over valid titles only (design-ADR 0029).
+   */
+  | 'CONFIG_DUPLICATE_VOCABULARY_TITLE'
+  /**
+   * A vocabulary item whose `level` exceeds the Rule's `maxLevel`: a title no
+   * heading can carry. Decided only when both are valid, and not beside
+   * `undefinedHeadings: forbid` (design-ADR 0029).
+   */
+  | 'CONFIG_VOCABULARY_BEYOND_MAX_LEVEL'
+  /**
+   * A vocabulary item at a level some `headings:` entry also names, raised at
+   * the item's `level`: one heading would be behind two kinds of judgement
+   * (design-ADR 0027, 0029).
+   */
+  | 'CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES'
+  /**
+   * A kind an earlier element of the same `mayHold` list already holds, raised
+   * at the later element. Decided over valid kinds only (design-ADR 0029).
+   */
+  | 'CONFIG_DUPLICATE_BLOCK_KIND';
 
 /** One fault: which constraint failed, and where in the config to look. */
 export interface ConfigFault {

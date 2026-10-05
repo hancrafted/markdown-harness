@@ -196,5 +196,42 @@ describe('template faults', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('walks mayHold after intent and before a level beyond maxLevel', () => {
+      // ARRANGE
+      const expected = [
+        { code: 'CONFIG_EMPTY_INTENT', location: `${ENTRY}.intent` },
+        { code: 'CONFIG_EMPTY_CONSTRAINT', location: `${ENTRY}.mayHold` },
+        { code: 'CONFIG_ENTRY_BEYOND_MAX_LEVEL', location: `${ENTRY}.level` },
+      ];
+      // ACT
+      const actual = entryFaults({ purpose: 'heading', level: 4, intent: '', mayHold: [] }, 3);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('decides mayHold on an entry whose purpose is invalid, since it depends on no purpose', () => {
+      // ARRANGE
+      const expected = [
+        { code: 'CONFIG_INVALID_VALUE', location: `${ENTRY}.purpose` },
+        { code: 'CONFIG_INVALID_VALUE', location: `${ENTRY}.mayHold[0]` },
+      ];
+      // ACT
+      const actual = entryFaults({ purpose: 'section', level: 2, mayHold: ['code'] });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('accepts mayHold on both purposes', () => {
+      // ARRANGE
+      const expected = [[], []];
+      // ACT
+      const actual = [
+        entryFaults({ purpose: 'heading', level: 2, mayHold: ['prose'] }),
+        entryFaults({ purpose: 'enumeration', level: 2, minCount: 1, mayHold: ['ordered-list'] }),
+      ];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 });

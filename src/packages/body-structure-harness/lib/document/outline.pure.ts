@@ -1,5 +1,6 @@
 /**
- * Read a body's outline with a bought Markdown lexer.
+ * Read a body's outline, and the kinds of block under each heading, with a
+ * bought Markdown lexer.
  *
  * Bought, not built (design-ADR 0014, tenet 7): every row of 0014's
  * recognition table past the first is a way a line regex goes silently wrong —
@@ -7,13 +8,17 @@
  * correct scanner for all of them is a block parser. `marked` is used as a
  * LEXER only: its block tokens are read and nothing is rendered.
  *
+ * What a block is reads straight off the lexer's top-level token (design-ADR
+ * 0028): a paragraph is prose and a list is ordered or unordered by the token's
+ * own `ordered` flag. Every other block is transparent and is never recorded.
+ *
  * The lexer knows nothing about frontmatter, and reads a `# comment` line in a
  * YAML block as a title, so the caller hands over the body with the block
  * already split off.
  */
 
 import { Lexer, Tokenizer, type Token, type Tokens } from 'marked';
-import type { OutlineHeading } from './document.types.ts';
+import type { BlockKind, OutlineSection } from './document.types.ts';
 
 /**
  * How the lexer's block rules spell "an ATX opening": one to six `#`, then any
@@ -78,17 +83,38 @@ function isHeading(token: Token): token is Tokens.Heading {
 }
 
 /**
- * The body's top-level headings, in document order.
+ * The kind of one top-level block, or `undefined` for a transparent one: a
+ * fence, an indented block, a quote, a table, HTML, a thematic break, a link
+ * definition or blank lines (design-ADR 0028). A list nested in a list item is
+ * a child of its item and never reaches here, so it belongs to the outer list.
+ */
+function blockKindOf(token: Token): BlockKind | undefined {
+  if (token.type === 'paragraph') return 'prose';
+  if (token.type === 'list') return (token as Tokens.List).ordered ? 'ordered-list' : 'unordered-list';
+  return undefined;
+}
+
+/**
+ * The body's sections, in document order: each top-level heading with the kinds
+ * of the blocks between it and the next top-level heading of ANY level, in
+ * document order, one entry per block.
  *
  * The lexer's top-level token list IS the document's children: a heading
  * inside a blockquote or a list item is a child token, never a sibling of it,
- * so filtering this list alone keeps nested headings out.
+ * so only top-level headings open or end a section. Blocks before the first
+ * heading belong to no section (design-ADR 0028).
  *
  * @param body The Markdown after the frontmatter block, or the whole file when it has none.
  */
-export function outlineOf(body: string): readonly OutlineHeading[] {
-  return strictLexer()
-    .lex(body)
-    .filter(isHeading)
-    .map((token) => ({ level: token.depth, content: token.text }));
+export function sectionsOf(body: string): readonly OutlineSection[] {
+  const sections: { heading: Tokens.Heading; blocks: BlockKind[] }[] = [];
+  for (const token of strictLexer().lex(body)) {
+    if (isHeading(token)) {
+      sections.push({ heading: token, blocks: [] });
+      continue;
+    }
+    const kind = blockKindOf(token);
+    if (kind !== undefined) sections.at(-1)?.blocks.push(kind);
+  }
+  return sections.map(({ heading, blocks }) => ({ heading: { level: heading.depth, content: heading.text }, blocks }));
 }
