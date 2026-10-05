@@ -72,6 +72,294 @@
     "ruleId": "anonymous-pair",
     "violations": []
   },
+  "docs/closed-bare/no-headings.md": {
+    "ruleId": "closed-bare",
+    "violations": []
+  },
+  "docs/closed-bare/one-heading.md": {
+    "ruleId": "closed-bare",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 1,
+        "content": "Title",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/closed-levels/every-level.md": {
+    "ruleId": "closed-levels",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 1,
+        "content": "One",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 3,
+        "content": "Three",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 3,
+        "content": "Three",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 4,
+        "content": "Four",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 5,
+        "content": "Five",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 6,
+        "content": "Six",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/closed-levels/h1-undefined.md": {
+    "ruleId": "closed-levels",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 1,
+        "content": "Title",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/closed-levels/passes.md": {
+    "ruleId": "closed-levels",
+    "violations": []
+  },
+  "docs/closed-levels/raw-content.md": {
+    "ruleId": "closed-levels",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 3,
+        "content": "**Bold** title",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/closed-levels/same-title-other-level.md": {
+    "ruleId": "closed-levels",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 3,
+        "content": "Overview",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/closed-record/fenced.md": {
+    "ruleId": "closed-record",
+    "violations": []
+  },
+  "docs/closed-record/frontmatter-comment.md": {
+    "ruleId": "closed-record",
+    "violations": []
+  },
+  "docs/closed-record/h2-undefined.md": {
+    "ruleId": "closed-record",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 2,
+        "content": "Rationale",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/closed-record/h3-undefined.md": {
+    "ruleId": "closed-record",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 3,
+        "content": "Notes",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/closed-record/misplaced.md": {
+    "ruleId": "closed-record",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Decision$",
+          "intent": "What was decided and why."
+        }
+      }
+    ]
+  },
+  "docs/closed-record/missing-and-undefined.md": {
+    "ruleId": "closed-record",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 2,
+        "content": "Rationale",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Status$",
+          "intent": "Proposed, accepted or superseded, with the date."
+        }
+      }
+    ]
+  },
+  "docs/closed-record/optional-absent.md": {
+    "ruleId": "closed-record",
+    "violations": []
+  },
+  "docs/closed-record/passes.md": {
+    "ruleId": "closed-record",
+    "violations": []
+  },
+  "docs/closed-record/repeated.md": {
+    "ruleId": "closed-record",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 2,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Decision$",
+          "intent": "What was decided and why."
+        }
+      }
+    ]
+  },
+  "docs/closed-sources/after-the-spine.md": {
+    "ruleId": "closed-sources",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 2,
+        "content": "Appendix",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/closed-sources/between-repeats.md": {
+    "ruleId": "closed-sources",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 2,
+        "content": "Aside",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/closed-sources/nested-between-repeats.md": {
+    "ruleId": "closed-sources",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 3,
+        "content": "Method",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 2,
+        "content": "Aside",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/closed-sources/outside-run.md": {
+    "ruleId": "closed-sources",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Source: ",
+          "minCount": 1,
+          "maxCount": 2
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+        "entry": 1,
+        "found": 3,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Source: ",
+          "minCount": 1,
+          "maxCount": 2
+        }
+      }
+    ]
+  },
+  "docs/closed-sources/passes.md": {
+    "ruleId": "closed-sources",
+    "violations": []
+  },
   "docs/decisions/adr-h4.md": {
     "ruleId": "decision-records",
     "violations": [
@@ -556,6 +844,23 @@
   "docs/notes/setup.md": {
     "ruleId": "guides",
     "violations": []
+  },
+  "docs/open-sources/between-repeats.md": {
+    "ruleId": "open-sources",
+    "violations": []
+  },
+  "docs/open-sources/too-deep.md": {
+    "ruleId": "open-sources",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 3,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 2
+        }
+      }
+    ]
   },
   "docs/other/NOTES.md": {
     "ruleId": "plural-names",

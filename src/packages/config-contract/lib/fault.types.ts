@@ -136,7 +136,12 @@ export type ConfigFaultCode =
    * A `body-structure` heading entry whose `level` exceeds the Rule's `maxLevel`.
    * Decided only when both are valid (design-ADR 0020).
    */
-  | 'CONFIG_ENTRY_BEYOND_MAX_LEVEL';
+  | 'CONFIG_ENTRY_BEYOND_MAX_LEVEL'
+  /**
+   * A `body-structure` Rule writing `maxLevel` beside `undefinedHeadings: forbid`,
+   * raised at `maxLevel`. Decided only when both keys are valid (design-ADR 0026).
+   */
+  | 'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE';
 
 /** One fault: which constraint failed, and where in the config to look. */
 export interface ConfigFault {

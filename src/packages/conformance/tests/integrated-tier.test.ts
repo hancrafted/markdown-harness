@@ -137,9 +137,10 @@ describe('the integrated tier at the process boundary', () => {
     });
 
     it('tallies the verdicts the spec states', () => {
-      // #221: 18 cases, of which 5 PASSES, 12 FAILS and 1 UNGOVERNED.
+      // #221: 18 cases, of which 5 PASSES, 12 FAILS and 1 UNGOVERNED; #225 extends it to 25 cases,
+      // of which 7 PASSES, 16 FAILS and 2 UNGOVERNED.
       // ARRANGE
-      const expected = { passes: 5, fails: 12, ungoverned: 1 };
+      const expected = { passes: 7, fails: 16, ungoverned: 2 };
       // ACT
       const actual = {
         passes: stated(PASSES).length,

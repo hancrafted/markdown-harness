@@ -1,10 +1,13 @@
 /**
  * What one body breaks of one Rule: the whole spine check behind one function
- * (design-ADR 0017, 0018, 0019).
+ * (design-ADR 0017, 0018, 0019, 0025).
  *
- * Two checks run over the body's top-level headings. Depth (`maxLevel`): levels
+ * Three checks run over the body's top-level headings. Depth (`maxLevel`): levels
  * are open by default, and forbidding depth is an explicit act, one violation
  * per level beyond the limit, never per heading, so a report stays bounded.
+ * Closure (`undefinedHeadings: forbid`): a heading no entry matches is a
+ * violation of its own, judged on the outline before the walk, and exclusive
+ * with depth. Both outline checks live in `outline-violations.pure.ts`.
  * Spine (`headings:`): entries processed in index order with one cursor over
  * the outline. A `heading` entry claims the first unclaimed match at or after
  * the cursor and the cursor moves just past it. An `enumeration` entry owns a
@@ -22,15 +25,17 @@
  * apart means a misplaced repeat is one violation and a missing one another,
  * and the Contributor is never told to add a heading that already exists.
  *
- * The walk, its matchers, leftover ownership and level counting are private:
- * callers hold a Rule and a body, never a cursor.
+ * The walk, its matchers and leftover ownership are private: callers hold a
+ * Rule and a body, never a cursor.
  */
 
 import type { BodyStructureViolation } from '../../../response-contract/index.ts';
 import type { BodyStructureRule, HeadingEntry } from '../../section.ts';
 import type { OutlineHeading } from '../document/document.types.ts';
 import { outlineOf } from '../document/outline.pure.ts';
+import { closesSpine } from '../section/spine-closure.pure.ts';
 import { dialectPattern } from '../validate/pattern-dialect.pure.ts';
+import { levelViolations, undefinedViolations } from './outline-violations.pure.ts';
 
 /** Whether one heading matches one entry: its level, then its pattern searched over the raw content. */
 type HeadingMatcher = (heading: OutlineHeading) => boolean;
@@ -106,8 +111,8 @@ function walkEnumeration(spine: Spine, index: number, state: WalkState): EntryFi
 }
 
 /** Walk one spine over one outline, then say what each entry found and which headings no entry took. */
-function walkSpine(entries: readonly HeadingEntry[], outline: readonly OutlineHeading[]) {
-  const spine: Spine = { entries, matchers: entries.map(matcherFor), outline };
+function walkSpine(spine: Spine) {
+  const { entries, outline } = spine;
   const state: WalkState = { cursor: 0, taken: new Set() };
   const findings = entries.map((entry, index) =>
     entry.purpose === 'enumeration' ? walkEnumeration(spine, index, state) : walkHeading(spine, index, state),
@@ -181,38 +186,10 @@ function enumerationViolations(
   return violations;
 }
 
-/**
- * Every level deeper than `maxLevel` the outline uses, ascending, each with how
- * many headings sit at it.
- *
- * @param maxLevel The Rule's limit, or `undefined` when it wrote none, which permits any depth.
- * @param outline The body's top-level headings.
- */
-function levelViolations(
-  maxLevel: number | undefined,
-  outline: readonly OutlineHeading[],
-): readonly BodyStructureViolation[] {
-  if (maxLevel === undefined) return [];
-  const counts = new Map<number, number>();
-  for (const heading of outline) {
-    if (heading.level > maxLevel) counts.set(heading.level, (counts.get(heading.level) ?? 0) + 1);
-  }
-  return [...counts.entries()]
-    .sort(([left], [right]) => left - right)
-    .map(([level, found]) => ({
-      violation: 'BODY_STRUCTURE__LEVEL_TOO_DEEP',
-      level,
-      found,
-      requirement: { maxLevel },
-    }));
-}
-
 /** Every spine violation one outline carries, in entry order. */
-function spineViolations(
-  entries: readonly HeadingEntry[],
-  outline: readonly OutlineHeading[],
-): readonly BodyStructureViolation[] {
-  const { spine, findings, leftovers } = walkSpine(entries, outline);
+function spineViolations(spine: Spine): readonly BodyStructureViolation[] {
+  const { entries } = spine;
+  const { findings, leftovers } = walkSpine(spine);
   const given = leftoversPerEntry(spine, findings, leftovers);
   return entries.flatMap((entry, index) => {
     const finding = findings[index] as EntryFinding;
@@ -224,14 +201,22 @@ function spineViolations(
 }
 
 /**
- * Every violation one body carries against one Rule: depth first, ascending by
- * level, then spine entries in entry order, so one file's report has one
- * defined order (design-ADR 0019).
+ * Every violation one body carries against one Rule: the outline checks, which
+ * no Rule carries both of (a closed spine excludes `maxLevel`), then spine
+ * entries in entry order, so one file's report has one defined order
+ * (design-ADR 0019, 0025).
  *
  * @param rule The Rule that governs the file.
  * @param body The file's markdown below its frontmatter.
  */
 export function bodyViolations(rule: BodyStructureRule, body: string): readonly BodyStructureViolation[] {
   const outline = outlineOf(body);
-  return [...levelViolations(rule.maxLevel, outline), ...spineViolations(rule.headings ?? [], outline)];
+  const entries = rule.headings ?? [];
+  const matchers = entries.map(matcherFor);
+  const undefinedHeadings = closesSpine(rule) ? undefinedViolations(matchers, outline) : [];
+  return [
+    ...undefinedHeadings,
+    ...levelViolations(rule.maxLevel, outline),
+    ...spineViolations({ entries, matchers, outline }),
+  ];
 }

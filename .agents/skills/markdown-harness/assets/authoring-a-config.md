@@ -13,6 +13,10 @@ directories that already share a shape — a `research/` whose files cite source
 goes out of date, an `index.md` convention — and read two or three real files from each to see what
 frontmatter they already carry.
 
+A template kept as prose, such as a docs template or a skill asset listing the headings a kind of
+document has, is a candidate for a rule over headings, covered at the end of this file, so note it
+rather than forcing it into `fields:`.
+
 Bring the candidates to the first question. "You have 34 files under `docs/research/`, 30 of which
 already carry `sources:`" is a question the user can answer; "what would you like to govern?" is not.
 
@@ -173,3 +177,12 @@ on the first run, and that number is the real cost of the rules they just approv
 
 _Done when_ the user has approved the change, the file is written, and they know what `mh --check`
 currently reports.
+
+## A rule over headings
+
+The steps above write the `frontmatter:` section. A rule over a document's **headings** belongs to the
+`body-structure:` section, and [`authoring-body-structure.md`](authoring-body-structure.md) is its
+workflow, entry by entry. One habit decides whether the rule says what the user meant: when a `pattern`
+names a fixed title, anchor it, `^Decision$`, with any metacharacter escaped, and drop the anchors only
+when the user asks for a substring match. A pattern is searched, so an unanchored `Decision` also
+passes `## Decision record`: the rule loosens silently and `mh --check` stays green.

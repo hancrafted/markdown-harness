@@ -1,0 +1,21 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[0].undefinedHeadings"
+    },
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[1].undefinedHeadings"
+    },
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[2].undefinedHeadings"
+    },
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[3].undefinedHeadings"
+    }
+  ]
+}

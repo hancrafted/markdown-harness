@@ -55,6 +55,34 @@ describe('candidateClaims', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('copies undefinedHeadings verbatim, so a written allow is echoed and forbid is told', () => {
+      // ARRANGE
+      const closed: BodyStructureRule = {
+        ruleId: 'closed',
+        intent: 'Closed.',
+        folders: ['docs/closed/'],
+        undefinedHeadings: 'forbid',
+        headings: [{ purpose: 'heading', level: 1 }],
+      };
+      const open: BodyStructureRule = {
+        ...closed,
+        ruleId: 'open',
+        folders: ['docs/open/'],
+        undefinedHeadings: 'allow',
+      };
+      const expected = [
+        [{ undefinedHeadings: 'forbid', headings: [{ purpose: 'heading', level: 1 }] }],
+        [{ undefinedHeadings: 'allow', headings: [{ purpose: 'heading', level: 1 }] }],
+      ];
+      // ACT
+      const actual = [
+        candidateClaims('docs/closed/a.md', [closed, open]),
+        candidateClaims('docs/open/a.md', [closed, open]),
+      ].map((claims) => claims.map((claim) => claim.requirements));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
@@ -69,6 +97,32 @@ describe('candidateClaims', () => {
   });
 
   describe('edge cases', () => {
+    it('writes undefinedHeadings between maxLevel and headings, the order the wire has it in', () => {
+      // ARRANGE
+      const rule: BodyStructureRule = {
+        ruleId: 'all',
+        intent: 'All keys.',
+        types: ['t'],
+        maxLevel: 2,
+        undefinedHeadings: 'allow',
+        headings: [{ purpose: 'heading', level: 1 }],
+      };
+      const expected = ['types', 'maxLevel', 'undefinedHeadings', 'headings'];
+      // ACT
+      const actual = candidateClaims('a.md', [rule]).map((claim) => Object.keys(claim.requirements));
+      // ASSERT
+      expect(actual).toEqual([expected]);
+    });
+
+    it('leaves undefinedHeadings out of the claim of a Rule that never wrote it', () => {
+      // ARRANGE
+      const expected = [{ rule: { ruleId: 'bare', intent: 'Bare.' }, requirements: { maxLevel: 2 } }];
+      // ACT
+      const actual = candidateClaims('a.md', [{ ruleId: 'bare', intent: 'Bare.', maxLevel: 2 }]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('leaves a requirement the Rule never wrote out of its claim', () => {
       // ARRANGE
       const expected = [{ rule: { ruleId: 'bare', intent: 'Bare.' }, requirements: {} }];

@@ -197,6 +197,22 @@ export interface LevelTooDeepViolation {
   requirement: { maxLevel: number };
 }
 
+/**
+ * A heading no entry of a closed spine matches, one per heading and not per
+ * level, since each is repaired on its own (design-ADR 0025). It has no `entry`
+ * and no `found`: no entry owns it.
+ */
+export interface HeadingUndefinedViolation {
+  /** The one outcome this shape reports. */
+  violation: 'BODY_STRUCTURE__HEADING_UNDEFINED';
+  /** The heading's level. */
+  level: number;
+  /** The heading's raw inline source (design-ADR 0014). */
+  content: string;
+  /** The key, as the Rule wrote it: only `forbid` closes a spine. */
+  requirement: { undefinedHeadings: 'forbid' };
+}
+
 /** A heading entry with no heading to claim, or whose heading lies before an earlier entry's. */
 export interface HeadingEntryViolation {
   /** Which outcome fired. */
@@ -227,4 +243,5 @@ export interface HeadingCountViolation {
  * the `<MODULE>__<OUTCOME>` code grammar #69 settled for a second Module
  * (design-ADR 0019).
  */
-export type BodyStructureViolation = LevelTooDeepViolation | HeadingEntryViolation | HeadingCountViolation;
+export type BodyStructureViolation =
+  LevelTooDeepViolation | HeadingUndefinedViolation | HeadingEntryViolation | HeadingCountViolation;
