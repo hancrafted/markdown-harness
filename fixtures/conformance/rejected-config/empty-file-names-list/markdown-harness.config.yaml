@@ -1,0 +1,13 @@
+# The `fileNames` axis written as an empty list.
+#
+# The same mistake as `empty-folders-list/` on the other Core axis: an empty
+# list names no file name, so the Rule selects nothing, where leaving the key
+# out would mean every file name.
+frontmatter:
+  rules:
+    - ruleId: every-document
+      fileNames: []
+      intent: A sound rule, so the only fault reported is the empty axis above.
+      fields:
+        title:
+          presence: required

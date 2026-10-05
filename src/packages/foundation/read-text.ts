@@ -2,8 +2,8 @@
 //
 // It ANSWERS rather than throws. A read comes back as the file's text, its
 // absence, or its unreadability, and what each of those means is the CALLER's
-// policy: `--assess` treats absence as ordinary advice about a file an agent is
-// about to write, `--check` refuses a whole corpus on it, and the config loader
+// policy: `assess` treats absence as ordinary advice about a file an agent is
+// about to write, `check` refuses a whole corpus on it, and the config loader
 // maps the two failures onto two different catalog codes. A gate that threw
 // would put all three behind one stack trace.
 //

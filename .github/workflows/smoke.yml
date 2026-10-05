@@ -125,7 +125,7 @@ jobs:
           npm install --no-audit --no-fund "../$tarball"
           ls node_modules/.bin
       # The exit contract, against both declared bin names. Exit codes are the
-      # whole assertion: an Operator puts `--check` in their own verify script,
+      # whole assertion: an Operator puts `check` in their own verify script,
       # so 1 on a wrong corpus and 0 on a sound one is the contract that makes a
       # green build mean anything.
       - name: run both installed shims
@@ -156,14 +156,14 @@ jobs:
 
             # The Steering query, on a path that does not exist yet — the answer
             # the product is for, and it must not depend on the file being there.
-            expect_exit 0 "$bin" --query docs/not-written-yet.md --config markdown-harness.config.yaml
+            expect_exit 0 "$bin" query docs/not-written-yet.md --config markdown-harness.config.yaml
 
             # A config it cannot read: a refusal about the invocation, never a
             # verdict about the corpus.
-            expect_exit 2 "$bin" --query docs/not-written-yet.md --config no-such-config.yaml
+            expect_exit 2 "$bin" query docs/not-written-yet.md --config no-such-config.yaml
 
             # A corpus with a violation in it.
-            expect_exit 1 "$bin" --check --root . --config markdown-harness.config.yaml
+            expect_exit 1 "$bin" check --root . --config markdown-harness.config.yaml
 
             # `--help` is a question rather than a mistake, so it answers on
             # stdout and succeeds. It takes no other flag and opens no config,
@@ -181,16 +181,16 @@ jobs:
         working-directory: scratch
         shell: cmd
         run: |
-          call .\node_modules\.bin\mh.cmd --query docs/not-written-yet.md --config markdown-harness.config.yaml
+          call .\node_modules\.bin\mh.cmd query docs/not-written-yet.md --config markdown-harness.config.yaml
           set rc=%ERRORLEVEL%
           if not "%rc%"=="0" (
-            echo ::error::cmd shim: expected exit 0 from --query, got %rc%
+            echo ::error::cmd shim: expected exit 0 from query, got %rc%
             exit /b 1
           )
-          call .\node_modules\.bin\mh.cmd --check --root . --config markdown-harness.config.yaml
+          call .\node_modules\.bin\mh.cmd check --root . --config markdown-harness.config.yaml
           set rc=%ERRORLEVEL%
           if not "%rc%"=="1" (
-            echo ::error::cmd shim: expected exit 1 from --check, got %rc%
+            echo ::error::cmd shim: expected exit 1 from check, got %rc%
             exit /b 1
           )
           echo ok  cmd.exe honours the exit contract
@@ -217,9 +217,9 @@ jobs:
             Write-Output "ok  exit $Want  mh $CliArgs"
           }
 
-          Expect-Exit 0 @('--query', 'docs/not-written-yet.md', '--config', 'markdown-harness.config.yaml')
-          Expect-Exit 2 @('--query', 'docs/not-written-yet.md', '--config', 'no-such-config.yaml')
-          Expect-Exit 1 @('--check', '--root', '.', '--config', 'markdown-harness.config.yaml')
+          Expect-Exit 0 @('query', 'docs/not-written-yet.md', '--config', 'markdown-harness.config.yaml')
+          Expect-Exit 2 @('query', 'docs/not-written-yet.md', '--config', 'no-such-config.yaml')
+          Expect-Exit 1 @('check', '--root', '.', '--config', 'markdown-harness.config.yaml')
 
           # The wrapper ends on `exit $LASTEXITCODE`, which is the 1 the last
           # assertion required. Leave on a deliberate zero.

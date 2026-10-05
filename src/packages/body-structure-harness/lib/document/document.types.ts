@@ -1,0 +1,35 @@
+/**
+ * What this Module reads out of one file: its `type`, its body, and the body's
+ * outline — its top-level headings in document order, each
+ * with the kinds of the blocks in the section it opens.
+ *
+ * Only a heading that is a DIRECT child of the document counts; one nested in
+ * a blockquote or a list item belongs to the container.
+ */
+
+/** One heading of the outline. */
+export interface OutlineHeading {
+  /** 1 to 6: the count of `#`, or 1 for a `===` and 2 for a `---` underline. */
+  level: number;
+  /**
+   * The heading's RAW inline source: ATX markers, the closing sequence and the
+   * surrounding whitespace removed, never rendered. A multi-line setext
+   * heading keeps its line breaks as `\n`.
+   */
+  content: string;
+}
+
+/** One top-level heading and the section it opens: the blocks up to the next top-level heading of any level. */
+export interface OutlineSection {
+  /** The heading that opens the section. */
+  heading: OutlineHeading;
+  /** The kind of each block of the section that has one, in document order, one entry per block; transparent blocks are not listed. */
+  blocks: readonly BlockKind[];
+}
+
+/**
+ * The three kinds of block a body section may hold. Every other
+ * block, a fence, a table, a quote, HTML, a rule, a link definition, is
+ * transparent: neither allowed nor forbidden, because no Rule can name it.
+ */
+export type BlockKind = 'prose' | 'ordered-list' | 'unordered-list';

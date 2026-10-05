@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_ENTRY_KEY_NOT_FOR_PURPOSE",
+      "location": "body-structure.rules[0].headings[0].presence"
+    }
+  ]
+}

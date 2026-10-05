@@ -21,7 +21,7 @@ import type { ConfigFault } from './fault.types.ts';
  * absent whenever any fault was found. A config fails whole (§3.5), so the
  * caller concatenates rather than stopping at the first thing wrong.
  */
-export interface SectionValidation<TSection> {
+export interface SectionValidation<TSection, TFaultCode extends string = string> {
   /**
    * The section, typed, absent whenever a fault was found.
    *
@@ -31,16 +31,29 @@ export interface SectionValidation<TSection> {
    */
   section?: TSection;
 
-  /** Every fault the section carries, in reporting order; empty when it carries none. */
-  faults: readonly ConfigFault[];
+  /**
+   * Every fault the section carries, in reporting order; empty when it carries none.
+   *
+   * Typed against the Module's own catalog — the Core's codes plus whatever its
+   * grammar adds — which is what lets `cli` derive the whole fault catalog from
+   * the declared Module set.
+   */
+  faults: readonly ConfigFault<TFaultCode>[];
 }
 
 /**
  * How a Module reaches the Core: one top-level key, the grammar of what may sit
- * under it, and one answerer per read verb.
+ * under it, and an answerer for each read verb the Module has something to say about.
  *
- * SIX MEMBERS, deliberately. `key` names the config section, `validateSection`
- * earns its typed value, and the four verbs answer the work a Module does.
+ * TWO MEMBERS REQUIRED, FOUR OPTIONAL, deliberately. `key` names the config
+ * section and `validateSection` earns its typed value; every Module has both,
+ * because a section nobody can validate is a key the config language cannot
+ * hold. The four verbs — `query`, `audit`, `assess`, `check` — answer the work
+ * a Module does, and a Module implements only the ones it has something to say
+ * about: one that makes no freshness claim carries no `assess`, rather than an
+ * `assess` that answers nothing. `cli` asks a verb of the Modules that carry it
+ * and skips the rest, so an absent verb is never an empty answer.
+ *
  * Only `validateSection` carries `TSection`, and only in return position. An
  * earlier design gave a member a validated section as an ARGUMENT, which put
  * `TSection` in parameter position and bought a variance hole: method syntax
@@ -70,6 +83,7 @@ export interface ModuleDescriptor<
   TAudit = unknown,
   TAssess = unknown,
   TCheck = unknown,
+  TFaultCode extends string = string,
 > {
   /**
    * The Module's one top-level config key.
@@ -92,19 +106,32 @@ export interface ModuleDescriptor<
    *
    * @param raw The value written under this Module's key, exactly as parsed.
    */
-  validateSection(raw: unknown): SectionValidation<TSection>;
+  validateSection(raw: unknown): SectionValidation<TSection, TFaultCode>;
 
-  /** Answer what this Module asks of one path before that path exists. */
-  query(path: string, config: LoadedConfig): TQuery;
+  /**
+   * Answer what this Module asks of one path before that path exists.
+   *
+   * What the answer IS is pinned by `cli`, not here: this Package is type-only
+   * and may name neither `foundation` nor `response-contract` (ARCH-008 §1.3).
+   * `cli/module-set.ts` holds every declared Module to:
+   * one shape per verb, `query` always answers a list of claims.
+   */
+  query?(path: string, config: LoadedConfig): TQuery;
 
-  /** Tally how this Module's declared rules fared across one corpus. */
-  audit(files: readonly string[], config: LoadedConfig): TAudit;
+  /**
+   * Tally how this Module's declared rules fared across one corpus.
+   *
+   * Takes the corpus ROOT as `check` does, because a Module whose Rules select
+   * on file content has to open a file to learn which Rule it would fall to
+   *. A Module selecting on paths alone ignores it.
+   */
+  audit?(root: string, files: readonly string[], config: LoadedConfig): TAudit;
 
   /** Assess one path at the caller-supplied instant. */
-  assess(file: { root: string; path: string }, now: string, config: LoadedConfig): TAssess;
+  assess?(file: { root: string; path: string }, now: string, config: LoadedConfig): TAssess;
 
   /** Check this Module's governed files across one corpus. */
-  check(root: string, files: readonly string[], config: LoadedConfig): TCheck;
+  check?(root: string, files: readonly string[], config: LoadedConfig): TCheck;
 }
 
 /**

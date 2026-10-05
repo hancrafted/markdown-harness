@@ -9,9 +9,9 @@
  */
 
 import { isMapping } from '../../../foundation/yaml-document.ts';
-import type { ConfigFault } from '../../../response-contract/index.ts';
 import type { FrontmatterConfig } from '../../section.ts';
 import { assessBlockFaults } from './assess-faults.pure.ts';
+import type { FrontmatterFault } from './fault.types.ts';
 import { ruleFaults } from './rule-faults.pure.ts';
 
 /** The section's own address, and the two keys it defines. */
@@ -46,9 +46,9 @@ const SECTION_KEYS: Record<keyof FrontmatterConfig, true> = { rules: true, asses
  * not the mistake, and reporting it there would send the Operator to the rule
  * they meant to keep.
  */
-function duplicateIdFaults(rules: readonly unknown[]): readonly ConfigFault[] {
+function duplicateIdFaults(rules: readonly unknown[]): readonly FrontmatterFault[] {
   const claimed = new Set<string>();
-  const faults: ConfigFault[] = [];
+  const faults: FrontmatterFault[] = [];
   rules.forEach((rule, index) => {
     if (!isMapping(rule) || typeof rule.ruleId !== 'string') return;
     if (claimed.has(rule.ruleId))
@@ -75,12 +75,12 @@ function duplicateIdFaults(rules: readonly unknown[]): readonly ConfigFault[] {
  *
  * @param section The value written under `frontmatter:`, whatever it parsed to.
  */
-export function sectionFaults(section: unknown): readonly ConfigFault[] {
+export function sectionFaults(section: unknown): readonly FrontmatterFault[] {
   if (!isMapping(section)) return [{ code: 'CONFIG_INVALID_VALUE', location: SECTION }];
 
   const unrecognised = Object.keys(section)
     .filter((key) => !Object.hasOwn(SECTION_KEYS, key))
-    .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${SECTION}.${key}` }));
+    .map((key): FrontmatterFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${SECTION}.${key}` }));
 
   const assess = assessBlockFaults(section.assess, ASSESS);
 

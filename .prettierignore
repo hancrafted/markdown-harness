@@ -30,3 +30,16 @@ fixtures/conformance/frontmatter/docs/plain/broken/**
 # files that fail today, because which malformed shapes survive `--write` is an
 # accident of the parser rather than a property anyone chose.
 fixtures/conformance/rejected-config/**
+
+# The body-structure tier: headings ARE the bytes under test. Prettier converts
+# setext headings to ATX, strips closing hashes and trailing whitespace, and
+# escapes `#Title`, so formatting would change what each case states and the
+# tier would go green over a corpus nobody wrote. Scoped to the tier directory,
+# not to today's offending files, on the same grounds as the entries above.
+fixtures/conformance/body-structure/**
+
+# The integrated tier holds no byte trick, but its cases are whole-corpus and its
+# `expected-check.json` and `expected-query.json` are frozen, and lint-staged runs
+# `prettier --write` on every staged `.md` and `.json`. Ignoring the directory
+# keeps the commit hook from reformatting a frozen file.
+fixtures/conformance/integrated/**

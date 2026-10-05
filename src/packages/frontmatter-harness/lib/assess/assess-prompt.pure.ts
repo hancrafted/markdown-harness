@@ -5,7 +5,7 @@
  * block replaces the Module-wide one entirely; a rule that wrote none gets the
  * Module's whole. Three reasons, all recorded on the design ticket: §3's "the
  * first matching rule is the complete set" survives replacement and dies under
- * merge; per-key merging recreates the silent-provenance problem `--audit`
+ * merge; per-key merging recreates the silent-provenance problem `audit`
  * exists to solve; and deleting a rule's block is then one visible act rather
  * than a one-line diff that silently reactivates a global.
  *

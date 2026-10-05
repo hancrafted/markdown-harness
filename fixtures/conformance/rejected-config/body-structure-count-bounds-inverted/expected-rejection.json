@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_COUNT_BOUNDS_INVERTED",
+      "location": "body-structure.rules[0].headings[0]"
+    }
+  ]
+}

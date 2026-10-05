@@ -13,13 +13,14 @@
  * and the table's order is the reporting order.
  */
 
-import type { FieldConstraints } from '../../../config-contract/index.ts';
-import type { FieldViolation, FieldViolationCode } from '../../../response-contract/index.ts';
-import { FIELD_VIOLATION_CODES } from '../../../response-contract/index.ts';
+import { dialectPattern } from '../../../foundation/pattern-dialect.ts';
+import type { FieldConstraints } from '../section/constraints.types.ts';
 import type { AddressSite, FrontmatterMapping } from './check.types.ts';
 import { resolveAddress } from './field-address.pure.ts';
 import { evidenceFor, isEmptyValue } from './field-evidence.pure.ts';
 import { matchesFormat } from './value-format.pure.ts';
+import { FIELD_VIOLATION_CODES } from './violation.pure.ts';
+import type { FieldViolation, FieldViolationCode } from './violation.types.ts';
 
 /** Constraints that name STRINGS, in §3.3's own table order. */
 const STRING_KEYS = ['minLength', 'maxLength', 'format', 'pattern'] as const;
@@ -96,9 +97,10 @@ function formatViolations(field: string, constraints: FieldConstraints, value: s
   if (format !== undefined && !matchesFormat(format, value)) {
     failures.push(report(field, FIELD_VIOLATION_CODES.FORMAT_MISMATCH, { of: value }));
   }
-  // A `pattern` that will not compile is a config fault caught at load time, so
-  // reaching one here would mean validation let it through.
-  if (pattern !== undefined && !new RegExp(pattern).test(value)) {
+  // A `pattern` that will not compile under the `u` flag is a config fault
+  // caught at load time, so reaching one here would mean validation let it
+  // through. Searched, never anchored, in the dialect load validated it in.
+  if (pattern !== undefined && !dialectPattern(pattern).test(value)) {
     failures.push(report(field, FIELD_VIOLATION_CODES.PATTERN_MISMATCH, { of: value }));
   }
   return failures;

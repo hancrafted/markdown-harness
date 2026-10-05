@@ -6,7 +6,7 @@
 // have collected this?" about a path that does not exist has no tree to offer.
 //
 // This exists because the selector language stopped carrying the extension.
-// While a selector was a glob, `.md` was spelled inside it, so `--query` on
+// While a selector was a glob, `.md` was spelled inside it, so `query` on
 // `notes.txt` answered `invisible` because no glob matched it. Under two
 // literal axes there is no extension anywhere, and a folder token would reach
 // `notes.txt` as readily as `notes.md` — a real, measured change in a frozen

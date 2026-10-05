@@ -1,5 +1,5 @@
 /**
- * What `--assess` answers about one file, at one instant.
+ * What `assess` answers about one file, at one instant.
  *
  * The only command that consults a clock, and it never reads one: the instant
  * arrives as an argument and is echoed beside the answer, so the comparison is
@@ -63,10 +63,10 @@ export type AssessState =
  * The rule that won under first-match, and its reason.
  *
  * Deliberately NOT `audit.types`' `RuleRef`, which also carries the selector.
- * `--audit` answers about rules, so a reader there needs to see which paths a
+ * `audit` answers about rules, so a reader there needs to see which paths a
  * rule claimed; an assessment answers about one file the caller already named,
  * and echoing the glob back would be noise in a response an agent reads
- * mid-task. Same two keys `--query` reports, for the same reason.
+ * mid-task. Same two keys `query` reports, for the same reason.
  */
 export interface WinningRule {
   /** The rule's id, the way every report refers to a rule. */

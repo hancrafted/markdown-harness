@@ -163,6 +163,19 @@ describe('constraintFaults', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('rejects an intent of the wrong type as an invalid value, never as blank', () => {
+      // ARRANGE
+      const constraint = { presence: 'required', intent: 0, allowed: [{ value: 'reference', intent: false }] };
+      const expected = [
+        { code: 'CONFIG_INVALID_VALUE', location: `${AT}.intent` },
+        { code: 'CONFIG_INVALID_VALUE', location: `${AT}.allowed[0].intent` },
+      ];
+      // ACT
+      const actual = constraintFaults(constraint, AT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('rejects an empty intent on an allowed entry', () => {
       // ARRANGE
       const constraint = { allowed: [{ value: 'reference', intent: '' }] };

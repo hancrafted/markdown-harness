@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_ENUMERATION_WITHOUT_COUNT",
+      "location": "body-structure.rules[0].headings[0]"
+    }
+  ]
+}

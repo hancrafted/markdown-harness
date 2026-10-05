@@ -2,7 +2,7 @@
 
 Reference for the `See it work on throwaway files before committing to rules` row of `SKILL.md`.
 
-Three files and one rule, laid into `docs/markdown-harness/demo/`, that make `--check`, `--assess`
+Three files and one rule, laid into `docs/markdown-harness/demo/`, that make `check`, `assess`
 and the freshness hook visible in about a minute. Everything it adds is marked, and one command takes
 it all back out.
 
@@ -32,7 +32,7 @@ the file it was handed, stops at the first `markdown-harness.config.yaml`, and r
 package and the hook goes silent on a file that is genuinely stale. Measured 2026-09-09.
 
 It is inserted **first** in the rule list, because rules are first-match and a broader rule above it
-would swallow the demo paths. The script does not trust its own YAML edit: it asks `mh --query` which
+would swallow the demo paths. The script does not trust its own YAML edit: it asks `mh query` which
 rule actually wins and fails loudly unless the answer is `markdown-harness-demo`. If the repository
 had no config yet, it creates one holding only the demo block.
 
@@ -43,11 +43,11 @@ It also appends a `demo,…,installed` row to `docs/markdown-harness/activity.cs
 previous corpus said "this file is stale" in its own prose, so a model summarising it repeated the
 prose and everyone read that as the hook working.
 
-| File                      | What it is                        | What the tool answers       |
-| ------------------------- | --------------------------------- | --------------------------- |
-| `tomorrows-weather.md`    | a forecast, no dates in the prose | `REVIEW`                    |
-| `einstein-on-insanity.md` | a truism about repetition         | `PROCEED`                   |
-| `coffee-machine.md`       | a descaling procedure             | `FIX_FILE`, and `--check` 1 |
+| File                      | What it is                        | What the tool answers     |
+| ------------------------- | --------------------------------- | ------------------------- |
+| `tomorrows-weather.md`    | a forecast, no dates in the prose | `REVIEW`                  |
+| `einstein-on-insanity.md` | a truism about repetition         | `PROCEED`                 |
+| `coffee-machine.md`       | a descaling procedure             | `FIX_FILE`, and `check` 1 |
 
 The pairing is semantic: a forecast perishes, a truism does not, and a coffee machine is genuinely
 ambiguous. The third is the interesting one — it declares no `stale_after` at all, and the tool
@@ -58,14 +58,14 @@ _Done when_ the report says `"governedBy": "markdown-harness-demo"`.
 ## 2. Show the two commands
 
 ```sh
-mh --check
+mh check
 ```
 
 Exits **1**, reporting one violation: `coffee-machine.md` declares no `stale_after`. That is the exit
 code that fails a build, so run the gate too and let them watch it go red.
 
 ```sh
-mh --assess docs/markdown-harness/demo/tomorrows-weather.md
+mh assess docs/markdown-harness/demo/tomorrows-weather.md
 ```
 
 Answers `REVIEW`, and carries back the sentence the demo rule configured — not a sentence
@@ -109,7 +109,7 @@ what came after it:
 | an `assess` row for the weather file, result `stale` | It fired and it spoke. This is the pass                                      |
 | no rows at all                                       | The hook never ran: the session predates the wiring, or the agent used `cat` |
 | a `not-installed` row                                | It ran, and found no local `@hancrafted/markdown-harness` to answer          |
-| a `config-rejected` row                              | It ran, and the config is currently broken — `mh --check` will say how       |
+| a `config-rejected` row                              | It ran, and the config is currently broken — `mh check` will say how         |
 
 If the reply quoted the rule id `markdown-harness-demo`, that settles it on its own. The id appears
 in the config and in none of the three files, so there is nowhere else it could have been read from.

@@ -7,7 +7,7 @@
 //
 // SPECIFICATION: every Conformance case states its own expected outcome in an
 // `<!-- expect: -->` marker, and the last suite in this file holds the
-// implementation to it. That half could not exist before `--check` did; the
+// implementation to it. That half could not exist before `check` did; the
 // coverage half above ran alone until then.
 //
 // ARCH-002 makes a changed marker a CONTRACT CHANGE rather than a test fix, so
@@ -24,7 +24,6 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { pathAssessment } from '../../cli/assessment.ts';
 import { MODULE_SET } from '../../cli/module-set.ts';
-import type { AllowedValue, FieldConstraints, Format } from '../../config-contract/index.ts';
 import { loadConfig } from '../../foundation/load-config.ts';
 import { assessPath } from '../../frontmatter-harness/assess.ts';
 import { checkCorpus } from '../../frontmatter-harness/check.ts';
@@ -52,6 +51,13 @@ if (loaded.config === undefined) throw new Error(`the tier config was refused: $
 const section = loaded.config.sectionFor(frontmatterModule);
 if (section === undefined) throw new Error('the tier config must name the frontmatter Module');
 const rules = section.rules;
+
+// The constraint vocabulary belongs to the frontmatter Module (ARCH-008), so
+// this runner reads its shapes off the section the Module validated rather than
+// naming the Module's declarations.
+type FieldConstraints = NonNullable<(typeof rules)[number]['fields']>[string];
+type AllowedValue = NonNullable<FieldConstraints['allowed']>[number];
+type Format = NonNullable<FieldConstraints['format']>;
 
 /** Every key a rule may carry. Grows only by deliberate amendment. */
 const RULE_KEYS = [
@@ -434,7 +440,7 @@ describe('the harness reports the verdict each Conformance case states', () => {
       // rather than against the corpus size, so adding a case with no marker
       // cannot quietly satisfy it.
       //
-      // This Module's own tally rather than the response summary: `--check`
+      // This Module's own tally rather than the response summary: `check`
       // counts governed files as a UNION across Modules, and a tier with one
       // Module in it cannot tell a union from a sum. The summary itself is
       // asserted at the process boundary, where the composition it comes from

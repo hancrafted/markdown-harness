@@ -1,9 +1,8 @@
 // The selector vocabulary: how a rule says which files it is about.
 //
-// Its own file rather than a section of `config.types.ts`, because it is the
-// one part of the config language a second Module would reach for unchanged —
-// a selector is Core vocabulary, while the rest of that file is the frontmatter
-// Module's own section shape.
+// Core vocabulary: the one part of the config language every Module reaches
+// for unchanged. Everything else a section is built from belongs to the Module
+// whose section it is.
 
 /**
  * How a rule says which files it is about: two axes of literal tokens, and no
@@ -35,7 +34,9 @@ export interface Selector {
    * reaches a subfolder, so a subtree is never governed by accident and the
    * folder list is an enumeration its author maintains. The accepted cost is
    * that a folder created under a governed parent is governed by nothing until
-   * the list is edited, and the tool says nothing.
+   * the list is edited, and the tool says nothing. An empty list is
+   * `CONFIG_INVALID_VALUE` at the key: it would select no file, and only an
+   * absent axis means every.
    */
   folders?: readonly FolderPath[];
 
@@ -45,6 +46,7 @@ export interface Selector {
    * On its own a name reaches the whole corpus, which is what lets a reserved
    * filename be governed with no folder list at all — and it is the one axis
    * that keeps reaching into folders created after the config was written.
+   * An empty list is `CONFIG_INVALID_VALUE` at the key, as for `folders`.
    */
   fileNames?: readonly FileName[];
 }

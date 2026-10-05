@@ -8,7 +8,7 @@ origin: s3://hancrafted-exports/quarterly usage.parquet
 
 <!-- expect: FAILS -->
 
-Three `FORMAT_MISMATCH` violations, one per named format, reported in the config's
+Three `FRONTMATTER__FORMAT_MISMATCH` violations, one per named format, reported in the config's
 own `fields:` order. `human/hancrafted` is the reserved-producer trap: `human` and
 `process` belong to the colon form, so the slash form is a mismatch however
 well-spelled it looks. `2026-08-24` is a date with no time and no offset, and `format`

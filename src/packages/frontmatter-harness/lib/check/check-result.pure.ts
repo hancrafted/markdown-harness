@@ -17,9 +17,10 @@
 import type { ModuleCheck, ModuleFinding } from '../../../response-contract/index.ts';
 import type { GovernedSource } from './check.types.ts';
 import { violationsForFile } from './file-verdict.pure.ts';
+import type { FrontmatterViolation } from './violation.types.ts';
 
 /** How many findings one file contributed. */
-function countIn(finding: ModuleFinding): number {
+function countIn(finding: ModuleFinding<FrontmatterViolation>): number {
   return finding.violations.length;
 }
 
@@ -30,15 +31,15 @@ function countIn(finding: ModuleFinding): number {
  * governed file was read, and only the ones with findings survive into `files`.
  * That is what makes the governed list the fact not recoverable from the findings.
  *
- * @param sources Every governed file with its bytes, in walker order.
+ * @param sources Every governed file, parsed, in walker order.
  */
-export function moduleCheckFor(sources: readonly GovernedSource[]): ModuleCheck {
+export function moduleCheckFor(sources: readonly GovernedSource[]): ModuleCheck<FrontmatterViolation> {
   const files = sources
     .map((source) => ({
       path: source.path,
       ruleId: source.rule.ruleId,
       ruleIntent: source.rule.intent,
-      violations: violationsForFile(source.text, source.rule),
+      violations: violationsForFile(source.frontmatter, source.rule),
     }))
     .filter((finding) => countIn(finding) > 0);
 

@@ -1,7 +1,7 @@
 /**
  * Which corpus files are governed, and by which rule.
  *
- * Runs BEFORE any file is opened. That order is what lets `--check` read only
+ * Runs BEFORE any file is opened. That order is what lets `check` read only
  * the files it will report on, and it is why an invisible file is absent from
  * the result for the stronger reason that nothing ever read it — rather than
  * being read, found conforming, and quietly dropped.
@@ -9,8 +9,8 @@
  * Nothing here sorts: the walker's order is the report's order.
  */
 
+import { firstMatch } from '../../../foundation/rule-selection.ts';
 import type { FrontmatterRule } from '../../section.ts';
-import { findFirstMatch } from '../rules/first-match.pure.ts';
 import type { GovernedFile } from './check.types.ts';
 
 /**
@@ -21,7 +21,7 @@ import type { GovernedFile } from './check.types.ts';
  */
 export function governedFiles(files: readonly string[], rules: readonly FrontmatterRule[]): readonly GovernedFile[] {
   return files.flatMap((path) => {
-    const rule = findFirstMatch(path, rules);
+    const rule = firstMatch(path, rules);
     return rule === undefined ? [] : [{ path, rule }];
   });
 }

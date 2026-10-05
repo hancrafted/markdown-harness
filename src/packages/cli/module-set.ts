@@ -13,19 +13,26 @@
 // too. The two lists are deliberately separate: one composes, one enforces, and
 // a rule derived from the thing it checks could not fail.
 
-import type { ModuleDescriptor } from '../config-contract/index.ts';
+import { bodyStructureModule } from '../body-structure-harness/module.ts';
 import { frontmatterModule } from '../frontmatter-harness/module.ts';
+import type { PinnedModule } from './lib/run/module-answers.types.ts';
 
 /**
- * Every Module this tool ships, in the order their faults are reported.
+ * Every Module this tool ships, in the order their faults are reported and
+ * their blocks nest: `frontmatter`, then `body-structure`.
  *
  * `satisfies` rather than an annotation, so each entry keeps its own section
  * and answer types for a caller that names one descriptor while the list as a
  * whole still has to be a set of descriptors. The two are compatible because
- * the port keeps every type parameter in RETURN position. Its four verb members
- * close over their own descriptor and ask `sectionFor` for the section keyed by
+ * the port keeps every type parameter in RETURN position. Its verb members —
+ * each optional, so a Module carries only the ones it answers — close over their own descriptor and ask `sectionFor` for the section keyed by
  * that descriptor identity; no widened caller supplies a section argument, so
  * the variance hole stays closed.
+ *
+ * The set is also held to the answers `cli` composes from (`PinnedModule`):
+ * `config-contract` is type-only and cannot name them, so this is the one place
+ * a Module answering `query` with a bare claim, or `audit` with a shape the
+ * composers cannot settle, stops compiling.
  *
  * ONE COMPILE-TIME GUARANTEE IS SPENT HERE. A whole-config interface could not
  * declare a key twice (`TS2300`); a list can, so two descriptors both claiming
@@ -33,4 +40,4 @@ import { frontmatterModule } from '../frontmatter-harness/module.ts';
  * than a config error — the Operator wrote nothing wrong — so it is not a
  * `ConfigFaultCode`, and the replacement is `tests/module-set.test.ts`.
  */
-export const MODULE_SET = [frontmatterModule] as const satisfies readonly ModuleDescriptor<unknown>[];
+export const MODULE_SET = [frontmatterModule, bodyStructureModule] as const satisfies readonly PinnedModule[];

@@ -33,7 +33,7 @@ function byCodeUnit(left: string, right: string): number {
  *
  * `localeCompare` is deliberately absent. It reads a host collation — an
  * ambient read no argument supplies — and it would order the same corpus
- * differently on two machines, which is exactly what `--check`'s file order and
+ * differently on two machines, which is exactly what `check`'s file order and
  * this list are relied on not to do.
  *
  * Returns a new array; the caller's is left as written.

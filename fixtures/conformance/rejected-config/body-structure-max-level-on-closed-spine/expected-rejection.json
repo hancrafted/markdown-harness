@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_MAX_LEVEL_ON_CLOSED_SPINE",
+      "location": "body-structure.rules[0].maxLevel"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 // Colocated unit test for the one seam that turns YAML bytes into a mapping
 // or says why they are not one. `config-document.pure.ts` and
-// `frontmatter-data.pure.ts` used to each hand-roll this — try, catch, drop
+// frontmatter-harness's own reader used to each hand-roll this — try, catch, drop
 // the parser's message, narrow to a mapping — and disagreed on exactly one
 // case: what an empty document means. That disagreement is why `emptyDocument`
 // is an explicit argument here rather than a single hard-coded answer; see

@@ -60,7 +60,7 @@ describe('cross-field constraints', () => {
         {
           field: null,
           satisfied: [],
-          violation: 'EXACTLY_ONE_OF_NONE_PRESENT',
+          violation: 'FRONTMATTER__EXACTLY_ONE_OF_NONE_PRESENT',
           requirement: { exactlyOneOf: ['name', 'title'] },
         },
       ];
@@ -78,7 +78,7 @@ describe('cross-field constraints', () => {
         {
           field: null,
           satisfied: ['name', 'title'],
-          violation: 'EXACTLY_ONE_OF_MULTIPLE_PRESENT',
+          violation: 'FRONTMATTER__EXACTLY_ONE_OF_MULTIPLE_PRESENT',
           requirement: { exactlyOneOf: ['name', 'title'] },
         },
       ];
@@ -96,7 +96,7 @@ describe('cross-field constraints', () => {
         {
           field: null,
           satisfied: [],
-          violation: 'ANY_OF_UNSATISFIED',
+          violation: 'FRONTMATTER__ANY_OF_UNSATISFIED',
           requirement: { anyOf: ['sources', 'generated'] },
         },
       ];
@@ -114,7 +114,7 @@ describe('cross-field constraints', () => {
         {
           field: null,
           satisfied: ['title'],
-          violation: 'ALL_OF_UNSATISFIED',
+          violation: 'FRONTMATTER__ALL_OF_UNSATISFIED',
           requirement: { allOf: ['title', 'description'] },
         },
       ];
@@ -148,7 +148,11 @@ describe('cross-field constraints', () => {
         anyOf: ['c', 'd'],
         allOf: ['e', 'f'],
       };
-      const expected = ['EXACTLY_ONE_OF_NONE_PRESENT', 'ANY_OF_UNSATISFIED', 'ALL_OF_UNSATISFIED'];
+      const expected = [
+        'FRONTMATTER__EXACTLY_ONE_OF_NONE_PRESENT',
+        'FRONTMATTER__ANY_OF_UNSATISFIED',
+        'FRONTMATTER__ALL_OF_UNSATISFIED',
+      ];
       // ACT
       const actual = crossFieldViolations(rule, {}).map((found) => found.violation);
       // ASSERT

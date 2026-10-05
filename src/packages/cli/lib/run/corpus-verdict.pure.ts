@@ -1,5 +1,5 @@
 /**
- * Compose every Module's answer about one corpus into the verdict `--check`
+ * Compose every Module's answer about one corpus into the verdict `check`
  * returns.
  *
  * This is where a file's findings NEST: each Module hands back what it found,
@@ -14,32 +14,13 @@
  * rather than one Module's tally, and no Module can see the others to take it.
  */
 
+import type { Unreadable } from '../../../foundation/read-corpus.ts';
 import type { CheckResult, ModuleCheck, ModuleViolations } from '../../../response-contract/index.ts';
-
-/**
- * One Module's answer, under the name the report will give it.
- *
- * A private local type beside its only consumer: the pairing of a descriptor's
- * key with its Module's answer is `cli`'s own composition step, and nothing
- * outside this Package has anything to do with it.
- */
-interface ModuleAnswer {
-  /** The Module's top-level config key, read from its descriptor. */
-  module: string;
-  /** What that Module answered about this corpus. */
-  check: ModuleCheck;
-}
-
-/** A Module's complete answer about one corpus, including a read refusal. */
-interface GatheredModuleAnswer {
-  /** The Module's top-level config key, read from its descriptor. */
-  module: string;
-  /** The Module's checked extent and findings, or the first governed file it could not read. */
-  result: { kind: 'checked'; result: ModuleCheck } | { kind: 'unreadable'; path: string };
-}
+import { settledAnswers } from './module-answers.pure.ts';
+import type { CheckAnswer, ModuleAnswer } from './module-answers.types.ts';
 
 /** How many findings one file's blocks carry between them. */
-function countIn(blocks: readonly ModuleViolations[]): number {
+function countIn<TViolation>(blocks: readonly ModuleViolations<TViolation>[]): number {
   return blocks.reduce((total, block) => total + block.violations.length, 0);
 }
 
@@ -49,11 +30,13 @@ function countIn(blocks: readonly ModuleViolations[]): number {
  * Keyed by path rather than by index, because a Module governs a SUBSET of the
  * corpus and two Modules need not govern the same one.
  */
-function blocksByPath(answers: readonly ModuleAnswer[]): Map<string, ModuleViolations[]> {
-  const blocks = new Map<string, ModuleViolations[]>();
+function blocksByPath<TViolation>(
+  answers: readonly ModuleAnswer<ModuleCheck<TViolation>>[],
+): Map<string, ModuleViolations<TViolation>[]> {
+  const blocks = new Map<string, ModuleViolations<TViolation>[]>();
 
   for (const answer of answers) {
-    for (const finding of answer.check.files) {
+    for (const finding of answer.answer.files) {
       const found = blocks.get(finding.path) ?? [];
       found.push({
         module: answer.module,
@@ -88,9 +71,12 @@ function inCorpusOrder(corpus: readonly string[]): (left: string, right: string)
  * @param corpus Every file the walk enumerated, normalised, in walker order.
  * @param answers Each Module's answer under its own config key, IN DECLARED MODULE ORDER — the order the blocks are reported in.
  */
-export function corpusVerdict(corpus: readonly string[], answers: readonly ModuleAnswer[]): CheckResult {
+export function corpusVerdict<TViolation>(
+  corpus: readonly string[],
+  answers: readonly ModuleAnswer<ModuleCheck<TViolation>>[],
+): CheckResult<TViolation> {
   const blocks = blocksByPath(answers);
-  const governed = new Set(answers.flatMap((answer) => [...answer.check.governed]));
+  const governed = new Set(answers.flatMap((answer) => [...answer.answer.governed]));
 
   const files = [...blocks.keys()].sort(inCorpusOrder(corpus)).map((path) => ({
     path,
@@ -112,24 +98,21 @@ export function corpusVerdict(corpus: readonly string[], answers: readonly Modul
  *
  * A read refusal wins before the verdict is composed: returning a partial
  * report would silently omit a governed file and could look clean. The impure
- * shell gathers each Module's result; this pure composer decides which report
- * shape those gathered results mean.
+ * shell gathers each Module's answer; this pure composer decides which report
+ * shape those gathered answers mean.
  */
-export function checkVerdict(
+export function checkVerdict<TViolation>(
   corpus: readonly string[],
-  answers: readonly GatheredModuleAnswer[],
-): { kind: 'checked'; result: CheckResult } | { kind: 'unreadable'; path: string } {
-  const unreadable = answers.find((answer) => answer.result.kind === 'unreadable');
-  if (unreadable !== undefined && unreadable.result.kind === 'unreadable') return unreadable.result;
+  answers: readonly ModuleAnswer<CheckAnswer<TViolation>>[],
+): { kind: 'checked'; result: CheckResult<TViolation> } | Unreadable {
+  const settled = settledAnswers<Extract<CheckAnswer<TViolation>, { kind: 'checked' }>>(answers);
+  if ('kind' in settled) return settled;
 
   return {
     kind: 'checked',
     result: corpusVerdict(
       corpus,
-      answers.map((answer) => {
-        if (answer.result.kind !== 'checked') throw new Error('unreadable Module result escaped its guard');
-        return { module: answer.module, check: answer.result.result };
-      }),
+      settled.map(({ module, answer }) => ({ module, answer: answer.result })),
     ),
   };
 }

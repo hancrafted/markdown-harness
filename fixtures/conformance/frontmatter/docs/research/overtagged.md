@@ -9,6 +9,6 @@ sources:
 
 <!-- expect: FAILS -->
 
-Six entries against `maxItems: 5`, so `TOO_MANY_ITEMS` fires. Every entry is inside
+Six entries against `maxItems: 5`, so `FRONTMATTER__TOO_MANY_ITEMS` fires. Every entry is inside
 `itemMaxLength: 20`, which keeps this case to the one code: the count is wrong and
 nothing else is.

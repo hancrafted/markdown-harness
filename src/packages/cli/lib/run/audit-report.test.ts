@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { ModuleAudit } from '../../../response-contract/index.ts';
-import { auditReport } from './audit-report.pure.ts';
+import { auditReport, auditVerdict } from './audit-report.pure.ts';
 
 const ZULU_AUDIT: ModuleAudit = {
   rules: [
@@ -42,8 +42,8 @@ describe('auditReport', () => {
       ];
       // ACT
       const actual = auditReport([
-        { module: 'zulu', audit: ZULU_AUDIT },
-        { module: 'alpha', audit: ALPHA_AUDIT },
+        { module: 'zulu', answer: ZULU_AUDIT },
+        { module: 'alpha', answer: ALPHA_AUDIT },
       ]).modules.map((block) => ({
         module: block.module,
         ruleId: block.rules[0].rule.ruleId,
@@ -59,7 +59,7 @@ describe('auditReport', () => {
       // ARRANGE
       const expected = [{ module: 'ruleless', rules: [] }];
       // ACT
-      const actual = auditReport([{ module: 'ruleless', audit: { rules: [] } }]).modules;
+      const actual = auditReport([{ module: 'ruleless', answer: { rules: [] } }]).modules;
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -73,6 +73,63 @@ describe('auditReport', () => {
       const actual = auditReport(noAnswers);
       // ASSERT
       expect(actual.modules).toEqual([]);
+    });
+  });
+});
+
+describe('auditVerdict', () => {
+  describe('success cases', () => {
+    it('composes every Module that tallied into the report, in declared order', () => {
+      // ARRANGE
+      const expected = {
+        kind: 'audited',
+        result: {
+          modules: [
+            { module: 'zulu', ...ZULU_AUDIT },
+            { module: 'alpha', ...ALPHA_AUDIT },
+          ],
+        },
+      };
+      // ACT
+      const actual = auditVerdict([
+        { module: 'zulu', answer: ZULU_AUDIT },
+        { module: 'alpha', answer: ALPHA_AUDIT },
+      ]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses the whole audit when one Module could not read a candidate file', () => {
+      // A Module that selects on file content has to open a file to tally it.
+      // A report leaving that file out would look complete, so the refusal
+      // wins over every other Module's tally.
+      // ARRANGE
+      const unreadable = '/corpus/docs/locked.md';
+      const expected = { kind: 'unreadable', path: unreadable };
+      // ACT
+      const actual = auditVerdict([
+        { module: 'zulu', answer: ZULU_AUDIT },
+        { module: 'alpha', answer: { kind: 'unreadable', path: unreadable } },
+      ]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('reports the first refusal in declared Module order when two Modules refuse', () => {
+      // ARRANGE
+      const first = '/corpus/docs/first.md';
+      const expected = { kind: 'unreadable', path: first };
+      // ACT
+      const actual = auditVerdict([
+        { module: 'zulu', answer: { kind: 'unreadable', path: first } },
+        { module: 'alpha', answer: { kind: 'unreadable', path: '/corpus/docs/second.md' } },
+      ]);
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
   });
 });

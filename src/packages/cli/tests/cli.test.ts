@@ -68,7 +68,7 @@ let plantedConfig = '';
 /**
  * A corpus with nothing wrong with it, so exit 0 can be proven.
  *
- * The `frontmatter` tier is built to fail, and a `--check` that always exited
+ * The `frontmatter` tier is built to fail, and a `check` that always exited
  * 1 would satisfy every other assertion in this file.
  */
 let conforming = '';
@@ -285,7 +285,7 @@ describe('mh', () => {
       const success = 0;
       const empty = '';
       // ACT
-      const run = mh('--query', 'docs/reference/api-limits.md', '--config', CONFIG);
+      const run = mh('query', 'docs/reference/api-limits.md', '--config', CONFIG);
       // ASSERT
       expect(run.code).toBe(success);
       expect(run.stderr).toBe(empty);
@@ -298,7 +298,7 @@ describe('mh', () => {
       const empty = '';
       const auditing = 'audit';
       // ACT
-      const run = mh('--audit', '--root', CORPUS_ROOT, '--config', CONFIG);
+      const run = mh('audit', '--root', CORPUS_ROOT, '--config', CONFIG);
       // ASSERT
       expect(run.code).toBe(success);
       expect(run.stderr).toBe(empty);
@@ -318,7 +318,7 @@ describe('mh', () => {
       const moduleName = 'frontmatter';
       const rowShape = ['rule', 'won', 'shadowed', 'shadowedBy', 'excluded'];
       // ACT
-      const run = mh('--audit', '--root', CORPUS_ROOT, '--config', CONFIG);
+      const run = mh('audit', '--root', CORPUS_ROOT, '--config', CONFIG);
       const modules = JSON.parse(run.stdout).result.modules;
       const rows = modules[0].rules;
       // ASSERT
@@ -333,7 +333,7 @@ describe('mh', () => {
       // ARRANGE
       const expected = [{ module: 'frontmatter', ruleId: 'reference' }];
       // ACT
-      const run = mh('--query', 'docs/reference/api-limits.md', '--config', CONFIG);
+      const run = mh('query', 'docs/reference/api-limits.md', '--config', CONFIG);
       const result = JSON.parse(run.stdout).result as { modules: { module: string; rule: { ruleId: string } }[] };
       const actual = result.modules.map((block) => ({ module: block.module, ruleId: block.rule.ruleId }));
       // ASSERT
@@ -346,7 +346,7 @@ describe('mh', () => {
       // No declared Module claims it, which is what `invisible` says — a claim
       // about the whole config rather than about a null rule.
       // ACT
-      const run = mh('--query', 'README.md', '--config', CONFIG);
+      const run = mh('query', 'README.md', '--config', CONFIG);
       const body = JSON.parse(run.stdout);
       // ASSERT
       expect(run.code).toBe(success);
@@ -374,15 +374,15 @@ describe('mh', () => {
       const refused = 2;
       const empty = '';
       // ACT
-      const run = mh('--query', 'docs/a.md', '--config', 'no-such-config.yaml');
+      const run = mh('query', 'docs/a.md', '--config', 'no-such-config.yaml');
       // ASSERT
       expect(run.code).toBe(refused);
       expect(run.stderr).toBe(empty);
       expect(JSON.parse(run.stdout).result.error).toBe(REJECTED);
     });
 
-    it('defaults the bare invocation to --check and rejects the missing default config', () => {
-      // A CONTRACT CHANGE from the phase that refused `--check` as a usage
+    it('defaults the bare invocation to check and rejects the missing default config', () => {
+      // A CONTRACT CHANGE from the phase that refused `check` as a usage
       // error: the bare invocation now runs, with both documented defaults
       // applied, and fails on the config rather than on the argv.
       // ARRANGE
@@ -407,20 +407,20 @@ describe('mh', () => {
       const refused = 2;
       const empty = '';
       // ACT
-      const run = mh('--audit', '--root', 'no-such-directory', '--config', CONFIG);
+      const run = mh('audit', '--root', 'no-such-directory', '--config', CONFIG);
       // ASSERT
       expect(run.code).toBe(refused);
       expect(run.stdout).toBe(empty);
       expect(run.stderr.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
     });
 
-    it('rejects a config on stdout even though the command was --audit', () => {
+    it('rejects a config on stdout even though the command was audit', () => {
       // "Never exits 1" is a statement about the corpus, not a promise of 0.
       // ARRANGE
       const refused = 2;
       const empty = '';
       // ACT
-      const run = mh('--audit', '--root', CORPUS_ROOT, '--config', 'no-such-config.yaml');
+      const run = mh('audit', '--root', CORPUS_ROOT, '--config', 'no-such-config.yaml');
       // ASSERT
       expect(run.code).toBe(refused);
       expect(run.stderr).toBe(empty);
@@ -432,7 +432,7 @@ describe('mh', () => {
       const refused = 2;
       const empty = '';
       // ACT
-      const run = mh('--root', 'docs', '--query', 'docs/a.md');
+      const run = mh('--root', 'docs', 'query', 'docs/a.md');
       // ASSERT
       expect(run.code).toBe(refused);
       expect(run.stdout).toBe(empty);
@@ -445,7 +445,7 @@ describe('mh', () => {
       const indented = '\n  "command"';
       const trailing = '}\n';
       // ACT
-      const run = mh('--query', 'README.md', '--config', CONFIG);
+      const run = mh('query', 'README.md', '--config', CONFIG);
       // ASSERT
       expect(run.stdout).toContain(indented);
       expect(run.stdout.slice(-trailing.length)).toBe(trailing);
@@ -461,7 +461,7 @@ describe('mh', () => {
       const written = './docs/reference/api-limits.md';
       const normalised = 'docs/reference/api-limits.md';
       // ACT
-      const run = mh('--query', written, '--config', CONFIG);
+      const run = mh('query', written, '--config', CONFIG);
       const body = JSON.parse(run.stdout);
       // ASSERT
       expect(body.path).toBe(written);
@@ -477,7 +477,7 @@ describe('mh', () => {
       // ARRANGE
       const onlyKeptMd = 1;
       // ACT
-      const run = mh('--audit', '--root', planted, '--config', plantedConfig);
+      const run = mh('audit', '--root', planted, '--config', plantedConfig);
       const rows = JSON.parse(run.stdout).result.modules[0].rules;
       // ASSERT
       expect(rows[0].won).toBe(onlyKeptMd);
@@ -487,7 +487,7 @@ describe('mh', () => {
       // ARRANGE
       const written = './fixtures/conformance/frontmatter';
       // ACT
-      const run = mh('--audit', '--root', written, '--config', CONFIG);
+      const run = mh('audit', '--root', written, '--config', CONFIG);
       // ASSERT
       expect(JSON.parse(run.stdout).root).toBe(written);
       expect(JSON.parse(run.stdout).config).toBe(CONFIG);
@@ -497,7 +497,7 @@ describe('mh', () => {
       // ARRANGE
       const empty = '';
       // ACT
-      const run = mh('--check', '--audit');
+      const run = mh('check', 'audit');
       // ASSERT
       expect(run.stdout).toBe(empty);
     });
@@ -505,10 +505,10 @@ describe('mh', () => {
 });
 
 // ---------------------------------------------------------------------------
-// mh --check against the conformance corpus.
+// mh check against the conformance corpus.
 // ---------------------------------------------------------------------------
 
-describe('mh --check', () => {
+describe('mh check', () => {
   describe('success cases', () => {
     it('reproduces the expected conformance verdict and exits 1', () => {
       // ARRANGE
@@ -516,7 +516,7 @@ describe('mh --check', () => {
       const corpusIsWrong = 1;
       const empty = '';
       // ACT
-      const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
+      const run = mh('check', '--root', CORPUS_ROOT, '--config', CONFIG);
       const body = JSON.parse(run.stdout);
       // ASSERT
       expect(body.result.summary).toEqual(summary);
@@ -554,7 +554,7 @@ describe('mh --check', () => {
         'docs/workflows/untitled.md',
       ];
       // ACT
-      const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
+      const run = mh('check', '--root', CORPUS_ROOT, '--config', CONFIG);
       const actual = JSON.parse(run.stdout).result.files.map((file: { path: string }) => file.path);
       // ASSERT
       expect(actual).toEqual(paths);
@@ -564,28 +564,28 @@ describe('mh --check', () => {
       // The corpus is built to reach every one.
       // ARRANGE
       const codes = [
-        'ALL_OF_UNSATISFIED',
-        'ANY_OF_UNSATISFIED',
-        'CONSTRAINT_SHAPE_MISMATCH',
-        'EMPTY_REQUIRED_FIELD',
-        'EXACTLY_ONE_OF_MULTIPLE_PRESENT',
-        'EXACTLY_ONE_OF_NONE_PRESENT',
-        'FORBIDDEN_FIELD_PRESENT',
-        'FORMAT_MISMATCH',
-        'FRONTMATTER_FORBIDDEN',
-        'FRONTMATTER_UNPARSEABLE',
-        'ITEM_TOO_LONG',
-        'MISSING_REQUIRED_FIELD',
-        'PATTERN_MISMATCH',
-        'TOO_FEW_ITEMS',
-        'TOO_MANY_ITEMS',
-        'UNKNOWN_KEY_FORBIDDEN',
-        'VALUE_NOT_ALLOWED',
-        'VALUE_TOO_LONG',
-        'VALUE_TOO_SHORT',
+        'FRONTMATTER__ALL_OF_UNSATISFIED',
+        'FRONTMATTER__ANY_OF_UNSATISFIED',
+        'FRONTMATTER__CONSTRAINT_SHAPE_MISMATCH',
+        'FRONTMATTER__EMPTY_REQUIRED_FIELD',
+        'FRONTMATTER__EXACTLY_ONE_OF_MULTIPLE_PRESENT',
+        'FRONTMATTER__EXACTLY_ONE_OF_NONE_PRESENT',
+        'FRONTMATTER__FORBIDDEN',
+        'FRONTMATTER__FORBIDDEN_FIELD_PRESENT',
+        'FRONTMATTER__FORMAT_MISMATCH',
+        'FRONTMATTER__ITEM_TOO_LONG',
+        'FRONTMATTER__MISSING_REQUIRED_FIELD',
+        'FRONTMATTER__PATTERN_MISMATCH',
+        'FRONTMATTER__TOO_FEW_ITEMS',
+        'FRONTMATTER__TOO_MANY_ITEMS',
+        'FRONTMATTER__UNKNOWN_KEY_FORBIDDEN',
+        'FRONTMATTER__UNPARSEABLE',
+        'FRONTMATTER__VALUE_NOT_ALLOWED',
+        'FRONTMATTER__VALUE_TOO_LONG',
+        'FRONTMATTER__VALUE_TOO_SHORT',
       ];
       // ACT
-      const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
+      const run = mh('check', '--root', CORPUS_ROOT, '--config', CONFIG);
       const files = JSON.parse(run.stdout).result.files as { modules: { violations: { violation: string }[] }[] }[];
       const reached = files.flatMap((file) =>
         file.modules.flatMap((block) => block.violations.map((found) => found.violation)),
@@ -601,7 +601,7 @@ describe('mh --check', () => {
       const nothingWrong = 0;
       const expectedGovernedCount = 2;
       // ACT
-      const run = mh('--check', '--root', canaryRoot, '--config', correctedCanaryConfig);
+      const run = mh('check', '--root', canaryRoot, '--config', correctedCanaryConfig);
       const summary = JSON.parse(run.stdout).result.summary;
       // ASSERT
       expect(run.code).toBe(nothingWrong);
@@ -627,7 +627,7 @@ describe('mh --check', () => {
               {
                 field: 'title',
                 value: 'Go',
-                violation: 'VALUE_TOO_SHORT',
+                violation: 'FRONTMATTER__VALUE_TOO_SHORT',
                 requirement: { minLength: 3, maxLength: 80 },
               },
             ],
@@ -635,7 +635,7 @@ describe('mh --check', () => {
         ],
       };
       // ACT
-      const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
+      const run = mh('check', '--root', CORPUS_ROOT, '--config', CONFIG);
       const files = JSON.parse(run.stdout).result.files as { path: string }[];
       const actual = files.find((file) => file.path === row.path);
       // ASSERT
@@ -652,7 +652,7 @@ describe('mh --check', () => {
       const cannotReport = 2;
       const empty = '';
       // ACT
-      const run = mh('--check', '--root', locked, '--config', lockedConfig);
+      const run = mh('check', '--root', locked, '--config', lockedConfig);
       // ASSERT
       expect(sealed).toBe(REFUSED);
       expect(run.code).toBe(cannotReport);
@@ -671,7 +671,7 @@ describe('mh --check', () => {
         { code: 'CONFIG_UNRECOGNISED_KEY', location: 'frontmatter.rules[0].excludeFiles.filenames' },
       ];
       // ACT
-      const run = mh('--check', '--root', canaryRoot, '--config', misspelledCanaryConfig);
+      const run = mh('check', '--root', canaryRoot, '--config', misspelledCanaryConfig);
       const actualFaults = JSON.parse(run.stdout).result.faults;
       // ASSERT
       expect(run.code).toBe(cannotReport);
@@ -695,7 +695,7 @@ describe('mh --check', () => {
       // ARRANGE
       const treeBefore = spawnSync('git', ['status', '--porcelain', CORPUS_ROOT], { encoding: 'utf8' }).stdout;
       // ACT
-      mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
+      mh('check', '--root', CORPUS_ROOT, '--config', CONFIG);
       const treeAfter = spawnSync('git', ['status', '--porcelain', CORPUS_ROOT], { encoding: 'utf8' }).stdout;
       // ASSERT
       expect(treeAfter).toBe(treeBefore);
@@ -706,7 +706,7 @@ describe('mh --check', () => {
       const nothingWrong = 0;
       const clean = { governedFiles: 1, invalidFiles: 0, totalViolations: 0 };
       // ACT
-      const run = mh('--check', '--root', conforming, '--config', conformingConfig);
+      const run = mh('check', '--root', conforming, '--config', conformingConfig);
       // ASSERT
       expect(run.code).toBe(nothingWrong);
       expect(JSON.parse(run.stdout).result.summary).toEqual(clean);
@@ -725,7 +725,7 @@ describe('mh --check', () => {
 /**
  * Run the built entry from a STATED directory.
  *
- * `--assess` anchors the config's globs at the current directory, because it
+ * `assess` anchors the config's globs at the current directory, because it
  * names one file rather than a corpus and refuses `--root`. The Conformance
  * config's globs are written relative to its own tier directory, so the only
  * honest way to exercise it at the process boundary is to stand where an
@@ -746,7 +746,7 @@ const LOCAL_CONFIG = 'valid-test-config.yaml';
 const STALE_CASE = 'docs/freshness/stale.md';
 const PINNED = '2026-12-01T00:00:00Z';
 
-describe('mh --assess', () => {
+describe('mh assess', () => {
   describe('success cases', () => {
     it("answers a stale file with the Operator's sentence, echoes the instant, and exits 0", () => {
       // ARRANGE
@@ -759,7 +759,7 @@ describe('mh --assess', () => {
         code: 0,
       };
       // ACT
-      const run = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', PINNED);
+      const run = mhIn(CORPUS_ROOT, 'assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', PINNED);
       const answered = JSON.parse(run.stdout) as {
         command: string;
         now: string;
@@ -782,6 +782,7 @@ describe('mh --assess', () => {
       // ARRANGE
       const expected = {
         command: 'assess',
+        modules: ['frontmatter'],
         path: 'sealed.md',
         now: PINNED,
         config: lockedConfig,
@@ -801,7 +802,7 @@ describe('mh --assess', () => {
         code: 0,
       };
       // ACT
-      const run = mhIn(locked, '--assess', 'sealed.md', '--config', lockedConfig, '--now', PINNED);
+      const run = mhIn(locked, 'assess', 'sealed.md', '--config', lockedConfig, '--now', PINNED);
       const answered = JSON.parse(run.stdout);
       const actual = { ...answered, code: run.code };
       // ASSERT
@@ -822,9 +823,9 @@ describe('mh --assess', () => {
       const instantShape = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
       const nothingWrong = 0;
       // ACT
-      const first = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG);
+      const first = mhIn(CORPUS_ROOT, 'assess', STALE_CASE, '--config', LOCAL_CONFIG);
       const echoed = (JSON.parse(first.stdout) as { now: string }).now;
-      const again = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', echoed);
+      const again = mhIn(CORPUS_ROOT, 'assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', echoed);
       const firstAnswer = (JSON.parse(first.stdout) as { result: { modules: { agentAction: string }[] } }).result
         .modules[0].agentAction;
       const replayed = (JSON.parse(again.stdout) as { result: { modules: { agentAction: string }[] } }).result
@@ -842,7 +843,7 @@ describe('mh --assess', () => {
       const empty = '';
       const cannotReport = 2;
       // ACT
-      const run = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', '2026-02-30T00:00:00Z');
+      const run = mhIn(CORPUS_ROOT, 'assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', '2026-02-30T00:00:00Z');
       // ASSERT
       expect(run.stderr.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
       expect(run.stdout).toBe(empty);
@@ -854,7 +855,7 @@ describe('mh --assess', () => {
       const empty = '';
       const cannotReport = 2;
       // ACT
-      const run = mhIn(CORPUS_ROOT, '--check', '--config', LOCAL_CONFIG, '--now', PINNED);
+      const run = mhIn(CORPUS_ROOT, 'check', '--config', LOCAL_CONFIG, '--now', PINNED);
       // ASSERT
       expect(run.stderr.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
       expect(run.stdout).toBe(empty);
@@ -872,7 +873,7 @@ describe('mh --assess', () => {
       // ACT
       const run = mhIn(
         CORPUS_ROOT,
-        '--assess',
+        'assess',
         'docs/research/vendor/upstream.md',
         '--config',
         LOCAL_CONFIG,
@@ -889,7 +890,7 @@ describe('mh --assess', () => {
       const empty = '';
       const cannotReport = 2;
       // ACT
-      const run = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--root', '.', '--config', LOCAL_CONFIG);
+      const run = mhIn(CORPUS_ROOT, 'assess', STALE_CASE, '--root', '.', '--config', LOCAL_CONFIG);
       // ASSERT
       expect(run.stderr.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
       expect(run.stdout).toBe(empty);
@@ -903,21 +904,21 @@ describe('mh --assess', () => {
       // ARRANGE
       const expected = { error: REJECTED, command: 'assess', stderr: '', code: 2 };
       // ACT
-      const run = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--config', 'nothing-here.yaml', '--now', PINNED);
+      const run = mhIn(CORPUS_ROOT, 'assess', STALE_CASE, '--config', 'nothing-here.yaml', '--now', PINNED);
       const answered = JSON.parse(run.stdout) as { command: string; result: { error: string } };
       const actual = { error: answered.result.error, command: answered.command, stderr: run.stderr, code: run.code };
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('names --assess and --now in the synopsis it prints when refused', () => {
+    it('names assess and --now in the synopsis it prints when refused', () => {
       // The synopsis is the only thing stderr ever carries, so a command absent
       // from it is a command a refused caller cannot discover.
       // ARRANGE
-      const assessFlag = '--assess';
+      const assessFlag = 'assess';
       const nowFlag = '--now';
       // ACT
-      const printed = mhIn(CORPUS_ROOT, '--assess', STALE_CASE, '--now', 'yesterday').stderr;
+      const printed = mhIn(CORPUS_ROOT, 'assess', STALE_CASE, '--now', 'yesterday').stderr;
       // ASSERT
       expect(printed).toContain(assessFlag);
       expect(printed).toContain(nowFlag);
@@ -940,10 +941,10 @@ describe('mh --help', () => {
       expect(run.stdout.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
     });
 
-    it('names all three reporting commands and the exit codes a caller must read', () => {
+    it('names all four reporting commands and the exit codes a caller must read', () => {
       // What an agent cannot infer from a synopsis, and so the part worth pinning.
       // ARRANGE
-      const commands = ['--check', '--query', '--audit'];
+      const commands = ['check', 'query', 'audit', 'assess'];
       const contract = 'CONFIG_REJECTED';
       const reference = 'https://github.com/hancrafted/markdown-harness';
       // ACT
@@ -957,13 +958,13 @@ describe('mh --help', () => {
 
   describe('failure cases', () => {
     it('refuses help beside a real command, on stderr and exit 2', () => {
-      // `--check --help` names two questions. Answering either one silently is
+      // `check --help` names two questions. Answering either one silently is
       // the precedence this tool does not do.
       // ARRANGE
       const refused = 2;
       const empty = '';
       // ACT
-      const run = mh('--check', '--help');
+      const run = mh('check', '--help');
       // ASSERT
       expect(run.code).toBe(refused);
       expect(run.stdout).toBe(empty);
@@ -1001,6 +1002,182 @@ describe('mh --help', () => {
       expect(refusal.length).toBeGreaterThan(0);
       expect(help.slice(0, refusal.length)).toBe(refusal);
     });
+
+    it('never offers a Module name without a command, which the parser refuses', () => {
+      // `mh frontmatter` alone is a usage error, so no synopsis line may read as
+      // though the command after a Module name were optional.
+      // ARRANGE
+      const optionalAfterModule = /\[<module>\]\s+\[check\]/;
+      const defaultCommand = 'check';
+      // ACT
+      const help = mh('--help').stdout;
+      const synopsis = help.slice(0, help.indexOf('\n\n'));
+      // ASSERT
+      expect(synopsis).toContain(defaultCommand);
+      expect(synopsis).not.toMatch(optionalAfterModule);
+    });
+
+    it('names all four refusals about a Module that add a line after the synopsis', () => {
+      // The parser names the alternatives for exactly these four; the help text
+      // promising fewer would leave a caller unable to read the fourth.
+      // ARRANGE
+      const refusals = [
+        'an unknown name',
+        'a name with no command',
+        'a command the named Module does not implement',
+        'a command no Module implements',
+      ];
+      // ACT
+      const help = mh('--help').stdout.replaceAll(/\s+/g, ' ');
+      // ASSERT
+      for (const refusal of refusals) expect(help).toContain(refusal);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Module scoping: `mh <module-key> <command>`, at the same process seam.
+// ---------------------------------------------------------------------------
+//
+// The Module name is its config key exactly. Every response names the Modules
+// that ran, so a clean scoped run is never read as a clean full run, and a
+// scoped run's exit code reflects only that Module's findings.
+
+/** Both tiers' Module keys, in declared order — the order every response must name them in. */
+const BOTH_MODULES = ['frontmatter', 'body-structure'];
+const INTEGRATED_CONFIG = 'fixtures/conformance/integrated/valid-test-config.yaml';
+const INTEGRATED_ROOT = 'fixtures/conformance/integrated';
+
+describe('mh <module-key> <command>', () => {
+  describe('success cases', () => {
+    it('names every Module that implements the command when no Module is named', () => {
+      // ARRANGE
+      const expected = { code: 1, modules: BOTH_MODULES };
+      // ACT
+      const run = mh('check', '--root', INTEGRATED_ROOT, '--config', INTEGRATED_CONFIG);
+      const actual = { code: run.code, modules: JSON.parse(run.stdout).modules };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('runs only the named Module, and its exit code reflects only that Module', () => {
+      // The frontmatter tier fails on frontmatter and declares no
+      // body-structure section, so the full run exits 1 while the run scoped to
+      // body-structure has nothing to report and exits 0.
+      // ARRANGE
+      const expected = {
+        full: { code: 1, modules: BOTH_MODULES },
+        scoped: { code: 0, modules: ['body-structure'], invalidFiles: 0 },
+      };
+      // ACT
+      const full = mh('check', '--root', CORPUS_ROOT, '--config', CONFIG);
+      const scoped = mh('body-structure', 'check', '--root', CORPUS_ROOT, '--config', CONFIG);
+      const scopedBody = JSON.parse(scoped.stdout);
+      const actual = {
+        full: { code: full.code, modules: JSON.parse(full.stdout).modules },
+        scoped: {
+          code: scoped.code,
+          modules: scopedBody.modules,
+          invalidFiles: scopedBody.result.summary.invalidFiles,
+        },
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('answers a scoped query with only the claims of the named Module', () => {
+      // ARRANGE
+      const expected = { modules: ['frontmatter'], blocks: ['frontmatter'] };
+      // ACT
+      const run = mh('frontmatter', 'query', 'docs/titles/new.md', '--config', INTEGRATED_CONFIG);
+      const body = JSON.parse(run.stdout) as { modules: string[]; result: { modules?: { module: string }[] } };
+      const actual = { modules: body.modules, blocks: (body.result.modules ?? []).map((block) => block.module) };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('names only the Modules that implement assess on an unscoped assessment', () => {
+      // ARRANGE
+      const expected = { code: 0, modules: ['frontmatter'] };
+      // ACT
+      const run = mhIn(CORPUS_ROOT, 'assess', STALE_CASE, '--config', LOCAL_CONFIG, '--now', PINNED);
+      const actual = { code: run.code, modules: JSON.parse(run.stdout).modules };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses a scoped command the Module does not implement, naming the Modules that do', () => {
+      // "Nothing to report" must never be confused with "not supported".
+      // ARRANGE
+      const expected = { code: 2, stdout: '' };
+      const reason = 'body-structure does not implement assess; frontmatter does';
+      // ACT
+      const run = mhIn(CORPUS_ROOT, 'body-structure', 'assess', STALE_CASE, '--config', LOCAL_CONFIG);
+      // ASSERT
+      expect({ code: run.code, stdout: run.stdout }).toEqual(expected);
+      expect(run.stderr).toContain(reason);
+      expect(run.stderr).toContain(USAGE_LEAD);
+    });
+
+    it('refuses an unknown Module name, naming the known Modules', () => {
+      // ARRANGE
+      const expected = { code: 2, stdout: '' };
+      const reason =
+        '"frontmater" is neither a command nor a Module. Commands: check, query, audit, assess. Modules: frontmatter, body-structure';
+      // ACT
+      const run = mh('frontmater', 'check', '--root', CORPUS_ROOT, '--config', CONFIG);
+      // ASSERT
+      expect({ code: run.code, stdout: run.stdout }).toEqual(expected);
+      expect(run.stderr).toContain(reason);
+    });
+
+    it('refuses a Module name with no command, naming the commands it implements', () => {
+      // ARRANGE
+      const expected = { code: 2, stdout: '' };
+      const reason = 'body-structure needs a command: check, query, audit';
+      // ACT
+      const run = mh('body-structure', '--root', CORPUS_ROOT, '--config', CONFIG);
+      // ASSERT
+      expect({ code: run.code, stdout: run.stdout }).toEqual(expected);
+      expect(run.stderr).toContain(reason);
+    });
+
+    it('refuses the retired flag form of a command rather than aliasing it', () => {
+      // ARRANGE
+      const expected = { code: 2, stdout: '' };
+      // ACT
+      const run = mh('--check', '--root', CORPUS_ROOT, '--config', CONFIG);
+      // ASSERT
+      expect({ code: run.code, stdout: run.stdout }).toEqual(expected);
+      expect(run.stderr.slice(0, USAGE_LEAD.length)).toBe(USAGE_LEAD);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('names the scoped Module on a response refusing the config', () => {
+      // The config is one file and fails whole, so a fault anywhere refuses a
+      // scoped run too; `modules` still echoes the scope that was asked.
+      // ARRANGE
+      const expected = { code: 2, modules: ['frontmatter'], error: REJECTED };
+      // ACT
+      const run = mh('frontmatter', 'audit', '--root', CORPUS_ROOT, '--config', 'no-such-config.yaml');
+      const body = JSON.parse(run.stdout);
+      const actual = { code: run.code, modules: body.modules, error: body.result.error };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('takes the flags before the command as well as after it', () => {
+      // ARRANGE
+      const expected = { code: 1, modules: ['frontmatter'] };
+      // ACT
+      const run = mh('--root', CORPUS_ROOT, 'frontmatter', '--config', CONFIG, 'check');
+      const actual = { code: run.code, modules: JSON.parse(run.stdout).modules };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 });
 
@@ -1022,7 +1199,7 @@ describe('mh under a stated Node version', () => {
       const success = 0;
       const empty = '';
       // ACT
-      const run = mhOnNode(supported, '--query', 'docs/reference/api-limits.md', '--config', CONFIG);
+      const run = mhOnNode(supported, 'query', 'docs/reference/api-limits.md', '--config', CONFIG);
       // ASSERT
       expect(run.code).toBe(success);
       expect(run.stderr).toBe(empty);
@@ -1040,7 +1217,7 @@ describe('mh under a stated Node version', () => {
       const refused = 2;
       const empty = '';
       // ACT
-      const run = mhOnNode(unsupported, '--query', 'README.md', '--config', CONFIG);
+      const run = mhOnNode(unsupported, 'query', 'README.md', '--config', CONFIG);
       // ASSERT
       expect(run.code).toBe(refused);
       expect(run.stdout).toBe(empty);
@@ -1088,11 +1265,13 @@ describe('mh under a stated Node version', () => {
       // ACT
       const actual = boundaries.map(({ version }) => ({
         version,
-        code: mhOnNode(version, '--query', 'README.md', '--config', CONFIG).code,
+        code: mhOnNode(version, 'query', 'README.md', '--config', CONFIG).code,
       }));
       // ASSERT
       expect(actual).toEqual(boundaries);
-    });
+      // Nine CLI spawns in series. Under a loaded CI runner that outlasts
+      // vitest's 5s default — measured red on PR #223 at 5s, while 0.6s locally.
+    }, 30_000);
 
     it('refuses a version it cannot read rather than assuming it is new enough', () => {
       // Nothing reports this; a nightly reports `27.0.0-nightly…`, which parses.
@@ -1102,7 +1281,7 @@ describe('mh under a stated Node version', () => {
       const refused = 2;
       const empty = '';
       // ACT
-      const run = mhOnNode(unreadable, '--query', 'README.md', '--config', CONFIG);
+      const run = mhOnNode(unreadable, 'query', 'README.md', '--config', CONFIG);
       // ASSERT
       expect(run.code).toBe(refused);
       expect(run.stdout).toBe(empty);

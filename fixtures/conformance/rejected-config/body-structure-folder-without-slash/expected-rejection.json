@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[0].folders"
+    }
+  ]
+}

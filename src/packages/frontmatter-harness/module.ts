@@ -11,9 +11,12 @@
 // ARCH-004 bans; a fifth narrow entry point is what it asks for.
 
 import type { ModuleDescriptor } from '../config-contract/index.ts';
+import type { ModuleClaim } from '../response-contract/index.ts';
 import { assessPath } from './assess.ts';
 import { auditRules } from './audit.ts';
 import { checkCorpus } from './check.ts';
+import type { FrontmatterRequirements } from './lib/query/requirements.types.ts';
+import type { FrontmatterFaultCode } from './lib/validate/fault.types.ts';
 import { queryPath } from './query.ts';
 import type { FrontmatterConfig } from './section.ts';
 import { validateFrontmatterSection } from './validate-config.ts';
@@ -33,19 +36,26 @@ import { validateFrontmatterSection } from './validate-config.ts';
  */
 export const frontmatterModule: ModuleDescriptor<
   FrontmatterConfig,
-  ReturnType<typeof queryPath>,
+  readonly ModuleClaim<FrontmatterRequirements>[],
   ReturnType<typeof auditRules>,
   ReturnType<typeof assessPath>,
-  ReturnType<typeof checkCorpus>
+  ReturnType<typeof checkCorpus>,
+  FrontmatterFaultCode
 > = {
   key: 'frontmatter',
   validateSection(raw: unknown) {
     return validateFrontmatterSection(raw);
   },
+  // One winning Rule at most, so the list holds one claim or none. The port
+  // answers a list for every Module; `queryPath` keeps the
+  // single-claim answer its Conformance callers read.
   query(path, config) {
-    return queryPath(path, config.sectionFor(frontmatterModule));
+    const claim = queryPath(path, config.sectionFor(frontmatterModule));
+    return claim === undefined ? [] : [claim];
   },
-  audit(files, config) {
+  // The corpus root goes unused: this Module's Rules select on paths alone, so
+  // its audit never opens a file.
+  audit(_root, files, config) {
     return auditRules(files, config.sectionFor(frontmatterModule));
   },
   assess(file, now, config) {

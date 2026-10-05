@@ -7,9 +7,11 @@
  * caller concatenates.
  */
 
-import type { AllowedValue, FieldConstraints, Format } from '../../../config-contract/index.ts';
+import { intentFaults } from '../../../foundation/intent-faults.ts';
+import { compiles } from '../../../foundation/pattern-dialect.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
-import type { ConfigFault } from '../../../response-contract/index.ts';
+import type { AllowedValue, FieldConstraints, Format } from '../section/constraints.types.ts';
+import type { FrontmatterFault } from './fault.types.ts';
 
 /**
  * Every key a constraint may carry, keyed by the type that declares them.
@@ -37,12 +39,12 @@ const CONSTRAINT_KEYS: Record<keyof FieldConstraints, true> = {
  * A `Record` keyed by the type rather than a list of strings, because a type
  * union is erased before any of this runs and a runtime check cannot read one.
  * Keying by the union is the only thing that keeps the shadow honest: widening
- * `Format` in `config-contract` and forgetting this file leaves a missing key,
+ * `Format` in `constraints.types.ts` and forgetting this file leaves a missing key,
  * and a misspelt spelling an excess one, so neither compiles.
  *
  * The type is the source and these follow it. That is the opposite direction
  * from the const-object pattern, which is for a vocabulary with no home — this
- * one has one, in `config-contract`, and it stays the source.
+ * one has one, in this Module's `constraints.types.ts`, and it stays the source.
  */
 const PRESENCE_STATES: Record<NonNullable<FieldConstraints['presence']>, true> = {
   required: true,
@@ -61,12 +63,6 @@ const BOUND_KEYS: readonly (keyof FieldConstraints)[] = [
   'itemMaxLength',
 ];
 
-/** An intent key written and left blank, wherever it sits. */
-function emptyIntentAt(carrier: Record<string, unknown>, location: string): readonly ConfigFault[] {
-  if (!('intent' in carrier) || carrier.intent) return [];
-  return [{ code: 'CONFIG_EMPTY_INTENT', location: `${location}.intent` }];
-}
-
 /** Every key an `allowed` entry may carry, keyed by the type that declares them. */
 const ALLOWED_KEYS: Record<keyof AllowedValue, true> = { value: true, intent: true };
 
@@ -81,21 +77,21 @@ const ALLOWED_KEYS: Record<keyof AllowedValue, true> = { value: true, intent: tr
  * truncated half is what the tool would go on to quote. Naming the vocabulary
  * turns that into a fault at the exact address.
  */
-function allowedEntryFaults(entry: unknown, at: string): readonly ConfigFault[] {
+function allowedEntryFaults(entry: unknown, at: string): readonly FrontmatterFault[] {
   if (!isMapping(entry)) return [{ code: 'CONFIG_INVALID_VALUE', location: at }];
 
   const unrecognised = Object.keys(entry)
     .filter((key) => !Object.hasOwn(ALLOWED_KEYS, key))
-    .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${at}.${key}` }));
+    .map((key): FrontmatterFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${at}.${key}` }));
 
-  const valueless: readonly ConfigFault[] =
+  const valueless: readonly FrontmatterFault[] =
     'value' in entry ? [] : [{ code: 'CONFIG_INVALID_VALUE', location: `${at}.value` }];
 
-  return [...unrecognised, ...valueless, ...emptyIntentAt(entry, at)];
+  return [...unrecognised, ...valueless, ...intentFaults(entry, at)];
 }
 
 /** The closed set of permitted values, if the constraint states one. */
-function allowedFaults(constraint: Record<string, unknown>, location: string): readonly ConfigFault[] {
+function allowedFaults(constraint: Record<string, unknown>, location: string): readonly FrontmatterFault[] {
   if (!('allowed' in constraint)) return [];
 
   const entries = constraint.allowed;
@@ -104,23 +100,13 @@ function allowedFaults(constraint: Record<string, unknown>, location: string): r
   return entries.flatMap((entry: unknown, index: number) => allowedEntryFaults(entry, `${location}.allowed[${index}]`));
 }
 
-/** Whether a string is a regular expression this platform can compile. */
-function compiles(pattern: string): boolean {
-  try {
-    new RegExp(pattern);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * A `pattern` owes a sibling `intent`, and owes being a usable regex.
  *
  * The mandatory intent is what the violation reports; without it the raw regex
  * leaks into the message.
  */
-function patternFaults(constraint: Record<string, unknown>, location: string): readonly ConfigFault[] {
+function patternFaults(constraint: Record<string, unknown>, location: string): readonly FrontmatterFault[] {
   const pattern = constraint.pattern;
   if (pattern === undefined) return [];
   if (typeof pattern !== 'string' || !compiles(pattern)) {
@@ -137,7 +123,7 @@ function patternFaults(constraint: Record<string, unknown>, location: string): r
 /**
  * Whether a written key holds something its closed vocabulary does not name.
  *
- * PRESENCE, not truthiness, for the same reason `emptyIntentAt` is not: a bare
+ * PRESENCE, not truthiness, for the same reason `intentFaults` is not: a bare
  * `presence:` parses to `null`, which is outside the vocabulary and so is the
  * Operator saying something wrong rather than saying nothing. A key never
  * written is not a fault here.
@@ -177,8 +163,8 @@ function lacksFiniteBound(constraint: Record<string, unknown>, key: string): boo
  * and so left the field silently ungoverned. §3.5 names that exact config as
  * `CONFIG_INVALID_VALUE`.
  */
-function vocabularyFaults(constraint: Record<string, unknown>, location: string): readonly ConfigFault[] {
-  const at = (key: string): ConfigFault => ({ code: 'CONFIG_INVALID_VALUE', location: `${location}.${key}` });
+function vocabularyFaults(constraint: Record<string, unknown>, location: string): readonly FrontmatterFault[] {
+  const at = (key: string): FrontmatterFault => ({ code: 'CONFIG_INVALID_VALUE', location: `${location}.${key}` });
 
   return [
     ...(outsideVocabulary(constraint, 'presence', PRESENCE_STATES) ? [at('presence')] : []),
@@ -193,7 +179,7 @@ function vocabularyFaults(constraint: Record<string, unknown>, location: string)
  * @param constraint The value written under one field address.
  * @param location The constraint's address in the config's own notation.
  */
-export function constraintFaults(constraint: unknown, location: string): readonly ConfigFault[] {
+export function constraintFaults(constraint: unknown, location: string): readonly FrontmatterFault[] {
   if (!isMapping(constraint)) return [{ code: 'CONFIG_INVALID_VALUE', location }];
 
   const keys = Object.keys(constraint);
@@ -202,9 +188,9 @@ export function constraintFaults(constraint: unknown, location: string): readonl
   return [
     ...keys
       .filter((key) => !Object.hasOwn(CONSTRAINT_KEYS, key))
-      .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${location}.${key}` })),
+      .map((key): FrontmatterFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${location}.${key}` })),
     ...vocabularyFaults(constraint, location),
-    ...emptyIntentAt(constraint, location),
+    ...intentFaults(constraint, location),
     ...allowedFaults(constraint, location),
     ...patternFaults(constraint, location),
   ];

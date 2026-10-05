@@ -5,7 +5,7 @@
  * rejection payloads, and deterministic rules pure and assertable without host I/O.
  */
 
-import type { ConfigFault, MarkdownHarnessResponse } from '../../../response-contract/index.ts';
+import type { ConfigFault } from '../../../response-contract/index.ts';
 import {
   assessResponse,
   auditResponse,
@@ -15,9 +15,11 @@ import {
   queryResponse,
   serializeResponse,
 } from '../../../response-contract/index.ts';
+import type { ModuleCommands } from '../argv/argv.types.ts';
 import { parseArgv } from '../argv/parse-argv.pure.ts';
-import { HELP, USAGE } from '../argv/usage.pure.ts';
+import { HELP, USAGE, usageRefusal } from '../argv/usage.pure.ts';
 import { unsupportedRuntime } from '../runtime/node-support.pure.ts';
+import type { DeclaredResponse } from './declared-module.types.ts';
 import type {
   AssessGathered,
   AuditGathered,
@@ -43,23 +45,28 @@ interface Termination {
 
 /** Could not report at all: a usage error, or a config that cannot be trusted. */
 const CANNOT_REPORT = 2;
-/** Ran, nothing wrong. Every command but `--check` exits this whenever it reported. */
+/** Ran, nothing wrong. Every command but `check` exits this whenever it reported. */
 const NOTHING_WRONG = 0;
-/** The corpus is wrong. `--check` alone can exit this, and exactly when `invalidFiles > 0`. */
+/** The corpus is wrong. `check` alone can exit this, and exactly when `invalidFiles > 0`. */
 const CORPUS_IS_WRONG = 1;
 
+/** Could not report: one refusal on stderr, nothing on stdout, exit 2. */
+function cannotReport(stderr: string): Termination {
+  return { stdout: '', stderr, code: CANNOT_REPORT };
+}
+
 /** Usage text on stderr, nothing on stdout, exit 2. */
-const USAGE_ERROR: Termination = { stdout: '', stderr: USAGE, code: CANNOT_REPORT };
+const USAGE_ERROR: Termination = cannotReport(USAGE);
 /** Help text on stdout, nothing on stderr, exit 0. */
 const HELP_ANSWER: Termination = { stdout: HELP, stderr: '', code: NOTHING_WRONG };
 
 /** JSON on stdout: 2-space indentation, trailing newline. */
-function emit(response: MarkdownHarnessResponse, code: number): Termination {
+function emit(response: DeclaredResponse, code: number): Termination {
   return { stdout: serializeResponse(response), stderr: '', code };
 }
 
 /** Every response uses the rejection guard to keep failure exit policy central. */
-function responseTermination(response: MarkdownHarnessResponse, answeredCode = NOTHING_WRONG): Termination {
+function responseTermination(response: DeclaredResponse, answeredCode = NOTHING_WRONG): Termination {
   return emit(response, isConfigError(response.result) ? CANNOT_REPORT : answeredCode);
 }
 
@@ -80,15 +87,16 @@ export function resolvedInstant(now: string, clock: string): string {
  *
  * @param nodeVersion `process.versions.node`, read once by the caller.
  * @param argv The arguments after the executable and script.
+ * @param modules Every declared Module's key and commands, in declared order.
  */
-export function route(nodeVersion: string, argv: readonly string[]): Route {
+export function route(nodeVersion: string, argv: readonly string[], modules: readonly ModuleCommands[]): Route {
   const refusal = unsupportedRuntime(nodeVersion);
   if (refusal !== undefined) return { kind: 'runtime-refused', refusal };
 
-  const invocation = parseArgv(argv);
-  if (invocation === undefined) return { kind: 'argv-refused' };
+  const parsed = parseArgv(argv, modules);
+  if (parsed.kind === 'refused') return { kind: 'argv-refused', reason: parsed.reason };
 
-  return { kind: 'routed', invocation };
+  return { kind: 'routed', invocation: parsed.invocation };
 }
 
 /** Compile-time exhaustiveness: reached only if a switch left a case unhandled. */
@@ -104,7 +112,7 @@ function assertNever(value: never): never {
  */
 function fromConfigOutcome<Result>(
   outcome: ConfigOutcome<Result>,
-  onRejected: (faults: readonly ConfigFault[]) => Termination,
+  onRejected: (faults: readonly ConfigFault<string>[]) => Termination,
   onAnswered: (result: Result) => Termination,
 ): Termination {
   return outcome.kind === 'rejected' ? onRejected(outcome.faults) : onAnswered(outcome.result);
@@ -113,8 +121,8 @@ function fromConfigOutcome<Result>(
 function queryTermination(gathered: QueryGathered): Termination {
   return fromConfigOutcome(
     gathered.outcome,
-    (faults) => responseTermination(queryResponse(gathered.path, gathered.config, configError(faults))),
-    (result) => responseTermination(queryResponse(gathered.path, gathered.config, result)),
+    (faults) => responseTermination(queryResponse(gathered, configError(faults))),
+    (result) => responseTermination(queryResponse(gathered, result)),
   );
 }
 
@@ -147,13 +155,19 @@ function withCorpus<T extends { readonly kind: string }>(
 }
 
 function auditTermination(gathered: AuditGathered): Termination {
-  return withCorpus(gathered.outcome, (outcome) =>
-    fromConfigOutcome(
+  return withCorpus(gathered.outcome, (outcome) => {
+    // A Module selecting on frontmatter `type` opens files to tally them, so an
+    // audit can be refused for an unreadable file on the same terms as a check.
+    if (outcome.kind === 'unreadable') {
+      return cannotReport(unreadableGovernedFile(outcome.path));
+    }
+
+    return fromConfigOutcome(
       outcome,
-      (faults) => responseTermination(auditResponse(gathered.root, gathered.config, configError(faults))),
-      (result) => responseTermination(auditResponse(gathered.root, gathered.config, result)),
-    ),
-  );
+      (faults) => responseTermination(auditResponse(gathered, configError(faults))),
+      (result) => responseTermination(auditResponse(gathered, result)),
+    );
+  });
 }
 
 function assessTermination(gathered: AssessGathered): Termination {
@@ -167,21 +181,18 @@ function assessTermination(gathered: AssessGathered): Termination {
 function checkTermination(gathered: CheckGathered): Termination {
   return withCorpus(gathered.outcome, (outcome) => {
     if (outcome.kind === 'unreadable') {
-      return { stdout: '', stderr: unreadableGovernedFile(outcome.path), code: CANNOT_REPORT };
+      return cannotReport(unreadableGovernedFile(outcome.path));
     }
 
     return fromConfigOutcome(
       outcome,
-      (faults) => responseTermination(checkResponse(gathered.root, gathered.config, configError(faults))),
+      (faults) => responseTermination(checkResponse(gathered, configError(faults))),
       (result) => {
         // THE SECOND RULE ENCODED AS A CONDITIONAL RATHER THAN AN EFFECT: whether
-        // a corpus is wrong is a fact about `invalidFiles`, and only `--check`
+        // a corpus is wrong is a fact about `invalidFiles`, and only `check`
         // ever exits on it.
         const wrong = result.summary.invalidFiles > 0;
-        return responseTermination(
-          checkResponse(gathered.root, gathered.config, result),
-          wrong ? CORPUS_IS_WRONG : NOTHING_WRONG,
-        );
+        return responseTermination(checkResponse(gathered, result), wrong ? CORPUS_IS_WRONG : NOTHING_WRONG);
       },
     );
   });
@@ -219,9 +230,9 @@ function terminationForCommand(gathered: CommandGathered): Termination {
 export function terminationFor(gathered: Gathered): Termination {
   switch (gathered.kind) {
     case 'runtime-refused':
-      return { stdout: '', stderr: gathered.refusal, code: CANNOT_REPORT };
+      return cannotReport(gathered.refusal);
     case 'argv-refused':
-      return USAGE_ERROR;
+      return cannotReport(usageRefusal(gathered.reason));
     case 'help':
       return HELP_ANSWER;
     default:

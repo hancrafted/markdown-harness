@@ -5,7 +5,7 @@
 // that does are answered identically — an agent about to author a file cannot
 // be asked to write it first and be told afterwards.
 //
-// Which is also why this command, and not `--check`, had to be told what a
+// Which is also why this command, and not `check`, had to be told what a
 // corpus file is once selectors stopped spelling `.md` inside a glob: there is
 // no walk here to have filtered one out.
 //
@@ -17,9 +17,10 @@
 
 import { isCorpusPath } from '../foundation/corpus-membership.ts';
 import { normalisePath } from '../foundation/path-shape.ts';
+import { firstMatch } from '../foundation/rule-selection.ts';
 import type { ModuleClaim } from '../response-contract/index.ts';
 import { requirementsForRule } from './lib/query/requirements.pure.ts';
-import { findFirstMatch } from './lib/rules/first-match.pure.ts';
+import type { FrontmatterRequirements } from './lib/query/requirements.types.ts';
 import type { FrontmatterConfig } from './section.ts';
 
 /**
@@ -28,7 +29,7 @@ import type { FrontmatterConfig } from './section.ts';
  * Corpus membership is asked BEFORE the rule list, and a path the walk would
  * never have collected is passed by whatever the config says. A selector
  * carries no extension any more, so this is the only thing left that can tell
- * `notes.txt` from `notes.md` — and claiming a file `--check` will never report
+ * `notes.txt` from `notes.md` — and claiming a file `check` will never report
  * on is the one way this command can mislead an agent about to create one.
  *
  * The path is normalised before any selector sees it and is NOT handed back:
@@ -38,11 +39,14 @@ import type { FrontmatterConfig } from './section.ts';
  * @param path The path asked about, exactly as the caller wrote it.
  * @param section This Module's validated section, or `undefined` when its key was not written — a Module governing nothing claims no path here either.
  */
-export function queryPath(path: string, section: FrontmatterConfig | undefined): ModuleClaim | undefined {
+export function queryPath(
+  path: string,
+  section: FrontmatterConfig | undefined,
+): ModuleClaim<FrontmatterRequirements> | undefined {
   const normalised = normalisePath(path);
   if (!isCorpusPath(normalised)) return undefined;
 
-  const winner = findFirstMatch(normalised, section?.rules ?? []);
+  const winner = firstMatch(normalised, section?.rules ?? []);
 
   if (winner === undefined) return undefined;
 

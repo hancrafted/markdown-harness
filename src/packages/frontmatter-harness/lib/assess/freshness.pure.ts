@@ -14,9 +14,9 @@
  * different offsets.
  */
 
+import { parseDocument } from '../../../foundation/read-corpus.ts';
 import type { AssessEvidence } from '../../../response-contract/index.ts';
 import { resolveAddress } from '../check/field-address.pure.ts';
-import { frontmatterData } from '../check/frontmatter-data.pure.ts';
 import type { Freshness } from './assess.types.ts';
 
 /**
@@ -39,7 +39,7 @@ export const STALE_AFTER = 'stale_after';
  * governed file that has made no claim.
  */
 function claimWritten(text: string): string | undefined {
-  const data = frontmatterData(text);
+  const data = parseDocument(text).frontmatter;
   if (data.kind !== 'mapping') return undefined;
 
   const resolved = resolveAddress(STALE_AFTER, data.data);

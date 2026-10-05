@@ -1,13 +1,21 @@
 /**
- * The closed catalog of config faults, and the one shape a fault takes.
+ * The Core's catalog of config faults, and the one shape a fault takes.
  *
  * It sits in the CONFIG contract rather than the response contract, and that is
  * a repair rather than a preference. The port below names `SectionValidation`,
- * which names a fault; `response-contract` names `FieldConstraints` back out of
- * this Package, so leaving the fault type there closed a cycle that
- * `no-circular` holds at `error`. `response-contract/index.ts` re-exports both
- * declarations, so every existing importer keeps working and the graph runs one
- * way.
+ * which names a fault, so leaving the fault type in `response-contract` would
+ * make the port depend on the wire format. `response-contract/index.ts`
+ * re-exports both declarations, so every existing importer keeps working and
+ * the graph runs one way.
+ *
+ * MODULE-FREE. This catalog holds the codes the loader raises and the codes
+ * every Module's grammar shares — a rule list, a rule id, an intent, a
+ * selector. A code only one Module's grammar can earn belongs to that Module's
+ * Package, which extends this union with its own members; `cli` derives the
+ * whole catalog from the declared Module set. Every code keeps the `CONFIG_`
+ * prefix wherever it is declared: a fault's `location` already names the
+ * section, and retrofitting the Module-prefixed grammar onto config faults is
+ * a separate decision (#110).
  *
  * A config fault is result content rather than a throw (§4.5). A program whose
  * config errors arrive as stack traces has two output formats, and only one of
@@ -15,7 +23,7 @@
  */
 
 /**
- * The closed catalog of config faults (§3.5).
+ * The Core's config faults (§3.5): the ones any Module's section can earn.
  *
  * A union of string literals rather than an `enum`: `enum` is the one
  * TypeScript construct with no type-erasure, so it emits runtime code Node
@@ -23,9 +31,9 @@
  * `enum` anywhere on it a startup failure rather than a style choice.
  *
  * Every member carries the `CONFIG_` prefix because a `code` is read in logs
- * and transcripts far from the envelope that scoped it — bare `INVALID_VALUE`
- * beside a frontmatter `VALUE_NOT_ALLOWED` would leave the reader guessing
- * which file to open.
+ * and transcripts far from the envelope that scoped it — a bare `INVALID_VALUE`
+ * beside a Module's violation code would leave the reader guessing which file
+ * to open.
  *
  * The first four name the file, the rest name a key inside it: the same split
  * HTTP draws between "no such thing", "cannot serve it", "malformed", and
@@ -43,9 +51,9 @@ export type ConfigFaultCode =
    * parses and governs nothing.
    *
    * Reported by the LOADER against the config file, because only the loader
-   * knows which Modules were declared. It used to be the Module's answer:
-   * `frontmatter:` absent earned `CONFIG_EMPTY_RULE_LIST` at `frontmatter.rules`
-   * from the one Module that existed. That answer could not survive a second
+   * knows which Modules were declared. It used to be the Module's answer: an
+   * absent section earned `CONFIG_EMPTY_RULE_LIST` at its `rules` key from the
+   * one Module that existed. That answer could not survive a second
    * Module — each would have raised it for the other's config — so the question
    * moved up to the only place that can answer it once.
    *
@@ -70,7 +78,7 @@ export type ConfigFaultCode =
   /**
    * `rules: []` — a section naming a Module and governing nothing.
    *
-   * NARROWED: it used to cover an absent `frontmatter:` section too. The loader
+   * NARROWED: it used to cover an absent section too. The loader
    * now answers first for a config no declared Module's key appears in, and a
    * Module's `validateSection` is never called for a key that was never written,
    * so the only way to reach this code is to write the empty list.
@@ -92,32 +100,22 @@ export type ConfigFaultCode =
   | 'CONFIG_SELECTOR_MISSING'
   /** A rule with no `intent`. */
   | 'CONFIG_MISSING_RULE_INTENT'
-  /** A `pattern` with no sibling `intent`. */
-  | 'CONFIG_MISSING_PATTERN_INTENT'
   /** Any `intent` key written and empty. */
   | 'CONFIG_EMPTY_INTENT'
   /** A constraint object stating nothing. */
-  | 'CONFIG_EMPTY_CONSTRAINT'
-  /** `frontmatter: forbidden` beside any payload key. */
-  | 'CONFIG_FRONTMATTER_FORBIDDEN_WITH_PAYLOAD'
-  /**
-   * A rule whose effective `assess.stale` prompt has no
-   * `stale_after: { presence: required }` beside it — a prompt that can never
-   * fire, which is an Operator mistake nothing else would report.
-   *
-   * Same shape as `CONFIG_MISSING_PATTERN_INTENT`: one key meaningless without
-   * another beside it. `presence: optional` does not satisfy it, because that is
-   * precisely the accidental case. Reported at the RULE, and against the
-   * EFFECTIVE prompt — so a Module-wide default forces the discipline on every
-   * constraining rule, which is what makes one expensive to adopt and worth
-   * knowing before writing it.
-   */
-  | 'CONFIG_ASSESS_WITHOUT_REQUIRED_FIELD';
+  | 'CONFIG_EMPTY_CONSTRAINT';
 
-/** One fault: which constraint failed, and where in the config to look. */
-export interface ConfigFault {
-  /** From §3.5's catalog. */
-  code: ConfigFaultCode;
-  /** The config's own notation, e.g. `frontmatter.rules[3].intent`. */
+/**
+ * One fault: which constraint failed, and where in the config to look.
+ *
+ * Generic in its code so a Module can type a fault it raises against its own
+ * catalog — the Core's codes plus its own — while the loader, which gathers
+ * every Module's faults, holds the union `cli` derives. The default is the
+ * Core's catalog, which is all a fault raised outside any Module can carry.
+ */
+export interface ConfigFault<TCode extends string = ConfigFaultCode> {
+  /** From the Core's catalog or the raising Module's own. */
+  code: TCode;
+  /** The config's own notation: the section key, then the path inside it. */
   location: string;
 }

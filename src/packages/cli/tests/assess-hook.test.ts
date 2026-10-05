@@ -87,7 +87,7 @@ const UNPROMPTED_INTENT = 'An unprompted note still says how fresh it is';
  * A rule selecting a whole directory rather than an extension, so the hook's own
  * markdown filter is measurable.
  *
- * Governance is decided by glob and not by extension — `mh --assess` answers
+ * Governance is decided by glob and not by extension — `mh assess` answers
  * `REVIEW` for a stale `.txt` under a rule like this one, measured 2026-09-09.
  * Without a rule of this shape in the fixture, a test asserting the hook ignores
  * a non-markdown file would pass over a hook that had no filter at all.
@@ -359,7 +359,7 @@ describe('the assess hook', () => {
 
     it('relativises the absolute path it is handed, which is the whole of its work', () => {
       // The two-sided canary. Claude Code only ever sends an absolute path, and
-      // `--assess` anchors the config's globs at the working directory — so
+      // `assess` anchors the config's globs at the working directory — so
       // handing the absolute path straight through answers `ungoverned` and the
       // hook goes quiet forever, on a corpus that is fully governed. Measured
       // 2026-09-09. The first half of this test is that failure, kept alive so
@@ -368,7 +368,7 @@ describe('the assess hook', () => {
       const unseen = 'ungoverned';
       const file = join(governed, 'docs', 'runbooks', 'stale.md');
       // ACT
-      const raw = spawnSync(process.execPath, [entry, '--assess', file], { encoding: 'utf8', cwd: governed });
+      const raw = spawnSync(process.execPath, [entry, 'assess', file], { encoding: 'utf8', cwd: governed });
       const straightThrough = (JSON.parse(raw.stdout) as { result: { state: string } }).result.state;
       const throughHook = contextFrom(onRead(governed, file).stdout);
       // ASSERT
@@ -431,7 +431,7 @@ describe('the assess hook', () => {
     });
 
     it('says nothing when the config is broken, which is a report the gate makes', () => {
-      // The likeliest real failure: an Operator mid-edit. `--assess` answers a
+      // The likeliest real failure: an Operator mid-edit. `assess` answers a
       // rejection envelope on stdout and exits 2, and that envelope carries no
       // `agentAction` — so the same gate that keeps `PROCEED` quiet keeps this
       // quiet too, and the hook needs no exit-code check of its own.
@@ -462,7 +462,7 @@ describe('the assess hook', () => {
     });
 
     it('records its own refusal when nothing is installed, rather than logging a tool state', () => {
-      // `not-installed` is the hook's word, not `--assess`'s: the tool was never
+      // `not-installed` is the hook's word, not `assess`'s: the tool was never
       // reached, so there is no `state` to copy. An install problem and a fresh
       // corpus look the same in stdout and must not look the same in the log.
       // ARRANGE
@@ -508,7 +508,7 @@ describe('the assess hook', () => {
       expect(context).toBe(silent);
     });
 
-    it('stays silent on a governed file that cannot answer, which --check already owns', () => {
+    it('stays silent on a governed file that cannot answer, which check already owns', () => {
       // `unassessable` is a repair the author owes, and it would fire on every
       // read of every governed file in a corpus that has not adopted
       // `stale_after` yet. The gate reports it once; the hook would report it
@@ -526,7 +526,7 @@ describe('the assess hook', () => {
       // Two files, one rule, one directory, differing only in extension — so a
       // hook that lost its markdown filter goes red here instead of passing over
       // a `.txt` that no glob could have matched anyway. Governance is decided
-      // by glob and not by extension: `mh --assess` answers `REVIEW` for the
+      // by glob and not by extension: `mh assess` answers `REVIEW` for the
       // `.txt` below when asked directly.
       // ARRANGE
       const silent = '';
@@ -542,7 +542,7 @@ describe('the assess hook', () => {
 
     it('finds the root from the file, not from the directory the session happens to be in', () => {
       // The hook is handed a `cwd`, and using it would be the obvious thing.
-      // But `--assess` anchors the config's globs at the working directory, so a
+      // But `assess` anchors the config's globs at the working directory, so a
       // session started inside `docs/` — or moved into a git worktree, where
       // CLAUDE_PROJECT_DIR stays pinned to where the session began — would find
       // no config and go quiet on a corpus that is fully governed. Walking up
@@ -589,7 +589,10 @@ describe('the assess hook', () => {
       const written = rowsIn(states);
       // ASSERT
       expect(written).toEqual(perState);
-    });
+      // Five hook runs, each spawning the CLI, in series: ten processes. Under a
+      // loaded CI runner that outlasts vitest's 5s default — measured red on
+      // PR #223 at 5s, while 0.5s locally.
+    }, 30_000);
 
     it('writes the header once, however many rows land after it', () => {
       // ARRANGE

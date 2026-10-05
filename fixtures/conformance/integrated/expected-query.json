@@ -1,0 +1,298 @@
+{
+  "docs/titles/new.md": {
+    "command": "query",
+    "modules": ["frontmatter", "body-structure"],
+    "path": "docs/titles/new.md",
+    "config": "fixtures/conformance/integrated/valid-test-config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/titles/new.md",
+      "modules": [
+        {
+          "module": "frontmatter",
+          "rule": {
+            "ruleId": "titles",
+            "intent": "A note says what it is about."
+          },
+          "requirements": {
+            "fields": [
+              {
+                "field": "description",
+                "presence": "required"
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "titles-notes",
+            "intent": "A note has a title and a prose summary, and the headings under the summary come from a short fixed set."
+          },
+          "requirements": {
+            "undefinedHeadings": "forbid",
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Summary$",
+                "mayHold": [
+                  "prose"
+                ],
+                "headings": [
+                  {
+                    "purpose": "enumeration",
+                    "level": 3,
+                    "minCount": 0,
+                    "allowed": [
+                      {
+                        "title": "Added",
+                        "intent": "What the note adds."
+                      },
+                      {
+                        "title": "Fixed"
+                      }
+                    ],
+                    "mayHold": [
+                      "unordered-list"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "docs/closed/new.md": {
+    "command": "query",
+    "modules": ["frontmatter", "body-structure"],
+    "path": "docs/closed/new.md",
+    "config": "fixtures/conformance/integrated/valid-test-config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/closed/new.md",
+      "modules": [
+        {
+          "module": "frontmatter",
+          "rule": {
+            "ruleId": "closed",
+            "intent": "A closed note says what it is about."
+          },
+          "requirements": {
+            "fields": [
+              {
+                "field": "description",
+                "presence": "required"
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "closed-notes",
+            "intent": "A closed note has one title and no other heading, whatever its frontmatter does."
+          },
+          "requirements": {
+            "undefinedHeadings": "forbid",
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "docs/research/new.md": {
+    "command": "query",
+    "modules": ["frontmatter", "body-structure"],
+    "path": "docs/research/new.md",
+    "config": "fixtures/conformance/integrated/valid-test-config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/research/new.md",
+      "modules": [
+        {
+          "module": "frontmatter",
+          "rule": {
+            "ruleId": "research",
+            "intent": "Research says what it is and what it is about, so an agent can choose it without opening it."
+          },
+          "requirements": {
+            "fields": [
+              {
+                "field": "description",
+                "presence": "required"
+              },
+              {
+                "field": "type",
+                "presence": "required",
+                "allowed": [
+                  {
+                    "value": "research",
+                    "intent": "Findings gathered to settle a question, with sources."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "research",
+            "intent": "Research opens with a title and gives its findings, so a reviewer reads it the same way every time."
+          },
+          "requirements": {
+            "types": [
+              "research"
+            ],
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Findings$"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "docs/shaped/new.md": {
+    "command": "query",
+    "modules": ["frontmatter", "body-structure"],
+    "path": "docs/shaped/new.md",
+    "config": "fixtures/conformance/integrated/valid-test-config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/shaped/new.md",
+      "modules": [
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "shaped-title",
+            "intent": "A shaped document has exactly one title."
+          },
+          "requirements": {
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "docs/lenient/new.md": {
+    "command": "query",
+    "modules": ["frontmatter", "body-structure"],
+    "path": "docs/lenient/new.md",
+    "config": "fixtures/conformance/integrated/valid-test-config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/lenient/new.md",
+      "modules": [
+        {
+          "module": "frontmatter",
+          "rule": {
+            "ruleId": "lenient",
+            "intent": "A lenient page says what it is about and leaves its type unchecked."
+          },
+          "requirements": {
+            "fields": [
+              {
+                "field": "description",
+                "presence": "required"
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "lenient-notes",
+            "intent": "A lenient note has exactly one title."
+          },
+          "requirements": {
+            "types": [
+              "note"
+            ],
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "docs/sealed/new.md": {
+    "command": "query",
+    "modules": ["frontmatter", "body-structure"],
+    "path": "docs/sealed/new.md",
+    "config": "fixtures/conformance/integrated/valid-test-config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/sealed/new.md",
+      "modules": [
+        {
+          "module": "frontmatter",
+          "rule": {
+            "ruleId": "sealed",
+            "intent": "A sealed page carries no frontmatter at all."
+          },
+          "requirements": {
+            "frontmatter": "forbidden"
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "sealed-title",
+            "intent": "A sealed page has exactly one title."
+          },
+          "requirements": {
+            "types": [
+              "sealed"
+            ],
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "docs/loose/new.md": {
+    "command": "query",
+    "modules": ["frontmatter", "body-structure"],
+    "path": "docs/loose/new.md",
+    "config": "fixtures/conformance/integrated/valid-test-config.yaml",
+    "result": {
+      "governance": "invisible",
+      "path": "docs/loose/new.md"
+    }
+  }
+}

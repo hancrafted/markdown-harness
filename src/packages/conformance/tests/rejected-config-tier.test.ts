@@ -43,6 +43,8 @@ const TIER_ROOT = tierRoot(TIER.name);
 const REJECTED_CONFIG_ROOT = `fixtures/conformance/${TIER.name}`;
 const CONFIG_NOT_FOUND_PATH = `${REJECTED_CONFIG_ROOT}/${CONFIG_NOT_FOUND}/${TIER.configFile}`;
 const SERIALIZED_RESPONSE = 'expected-check-response.json';
+/** What an unscoped `check` names as the Modules that ran: every declared Module implementing it, in order. */
+const CHECKING_MODULES = MODULE_SET.filter((module) => module.check !== undefined).map((module) => module.key);
 
 /**
  * The whole config-error response one case produces.
@@ -88,12 +90,17 @@ describe('the rejected-config tier', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('freezes the serialized --check envelope for config-not-found', () => {
+    it('freezes the serialized check envelope for config-not-found', () => {
       // ARRANGE
       const expected = expectedCheckResponse();
       // ACT
       const faults = loadConfig(CONFIG_NOT_FOUND_PATH, MODULE_SET).faults;
-      const actual = serializeResponse(checkResponse(REJECTED_CONFIG_ROOT, CONFIG_NOT_FOUND_PATH, configError(faults)));
+      const actual = serializeResponse(
+        checkResponse(
+          { modules: CHECKING_MODULES, root: REJECTED_CONFIG_ROOT, config: CONFIG_NOT_FOUND_PATH },
+          configError(faults),
+        ),
+      );
       // ASSERT
       expect(actual).toBe(expected);
     });
@@ -150,6 +157,20 @@ describe('the rejected-config tier', () => {
         cases.flatMap((caseName) => rejectionFor(caseName).faults.map((fault) => fault.code)),
         codesFrozen(),
       );
+      // ASSERT
+      expect(actual).toEqual(complete);
+    });
+
+    it('freezes only codes the catalog declares, and every one of them', () => {
+      // Tool-free, so it holds whatever the loader answers: a misspelled code
+      // in any frozen expectation is red here even when the loader is broken,
+      // and the test above cannot tell one wrong answer from another. Coverage
+      // over the FROZEN side too, so a catalog code no case freezes is just as
+      // red.
+      // ARRANGE
+      const complete = { unreached: [], undeclared: [] };
+      // ACT
+      const actual = coverageAndClosure(DECLARED_CODES, codesFrozen(), codesFrozen());
       // ASSERT
       expect(actual).toEqual(complete);
     });

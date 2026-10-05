@@ -72,7 +72,7 @@ describe('unknown keys', () => {
         {
           field: 'reviewedBy',
           value: 'nobody',
-          violation: 'UNKNOWN_KEY_FORBIDDEN',
+          violation: 'FRONTMATTER__UNKNOWN_KEY_FORBIDDEN',
           requirement: { unknownKeys: 'forbidden', allowedKeys: ['type', 'description'] },
         },
       ];

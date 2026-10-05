@@ -1,0 +1,13 @@
+# body-structure rejected-config case: fault order closed spine.
+# Frozen faults are in expected-rejection.json beside this file; see the closed-spine spec (#225).
+body-structure:
+  rules:
+    - ruleId: ordered
+      folders: [docs/]
+      types: []
+      intent: 'A Rule that carries four faults, so the position of the exclusion among them is frozen.'
+      extra: 1
+      maxLevel: 2
+      undefinedHeadings: forbid
+      headings:
+        - { purpose: heading, level: 3, intent: '' }

@@ -1,7 +1,7 @@
 # Migrating a config off the glob grammar
 
 Reached from `authoring-a-config.md` step 1, when the config already there carries `path:`,
-`fileName:`, or any selector value with a `*` in it. That grammar is gone: `mh --query` rejects it
+`fileName:`, or any selector value with a `*` in it. That grammar is gone: `mh query` rejects it
 outright, with `CONFIG_UNRECOGNISED_KEY` on the old key and `CONFIG_SELECTOR_MISSING` right behind it,
 because a config on the old grammar has no `folders:` or `fileNames:` for the loader to find.
 
@@ -16,7 +16,7 @@ At least one axis is required. An absent axis means every: `folders` alone is ev
 folders, `fileNames` alone is that name anywhere in the corpus, both together intersect.
 
 Translate one rule at a time, in the order the config already lists them — the same discipline as
-authoring a new one. Run `mh --query` after each translated rule, on a path that rule should still
+authoring a new one. Run `mh query` after each translated rule, on a path that rule should still
 win. Do not translate the whole file in one pass: a config translated all at once goes red across the
 corpus at the same moment authoring one in one pass would.
 
@@ -50,14 +50,14 @@ every exclusion with `folders` unless the old glob genuinely excluded that name 
 
 ## Verify the migration held, not just each rule
 
-`mh --query` proves one rule at a time; it does not prove the corpus came out the same shape. Before
-touching the file, run `mh --audit` (or `mh --check`) against the config as it stands and note the
+`mh query` proves one rule at a time; it does not prove the corpus came out the same shape. Before
+touching the file, run `mh audit` (or `mh check`) against the config as it stands and note the
 `governedFiles` count and the violation count. After every rule is translated, run the same command
 again. The two counts match, or the difference is named as the contract change it is — a folder that
 picked up a new subfolder, an exclusion that now reaches fewer files than the glob did. A silent count
 change is the migration having moved the boundary of governance without anyone deciding to.
 
-_Done when_ every old-grammar key is gone, `mh --audit` reports the same `governedFiles` and violation
+_Done when_ every old-grammar key is gone, `mh audit` reports the same `governedFiles` and violation
 counts as before (or states why they differ), and the summary names every rule that lost recursion —
 so the reader knows which folder lists to watch for staleness. Continue at `authoring-a-config.md` step
 2 only if the user also wants to add or change a rule; a pure migration ends here.

@@ -6,5 +6,5 @@ description: Everything a first-time contributor has to be shown, in order.
 
 <!-- expect: FAILS -->
 
-`title` is 101 characters against `maxLength: 80`, so `VALUE_TOO_LONG` fires. The
+`title` is 101 characters against `maxLength: 80`, so `FRONTMATTER__VALUE_TOO_LONG` fires. The
 count is of characters, because `maxLength` applies to strings only.

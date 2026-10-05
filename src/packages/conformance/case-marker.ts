@@ -7,6 +7,7 @@
 // harness actually said, where a boolean would report the same sentence for
 // every possible cause.
 
+import { casesIn, tierRoot } from './case-corpus.ts';
 import { readCaseText } from './lib/case/case-text.impure.ts';
 import { assessMarkersIn, expectMarkersIn } from './lib/marker/marker-scan.pure.ts';
 
@@ -46,4 +47,16 @@ export function agentActionOf(tierRoot: string, casePath: string): string | unde
   const found = assessMarkersIn(readCaseText(tierRoot, casePath));
   if (found.length > 1) throw new Error(`${casePath} must carry at most one assess marker, found ${found.length}`);
   return found[0];
+}
+
+/**
+ * Every case in `tier` whose marker states `verdict`, tier-relative and sorted.
+ *
+ * The one place a runner turns a tier into its three verdict groups, so two
+ * runners asking the same question of their markers cannot answer it two ways.
+ * Throws where `verdictOf` does: a case stating no verdict is never skipped.
+ */
+export function casesStating(tier: string, verdict: string): readonly string[] {
+  const root = tierRoot(tier);
+  return casesIn(tier).filter((casePath) => verdictOf(root, casePath) === verdict);
 }

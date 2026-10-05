@@ -81,9 +81,10 @@ translation.
 _Avoid_: LRM-wiki, wiki (unqualified), vault
 
 **config contract**:
-The vocabulary every config section is built from — selectors, Constraints, the fault a
-rejected config reports — plus the port a Module declares itself through. It names no Module and
-describes no file: a Module's own section type belongs to that Module. It is the **portable** half of
+The vocabulary every config section is built from — selectors, the fault a rejected config
+reports — plus the port a Module declares itself through. It names no Module and describes no file:
+a Module's own section type, the vocabulary only that section uses (the Constraints are
+`frontmatter`'s) and the config faults only its grammar can earn all belong to that Module. It is the **portable** half of
 the product — adopters and any reimplementation receive it and never receive `.archgate/`, which is
 why an ADR must not hold it.
 _Avoid_ as a name for this: schema, config types, the config API, the contract (unqualified — this
@@ -96,7 +97,10 @@ Package. This is what `docs/vision/architecture.md` calls **the report format**;
 named for the frozen type names — `QueryResponse`, `CheckResponse`, `AuditResponse` — rather than
 for the prose, so the phrase is bound here instead of either side being renamed. Portable on the
 same terms as the config contract, and it stores no prose of ours: a code, the value found and the
-Operator's verbatim `intent`, never a sentence this repo wrote.
+Operator's verbatim `intent`, never a sentence this repo wrote. Like the config contract it names no
+Module: what a claim requires and what a finding looks like are generic parameters here, each
+Module declares its own requirement shapes, violation shapes and `<MODULE>__<OUTCOME>` codes in its
+own Package, and `cli` derives the concrete response from the declared Module set.
 _Avoid_: report contract (as a Package name), output schema, the response type (unqualified)
 
 **Core**:
@@ -268,14 +272,17 @@ Module that ships it rather than here.
 _Avoid_ as a name for this: path rule, matcher, policy
 
 **selector**:
-How a Rule says which files it is about, on two literal axes — folders and file names. A folder token
-is a literal path from the repo root carrying a mandatory trailing `/` and selecting **that folder
-alone**, and the corpus root is `./`; a file name is one literal basename with its extension,
-compared case-sensitively. An absent axis means every, which is the only spelling "all" has, because
-a selector carries no wildcard anywhere. Being literal is what makes it host-independent: literal
-names compare the same way on every filesystem, where a glob matcher turns case-insensitive inside a
-wildcard-bearing segment. Nothing compares two selectors to each other — a Rule is only ever asked
-whether it selects one file.
+How a Rule says which files it is about, on two literal path axes — folders and file names — plus,
+in `body-structure` alone, a `types` axis. A folder token is a literal path from the repo root
+carrying a mandatory trailing `/` and selecting **that folder alone**, and the corpus root is `./`; a
+file name is one literal basename with its extension, compared case-sensitively; a `types` token is
+one literal frontmatter `type` value, compared by exact string equality, so a file with no string
+`type` selects no Rule that writes the axis. Every axis the Rule writes must match. An absent axis
+means every, which is the only spelling "all" has, because a selector carries no wildcard anywhere;
+an axis written as an empty list is refused rather than read as none. Being literal is what makes it
+host-independent: literal names compare the same way on every filesystem, where a glob matcher turns
+case-insensitive inside a wildcard-bearing segment. Nothing compares two selectors to each other — a
+Rule is only ever asked whether it selects one file.
 _Avoid_ as a name for this: glob, pattern, path spec, matcher
 
 **folder tree**:
@@ -296,14 +303,62 @@ _Avoid_ as a name for anything this repo's config language currently admits: glo
 pattern
 
 **claim**:
-What one Module asks of one path: which Rule won, and what that Rule requires. It does not name
-the Module.
+What one candidate Rule asks of one path: the Rule, and what that Rule requires. A Module may make
+zero, one or several claims on a path. `frontmatter` decides its Rule from the path alone, so it
+makes at most one, the Rule that won; `body-structure` cannot read the `type` of a file not yet
+written, so it makes one per Rule that could still win. A claim does not name the Module; composition
+does.
 _Avoid_ as a name for this: assertion (taken by **Constraint**), declaration, requirement, fact
 
 **Constraint**:
-One assertion a Rule makes about one frontmatter field, keyed by field address. Constraints
-are shape-specific by construction: `minLength` names strings, `minItems` names lists.
+One assertion a Rule makes about the files it selects, in the Module's own vocabulary. In
+`frontmatter`, one assertion about one field, keyed by field address, and shape-specific by
+construction: `minLength` names strings, `minItems` names lists. In `body-structure`, one assertion
+about the body's headings: a **spine** entry at any depth, `maxLevel`, or `undefinedHeadings`.
 _Avoid_: validation, assertion, check
+
+**spine**:
+The ordered `headings:` list of a `body-structure` Rule: the headings a document of that kind has, each entry
+either a `heading` (exactly one) or an `enumeration` (a counted run of repeats). An entry matches a heading by
+level and by its title, named by a pattern or by a list of exact titles, never both. By default a spine is open: it is an ordered subsequence of the body's headings,
+and a heading no entry matches is permitted, which is what lets the Module be added to an existing knowledge
+base without a finding per page.
+_Avoid_: outline (that is the body's own list of headings, which a spine is walked against), template
+(unqualified), schema
+
+**nested spine**:
+The `headings:` list one spine entry carries, walked once under every heading that entry claims: over the headings
+under it, those after it up to the next heading at its level or shallower. Every entry of it sits deeper than its
+parent, and it may carry nested spines in turn.
+_Avoid_: sub-template, child spine; section for the headings under a heading (a **section** is blocks, and ends at the
+next heading of any level)
+
+**closed spine**:
+A spine whose Rule writes `undefinedHeadings: forbid`, so a heading no entry matches is a violation. It is
+opt-in per Rule and never a default, and it excludes `maxLevel`, which is the depth floor of an open spine.
+_Avoid_: strict mode, exhaustive spine, sealed
+
+**undefined heading**:
+In a closed spine, a heading that no entry matches at its position, at any level and the title included: no entry of
+the Rule's own spine, and no entry of a nested spine walked under a heading it sits under.
+_Avoid_: unknown heading, extra heading, unclaimed heading (the walk claims a heading, and an unclaimed one may
+still be defined)
+
+**heading vocabulary** — _retired, defined only so the term resolves_:
+The exact titles a Rule allowed at one heading level wherever the heading sat, written as a Rule-level `vocabulary:`
+key. A nested spine replaced it, because a set of titles with no position could not say which section a heading
+belongs to. It survives in #227 and in configs written against that prototype, which the tool now refuses; treat
+every such mention as history.
+
+**section**:
+The blocks of a body from one top-level heading to the next, of any level, judged by the entry that claimed its heading. Always
+a body section: not a Module's section of the config, which is named as such wherever both could be read.
+_Avoid_: content (a heading's raw inline source), part, chapter; the bare word where a Module's config section is also in view
+
+**block kind**:
+One of `prose` (a paragraph), `ordered-list` and `unordered-list`, the names a heading entry's `mayHold` may list; every other
+block is transparent.
+_Avoid_: block type, element, content type, node
 
 **Governed file**:
 A file matched by at least one Rule. Files nothing matches are invisible — never reported on,
@@ -394,9 +449,10 @@ _Avoid_: suite, corpus, fixture group, category
 **Conformance case**:
 One document under a Module tier's `docs/` — `fixtures/conformance/**/docs/` — carrying a
 machine-readable `<!-- expect: -->` marker that names the verdict — PASSES, FAILS, or UNGOVERNED —
-its prose already argues. A case of another kind has no document to mark, so not everything a
-corpus tier holds is one of these: a **rejected-config case** is a directory of config bytes and
-one frozen expectation, and a **witness case** is a path with no document at all.
+its prose already argues. A case of another kind has no document to mark, or none that can carry
+a marker, so not everything a corpus tier holds is one of these: a **rejected-config case** is a
+directory of config bytes and one frozen expectation, a **witness case** is a path with no document
+at all, and a **verbatim case** is a document whose bytes may not change.
 _Avoid_ as a name for this: fixture, test file, example doc
 
 **integrated**:
@@ -412,7 +468,8 @@ _Avoid_ as a name for this: bad config, invalid config fixture, error case
 
 **golden expectation**:
 A file holding the response the harness must produce verbatim, beside a subject that is not a
-Conformance case document. A **rejected-config case** and a **witness case** each carry one.
+Conformance case document. A **rejected-config case**, a **witness case** and a **verbatim case** each
+carry one.
 _Avoid_ as a name for this: snapshot, golden file, expected output
 
 **witness case**:
@@ -420,6 +477,11 @@ A path with no document behind it, plus the answer a **Steering query** must giv
 selector by where it does **not** reach, which a tree of real files cannot do. Not a Conformance case
 and not a **rejected-config case**.
 _Avoid_ as a name for this: phantom path, synthetic path, negative fixture
+
+**verbatim case**:
+A document the corpus holds byte for byte, unmarked, outside a tier's `docs/` and outside `.md`, with its expectation and its
+SHA-256 pinned in a **golden expectation**. Not a Conformance case.
+_Avoid_ as a name for this: copied fixture, snapshot, golden file
 
 **fixture**:
 Ordinary test data anywhere in the repo that pins nothing — coverage, not contract. Every

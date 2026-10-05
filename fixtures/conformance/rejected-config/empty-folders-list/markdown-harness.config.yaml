@@ -1,0 +1,13 @@
+# A selector axis written as an empty list.
+#
+# Leaving `folders` out means every folder; writing `folders: []` names none, so
+# the Rule selects no file and a green run over it reads compliance out of
+# absence. It is refused at the axis, with the code `types: []` already earns.
+frontmatter:
+  rules:
+    - ruleId: every-document
+      folders: []
+      intent: A sound rule, so the only fault reported is the empty axis above.
+      fields:
+        title:
+          presence: required

@@ -39,11 +39,11 @@ documents you did not write, cannot re-read, and have not checked in months.
 Full trust in a corpus like that is not achievable, and this does not claim it. What is available is
 narrower and enough. One config declares what each path must carry. Every governed document states
 its own provenance, verification and expiry **in the file** — so a reader that has never heard of
-this tool still sees them. And `mh --check` turns all of it into an exit code your gate already
+this tool still sees them. And `mh check` turns all of it into an exit code your gate already
 understands.
 
 <!-- DEMO GIF SLOT — `.github/assets/demo.gif`, ~820px wide.
-     Suggested take: `mh --check` going red on a corpus, the frontmatter fix, then green.
+     Suggested take: `mh check` going red on a corpus, the frontmatter fix, then green.
      Caption underneath: the rule's own `intent` sentence appearing in the violation. -->
 
 ## Quick start
@@ -88,7 +88,7 @@ rule.
 ### 3. Ask what a rule expects, before the file exists
 
 ```bash
-mh --query docs/research/new.md
+mh query docs/research/new.md
 ```
 
 This doubles as the authoring loop. A malformed config comes back with a fault code and its location
@@ -97,7 +97,7 @@ inside the file; a sound one comes back with the rule that governs the path.
 ### 4. Check the corpus
 
 ```bash
-mh --check
+mh check
 ```
 
 Exit **0** clean, exit **1** the corpus is wrong. A path no rule matches is invisible — a correct
@@ -106,7 +106,7 @@ answer, not an error — so a fresh install reports nothing on a corpus it has n
 ### 5. Put it in your gate
 
 ```json
-{ "scripts": { "verify": "... && mh --check" } }
+{ "scripts": { "verify": "... && mh check" } }
 ```
 
 That is the whole adoption path. A green build starts meaning something.
@@ -125,17 +125,23 @@ what it deliberately stays quiet about.
 
 Four commands, and a `--help` that is the only one not answering in JSON.
 
-| command              | answers                                                         |
-| -------------------- | --------------------------------------------------------------- |
-| `mh --check`         | every governed file's violations, and the counts. The default   |
-| `mh --query <path>`  | what the config asks of a path, before the file exists          |
-| `mh --audit`         | how every rule fared, so a rule that governs nothing is visible |
-| `mh --assess <path>` | what one file is worth believing, at one instant                |
-| `mh --help`          | the commands, the flag defaults and the exit-code contract      |
+| command            | answers                                                         |
+| ------------------ | --------------------------------------------------------------- |
+| `mh check`         | every governed file's violations, and the counts. The default   |
+| `mh query <path>`  | what the config asks of a path, before the file exists          |
+| `mh audit`         | how every rule fared, so a rule that governs nothing is visible |
+| `mh assess <path>` | what one file is worth believing, at one instant                |
+| `mh --help`        | the commands, the flag defaults and the exit-code contract      |
 
-The exit codes are the contract: **0** nothing wrong, **1** the corpus is wrong — `--check` alone
+The exit codes are the contract: **0** nothing wrong, **1** the corpus is wrong — `check` alone
 ever exits this — and **2** it could not report at all, which is either a usage error on stderr or a
 rejected config on stdout.
+
+Put a Module's config key in front of a command to run that Module alone — `mh body-structure check`,
+`mh frontmatter assess docs/x.md`. Without one, every Module that implements the command runs. Every
+response names the Modules that ran in a top-level `modules` list, so a clean run scoped to one
+Module is never read as a clean full run, and a scoped `check` exits 1 only for that Module's
+findings. Naming a Module that does not implement the command exits 2 and names the ones that do.
 
 And around them:
 
@@ -196,11 +202,11 @@ An agent that opens this in December sees that `stale_after` has passed — **wi
 markdown-harness, and whatever the body claims about itself.** Keeping those fields present and true
 is the job; being in the read path is not.
 
-**`--assess` amplifies that signal at run time; it is never the only way to reach it.** It reads one
+**`assess` amplifies that signal at run time; it is never the only way to reach it.** It reads one
 file, compares its `stale_after` to an instant you supply, and answers with your own sentence:
 
 ```bash
-mh --assess docs/research/yaml.md --now 2026-12-01T00:00:00Z
+mh assess docs/research/yaml.md --now 2026-12-01T00:00:00Z
 ```
 
 ```json
@@ -231,7 +237,7 @@ for the reader rather than by them. Multiple Modules keep separate blocks and se
 instructions; when none governs the path, the whole-config result is `state: "ungoverned"` with
 `agentAction: "PROCEED"`.
 The instant is the whole of why this stays trustworthy: `--now` is echoed back, so the comparison can
-be repeated by hand, and `--check` is left clock-free so a corpus cannot go red overnight on a tree
+be repeated by hand, and `check` is left clock-free so a corpus cannot go red overnight on a tree
 nobody touched. Configure the sentence beside the rules:
 
 ```yaml
@@ -254,7 +260,7 @@ a sentence that could never be printed is worth telling you about.
 
 ## The freshness hook
 
-**Something has to ask, and on Claude Code a hook can ask for you.** It runs `--assess` after every
+**Something has to ask, and on Claude Code a hook can ask for you.** It runs `assess` after every
 file the agent reads and hands your sentence back when that file is past its date.
 
 <!-- HOOK GIF SLOT — `.github/assets/hook.gif`, ~820px wide.
@@ -267,7 +273,7 @@ built output. Install it with the skill, then follow the
 `Wire the freshness hook on its own, on Claude Code` row of its `SKILL.md`.
 
 It speaks on one state only. `PROCEED` is silence by contract, and `FIX_FILE` is a repair
-`mh --check` already reports once in the gate — a governance tool that talks on every read of every
+`mh check` already reports once in the gate — a governance tool that talks on every read of every
 governed file gets switched off.
 
 Which leaves a problem worth naming: a hook that ran and had nothing to say is indistinguishable
@@ -295,7 +301,7 @@ Pre-1.0. Shapes may still change, and what follows is honest about what is not h
 
 | what exists                                         | and what it means                                      |
 | --------------------------------------------------- | ------------------------------------------------------ |
-| `--check`, `--query`, `--audit`, `--assess`         | The four commands and the exit-code contract           |
+| `check`, `query`, `audit`, `assess`, Module scoping | The four commands and the exit-code contract           |
 | The config contract and the Conformance suite       | The portable specification, not just an implementation |
 | The pinned OKF revision                             | Vendored byte-identical at [`docs/okf/`](docs/okf/)    |
 | The skill, the gate wiring and the Claude Code hook | Including the activity log that proves the hook ran    |

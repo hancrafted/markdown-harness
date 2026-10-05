@@ -65,7 +65,7 @@ const TEST_HOMES = `^${R}/[^/]+/.+/[^/]+\\.test\\.ts$`;
  * `cli/module-set.ts` is the other list, and the two are deliberately separate:
  * one composes Modules with the Core, this one holds them apart.
  */
-const MODULES = ['frontmatter-harness'];
+const MODULES = ['frontmatter-harness', 'body-structure-harness'];
 
 /** The alternation the Module rule matches with, on both ends of the edge. */
 const ANY_MODULE = `^${R}/(${MODULES.join('|')})/`;
