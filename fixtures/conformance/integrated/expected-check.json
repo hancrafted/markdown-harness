@@ -4,9 +4,9 @@
   "config": "fixtures/conformance/integrated/valid-test-config.yaml",
   "result": {
     "summary": {
-      "governedFiles": 23,
-      "invalidFiles": 16,
-      "totalViolations": 24
+      "governedFiles": 27,
+      "invalidFiles": 18,
+      "totalViolations": 28
     },
     "files": [
       {
@@ -402,6 +402,83 @@
                 "requirement": {
                   "purpose": "heading",
                   "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/titles-typed/typed-fails.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "titles-typed",
+            "ruleIntent": "A typed note names the titles its second-level headings may take and asks nothing else of its structure.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+                "level": 2,
+                "content": "Improved",
+                "requirement": {
+                  "level": 2,
+                  "allowed": [
+                    "Added",
+                    "Fixed"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/titles/both-fail.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "titles",
+            "ruleIntent": "A note says what it is about.",
+            "violations": [
+              {
+                "field": "description",
+                "violation": "MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required"
+                }
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "titles-notes",
+            "ruleIntent": "A note has a title and a prose summary, and the headings under the summary come from a short fixed set.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+                "level": 3,
+                "content": "Improved",
+                "requirement": {
+                  "level": 3,
+                  "allowed": [
+                    "Added",
+                    "Fixed"
+                  ]
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": 1,
+                "content": "Summary",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Summary$",
+                  "mayHold": [
+                    "prose"
+                  ]
                 }
               }
             ]

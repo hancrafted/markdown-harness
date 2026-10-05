@@ -23,7 +23,7 @@ describe('Conformance tier records', () => {
           name: 'integrated',
           caseKind: 'markdown',
           configFile: 'valid-test-config.yaml',
-          caseCount: 25,
+          caseCount: 29,
         },
         {
           name: 'rejected-config',

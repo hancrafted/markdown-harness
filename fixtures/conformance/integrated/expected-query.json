@@ -1,4 +1,62 @@
 {
+  "docs/titles/new.md": {
+    "command": "query",
+    "path": "docs/titles/new.md",
+    "config": "fixtures/conformance/integrated/valid-test-config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/titles/new.md",
+      "modules": [
+        {
+          "module": "frontmatter",
+          "rule": {
+            "ruleId": "titles",
+            "intent": "A note says what it is about."
+          },
+          "requirements": {
+            "fields": [
+              {
+                "field": "description",
+                "presence": "required"
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "titles-notes",
+            "intent": "A note has a title and a prose summary, and the headings under the summary come from a short fixed set."
+          },
+          "requirements": {
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Summary$",
+                "mayHold": [
+                  "prose"
+                ]
+              }
+            ],
+            "vocabulary": [
+              {
+                "level": 3,
+                "allowed": [
+                  "Added",
+                  "Fixed"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
   "docs/closed/new.md": {
     "command": "query",
     "path": "docs/closed/new.md",
