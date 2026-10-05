@@ -21,9 +21,9 @@ describe('Conformance tier records', () => {
         },
         {
           name: 'integrated',
-          caseKind: 'markdown',
-          configFile: 'valid-test-config.yaml',
-          caseCount: 30,
+          caseKind: 'spec-folder',
+          configFile: 'markdown-harness.config.yaml',
+          caseCount: 33,
         },
         {
           name: 'rejected-config',

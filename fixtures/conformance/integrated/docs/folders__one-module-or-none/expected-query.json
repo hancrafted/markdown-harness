@@ -1,0 +1,45 @@
+{
+  "docs/shaped/new.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "docs/shaped/new.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/shaped/new.md",
+      "modules": [
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "shaped-title",
+            "intent": "A shaped document has exactly one title."
+          },
+          "requirements": {
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "docs/loose/new.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "docs/loose/new.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "invisible",
+      "path": "docs/loose/new.md"
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "docs/research/new.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "docs/research/new.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/research/new.md",
+      "modules": [
+        {
+          "module": "frontmatter",
+          "rule": {
+            "ruleId": "research",
+            "intent": "Research says what it is and what it is about, so an agent can choose it without opening it."
+          },
+          "requirements": {
+            "fields": [
+              {
+                "field": "description",
+                "presence": "required"
+              },
+              {
+                "field": "type",
+                "presence": "required",
+                "allowed": [
+                  {
+                    "value": "research",
+                    "intent": "Findings gathered to settle a question, with sources."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "research",
+            "intent": "Research opens with a title and gives its findings, so a reviewer reads it the same way every time."
+          },
+          "requirements": {
+            "types": [
+              "research"
+            ],
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Findings$"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
