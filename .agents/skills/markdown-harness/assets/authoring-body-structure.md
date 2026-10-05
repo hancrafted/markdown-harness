@@ -125,7 +125,7 @@ A `heading` or an `enumeration` entry may carry its own **`headings:`** list, a 
 checked over the headings under each heading the entry claims: the headings after it, up to the next
 heading at its level or shallower. That is wider than the heading's own section (step 6), which ends
 at the next heading of any level. An enumeration's nested list is checked again under every repeat,
-so every release of a changelog gets the same sub-template, and a sub-template never reaches into the
+so every release of a changelog gets the same nested spine, and a nested spine never reaches into the
 next release. A nested list has the same grammar as the Rule's own and nests again, down to level 6.
 Every entry in it sits deeper than its parent; one that does not could never match, and is
 `CONFIG_NESTED_ENTRY_NOT_DEEPER` at its `level`. A heading under a parent the walk never claimed, a
