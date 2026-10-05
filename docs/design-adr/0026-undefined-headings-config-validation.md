@@ -32,6 +32,9 @@ else the key changes in validation.
 
 ## Decisions
 
+> Amended by [`0029`](./0029-vocabulary-and-block-kind-config-validation.md): decision 6's payload rule reads `vocabulary` as a fourth key, and the walk order below it gains
+> `vocabulary` between the exclusion and `headings`.
+
 1. **The value set is `allow` and `forbid`, lowercase, and nothing else.** `allow` is the default written
    out: it means exactly what omission means, and a Rule that writes it behaves identically to a Rule that
    does not. Any other value is `CONFIG_INVALID_VALUE` at the key: `Forbid`, `forbidden`, `true`, `false`, a

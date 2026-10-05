@@ -46,6 +46,10 @@ snapshot; the Conformance cases below are what hold the behaviour in place when 
 
 ## What counts as a heading
 
+> Amended by [`0028`](./0028-a-section-holds-an-allowed-set-of-block-kinds.md): the Module now reads the type of every other top-level block and a list token's `ordered` flag, to
+> know what a section holds, which deepens its reliance on the lexer without adding a dependency. The table below and what
+> counts as a heading are unchanged.
+
 | shape                                                            | counts?                                          |
 | ---------------------------------------------------------------- | ------------------------------------------------ |
 | ATX heading, one to six `#`, then a space, a tab or the line end | yes                                              |

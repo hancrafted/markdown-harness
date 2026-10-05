@@ -320,11 +320,25 @@ opt-in per Rule and never a default, and it excludes `maxLevel`, which is the de
 _Avoid_: strict mode, exhaustive spine, sealed
 
 **undefined heading**:
-In a closed spine, a heading of the body that no entry of the spine matches, at any level and the title
-included. It is decided by matching and not by what the walk did with the heading: one that an entry matches
-but that repeats, is out of order or lies outside an enumeration's run is defined, and that entry reports it.
+In a closed spine, a heading that no entry of the spine matches and whose level no heading vocabulary governs, at any level and
+the title included.
 _Avoid_: unknown heading, extra heading, unclaimed heading (the walk claims a heading, and an unclaimed one may
 still be defined)
+
+**heading vocabulary**:
+The exact titles a Rule allows at one heading level, written as `vocabulary:` items of `{ level, allowed }`.
+_Avoid_: title list, enum, taxonomy; **Type vocabulary** (the `type` values a repo recognises, a different thing, which the two
+are qualified against wherever both are in view)
+
+**section**:
+The blocks of a body from one top-level heading to the next, of any level, judged by the entry that claimed its heading. Always
+a body section: not a Module's section of the config, which is named as such wherever both could be read.
+_Avoid_: content (a heading's raw inline source), part, chapter; the bare word where a Module's config section is also in view
+
+**block kind**:
+One of `prose` (a paragraph), `ordered-list` and `unordered-list`, the names a heading entry's `mayHold` may list; every other
+block is transparent.
+_Avoid_: block type, element, content type, node
 
 **Governed file**:
 A file matched by at least one Rule. Files nothing matches are invisible — never reported on,
@@ -415,9 +429,10 @@ _Avoid_: suite, corpus, fixture group, category
 **Conformance case**:
 One document under a Module tier's `docs/` — `fixtures/conformance/**/docs/` — carrying a
 machine-readable `<!-- expect: -->` marker that names the verdict — PASSES, FAILS, or UNGOVERNED —
-its prose already argues. A case of another kind has no document to mark, so not everything a
-corpus tier holds is one of these: a **rejected-config case** is a directory of config bytes and
-one frozen expectation, and a **witness case** is a path with no document at all.
+its prose already argues. A case of another kind has no document to mark, or none that can carry
+a marker, so not everything a corpus tier holds is one of these: a **rejected-config case** is a
+directory of config bytes and one frozen expectation, a **witness case** is a path with no document
+at all, and a **verbatim case** is a document whose bytes may not change.
 _Avoid_ as a name for this: fixture, test file, example doc
 
 **integrated**:
@@ -433,7 +448,8 @@ _Avoid_ as a name for this: bad config, invalid config fixture, error case
 
 **golden expectation**:
 A file holding the response the harness must produce verbatim, beside a subject that is not a
-Conformance case document. A **rejected-config case** and a **witness case** each carry one.
+Conformance case document. A **rejected-config case**, a **witness case** and a **verbatim case** each
+carry one.
 _Avoid_ as a name for this: snapshot, golden file, expected output
 
 **witness case**:
@@ -441,6 +457,11 @@ A path with no document behind it, plus the answer a **Steering query** must giv
 selector by where it does **not** reach, which a tree of real files cannot do. Not a Conformance case
 and not a **rejected-config case**.
 _Avoid_ as a name for this: phantom path, synthetic path, negative fixture
+
+**verbatim case**:
+A document the corpus holds byte for byte, unmarked, outside a tier's `docs/` and outside `.md`, with its expectation and its
+SHA-256 pinned in a **golden expectation**. Not a Conformance case.
+_Avoid_ as a name for this: copied fixture, snapshot, golden file
 
 **fixture**:
 Ordinary test data anywhere in the repo that pins nothing — coverage, not contract. Every

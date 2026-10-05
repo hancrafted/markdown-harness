@@ -15,6 +15,9 @@ not used on this branch: they were round-one records, and 0017 to 0020 replace t
 
 ## The entry
 
+> Amended by [`0028`](./0028-a-section-holds-an-allowed-set-of-block-kinds.md): an entry gains an optional `mayHold`, the block kinds its section may hold, valid on both purposes.
+> Omitting it leaves the section unconstrained, which is every entry written before it. The spine and its walk are unchanged.
+
 A heading entry is `{ purpose, level, pattern?, presence?, minCount?, maxCount?, intent? }`.
 
 - `purpose` is mandatory and is `heading` or `enumeration`. There is no default, so a reader of a
@@ -111,6 +114,11 @@ already exists.
    always the one an author moved.
 
 ## Consequences
+
+> Amended by [`0027`](./0027-a-heading-vocabulary-is-a-rule-level-list-of-exact-titles-per-level.md) and [`0028`](./0028-a-section-holds-an-allowed-set-of-block-kinds.md): consequence 1's flat spine can now say the set of titles a level may take, by a
+> `vocabulary`, though still not their count or order; and consequence 2's "no loosening direction anywhere in this Module" is
+> amended for `vocabulary` and `mayHold` as 0025 amended it for `undefinedHeadings`. No table is carried and loosening detection
+> stays out of scope.
 
 > Amended by [`0025`](./0025-a-closed-spine-is-opt-in-per-rule-and-reports-undefined-headings.md): consequence 2's "no loosening
 > direction anywhere" no longer holds for `undefinedHeadings`, whose direction is recorded there. No table is carried and

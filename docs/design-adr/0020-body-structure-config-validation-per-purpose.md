@@ -13,6 +13,8 @@ has a rejected-config case in the spec for this round.
 
 ## What each purpose may and may not carry
 
+> Amended by [`0029`](./0029-vocabulary-and-block-kind-config-validation.md): `mayHold` is a further entry key, optional on both purposes, and `vocabulary` is a further Rule key.
+
 | key        | `heading`     | `enumeration`                           |
 | ---------- | ------------- | --------------------------------------- |
 | `purpose`  | required      | required                                |
@@ -52,6 +54,10 @@ An `enumeration` must carry `minCount`, `maxCount` or both. Decisions and their 
 
 ## The catalog
 
+> Amended by [`0029`](./0029-vocabulary-and-block-kind-config-validation.md): five more codes, `CONFIG_DUPLICATE_VOCABULARY_LEVEL`, `CONFIG_DUPLICATE_VOCABULARY_TITLE`,
+> `CONFIG_VOCABULARY_BEYOND_MAX_LEVEL`, `CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES` and `CONFIG_DUPLICATE_BLOCK_KIND`, taking the
+> catalog from 21 codes to 26, and `vocabulary` counts as a Rule payload.
+
 > Amended by [`0026`](./0026-undefined-headings-config-validation.md): one more code, `CONFIG_MAX_LEVEL_ON_CLOSED_SPINE`, taking the catalog from 20 codes to 21, and
 > `undefinedHeadings` joins the Rule's keys.
 
@@ -87,6 +93,9 @@ An empty `pattern`, like round one's empty `prefix`, would match everything and 
 same reason, as `CONFIG_INVALID_VALUE`.
 
 ## Walk order
+
+> Amended by [`0029`](./0029-vocabulary-and-block-kind-config-validation.md): `vocabulary` is walked between the exclusion of `maxLevel` and `headings`, and an entry's `mayHold`
+> between `intent` and the level beyond `maxLevel`.
 
 > Amended by [`0022`](./0022-rule-selection-and-selector-validation-live-in-foundation.md): the selector faults named
 > below (axis shape, `excludeFiles`) are no longer mirrored from the first Module per Module but validated once in

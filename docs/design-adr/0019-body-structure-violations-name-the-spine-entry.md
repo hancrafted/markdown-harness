@@ -19,6 +19,11 @@ changes, no command is added and no flag is added.
 
 ## Violations
 
+> Amended by [`0027`](./0027-a-heading-vocabulary-is-a-rule-level-list-of-exact-titles-per-level.md) and [`0028`](./0028-a-section-holds-an-allowed-set-of-block-kinds.md): two more codes, `BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY` and
+> `BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED`, taking the family to nine. The order inside a file is now the levels beyond
+> `maxLevel`, then undefined and out-of-vocabulary headings together in document order, then entries by index, then section
+> content by entry, section and kind.
+
 > Amended by [`0025`](./0025-a-closed-spine-is-opt-in-per-rule-and-reports-undefined-headings.md): a seventh code, `BODY_STRUCTURE__HEADING_UNDEFINED`, for a heading no entry matches in a
 > closed spine, and the order inside a file puts undefined headings first, in document order, in the slot the levels
 > beyond `maxLevel` hold.
@@ -48,6 +53,9 @@ are gone with `levels:`. `HEADING_REPEATED` is new, because a `heading` entry is
 second title needs a name.
 
 ## The four commands
+
+> Amended by [`0027`](./0027-a-heading-vocabulary-is-a-rule-level-list-of-exact-titles-per-level.md) and [`0028`](./0028-a-section-holds-an-allowed-set-of-block-kinds.md): `--query` copies `vocabulary` into each candidate's requirements (0027
+> decision 8), and every entry's `mayHold` rides inside its entry (0028 decision 11). `--audit` and `--assess` are unchanged.
 
 > Amended by [`0025`](./0025-a-closed-spine-is-opt-in-per-rule-and-reports-undefined-headings.md): `--query` copies `undefinedHeadings` into each candidate's requirements, beside
 > `types`, `maxLevel` and `headings`. `--audit` and `--assess` are unchanged.
