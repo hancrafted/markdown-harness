@@ -14,16 +14,30 @@
 import type { ConfigFaultCode } from '../../../config-contract/index.ts';
 import type { CheckResult, MarkdownHarnessResponse, QueryResult } from '../../../response-contract/index.ts';
 import type { MODULE_SET } from '../../module-set.ts';
+import type { Implementing, Verb } from './module-answers.types.ts';
 
 /** Any one declared Module's descriptor. */
 type DeclaredModule = (typeof MODULE_SET)[number];
 
+/** What a verb answers on each descriptor carrying it, distributed over a union of descriptors. */
+type Returned<TModule, TVerb extends Verb> =
+  TModule extends Readonly<Record<TVerb, (...args: never[]) => infer TAnswer>> ? TAnswer : never;
+
+/**
+ * What one verb answers across the declared set.
+ *
+ * The port's verbs are optional, so this is read only off the Modules that
+ * implement the verb: one that does not contributes nothing to the union,
+ * rather than an `undefined` it never answers.
+ */
+type AnswerTo<TVerb extends Verb> = Returned<Implementing<DeclaredModule, TVerb>, TVerb>;
+
 /** What a claim from any declared Module requires: the union of every Module's requirement shape. */
-export type DeclaredRequirements = ReturnType<DeclaredModule['query']>[number]['requirements'];
+export type DeclaredRequirements = AnswerTo<'query'>[number]['requirements'];
 
 /** One finding from any declared Module: the union of every Module's violation shape. */
 export type DeclaredViolation = Extract<
-  ReturnType<DeclaredModule['check']>,
+  AnswerTo<'check'>,
   { kind: 'checked' }
 >['result']['files'][number]['violations'][number];
 
