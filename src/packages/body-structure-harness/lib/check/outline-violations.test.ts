@@ -3,7 +3,7 @@
 // vocabulary, design-ADR 0019, 0025 and 0027.
 
 import { describe, expect, it } from 'vitest';
-import { levelViolations, unnamedViolations } from './outline-violations.pure.ts';
+import { levelViolations, unlistedViolations } from './outline-violations.pure.ts';
 
 const TITLE = { level: 1, content: 'Report' };
 const ASIDE = { level: 2, content: 'Aside' };
@@ -25,7 +25,7 @@ describe('outline violations', () => {
         },
       ];
       // ACT
-      const actual = unnamedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [
+      const actual = unlistedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [
         h3('Added'),
         h3('Improved'),
       ]);
@@ -37,7 +37,7 @@ describe('outline violations', () => {
       // ARRANGE
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = unnamedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [
+      const actual = unlistedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [
         h3('Fixed'),
         h3('Added'),
         h3('Fixed'),
@@ -51,7 +51,7 @@ describe('outline violations', () => {
       // ARRANGE
       const expected = ['Detail', 'Improved', 'Aside'];
       // ACT
-      const actual = unnamedViolations({ ...FORBID, vocabulary: [THREE] }, [
+      const actual = unlistedViolations({ ...FORBID, vocabulary: [THREE] }, [
         TITLE,
         { level: 4, content: 'Detail' },
         h3('Improved'),
@@ -73,7 +73,7 @@ describe('outline violations', () => {
         },
       ];
       // ACT
-      const actual = unnamedViolations(FORBID, [TITLE, ASIDE]);
+      const actual = unlistedViolations(FORBID, [TITLE, ASIDE]);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -101,7 +101,7 @@ describe('outline violations', () => {
       // ARRANGE
       const expected = ['BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY'];
       // ACT
-      const actual = unnamedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [h3(content)]).map(
+      const actual = unlistedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [h3(content)]).map(
         ({ violation }) => violation,
       );
       // ASSERT
@@ -112,7 +112,7 @@ describe('outline violations', () => {
       // ARRANGE
       const expected = ['BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY'];
       // ACT
-      const actual = unnamedViolations({ ...FORBID, vocabulary: [THREE] }, [h3('Improved')]).map(
+      const actual = unlistedViolations({ ...FORBID, vocabulary: [THREE] }, [h3('Improved')]).map(
         ({ violation }) => violation,
       );
       // ASSERT
@@ -123,7 +123,10 @@ describe('outline violations', () => {
       // ARRANGE
       const expected = 2;
       // ACT
-      const actual = unnamedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [h3('X'), h3('X')]).length;
+      const actual = unlistedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [
+        h3('X'),
+        h3('X'),
+      ]).length;
       // ASSERT
       expect(actual).toBe(expected);
     });
@@ -132,7 +135,7 @@ describe('outline violations', () => {
       // ARRANGE
       const expected = 2;
       // ACT
-      const actual = unnamedViolations({ ...FORBID, matchers: [] }, [TITLE, ASIDE]).length;
+      const actual = unlistedViolations({ ...FORBID, matchers: [] }, [TITLE, ASIDE]).length;
       // ASSERT
       expect(actual).toBe(expected);
     });
@@ -143,7 +146,7 @@ describe('outline violations', () => {
       // ARRANGE
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = unnamedViolations({ ...FORBID, vocabulary: [THREE] }, [TITLE, h3('Added'), h3('Fixed')]);
+      const actual = unlistedViolations({ ...FORBID, vocabulary: [THREE] }, [TITLE, h3('Added'), h3('Fixed')]);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -153,8 +156,8 @@ describe('outline violations', () => {
       const expected = [['BODY_STRUCTURE__HEADING_UNDEFINED'], []];
       // ACT
       const actual = [
-        unnamedViolations({ ...FORBID, vocabulary: [THREE] }, [ASIDE]).map(({ violation }) => violation),
-        unnamedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [ASIDE]),
+        unlistedViolations({ ...FORBID, vocabulary: [THREE] }, [ASIDE]).map(({ violation }) => violation),
+        unlistedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [ASIDE]),
       ];
       // ASSERT
       expect(actual).toEqual(expected);
@@ -164,7 +167,7 @@ describe('outline violations', () => {
       // ARRANGE
       const expected = ['Sample', 'Install'];
       // ACT
-      const actual = unnamedViolations(
+      const actual = unlistedViolations(
         { closed: false, vocabulary: [THREE, { level: 2, allowed: ['Overview'] }], matchers: [] },
         [h3('Added'), { level: 3, content: 'Sample' }, { level: 2, content: 'Install' }],
       ).map((violation) => ('content' in violation ? violation.content : undefined));
@@ -176,7 +179,7 @@ describe('outline violations', () => {
       // ARRANGE
       const expected = [[], []];
       // ACT
-      const actual = [unnamedViolations(FORBID, []), levelViolations(undefined, [ASIDE])];
+      const actual = [unlistedViolations(FORBID, []), levelViolations(undefined, [ASIDE])];
       // ASSERT
       expect(actual).toEqual(expected);
     });

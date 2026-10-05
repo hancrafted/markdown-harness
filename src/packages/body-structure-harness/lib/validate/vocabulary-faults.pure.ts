@@ -12,19 +12,16 @@
  * only, so one mistake is reported once.
  */
 
-import type { ConfigFault, ConfigFaultCode } from '../../../config-contract/index.ts';
+import type { ConfigFault } from '../../../config-contract/index.ts';
 import { invalidValue, unrecognisedKeys } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { VocabularyItem } from '../../section.ts';
 import { closesSpine } from '../section/spine-closure.pure.ts';
+import { fault } from './fault.pure.ts';
 import { isLevel } from './template-faults.pure.ts';
 
 /** Every key a vocabulary item may carry, keyed by the type declaring them so the two cannot drift. */
 const ITEM_KEYS: Record<keyof VocabularyItem, true> = { level: true, allowed: true };
-
-function fault(code: ConfigFaultCode, location: string): ConfigFault {
-  return { code, location };
-}
 
 /** A title: a non-empty string with no leading or trailing whitespace, since a heading's content never has either and such a title could never match. */
 function isTitle(value: unknown): value is string {

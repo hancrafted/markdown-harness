@@ -14,6 +14,7 @@
  */
 
 import type { Selector } from '../../../config-contract/index.ts';
+import type { BlockKind } from '../document/document.types.ts';
 
 /** Everything the `body-structure` section holds. */
 export interface BodyStructureConfig {
@@ -74,13 +75,6 @@ export interface VocabularyItem {
   /** The titles a heading at `level` may take: a set, in any order. */
   allowed: readonly string[];
 }
-
-/**
- * The three kinds of block a section may hold (design-ADR 0028). Every other
- * block, a fence, a table, a quote, HTML, a rule, a link definition, is
- * transparent: neither allowed nor forbidden, because no Rule can name it.
- */
-export type BlockKind = 'prose' | 'ordered-list' | 'unordered-list';
 
 /** Whether an entry is one fixed heading or a counted run of repeats. */
 export type HeadingPurpose = 'heading' | 'enumeration';

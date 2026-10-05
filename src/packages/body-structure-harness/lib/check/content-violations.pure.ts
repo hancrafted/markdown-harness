@@ -7,8 +7,7 @@
  */
 
 import type { BodyStructureViolation } from '../../../response-contract/index.ts';
-import type { BlockKind } from '../../section.ts';
-import type { OutlineSection } from '../document/document.types.ts';
+import type { BlockKind, OutlineSection } from '../document/document.types.ts';
 import type { Claim } from './body-check.types.ts';
 
 /** How many blocks of each kind a section holds, in the order each kind first appears. */
@@ -21,9 +20,9 @@ function countsByKind(blocks: readonly BlockKind[]): ReadonlyMap<BlockKind, numb
 /** One violation per unlisted kind of one claimed section. */
 function sectionViolations(
   { entry, index }: Claim,
+  allowed: readonly BlockKind[],
   { heading, blocks }: OutlineSection,
 ): readonly BodyStructureViolation[] {
-  const allowed = entry.mayHold ?? [];
   return [...countsByKind(blocks)]
     .filter(([kind]) => !allowed.includes(kind))
     .map(([kind, found]) => ({
@@ -45,7 +44,8 @@ function sectionViolations(
  * @param claims One per entry of the spine, in index order.
  */
 export function contentViolations(claims: readonly Claim[]): readonly BodyStructureViolation[] {
-  return claims
-    .filter(({ entry }) => entry.mayHold !== undefined)
-    .flatMap((claim) => claim.sections.flatMap((section) => sectionViolations(claim, section)));
+  return claims.flatMap((claim) => {
+    const { mayHold } = claim.entry;
+    return mayHold === undefined ? [] : claim.sections.flatMap((section) => sectionViolations(claim, mayHold, section));
+  });
 }

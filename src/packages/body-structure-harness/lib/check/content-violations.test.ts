@@ -21,6 +21,44 @@ const section = (content: string, ...blocks: BlockKind[]) => ({ heading: { level
 
 describe('contentViolations', () => {
   describe('success cases', () => {
+    it('admits any mix, order and count of the listed kinds', () => {
+      // ARRANGE
+      const entry: HeadingEntry = { ...PROSE_ONLY, mayHold: ['prose', 'ordered-list'] };
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = contentViolations([
+        { entry, index: 0, sections: [section('Context', 'ordered-list', 'prose', 'prose', 'ordered-list', 'prose')] },
+      ]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('leaves an entry that writes no mayHold unconstrained', () => {
+      // ARRANGE
+      const entry: HeadingEntry = { purpose: 'heading', level: 2 };
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = contentViolations([
+        { entry, index: 0, sections: [section('Any', 'prose', 'ordered-list', 'unordered-list')] },
+      ]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('passes an empty section, and an entry that claimed no section at all', () => {
+      // ARRANGE
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = contentViolations([
+        { entry: PROSE_ONLY, index: 0, sections: [section('Context')] },
+        { entry: STEPS, index: 1, sections: [] },
+      ]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
     it('reports a kind the entry does not list once, with its count, naming the section and carrying the entry verbatim', () => {
       // ARRANGE
       const expected = [
@@ -45,18 +83,6 @@ describe('contentViolations', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('admits any mix, order and count of the listed kinds', () => {
-      // ARRANGE
-      const entry: HeadingEntry = { ...PROSE_ONLY, mayHold: ['prose', 'ordered-list'] };
-      const expected: readonly unknown[] = [];
-      // ACT
-      const actual = contentViolations([
-        { entry, index: 0, sections: [section('Context', 'ordered-list', 'prose', 'prose', 'ordered-list', 'prose')] },
-      ]);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
     it('judges an enumeration on each repeat section, one report per repeat', () => {
       // ARRANGE
       const expected = ['1. One', '3. Three'];
@@ -75,9 +101,6 @@ describe('contentViolations', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
-  });
-
-  describe('failure cases', () => {
     it('reports each offending kind of a section in the order it first appears', () => {
       // ARRANGE
       const expected = [
@@ -114,30 +137,6 @@ describe('contentViolations', () => {
   });
 
   describe('edge cases', () => {
-    it('leaves an entry that writes no mayHold unconstrained', () => {
-      // ARRANGE
-      const entry: HeadingEntry = { purpose: 'heading', level: 2 };
-      const expected: readonly unknown[] = [];
-      // ACT
-      const actual = contentViolations([
-        { entry, index: 0, sections: [section('Any', 'prose', 'ordered-list', 'unordered-list')] },
-      ]);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('passes an empty section, and an entry that claimed no section at all', () => {
-      // ARRANGE
-      const expected: readonly unknown[] = [];
-      // ACT
-      const actual = contentViolations([
-        { entry: PROSE_ONLY, index: 0, sections: [section('Context')] },
-        { entry: STEPS, index: 1, sections: [] },
-      ]);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
     it('reports a section of thirty bullets as one finding', () => {
       // ARRANGE
       const expected = [30];

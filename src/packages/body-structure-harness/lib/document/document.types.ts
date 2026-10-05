@@ -7,8 +7,6 @@
  * a blockquote or a list item belongs to the container.
  */
 
-import type { BlockKind } from '../section/section.types.ts';
-
 /** One heading of the outline. */
 export interface OutlineHeading {
   /** 1 to 6: the count of `#`, or 1 for a `===` and 2 for a `---` underline. */
@@ -28,3 +26,10 @@ export interface OutlineSection {
   /** The kind of each block of the section that has one, in document order, one entry per block; transparent blocks are not listed. */
   blocks: readonly BlockKind[];
 }
+
+/**
+ * The three kinds of block a body section may hold (design-ADR 0028). Every other
+ * block, a fence, a table, a quote, HTML, a rule, a link definition, is
+ * transparent: neither allowed nor forbidden, because no Rule can name it.
+ */
+export type BlockKind = 'prose' | 'ordered-list' | 'unordered-list';

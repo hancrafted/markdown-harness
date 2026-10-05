@@ -19,12 +19,13 @@
  * `CONFIG_INVALID_VALUE`, a key written with a value outside its declared type.
  */
 
-import type { ConfigFault, ConfigFaultCode } from '../../../config-contract/index.ts';
+import type { ConfigFault } from '../../../config-contract/index.ts';
 import { invalidValue, unrecognisedKeys } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { HeadingEntry, HeadingPresence, HeadingPurpose } from '../../section.ts';
 import { closesSpine } from '../section/spine-closure.pure.ts';
 import { mayHoldFaults } from './block-kind-faults.pure.ts';
+import { fault } from './fault.pure.ts';
 import { compiles, isAnchoredLiteral } from './pattern-dialect.pure.ts';
 
 /** Every key a heading entry may carry, keyed by the type declaring them so the two cannot drift. */
@@ -47,10 +48,6 @@ const PRESENCE: Record<HeadingPresence, true> = { required: true, optional: true
 
 /** The smallest value each count admits: `minCount` may be 0, `maxCount` may not. */
 const COUNT_FLOORS = { minCount: 0, maxCount: 1 } as const;
-
-function fault(code: ConfigFaultCode, location: string): ConfigFault {
-  return { code, location };
-}
 
 /** An integer from 1 to 6: a heading level, or the deepest level a Rule permits. */
 export function isLevel(value: unknown): value is number {

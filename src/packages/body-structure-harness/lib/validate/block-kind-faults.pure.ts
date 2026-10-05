@@ -12,6 +12,7 @@
 import type { ConfigFault } from '../../../config-contract/index.ts';
 import { invalidValue } from '../../../foundation/selector-faults.ts';
 import type { BlockKind } from '../../section.ts';
+import { fault } from './fault.pure.ts';
 
 /** The three kinds, keyed by the union they shadow so a kind added there cannot be forgotten here. */
 const BLOCK_KINDS: Record<BlockKind, true> = { prose: true, 'ordered-list': true, 'unordered-list': true };
@@ -33,7 +34,7 @@ function repeatedKindFaults(kinds: readonly unknown[], at: string): readonly Con
     if (!isBlockKind(kind)) return [];
     const repeated = seen.has(kind);
     seen.add(kind);
-    return repeated ? [{ code: 'CONFIG_DUPLICATE_BLOCK_KIND', location: `${at}.mayHold[${index}]` } as const] : [];
+    return repeated ? [fault('CONFIG_DUPLICATE_BLOCK_KIND', `${at}.mayHold[${index}]`)] : [];
   });
 }
 
@@ -47,6 +48,6 @@ export function mayHoldFaults(entry: Record<string, unknown>, at: string): reado
   if (!('mayHold' in entry)) return [];
   const written = entry.mayHold;
   if (!Array.isArray(written)) return [invalidValue(`${at}.mayHold`)];
-  if (written.length === 0) return [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: `${at}.mayHold` }];
+  if (written.length === 0) return [fault('CONFIG_EMPTY_CONSTRAINT', `${at}.mayHold`)];
   return [...invalidKindFaults(written, at), ...repeatedKindFaults(written, at)];
 }

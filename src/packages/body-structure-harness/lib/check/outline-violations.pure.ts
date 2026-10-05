@@ -1,13 +1,13 @@
 /**
  * The checks judged on a body's outline alone, before any spine is walked:
- * depth (`maxLevel`), and the headings nothing names, which are the closure
+ * depth (`maxLevel`), and the headings nothing lists, which are the closure
  * (`undefinedHeadings: forbid`) and the heading vocabulary
  * (design-ADR 0019, 0025, 0026, 0027).
  */
 
 import type { BodyStructureViolation } from '../../../response-contract/index.ts';
 import type { OutlineHeading } from '../document/document.types.ts';
-import type { Naming } from './body-check.types.ts';
+import type { Listing } from './body-check.types.ts';
 
 /**
  * Every level deeper than `maxLevel` the outline uses, ascending, each with how
@@ -41,8 +41,8 @@ export function levelViolations(
  * and by nothing else, so it is never also undefined; any other heading is
  * undefined when the spine is closed and no entry matches it.
  */
-function unnamedFinding(
-  { closed, vocabulary, matchers }: Naming,
+function unlistedFinding(
+  { closed, vocabulary, matchers }: Listing,
   heading: OutlineHeading,
 ): BodyStructureViolation | undefined {
   const { level, content } = heading;
@@ -62,18 +62,18 @@ function unnamedFinding(
 }
 
 /**
- * Every heading no entry and no vocabulary names, in document order whatever
+ * Every heading no entry and no vocabulary lists, in document order whatever
  * the level: those outside a vocabulary, and, under a closed spine, those no
  * entry matches. Decided by asking each entry's matcher and never from the
  * walk, so a heading the walk left over is still defined when an entry matches
  * it (design-ADR 0025, 0027).
  *
- * @param naming What names a heading besides the outline itself.
+ * @param listing What lists a heading besides the outline itself: the closure, the vocabulary and the entries' matchers.
  * @param outline The body's top-level headings.
  */
-export function unnamedViolations(
-  naming: Naming,
+export function unlistedViolations(
+  listing: Listing,
   outline: readonly OutlineHeading[],
 ): readonly BodyStructureViolation[] {
-  return outline.flatMap((heading) => unnamedFinding(naming, heading) ?? []);
+  return outline.flatMap((heading) => unlistedFinding(listing, heading) ?? []);
 }

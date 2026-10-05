@@ -1,5 +1,6 @@
 /**
- * Read a body's outline with a bought Markdown lexer.
+ * Read a body's outline, and the kinds of block under each heading, with a
+ * bought Markdown lexer.
  *
  * Bought, not built (design-ADR 0014, tenet 7): every row of 0014's
  * recognition table past the first is a way a line regex goes silently wrong —
@@ -17,8 +18,7 @@
  */
 
 import { Lexer, Tokenizer, type Token, type Tokens } from 'marked';
-import type { BlockKind } from '../section/section.types.ts';
-import type { OutlineSection } from './document.types.ts';
+import type { BlockKind, OutlineSection } from './document.types.ts';
 
 /**
  * How the lexer's block rules spell "an ATX opening": one to six `#`, then any

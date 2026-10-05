@@ -6,6 +6,9 @@
  * union `Violation` there names `BodyStructureViolation` from here.
  */
 
+/** The kinds of block a section may hold, as written in `mayHold` and as reported in a finding (design-ADR 0028). */
+type BlockKindName = 'prose' | 'ordered-list' | 'unordered-list';
+
 /**
  * One heading entry of a `body-structure` Rule, as the Operator wrote it, `intent` included.
  *
@@ -27,7 +30,7 @@ export interface HeadingRequirement {
   /** `enumeration` only: most repeats. */
   maxCount?: number;
   /** The kinds of block the entry's section may hold, an allowed set; absent leaves it unconstrained (design-ADR 0028). */
-  mayHold?: readonly ('prose' | 'ordered-list' | 'unordered-list')[];
+  mayHold?: readonly BlockKindName[];
   /** What the section should contain: Steering, never enforced. */
   intent?: string;
 }
@@ -98,7 +101,7 @@ export interface BlockKindNotAllowedViolation {
   /** The section's heading, as its raw inline source, which tells one repeat from another. */
   content: string;
   /** The offending kind. */
-  kind: 'prose' | 'ordered-list' | 'unordered-list';
+  kind: BlockKindName;
   /** How many blocks of that kind the section holds. */
   found: number;
   /** The entry, verbatim, so the allowed set travels with the finding. */

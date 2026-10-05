@@ -10,12 +10,12 @@ import { describe, expect, it } from 'vitest';
 import { sectionsOf } from './outline.pure.ts';
 
 /** The headings alone, which is what the first `describe` states. */
-const outlineOf = (body: string) => sectionsOf(body).map(({ heading }) => heading);
+const headingsOf = (body: string) => sectionsOf(body).map(({ heading }) => heading);
 
 /** The kinds of each section's blocks, in document order, headed by the heading's content. */
 const kindsOf = (body: string) => sectionsOf(body).map(({ heading, blocks }) => [heading.content, blocks]);
 
-describe('outline headings', () => {
+describe('headings of the outline', () => {
   describe('success cases', () => {
     it('reads ATX headings at every level, in document order', () => {
       // ARRANGE
@@ -27,7 +27,7 @@ describe('outline headings', () => {
         { level: 6, content: 'Deepest' },
       ];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -40,7 +40,7 @@ describe('outline headings', () => {
         { level: 2, content: 'Section' },
       ];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -50,7 +50,7 @@ describe('outline headings', () => {
       const body = '## **Findings**\n';
       const expected = [{ level: 2, content: '**Findings**' }];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -60,7 +60,7 @@ describe('outline headings', () => {
       const body = '##  Findings   ##   \n';
       const expected = [{ level: 2, content: 'Findings' }];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -72,7 +72,7 @@ describe('outline headings', () => {
       const body = '```\n# not a title\n```\n\n~~~\n## nor this\n~~~\n';
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -84,7 +84,7 @@ describe('outline headings', () => {
       const body = '> # quoted\n\n- # listed\n\n<div>\n# inside html\n</div>\n\n<h1>element</h1>\n';
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -94,7 +94,7 @@ describe('outline headings', () => {
       const body = '#Title\n\n####### Seven\n\n\\# Escaped\n\n    # Indented code\n';
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -112,7 +112,7 @@ describe('outline headings', () => {
       const body = `#${separator}Title\n\n###${separator}Detail\n`;
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -124,7 +124,7 @@ describe('outline headings', () => {
       const body = 'Prose.\n# Title\n';
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -137,7 +137,7 @@ describe('outline headings', () => {
       const bodies = ['> Quoted\n# Title\n===\n', '- Item\n#\u000cTitle\n===\n', '- Item\n#Title\n===\n'];
       const expected = [[], [], []];
       // ACT
-      const actual = bodies.map(outlineOf);
+      const actual = bodies.map(headingsOf);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -157,7 +157,7 @@ describe('outline headings', () => {
         { level: 2, content: '#\u000cTitle' },
       ];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -170,7 +170,7 @@ describe('outline headings', () => {
         { level: 2, content: '' },
       ];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -180,7 +180,7 @@ describe('outline headings', () => {
       const body = 'Source:\nOne\n---\n';
       const expected = [{ level: 2, content: 'Source:\nOne' }];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -190,7 +190,7 @@ describe('outline headings', () => {
       const body = 'Prose.\n\n---\n';
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -203,7 +203,7 @@ describe('outline headings', () => {
         { level: 1, content: 'Tabbed' },
       ];
       // ACT
-      const actual = outlineOf(body);
+      const actual = headingsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -275,9 +275,6 @@ describe('sectionsOf', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
-  });
-
-  describe('failure cases', () => {
     it('reads a bold label ahead of a list as prose, with the list a block of its own', () => {
       // ARRANGE
       const body = '## A\n\n**Positive:**\n\n1. one\n\n**Negative:**\n- two\n';
@@ -326,34 +323,7 @@ describe('sectionsOf', () => {
     });
   });
 
-  describe('edge cases', () => {
-    it('reads a list nested in a list item as part of the outer list, whatever its own marker', () => {
-      // ARRANGE
-      const body =
-        '## A\n\n1. a\n   - nested bullet\n   - another\n2. b\n\n## B\n\n- a\n  1. nested number\n  2. another\n';
-      const expected = [
-        ['A', ['ordered-list']],
-        ['B', ['unordered-list']],
-      ];
-      // ACT
-      const actual = kindsOf(body);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('reads a loose list, or one whose item holds a second paragraph or a fence, as one list', () => {
-      // ARRANGE
-      const body = '## A\n\n1. a\n\n2. b\n\n## B\n\n1. a\n\n   more\n\n   ```\n   code\n   ```\n\n2. b\n';
-      const expected = [
-        ['A', ['ordered-list']],
-        ['B', ['ordered-list']],
-      ];
-      // ACT
-      const actual = kindsOf(body);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
+  describe('failure cases', () => {
     it('reads the blocks no kind names as transparent: they are neither a kind nor an end of the section', () => {
       // ARRANGE
       const body = [
@@ -391,26 +361,6 @@ describe('sectionsOf', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('splits a list on a transparent block between its items, as the lexer does', () => {
-      // ARRANGE
-      const body = '## A\n\n1. a\n\n<!-- c -->\n\n2. b\n';
-      const expected = [['A', ['ordered-list', 'ordered-list']]];
-      // ACT
-      const actual = kindsOf(body);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('reads a line of inline HTML, a bare image and an escaped bullet as prose', () => {
-      // ARRANGE
-      const body = '## A\n\n<b>x</b> bold\n\n![alt](/x.png)\n\n\\- not a list\n';
-      const expected = [['A', ['prose', 'prose', 'prose']]];
-      // ACT
-      const actual = kindsOf(body);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
     it('lets a heading inside a fence, a quote or a list item end nothing', () => {
       // ARRANGE
       const body = '## A\n\n```\n## in fence\n```\n\n> ## in quote\n\n- ## in item\n\nProse.\n';
@@ -436,6 +386,55 @@ describe('sectionsOf', () => {
       const expected = [[], []];
       // ACT
       const actual = [kindsOf('Only prose.\n\n- and a list\n'), kindsOf('')];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('reads a list nested in a list item as part of the outer list, whatever its own marker', () => {
+      // ARRANGE
+      const body =
+        '## A\n\n1. a\n   - nested bullet\n   - another\n2. b\n\n## B\n\n- a\n  1. nested number\n  2. another\n';
+      const expected = [
+        ['A', ['ordered-list']],
+        ['B', ['unordered-list']],
+      ];
+      // ACT
+      const actual = kindsOf(body);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reads a loose list, or one whose item holds a second paragraph or a fence, as one list', () => {
+      // ARRANGE
+      const body = '## A\n\n1. a\n\n2. b\n\n## B\n\n1. a\n\n   more\n\n   ```\n   code\n   ```\n\n2. b\n';
+      const expected = [
+        ['A', ['ordered-list']],
+        ['B', ['ordered-list']],
+      ];
+      // ACT
+      const actual = kindsOf(body);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('splits a list on a transparent block between its items, as the lexer does', () => {
+      // ARRANGE
+      const body = '## A\n\n1. a\n\n<!-- c -->\n\n2. b\n';
+      const expected = [['A', ['ordered-list', 'ordered-list']]];
+      // ACT
+      const actual = kindsOf(body);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reads a line of inline HTML, a bare image and an escaped bullet as prose', () => {
+      // ARRANGE
+      const body = '## A\n\n<b>x</b> bold\n\n![alt](/x.png)\n\n\\- not a list\n';
+      const expected = [['A', ['prose', 'prose', 'prose']]];
+      // ACT
+      const actual = kindsOf(body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
