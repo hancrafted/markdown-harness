@@ -73,6 +73,8 @@ interface HeadingEntry {
   readonly maxCount?: number;
   readonly intent?: string;
   readonly mayHold?: readonly string[];
+  readonly allowed?: readonly { readonly title: string; readonly intent?: string }[];
+  readonly headings?: readonly HeadingEntry[];
 }
 
 interface RuleSpec {
@@ -84,7 +86,6 @@ interface RuleSpec {
   readonly types?: readonly string[];
   readonly excludeFiles?: readonly unknown[];
   readonly maxLevel?: number;
-  readonly vocabulary?: readonly { level: number; allowed: readonly string[] }[];
   readonly headings?: readonly HeadingEntry[];
 }
 
@@ -112,6 +113,16 @@ const ruleNamed = (ruleId: string): RuleSpec => {
   if (rule === undefined) throw new Error(`the tier config has no Rule ${ruleId}`);
   return rule;
 };
+
+/** Every entry of a list and of every list nested under it, depth-first in config order. */
+function entriesWithin(list: readonly HeadingEntry[] | undefined): readonly HeadingEntry[] {
+  return (list ?? []).flatMap((entry) => [entry, ...entriesWithin(entry.headings)]);
+}
+
+/** How many lists deep a list goes: 1 for a list nothing is nested under, 0 for none. */
+function depthOf(list: readonly HeadingEntry[] | undefined): number {
+  return list === undefined ? 0 : 1 + Math.max(0, ...list.map((entry) => depthOf(entry.headings)));
+}
 
 const frozen = JSON.parse(readTierText(FINDINGS_FILE)) as Record<string, Finding>;
 
@@ -278,28 +289,39 @@ const RULE_KEYS = [
   'excludeFiles',
   'maxLevel',
   'undefinedHeadings',
-  'vocabulary',
   'headings',
 ];
-const ENTRY_KEYS = ['purpose', 'level', 'pattern', 'presence', 'minCount', 'maxCount', 'intent', 'mayHold'];
+const ENTRY_KEYS = [
+  'purpose',
+  'level',
+  'pattern',
+  'allowed',
+  'presence',
+  'minCount',
+  'maxCount',
+  'intent',
+  'mayHold',
+  'headings',
+];
 const PURPOSE_VALUES = ['heading', 'enumeration'];
 const PRESENCE_VALUES = ['required', 'optional'];
 const UNDEFINED_HEADINGS_VALUES = ['allow', 'forbid'];
-// A vocabulary item has two keys and a `mayHold` set has three kinds (#227):
+// An `allowed` item has two keys (#229) and a `mayHold` set has three kinds (#227):
 // the config writes every key and every kind, and no other.
-const VOCABULARY_ITEM_KEYS = ['level', 'allowed'];
+const ALLOWED_ITEM_KEYS = ['title', 'intent'];
 const BLOCK_KIND_VALUES = ['prose', 'ordered-list', 'unordered-list'];
 
 describe('the body-structure tier states one coherent specification', () => {
   describe('success cases', () => {
-    it('proves coverage and closure for the section, rule, entry, purpose, presence, undefinedHeadings, vocabulary-item and block-kind vocabularies together', () => {
+    it('proves coverage and closure for the section, rule, entry, purpose, presence, undefinedHeadings, allowed-item and block-kind vocabularies together', () => {
       // Read off the config as WRITTEN, so this holds whatever the loader
       // answers; the suite below asks the loader and the tool.
       // ARRANGE
       const complete = { unreached: [], undeclared: [] };
       const sectionKeys = Object.keys(writtenSection);
       const ruleKeys = rules.flatMap((rule) => Object.keys(rule));
-      const entries = rules.flatMap((rule) => rule.headings ?? []);
+      // Every entry at every depth (#229): a nested list is written in the same grammar as the top one.
+      const entries = rules.flatMap((rule) => entriesWithin(rule.headings));
       const entryKeys = entries.flatMap((entry) => Object.keys(entry));
       const purposes = entries.map((entry) => entry.purpose);
       // A `heading` entry that omits `presence` is required: that is the default the
@@ -313,9 +335,9 @@ describe('the body-structure tier states one coherent specification', () => {
       const undefinedHeadings = rules.flatMap((rule) =>
         rule.undefinedHeadings === undefined ? [] : [rule.undefinedHeadings],
       );
-      // `vocabulary` is a Rule key whose items carry two keys, and `mayHold` an entry key whose
+      // `allowed` is an entry key whose items carry two keys (#229), and `mayHold` an entry key whose
       // values are the three block kinds (#227): the config writes every one and no other.
-      const items = rules.flatMap((rule) => rule.vocabulary ?? []);
+      const items = entries.flatMap((entry) => entry.allowed ?? []);
       const itemKeys = items.flatMap((item) => Object.keys(item));
       const blockKinds = entries.flatMap((entry) => entry.mayHold ?? []);
       // ACT
@@ -326,7 +348,7 @@ describe('the body-structure tier states one coherent specification', () => {
         purpose: coverageAndClosure(PURPOSE_VALUES, purposes, purposes),
         presence: coverageAndClosure(PRESENCE_VALUES, presences, presences),
         undefinedHeadings: coverageAndClosure(UNDEFINED_HEADINGS_VALUES, undefinedHeadings, undefinedHeadings),
-        vocabularyItem: coverageAndClosure(VOCABULARY_ITEM_KEYS, itemKeys, itemKeys),
+        allowedItem: coverageAndClosure(ALLOWED_ITEM_KEYS, itemKeys, itemKeys),
         blockKind: coverageAndClosure(BLOCK_KIND_VALUES, blockKinds, blockKinds),
       };
       // ASSERT
@@ -337,26 +359,44 @@ describe('the body-structure tier states one coherent specification', () => {
         purpose: complete,
         presence: complete,
         undefinedHeadings: complete,
-        vocabularyItem: complete,
+        allowedItem: complete,
         blockKind: complete,
       });
     });
 
-    it('writes maxLevel on some Rules and omits it on others, and writes presence: optional eight times', () => {
+    it('writes maxLevel on some Rules and omits it on others, and writes presence: optional fourteen times', () => {
       // The listing: "`maxLevel` both written and omitted and with `presence:
       // optional` written" -- once in #221, and twice since #225 added
       // `closed-record`'s `Consequences` entry as the second, and eight since #227 added the
-      // six optional entries of `section-kinds`. #221's "written once"
+      // six optional entries of `section-kinds`, and fourteen since #229 added the six nested
+      // change types of `nested-changelog`, counted at every depth. #221's "written once"
       // described that round's config and not a property of the Module. A tier that
       // always wrote it, or never wrote it, could not tell open depth from forbidden depth.
       // ARRANGE
-      const expected = { writesMaxLevel: true, omitsMaxLevel: true, optionalEntries: 8 };
+      const expected = { writesMaxLevel: true, omitsMaxLevel: true, optionalEntries: 14 };
       // ACT
       const actual = {
         writesMaxLevel: rules.some((rule) => rule.maxLevel !== undefined),
         omitsMaxLevel: rules.some((rule) => rule.maxLevel === undefined),
-        optionalEntries: rules.flatMap((rule) => rule.headings ?? []).filter((entry) => entry.presence === 'optional')
-          .length,
+        optionalEntries: rules
+          .flatMap((rule) => entriesWithin(rule.headings))
+          .filter((entry) => entry.presence === 'optional').length,
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('nests a list under a heading entry and under an enumeration, four lists deep at most', () => {
+      // #229 decision 1: both purposes may carry `headings:`, at any depth down to level 6. A tier that
+      // nested under one purpose only, or one level only, could not tell a depth-bound walk from a general one.
+      // ARRANGE
+      const expected = { underHeading: true, underEnumeration: true, deepest: 4 };
+      // ACT
+      const parents = rules.flatMap((rule) => entriesWithin(rule.headings)).filter((entry) => entry.headings);
+      const actual = {
+        underHeading: parents.some((entry) => entry.purpose === 'heading'),
+        underEnumeration: parents.some((entry) => entry.purpose === 'enumeration'),
+        deepest: Math.max(...rules.map((rule) => depthOf(rule.headings))),
       };
       // ASSERT
       expect(actual).toEqual(expected);
@@ -418,9 +458,11 @@ describe('the body-structure tier states one coherent specification', () => {
     });
 
     it('tallies the verdicts and violations the spec states', () => {
-      // #221's expected counts, as #225 and then #227 extend them: 128 PASSES, 149 FAILS, 18 UNGOVERNED, 172 violations.
+      // #221's expected counts, as #225 and #227 extend them and #229 reshapes them: the 22 heading-vocabulary
+      // cases retire with the key, and 22 nested-spine and allowed-title cases take their place.
+      // 122 PASSES, 155 FAILS, 18 UNGOVERNED, 173 violations.
       // ARRANGE
-      const expected = { passes: 128, fails: 149, ungoverned: 18, violations: 172 };
+      const expected = { passes: 122, fails: 155, ungoverned: 18, violations: 173 };
       // ACT
       const actual = {
         passes: stated(PASSES).length,
@@ -670,10 +712,10 @@ const AUDIT_ROWS = [
   { ruleId: 'closed-sources', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'open-sources', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'closed-bare', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'vocab-changelog', won: 13, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'vocab-closed', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'vocab-levels', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'vocab-depth', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'nested-changelog', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'nested-adr', won: 6, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'nested-depth', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'allowed-titles', won: 6, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'section-kinds', won: 29, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'section-steps', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'section-nested', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
@@ -698,8 +740,9 @@ const QUERY_CANDIDATES: readonly (readonly [string, readonly string[]])[] = [
   ['docs/closed-record/x.md', ['guides', 'closed-record']],
   ['docs/open-sources/x.md', ['guides', 'open-sources']],
   ['docs/closed-bare/x.md', ['guides', 'closed-bare']],
-  ['docs/vocab-changelog/x.md', ['guides', 'vocab-changelog']],
-  ['docs/vocab-levels/x.md', ['guides', 'vocab-levels']],
+  ['docs/nested-changelog/x.md', ['guides', 'nested-changelog']],
+  ['docs/nested-depth/x.md', ['guides', 'nested-depth']],
+  ['docs/allowed-titles/x.md', ['guides', 'allowed-titles']],
   ['docs/section-kinds/x.md', ['guides', 'section-kinds']],
   ['docs/adr/x.md', ['guides', 'adr-contract']],
 ];
@@ -720,7 +763,6 @@ function candidateBlock(ruleId: string): unknown {
     types: rule.types,
     maxLevel: rule.maxLevel,
     undefinedHeadings: rule.undefinedHeadings,
-    vocabulary: rule.vocabulary,
     headings: rule.headings,
   };
   const requirements = Object.fromEntries(Object.entries(written).filter(([, value]) => value !== undefined));
@@ -808,7 +850,7 @@ describe('the tool answers for the whole body-structure tier', () => {
       const expected = {
         code: 1,
         refusal: undefined,
-        summary: { governedFiles: 277, invalidFiles: 149, totalViolations: 172 },
+        summary: { governedFiles: 277, invalidFiles: 155, totalViolations: 173 },
       };
       // ACT
       const actual = {

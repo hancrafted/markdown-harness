@@ -35,10 +35,26 @@ function positions(count: number): readonly number[] {
   return Array.from({ length: count }, (_, position) => position);
 }
 
-/** One entry's matcher: the level equal, and the pattern, when written, searched with the `u` flag and no other. */
+/**
+ * One entry's matcher: the level equal, then the pattern, when written,
+ * searched with the `u` flag and no other, or the content, when `allowed` is
+ * written, equal to one of its titles whole and case-sensitively.
+ */
 export function matcherFor(entry: HeadingEntry): HeadingMatcher {
   const pattern = entry.pattern === undefined ? undefined : dialectPattern(entry.pattern);
-  return (heading) => heading.level === entry.level && (pattern === undefined || pattern.test(heading.content));
+  const titles = entry.allowed?.map(({ title }) => title);
+  return (heading) =>
+    heading.level === entry.level &&
+    (pattern === undefined || pattern.test(heading.content)) &&
+    (titles === undefined || titles.includes(heading.content));
+}
+
+/**
+ * The positions of the headings one entry claimed: the heading a `heading`
+ * entry matched, or the repeats of an enumeration's run.
+ */
+export function claimedPositions({ claimed, repeats }: EntryFinding): readonly number[] {
+  return claimed === undefined ? repeats : [claimed];
 }
 
 /** One `heading` entry: the first untaken match at or after the cursor, else misplaced or missing. */

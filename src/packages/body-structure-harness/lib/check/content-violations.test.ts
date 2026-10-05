@@ -27,7 +27,11 @@ describe('contentViolations', () => {
       const expected: readonly unknown[] = [];
       // ACT
       const actual = contentViolations([
-        { entry, index: 0, sections: [section('Context', 'ordered-list', 'prose', 'prose', 'ordered-list', 'prose')] },
+        {
+          entry,
+          locator: { entry: [0] },
+          sections: [section('Context', 'ordered-list', 'prose', 'prose', 'ordered-list', 'prose')],
+        },
       ]);
       // ASSERT
       expect(actual).toEqual(expected);
@@ -39,7 +43,7 @@ describe('contentViolations', () => {
       const expected: readonly unknown[] = [];
       // ACT
       const actual = contentViolations([
-        { entry, index: 0, sections: [section('Any', 'prose', 'ordered-list', 'unordered-list')] },
+        { entry, locator: { entry: [0] }, sections: [section('Any', 'prose', 'ordered-list', 'unordered-list')] },
       ]);
       // ASSERT
       expect(actual).toEqual(expected);
@@ -50,8 +54,8 @@ describe('contentViolations', () => {
       const expected: readonly unknown[] = [];
       // ACT
       const actual = contentViolations([
-        { entry: PROSE_ONLY, index: 0, sections: [section('Context')] },
-        { entry: STEPS, index: 1, sections: [] },
+        { entry: PROSE_ONLY, locator: { entry: [0] }, sections: [section('Context')] },
+        { entry: STEPS, locator: { entry: [1] }, sections: [] },
       ]);
       // ASSERT
       expect(actual).toEqual(expected);
@@ -64,7 +68,7 @@ describe('contentViolations', () => {
       const expected = [
         {
           violation: 'BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED',
-          entry: 4,
+          entry: [4],
           content: 'Context',
           kind: 'unordered-list',
           found: 2,
@@ -75,7 +79,7 @@ describe('contentViolations', () => {
       const actual = contentViolations([
         {
           entry: PROSE_ONLY,
-          index: 4,
+          locator: { entry: [4] },
           sections: [section('Context', 'prose', 'unordered-list', 'prose', 'unordered-list')],
         },
       ]);
@@ -90,7 +94,7 @@ describe('contentViolations', () => {
       const actual = contentViolations([
         {
           entry: STEPS,
-          index: 1,
+          locator: { entry: [1] },
           sections: [
             section('1. One', 'prose'),
             section('2. Two', 'ordered-list'),
@@ -111,7 +115,7 @@ describe('contentViolations', () => {
       const actual = contentViolations([
         {
           entry: PROSE_ONLY,
-          index: 0,
+          locator: { entry: [0] },
           sections: [section('Context', 'prose', 'unordered-list', 'ordered-list', 'ordered-list')],
         },
       ]).map((violation) => ('kind' in violation ? [violation.kind, violation.found] : []));
@@ -119,18 +123,24 @@ describe('contentViolations', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('orders findings by entry, then section in document order, then kind', () => {
+    it('orders findings by claim, then section in document order, then kind, each carrying its locator', () => {
       // ARRANGE
       const expected = [
-        [0, 'A', 'ordered-list'],
-        [0, 'B', 'ordered-list'],
-        [2, 'C', 'unordered-list'],
+        [[0], undefined, 'A', 'ordered-list'],
+        [[0], undefined, 'B', 'ordered-list'],
+        [[2, 1], 'Parent', 'C', 'unordered-list'],
       ];
       // ACT
       const actual = contentViolations([
-        { entry: PROSE_ONLY, index: 0, sections: [section('A', 'ordered-list'), section('B', 'ordered-list')] },
-        { entry: PROSE_ONLY, index: 2, sections: [section('C', 'unordered-list')] },
-      ]).map((violation) => ('kind' in violation ? [violation.entry, violation.content, violation.kind] : []));
+        {
+          entry: PROSE_ONLY,
+          locator: { entry: [0] },
+          sections: [section('A', 'ordered-list'), section('B', 'ordered-list')],
+        },
+        { entry: PROSE_ONLY, locator: { entry: [2, 1], under: 'Parent' }, sections: [section('C', 'unordered-list')] },
+      ]).map((violation) =>
+        'kind' in violation ? [violation.entry, violation.under, violation.content, violation.kind] : [],
+      );
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -144,7 +154,7 @@ describe('contentViolations', () => {
       const actual = contentViolations([
         {
           entry: PROSE_ONLY,
-          index: 0,
+          locator: { entry: [0] },
           sections: [section('Context', ...Array.from({ length: 30 }, () => 'unordered-list' as const))],
         },
       ]).map((violation) => ('found' in violation ? violation.found : undefined));

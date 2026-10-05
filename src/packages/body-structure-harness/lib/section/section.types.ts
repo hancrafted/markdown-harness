@@ -55,12 +55,6 @@ export interface BodyStructureRule extends Selector {
    * `maxLevel` when `forbid`.
    */
   undefinedHeadings?: UndefinedHeadings;
-  /**
-   * The exact titles each named heading level may take, wherever the heading
-   * sits and however often it repeats. A level is held to a
-   * vocabulary or walked by entries, never both.
-   */
-  vocabulary?: readonly VocabularyItem[];
   /** The document's spine: entries processed in order by the spine walk. */
   headings?: readonly HeadingEntry[];
 }
@@ -68,12 +62,12 @@ export interface BodyStructureRule extends Selector {
 /** The two values of `undefinedHeadings`. */
 export type UndefinedHeadings = 'allow' | 'forbid';
 
-/** One level's heading vocabulary: a set of exact titles, matched whole and case-sensitively against a heading's raw content. */
-export interface VocabularyItem {
-  /** An integer from 1 to 6. */
-  level: number;
-  /** The titles a heading at `level` may take: a set, in any order. */
-  allowed: readonly string[];
+/** One title an entry's `allowed` list names: matched whole and case-sensitively against a heading's raw content. */
+export interface AllowedTitle {
+  /** The exact title. */
+  title: string;
+  /** What a section under this title is for: Steering only, never enforced. */
+  intent?: string;
 }
 
 /** Whether an entry is one fixed heading or a counted run of repeats. */
@@ -96,8 +90,10 @@ export interface HeadingEntry {
   purpose: HeadingPurpose;
   /** An integer from 1 to 6. */
   level: number;
-  /** ECMAScript regular expression, `u` flag, searched; absent matches any heading at `level`. */
+  /** ECMAScript regular expression, `u` flag, searched. Never beside `allowed`; with neither, any title matches. */
   pattern?: string;
+  /** The exact titles a matching heading may take, a non-empty set. Never beside `pattern`. */
+  allowed?: readonly AllowedTitle[];
   /** `heading` only; `required` when absent. */
   presence?: HeadingPresence;
   /** `enumeration` only: an integer of 0 or more. */
@@ -111,4 +107,9 @@ export interface HeadingEntry {
   mayHold?: readonly BlockKind[];
   /** What the section should contain: Steering only, never enforced. */
   intent?: string;
+  /**
+   * A nested spine, walked under every heading this entry claims: over the
+   * headings after it up to the next one at its level or shallower. Every entry in it sits deeper than this one.
+   */
+  headings?: readonly HeadingEntry[];
 }

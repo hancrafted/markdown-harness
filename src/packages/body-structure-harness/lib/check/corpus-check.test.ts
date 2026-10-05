@@ -50,7 +50,7 @@ describe('corpus check', () => {
             violations: [
               {
                 violation: 'BODY_STRUCTURE__HEADING_REPEATED',
-                entry: 0,
+                entry: [0],
                 found: 2,
                 requirement: { purpose: 'heading', level: 1 },
               },

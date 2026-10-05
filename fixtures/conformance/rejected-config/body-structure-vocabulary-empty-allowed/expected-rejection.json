@@ -1,9 +1,0 @@
-{
-  "error": "CONFIG_REJECTED",
-  "faults": [
-    {
-      "code": "CONFIG_EMPTY_CONSTRAINT",
-      "location": "body-structure.rules[0].vocabulary[0].allowed"
-    }
-  ]
-}

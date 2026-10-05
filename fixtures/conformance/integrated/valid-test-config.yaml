@@ -65,22 +65,28 @@ body-structure:
       headings:
         - { purpose: heading, level: 1 }
 
-    # Heading vocabularies and section content beside the first Module. `titles-notes` selects by folder
-    # alone; `titles-typed` selects by `type` as well, so a miss is the deliberate silent miss.
+    # Nested spines, exact titles and section content beside the first Module. `titles-notes` selects by
+    # folder alone; `titles-typed` selects by `type` as well, so a miss is the deliberate silent miss.
     - ruleId: titles-notes
       folders: [docs/titles/]
       intent: 'A note has a title and a prose summary, and the headings under the summary come from a short fixed set.'
+      undefinedHeadings: forbid
       headings:
         - { purpose: heading, level: 1 }
-        - { purpose: heading, level: 2, pattern: '^Summary$', mayHold: [prose] }
-      vocabulary:
-        - { level: 3, allowed: [Added, Fixed] }
+        - purpose: heading
+          level: 2
+          pattern: '^Summary$'
+          mayHold: [prose]
+          headings:
+            - { purpose: enumeration, level: 3, minCount: 0, allowed: [{ title: Added, intent: 'What the note adds.' }, { title: Fixed }], mayHold: [unordered-list] }
     - ruleId: titles-typed
       folders: [docs/titles-typed/]
       types: [titled-note]
-      intent: 'A typed note names the titles its second-level headings may take and asks nothing else of its structure.'
-      vocabulary:
-        - { level: 2, allowed: [Added, Fixed] }
+      intent: 'A typed note has one title, and its second-level headings come from a short fixed set and nothing else.'
+      undefinedHeadings: forbid
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 0, allowed: [{ title: Added }, { title: Fixed }] }
 
 frontmatter:
   rules:

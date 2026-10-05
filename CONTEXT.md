@@ -314,18 +314,24 @@ _Avoid_ as a name for this: assertion (taken by **Constraint**), declaration, re
 One assertion a Rule makes about the files it selects, in the Module's own vocabulary. In
 `frontmatter`, one assertion about one field, keyed by field address, and shape-specific by
 construction: `minLength` names strings, `minItems` names lists. In `body-structure`, one assertion
-about the body's headings: a **spine** entry, a **heading vocabulary**, `maxLevel`, or
-`undefinedHeadings`.
+about the body's headings: a **spine** entry at any depth, `maxLevel`, or `undefinedHeadings`.
 _Avoid_: validation, assertion, check
 
 **spine**:
 The ordered `headings:` list of a `body-structure` Rule: the headings a document of that kind has, each entry
 either a `heading` (exactly one) or an `enumeration` (a counted run of repeats). An entry matches a heading by
-level and by pattern together. By default a spine is open: it is an ordered subsequence of the body's headings,
+level and by its title, named by a pattern or by a list of exact titles, never both. By default a spine is open: it is an ordered subsequence of the body's headings,
 and a heading no entry matches is permitted, which is what lets the Module be added to an existing knowledge
 base without a finding per page.
 _Avoid_: outline (that is the body's own list of headings, which a spine is walked against), template
 (unqualified), schema
+
+**nested spine**:
+The `headings:` list one spine entry carries, walked once under every heading that entry claims: over the headings
+under it, those after it up to the next heading at its level or shallower. Every entry of it sits deeper than its
+parent, and it may carry nested spines in turn.
+_Avoid_: sub-template, child spine; section for the headings under a heading (a **section** is blocks, and ends at the
+next heading of any level)
 
 **closed spine**:
 A spine whose Rule writes `undefinedHeadings: forbid`, so a heading no entry matches is a violation. It is
@@ -333,15 +339,16 @@ opt-in per Rule and never a default, and it excludes `maxLevel`, which is the de
 _Avoid_: strict mode, exhaustive spine, sealed
 
 **undefined heading**:
-In a closed spine, a heading that no entry of the spine matches and whose level no heading vocabulary governs, at any level and
-the title included.
+In a closed spine, a heading that no entry matches at its position, at any level and the title included: no entry of
+the Rule's own spine, and no entry of a nested spine walked under a heading it sits under.
 _Avoid_: unknown heading, extra heading, unclaimed heading (the walk claims a heading, and an unclaimed one may
 still be defined)
 
-**heading vocabulary**:
-The exact titles a Rule allows at one heading level, written as `vocabulary:` items of `{ level, allowed }`.
-_Avoid_: title list, enum, taxonomy; **Type vocabulary** (the `type` values a repo recognises, a different thing, which the two
-are qualified against wherever both are in view)
+**heading vocabulary** — _retired, defined only so the term resolves_:
+The exact titles a Rule allowed at one heading level wherever the heading sat, written as a Rule-level `vocabulary:`
+key. A nested spine replaced it, because a set of titles with no position could not say which section a heading
+belongs to. It survives in #227 and in configs written against that prototype, which the tool now refuses; treat
+every such mention as history.
 
 **section**:
 The blocks of a body from one top-level heading to the next, of any level, judged by the entry that claimed its heading. Always

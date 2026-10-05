@@ -1,79 +1,61 @@
-// Colocated unit test for the checks judged on a body's outline alone: depth
-// (`maxLevel`), closure (`undefinedHeadings: forbid`) and the heading
-// vocabulary.
+// Colocated unit test for the checks judged on a body's outline and the lists
+// walked over it: depth (`maxLevel`), and closure (`undefinedHeadings: forbid`),
+// which asks every list whose stretch holds a heading whether one of its
+// entries matches it.
 
 import { describe, expect, it } from 'vitest';
 import { levelViolations, unlistedViolations } from './outline-violations.pure.ts';
 
+/** One walked list, as `unlistedViolations` takes it. */
+type WalkedSpine = Parameters<typeof unlistedViolations>[0]['scopes'][number];
+
 const TITLE = { level: 1, content: 'Report' };
 const ASIDE = { level: 2, content: 'Aside' };
-const MATCHES_TITLE = (heading: { level: number }) => heading.level === 1;
-const FORBID = { closed: true, vocabulary: [], matchers: [MATCHES_TITLE] };
-const THREE = { level: 3, allowed: ['Added', 'Fixed'] };
 const h3 = (content: string) => ({ level: 3, content });
+const MATCHES_TITLE = (heading: { level: number }) => heading.level === 1;
+const MATCHES_H2 = (heading: { level: number }) => heading.level === 2;
+const MATCHES_H3 = (heading: { level: number }) => heading.level === 3;
+
+/** One walked list over `outline` from `start` to its end, with the given matchers; the walk itself is never read here. */
+const scope = (
+  outline: readonly { level: number; content: string }[],
+  matchers: readonly ((heading: { level: number }) => boolean)[],
+  start = 0,
+): WalkedSpine => ({
+  prefix: [],
+  start,
+  spine: { entries: [], matchers, outline: outline.slice(start) },
+  walk: { findings: [], given: new Map() },
+});
+
+const undefinedHeading = (level: number, content: string) => ({
+  violation: 'BODY_STRUCTURE__HEADING_UNDEFINED',
+  level,
+  content,
+  requirement: { undefinedHeadings: 'forbid' },
+});
 
 describe('outline violations', () => {
   describe('success cases', () => {
-    it('reports a heading outside the vocabulary of its level, once, with the item verbatim', () => {
-      // ARRANGE
-      const expected = [
-        {
-          violation: 'BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY',
-          level: 3,
-          content: 'Improved',
-          requirement: THREE,
-        },
-      ];
-      // ACT
-      const actual = unlistedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [
-        h3('Added'),
-        h3('Improved'),
-      ]);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('admits a title anywhere, any number of times, in any order', () => {
-      // ARRANGE
-      const expected: readonly unknown[] = [];
-      // ACT
-      const actual = unlistedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [
-        h3('Fixed'),
-        h3('Added'),
-        h3('Fixed'),
-        h3('Fixed'),
-      ]);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('reports undefined and out-of-vocabulary headings together, in document order whatever their level', () => {
-      // ARRANGE
-      const expected = ['Detail', 'Improved', 'Aside'];
-      // ACT
-      const actual = unlistedViolations({ ...FORBID, vocabulary: [THREE] }, [
-        TITLE,
-        { level: 4, content: 'Detail' },
-        h3('Improved'),
-        ASIDE,
-        h3('Added'),
-      ]).map((violation) => ('content' in violation ? violation.content : undefined));
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
     it('reports every heading no matcher accepts, in outline order, with level and raw content', () => {
       // ARRANGE
-      const expected = [
-        {
-          violation: 'BODY_STRUCTURE__HEADING_UNDEFINED',
-          level: 2,
-          content: 'Aside',
-          requirement: { undefinedHeadings: 'forbid' },
-        },
-      ];
+      const outline = [TITLE, ASIDE];
+      const expected = [undefinedHeading(2, 'Aside')];
       // ACT
-      const actual = unlistedViolations(FORBID, [TITLE, ASIDE]);
+      const actual = unlistedViolations({ closed: true, scopes: [scope(outline, [MATCHES_TITLE])] }, outline);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('counts a heading as defined when a nested list whose stretch holds it matches it', () => {
+      // ARRANGE
+      const outline = [TITLE, h3('Added')];
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = unlistedViolations(
+        { closed: true, scopes: [scope(outline, [MATCHES_TITLE]), scope(outline, [MATCHES_H3], 1)] },
+        outline,
+      );
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -91,29 +73,14 @@ describe('outline violations', () => {
   });
 
   describe('failure cases', () => {
-    it.each([
-      ['a different case', 'added'],
-      ['a substring', 'Add'],
-      ['a superstring', 'Added things'],
-      ['inline markup', '**Added**'],
-      ['an empty title', ''],
-    ])('reports %s as outside the vocabulary: matching is whole, exact and case-sensitive', (_name, content) => {
+    it('reports a heading outside every stretch whose list could match it, though a list elsewhere would', () => {
       // ARRANGE
-      const expected = ['BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY'];
+      const outline = [TITLE, h3('Stray'), ASIDE, h3('Added')];
+      const expected = [undefinedHeading(3, 'Stray')];
       // ACT
-      const actual = unlistedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [h3(content)]).map(
-        ({ violation }) => violation,
-      );
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('reports a heading outside the vocabulary once under a closed spine, as outside the vocabulary and never as undefined', () => {
-      // ARRANGE
-      const expected = ['BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY'];
-      // ACT
-      const actual = unlistedViolations({ ...FORBID, vocabulary: [THREE] }, [h3('Improved')]).map(
-        ({ violation }) => violation,
+      const actual = unlistedViolations(
+        { closed: true, scopes: [scope(outline, [MATCHES_TITLE, MATCHES_H2]), scope(outline, [MATCHES_H3], 3)] },
+        outline,
       );
       // ASSERT
       expect(actual).toEqual(expected);
@@ -121,65 +88,25 @@ describe('outline violations', () => {
 
     it('reports two headings of the same level and content as two violations', () => {
       // ARRANGE
+      const outline = [h3('X'), h3('X')];
       const expected = 2;
       // ACT
-      const actual = unlistedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [
-        h3('X'),
-        h3('X'),
-      ]).length;
-      // ASSERT
-      expect(actual).toBe(expected);
-    });
-
-    it('reports every heading as undefined when the spine has no matcher', () => {
-      // ARRANGE
-      const expected = 2;
-      // ACT
-      const actual = unlistedViolations({ ...FORBID, matchers: [] }, [TITLE, ASIDE]).length;
+      const actual = unlistedViolations({ closed: true, scopes: [scope(outline, [])] }, outline).length;
       // ASSERT
       expect(actual).toBe(expected);
     });
   });
 
   describe('edge cases', () => {
-    it('counts a heading a vocabulary admits as claimed, so a closed spine never calls it undefined', () => {
+    it('reports nothing on an open spine, for an empty outline, or for no limit', () => {
       // ARRANGE
-      const expected: readonly unknown[] = [];
-      // ACT
-      const actual = unlistedViolations({ ...FORBID, vocabulary: [THREE] }, [TITLE, h3('Added'), h3('Fixed')]);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('leaves a level the vocabulary does not name to the closure, or to nobody on an open spine', () => {
-      // ARRANGE
-      const expected = [['BODY_STRUCTURE__HEADING_UNDEFINED'], []];
+      const expected = [[], [], []];
       // ACT
       const actual = [
-        unlistedViolations({ ...FORBID, vocabulary: [THREE] }, [ASIDE]).map(({ violation }) => violation),
-        unlistedViolations({ closed: false, vocabulary: [THREE], matchers: [] }, [ASIDE]),
+        unlistedViolations({ closed: false, scopes: [scope([ASIDE], [])] }, [ASIDE]),
+        unlistedViolations({ closed: true, scopes: [scope([], [])] }, []),
+        levelViolations(undefined, [ASIDE]),
       ];
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('holds each level to its own item', () => {
-      // ARRANGE
-      const expected = ['Sample', 'Install'];
-      // ACT
-      const actual = unlistedViolations(
-        { closed: false, vocabulary: [THREE, { level: 2, allowed: ['Overview'] }], matchers: [] },
-        [h3('Added'), { level: 3, content: 'Sample' }, { level: 2, content: 'Install' }],
-      ).map((violation) => ('content' in violation ? violation.content : undefined));
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('reports nothing for an empty outline or for no limit', () => {
-      // ARRANGE
-      const expected = [[], []];
-      // ACT
-      const actual = [unlistedViolations(FORBID, []), levelViolations(undefined, [ASIDE])];
       // ASSERT
       expect(actual).toEqual(expected);
     });

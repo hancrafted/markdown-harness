@@ -42,7 +42,6 @@ const codes = [
   'FRONTMATTER__ALL_OF_UNSATISFIED',
   'BODY_STRUCTURE__LEVEL_TOO_DEEP',
   'BODY_STRUCTURE__HEADING_UNDEFINED',
-  'BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY',
   'BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED',
   'BODY_STRUCTURE__HEADING_MISSING',
   'BODY_STRUCTURE__HEADING_OUT_OF_ORDER',
@@ -61,7 +60,7 @@ const CODES = codes satisfies readonly DeclaredViolationCode[] & ([Unlisted] ext
  * The config key of the Module that mints each code — exhaustive over the derived union.
  *
  * A record rather than a `switch`: the two are the same proof (a missing code is
- * `TS2741`, a code no Module mints is `TS2353`), and a 28-way switch is a
+ * `TS2741`, a code no Module mints is `TS2353`), and a 27-way switch is a
  * function the complexity budget refuses. A record keyed by a union that widened
  * to `string` would accept anything, which is why `CODES` above also pins the
  * union from the other side.
@@ -88,7 +87,6 @@ const MINTED_BY = {
   FRONTMATTER__ALL_OF_UNSATISFIED: 'frontmatter',
   BODY_STRUCTURE__LEVEL_TOO_DEEP: 'body-structure',
   BODY_STRUCTURE__HEADING_UNDEFINED: 'body-structure',
-  BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY: 'body-structure',
   BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED: 'body-structure',
   BODY_STRUCTURE__HEADING_MISSING: 'body-structure',
   BODY_STRUCTURE__HEADING_OUT_OF_ORDER: 'body-structure',

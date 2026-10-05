@@ -1,0 +1,13 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_NESTED_ENTRY_NOT_DEEPER",
+      "location": "body-structure.rules[0].headings[0].headings[0].level"
+    },
+    {
+      "code": "CONFIG_NESTED_ENTRY_NOT_DEEPER",
+      "location": "body-structure.rules[1].headings[0].headings[0].headings[0].level"
+    }
+  ]
+}

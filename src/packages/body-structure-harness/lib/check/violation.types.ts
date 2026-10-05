@@ -23,6 +23,8 @@ export interface HeadingRequirement {
   level: number;
   /** ECMAScript regular expression, `u` flag, searched over the heading's raw content. */
   pattern?: string;
+  /** The exact titles the matching heading may take, each with its `intent` when written. */
+  allowed?: readonly AllowedTitleRequirement[];
   /** `heading` only: `required` when absent. */
   presence?: 'required' | 'optional';
   /** `enumeration` only: fewest repeats. */
@@ -33,14 +35,29 @@ export interface HeadingRequirement {
   mayHold?: readonly BlockKindName[];
   /** What the section should contain: Steering, never enforced. */
   intent?: string;
+  /** The nested spine walked under each heading this entry claims, verbatim. */
+  headings?: readonly HeadingRequirement[];
 }
 
-/** One level's heading vocabulary, as the Operator wrote it. */
-export interface VocabularyRequirement {
-  /** The level the vocabulary holds. */
-  level: number;
-  /** The exact titles a heading at `level` may take. */
-  allowed: readonly string[];
+/** One exact title of an entry's `allowed` list, as the Operator wrote it. */
+export interface AllowedTitleRequirement {
+  /** The title, compared whole and case-sensitively with the heading's raw content. */
+  title: string;
+  /** What a section under this title is for: Steering, never enforced. */
+  intent?: string;
+}
+
+/**
+ * Where a spine finding sits in the config: the index of its entry in each
+ * `headings:` list from the Rule's own down (`[1]` at the top, `[1, 0]` one
+ * list deeper), and, for a finding inside a nested list, the heading it was
+ * found under.
+ */
+export interface EntryLocator {
+  /** The index path from the Rule's top-level `headings:` list down to the entry. */
+  entry: readonly number[];
+  /** The raw inline source of the parent heading the nested spine was walked under; absent at the top level. */
+  under?: string;
 }
 
 /** A level deeper than the Rule's `maxLevel`, one violation per level rather than per heading. */
@@ -72,32 +89,13 @@ export interface HeadingUndefinedViolation {
 }
 
 /**
- * A heading at a vocabulary's level whose raw content is none of its titles,
- * one per heading. It has no `entry` and no `found`: no entry
- * owns it, and the requirement is the vocabulary item, so the Contributor reads
- * the whole list in the violation that names the stranger.
- */
-export interface HeadingNotInVocabularyViolation {
-  /** The one outcome this shape reports. */
-  violation: 'BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY';
-  /** The heading's level. */
-  level: number;
-  /** The heading's raw inline source. */
-  content: string;
-  /** The vocabulary item for the heading's level, verbatim. */
-  requirement: VocabularyRequirement;
-}
-
-/**
  * A section holding blocks of a kind its entry's `mayHold` does not list, one
  * per section and kind. A violation carries no line, so one
  * per block would make two paragraphs indistinguishable duplicates.
  */
-export interface BlockKindNotAllowedViolation {
+export interface BlockKindNotAllowedViolation extends EntryLocator {
   /** The one outcome this shape reports. */
   violation: 'BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED';
-  /** The zero-based index of the entry that claimed the section's heading. */
-  entry: number;
   /** The section's heading, as its raw inline source, which tells one repeat from another. */
   content: string;
   /** The offending kind. */
@@ -109,24 +107,20 @@ export interface BlockKindNotAllowedViolation {
 }
 
 /** A heading entry with no heading to claim, or whose heading lies before an earlier entry's. */
-export interface HeadingEntryViolation {
+export interface HeadingEntryViolation extends EntryLocator {
   /** Which outcome fired. */
   violation: 'BODY_STRUCTURE__HEADING_MISSING' | 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER';
-  /** The zero-based index in the Rule's `headings:` list: the locator the Operator opens the config at. */
-  entry: number;
   /** The entry, verbatim, `intent` included. */
   requirement: HeadingRequirement;
 }
 
 /** An entry whose count disagrees with what it is: a `heading` that appears twice, or an enumeration out of bounds. */
-export interface HeadingCountViolation {
+export interface HeadingCountViolation extends EntryLocator {
   /** Which outcome fired. */
   violation:
     | 'BODY_STRUCTURE__HEADING_REPEATED'
     | 'BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM'
     | 'BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM';
-  /** The zero-based index in the Rule's `headings:` list. */
-  entry: number;
   /** How many headings the entry accounts for. */
   found: number;
   /** The entry, verbatim, `intent` included. */
@@ -140,7 +134,6 @@ export interface HeadingCountViolation {
 export type BodyStructureViolation =
   | LevelTooDeepViolation
   | HeadingUndefinedViolation
-  | HeadingNotInVocabularyViolation
   | HeadingEntryViolation
   | HeadingCountViolation
   | BlockKindNotAllowedViolation;

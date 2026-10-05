@@ -36,6 +36,16 @@ export function compiles(pattern: string): boolean {
 }
 
 /**
+ * Whether a written `pattern` is one this Module accepts: a non-empty string
+ * that compiles under the `u` flag.
+ *
+ * @param value A `pattern` straight off the YAML.
+ */
+export function isPattern(value: unknown): value is string {
+  return typeof value === 'string' && value !== '' && compiles(value);
+}
+
+/**
  * Whether a pattern is an anchored literal: it begins `^`,
  * ends in an unescaped `$`, and everything between is a run of literal
  * characters. A syntactic test, never a proof of how many strings the pattern

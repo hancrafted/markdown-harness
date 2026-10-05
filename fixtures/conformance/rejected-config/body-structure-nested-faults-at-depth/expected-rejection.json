@@ -1,0 +1,29 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_ENUMERATION_WITHOUT_COUNT",
+      "location": "body-structure.rules[0].headings[0].headings[0]"
+    },
+    {
+      "code": "CONFIG_ENTRY_KEY_NOT_FOR_PURPOSE",
+      "location": "body-structure.rules[0].headings[0].headings[1].minCount"
+    },
+    {
+      "code": "CONFIG_ENTRY_BEYOND_MAX_LEVEL",
+      "location": "body-structure.rules[0].headings[0].headings[1].level"
+    },
+    {
+      "code": "CONFIG_EMPTY_CONSTRAINT",
+      "location": "body-structure.rules[0].headings[0].headings[1].headings"
+    },
+    {
+      "code": "CONFIG_ENTRY_BEYOND_MAX_LEVEL",
+      "location": "body-structure.rules[0].headings[0].headings[2].level"
+    },
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[0].headings[0].headings[2].headings"
+    }
+  ]
+}

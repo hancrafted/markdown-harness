@@ -1,0 +1,41 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_UNRECOGNISED_KEY",
+      "location": "body-structure.rules[0].extra"
+    },
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[0].types"
+    },
+    {
+      "code": "CONFIG_EMPTY_INTENT",
+      "location": "body-structure.rules[0].headings[0].allowed[1].intent"
+    },
+    {
+      "code": "CONFIG_DUPLICATE_VOCABULARY_TITLE",
+      "location": "body-structure.rules[0].headings[0].allowed[1].title"
+    },
+    {
+      "code": "CONFIG_PATTERN_WITH_ALLOWED",
+      "location": "body-structure.rules[0].headings[0].allowed"
+    },
+    {
+      "code": "CONFIG_EMPTY_INTENT",
+      "location": "body-structure.rules[0].headings[0].intent"
+    },
+    {
+      "code": "CONFIG_EMPTY_CONSTRAINT",
+      "location": "body-structure.rules[0].headings[0].mayHold"
+    },
+    {
+      "code": "CONFIG_NESTED_ENTRY_NOT_DEEPER",
+      "location": "body-structure.rules[0].headings[0].headings[0].level"
+    },
+    {
+      "code": "CONFIG_ENTRY_BEYOND_MAX_LEVEL",
+      "location": "body-structure.rules[0].headings[0].headings[1].level"
+    }
+  ]
+}

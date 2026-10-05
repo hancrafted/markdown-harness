@@ -1,0 +1,25 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[0].headings[0].allowed[0].title"
+    },
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[0].headings[0].allowed[1].title"
+    },
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[0].headings[0].allowed[2].title"
+    },
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[0].headings[0].allowed[3].title"
+    },
+    {
+      "code": "CONFIG_INVALID_VALUE",
+      "location": "body-structure.rules[0].headings[0].allowed[4]"
+    }
+  ]
+}
