@@ -1,8 +1,8 @@
-// Colocated unit test for the template half of one Rule: its `maxLevel:` and
+// Colocated unit test for the heading Constraints of one Rule: its `maxLevel:` and
 // its `headings:` spine, in walk order.
 
 import { describe, expect, it } from 'vitest';
-import { headingsFaults, maxLevelFaults } from './template-faults.pure.ts';
+import { headingsFaults, maxLevelFaults } from './spine-faults.pure.ts';
 
 const AT = 'body-structure.rules[0]';
 const ENTRY = `${AT}.headings[0]`;
@@ -12,7 +12,7 @@ function entryFaults(entry: Record<string, unknown>, maxLevel?: number) {
   return headingsFaults({ headings: [entry], ...(maxLevel === undefined ? {} : { maxLevel }) }, AT);
 }
 
-describe('template faults', () => {
+describe('spine faults', () => {
   describe('success cases', () => {
     it('finds nothing in a sound spine and a sound maxLevel', () => {
       // ARRANGE

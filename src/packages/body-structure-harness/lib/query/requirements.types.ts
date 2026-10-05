@@ -6,6 +6,7 @@
  * other declared Module's.
  */
 
+import type { UndefinedHeadings } from '../../section.ts';
 import type { HeadingRequirement } from '../check/violation.types.ts';
 
 /**
@@ -22,7 +23,7 @@ export interface BodyStructureRequirements {
   /** The deepest heading level permitted, as written. */
   maxLevel?: number;
   /** `forbid` closes the spine, `allow` is the open spine written out; echoed as written. */
-  undefinedHeadings?: 'allow' | 'forbid';
+  undefinedHeadings?: UndefinedHeadings;
   /** The Rule's spine, verbatim, each `intent`, `mayHold`, `allowed` list and nested spine included. */
   headings?: readonly HeadingRequirement[];
 }

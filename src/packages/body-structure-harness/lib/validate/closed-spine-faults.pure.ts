@@ -6,8 +6,9 @@
 import { invalidValue } from '../../../foundation/selector-faults.ts';
 import type { UndefinedHeadings } from '../../section.ts';
 import { closesSpine } from '../section/spine-closure.pure.ts';
+import { fault } from './fault.pure.ts';
 import type { BodyStructureFault } from './fault.types.ts';
-import { isLevel } from './template-faults.pure.ts';
+import { isLevel } from './spine-faults.pure.ts';
 
 /** The two spellings of `undefinedHeadings`, keyed by the union they shadow. */
 const UNDEFINED_HEADINGS: Record<UndefinedHeadings, true> = { allow: true, forbid: true };
@@ -41,6 +42,6 @@ export function undefinedHeadingsFaults(rule: Record<string, unknown>, at: strin
  */
 export function closedSpineFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   return isLevel(rule.maxLevel) && closesSpine(rule)
-    ? [{ code: 'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE', location: `${at}.maxLevel` }]
+    ? [fault('CONFIG_MAX_LEVEL_ON_CLOSED_SPINE', `${at}.maxLevel`)]
     : [];
 }

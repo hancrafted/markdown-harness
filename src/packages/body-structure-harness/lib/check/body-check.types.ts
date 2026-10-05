@@ -33,7 +33,7 @@ export interface Walk {
   /** One finding per entry, in index order. */
   findings: readonly EntryFinding[];
   /** For each entry index, how many leftover headings it was given: repeats of a `heading`, or repeats an enumeration found outside its run. */
-  given: ReadonlyMap<number, number>;
+  leftovers: ReadonlyMap<number, number>;
 }
 
 /**
@@ -59,11 +59,11 @@ export interface Listing {
   /** `undefinedHeadings: forbid`. */
   closed: boolean;
   /** Every list walked, at every depth. */
-  scopes: readonly WalkedSpine[];
+  spines: readonly WalkedSpine[];
 }
 
 /** One entry, where it sits in the config, and the sections of the headings it claimed, in document order. */
-export interface Claim {
+export interface Placement {
   entry: HeadingEntry;
   locator: EntryLocator;
   sections: readonly OutlineSection[];

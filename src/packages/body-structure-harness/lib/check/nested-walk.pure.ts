@@ -19,11 +19,10 @@ import type { EntryFinding, WalkedSpine } from './body-check.types.ts';
 import { claimedPositions, matcherFor, walkSpine } from './spine-walk.pure.ts';
 
 /** One list and the stretch of the outline it is walked over, with where it sits in the config. */
-interface Stretch {
+interface Stretch extends Pick<WalkedSpine, 'prefix' | 'under' | 'start'> {
+  /** The list to walk. */
   entries: readonly HeadingEntry[];
-  prefix: readonly number[];
-  under: string | undefined;
-  start: number;
+  /** The whole-outline position just past the stretch's last heading. */
   end: number;
 }
 
@@ -42,9 +41,9 @@ export function endOfHeadingsUnder(outline: readonly OutlineHeading[], position:
 
 /** Walk one list over its stretch. */
 function walkStretch(outline: readonly OutlineHeading[], stretch: Stretch): WalkedSpine {
-  const { entries, prefix, under, start, end } = stretch;
-  const spine = { entries, matchers: entries.map(matcherFor), outline: outline.slice(start, end) };
-  return { prefix, ...(under === undefined ? {} : { under }), start, spine, walk: walkSpine(spine) };
+  const { entries, end, ...place } = stretch;
+  const spine = { entries, matchers: entries.map(matcherFor), outline: outline.slice(place.start, end) };
+  return { ...place, spine, walk: walkSpine(spine) };
 }
 
 /** The stretches one walked list's nested lists are walked over: in entry order, then in document order. */
@@ -85,5 +84,5 @@ export function walkNested(
   entries: readonly HeadingEntry[],
   outline: readonly OutlineHeading[],
 ): readonly WalkedSpine[] {
-  return walkFrom(outline, { entries, prefix: [], under: undefined, start: 0, end: outline.length });
+  return walkFrom(outline, { entries, prefix: [], start: 0, end: outline.length });
 }

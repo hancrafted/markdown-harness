@@ -32,7 +32,7 @@ describe('the spine walk', () => {
       // ARRANGE
       const entries = [heading(1), heading(2, 'Context'), heading(2, 'Decision')];
       const outline = [h(1, 'Title'), h(2, 'Context'), h(2, 'Aside'), h(2, 'Decision')];
-      const expected = { findings: [found(0), found(1), found(3)], given: new Map() };
+      const expected = { findings: [found(0), found(1), found(3)], leftovers: new Map() };
       // ACT
       const actual = walk(entries, outline);
       // ASSERT
@@ -45,7 +45,7 @@ describe('the spine walk', () => {
       // enumeration stops there even though nothing between would stop it.
       const entries = [heading(1), enumeration(2, '^\\['), heading(2, 'Notes')];
       const outline = [h(1, 'Changelog'), h(2, '[1.1.0]'), h(2, '[1.0.0]'), h(2, 'Notes')];
-      const expected = { findings: [found(0), found(undefined, [1, 2]), found(3)], given: new Map() };
+      const expected = { findings: [found(0), found(undefined, [1, 2]), found(3)], leftovers: new Map() };
       // ACT
       const actual = walk(entries, outline);
       // ASSERT
@@ -76,7 +76,7 @@ describe('the spine walk', () => {
       // ARRANGE
       const entries = [heading(1), heading(2, 'Consequences')];
       const outline = [h(1, 'Title'), h(2, 'Context')];
-      const expected = { findings: [found(0), found(undefined)], given: new Map() };
+      const expected = { findings: [found(0), found(undefined)], leftovers: new Map() };
       // ACT
       const actual = walk(entries, outline);
       // ASSERT
@@ -89,7 +89,7 @@ describe('the spine walk', () => {
       // is behind it: out of order rather than missing, and still a leftover.
       const entries = [heading(2, 'Context'), heading(2, 'Status')];
       const outline = [h(2, 'Status'), h(2, 'Context')];
-      const expected = { findings: [found(1), found(undefined, [], true)], given: new Map() };
+      const expected = { findings: [found(1), found(undefined, [], true)], leftovers: new Map() };
       // ACT
       const actual = walk(entries, outline);
       // ASSERT
@@ -100,7 +100,7 @@ describe('the spine walk', () => {
       // ARRANGE
       const entries = [heading(1), heading(2, 'Context')];
       const outline = [h(1, 'Title'), h(2, 'Context'), h(2, 'Context')];
-      const expected = { findings: [found(0), found(1)], given: new Map([[1, 1]]) };
+      const expected = { findings: [found(0), found(1)], leftovers: new Map([[1, 1]]) };
       // ACT
       const actual = walk(entries, outline);
       // ASSERT
@@ -115,7 +115,7 @@ describe('the spine walk', () => {
       // leftover, given to the enumeration rather than repeated by `Notes`.
       const entries = [enumeration(2, '^\\['), heading(2, 'Notes')];
       const outline = [h(2, '[1.1.0]'), h(2, 'Unreleased'), h(2, 'Notes'), h(2, '[1.0.0]')];
-      const expected = { findings: [found(undefined, [0]), found(2)], given: new Map([[0, 1]]) };
+      const expected = { findings: [found(undefined, [0]), found(2)], leftovers: new Map([[0, 1]]) };
       // ACT
       const actual = walk(entries, outline);
       // ASSERT
@@ -128,7 +128,7 @@ describe('the spine walk', () => {
       // second 1, never a backtracking search for another reading.
       const entries = [heading(2), heading(2, 'B')];
       const outline = [h(2, 'B'), h(2, 'B')];
-      const expected = { findings: [found(0), found(1)], given: new Map() };
+      const expected = { findings: [found(0), found(1)], leftovers: new Map() };
       // ACT
       const actual = walk(entries, outline);
       // ASSERT
@@ -139,7 +139,7 @@ describe('the spine walk', () => {
       // ARRANGE
       const entries = [heading(1)];
       const outline = [h(1, 'Title'), h(3, 'Detail')];
-      const expected = { findings: [found(0)], given: new Map() };
+      const expected = { findings: [found(0)], leftovers: new Map() };
       // ACT
       const actual = walk(entries, outline);
       // ASSERT
@@ -152,7 +152,7 @@ describe('the spine walk', () => {
       // `Notes` is still found from the same cursor.
       const entries = [heading(1), enumeration(2, '^\\['), heading(2, 'Notes')];
       const outline = [h(1, 'Changelog'), h(2, 'Notes')];
-      const expected = { findings: [found(0), found(undefined, []), found(1)], given: new Map() };
+      const expected = { findings: [found(0), found(undefined, []), found(1)], leftovers: new Map() };
       // ACT
       const actual = walk(entries, outline);
       // ASSERT

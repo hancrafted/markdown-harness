@@ -53,12 +53,12 @@ function defines({ start, spine }: WalkedSpine, position: number, heading: Outli
  * @param outline The body's top-level headings.
  */
 export function unlistedViolations(
-  { closed, scopes }: Listing,
+  { closed, spines }: Listing,
   outline: readonly OutlineHeading[],
 ): readonly BodyStructureViolation[] {
   if (!closed) return [];
   return outline.flatMap((heading, position): readonly BodyStructureViolation[] =>
-    scopes.some((scope) => defines(scope, position, heading))
+    spines.some((walked) => defines(walked, position, heading))
       ? []
       : [
           {

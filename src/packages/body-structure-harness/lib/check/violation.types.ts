@@ -7,18 +7,19 @@
  * other declared Module's findings — so nothing outside this Package names them.
  */
 
-/** The kinds of block a section may hold, as written in `mayHold` and as reported in a finding. */
-type BlockKindName = 'prose' | 'ordered-list' | 'unordered-list';
+import type { HeadingPresence, HeadingPurpose } from '../../section.ts';
+import type { BlockKind } from '../document/document.types.ts';
 
 /**
  * One heading entry of a `body-structure` Rule, as the Operator wrote it, `intent` included.
  *
  * Declared apart from the section's `HeadingEntry` on purpose: this is the
  * wire format, and a response is read by tools that never see a config type.
+ * Only the value unions are shared, so a spelling cannot drift between them.
  */
 export interface HeadingRequirement {
   /** `heading` is exactly one heading; `enumeration` is a counted run of repeats. */
-  purpose: 'heading' | 'enumeration';
+  purpose: HeadingPurpose;
   /** The level the matching heading sits at. */
   level: number;
   /** ECMAScript regular expression, `u` flag, searched over the heading's raw content. */
@@ -26,13 +27,13 @@ export interface HeadingRequirement {
   /** The exact titles the matching heading may take, each with its `intent` when written. */
   allowed?: readonly AllowedTitleRequirement[];
   /** `heading` only: `required` when absent. */
-  presence?: 'required' | 'optional';
+  presence?: HeadingPresence;
   /** `enumeration` only: fewest repeats. */
   minCount?: number;
   /** `enumeration` only: most repeats. */
   maxCount?: number;
   /** The kinds of block the entry's section may hold, an allowed set; absent leaves it unconstrained. */
-  mayHold?: readonly BlockKindName[];
+  mayHold?: readonly BlockKind[];
   /** What the section should contain: Steering, never enforced. */
   intent?: string;
   /** The nested spine walked under each heading this entry claims, verbatim. */
@@ -99,7 +100,7 @@ export interface BlockKindNotAllowedViolation extends EntryLocator {
   /** The section's heading, as its raw inline source, which tells one repeat from another. */
   content: string;
   /** The offending kind. */
-  kind: BlockKindName;
+  kind: BlockKind;
   /** How many blocks of that kind the section holds. */
   found: number;
   /** The entry, verbatim, so the allowed set travels with the finding. */
