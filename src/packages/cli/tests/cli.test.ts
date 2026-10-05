@@ -1092,7 +1092,9 @@ describe('mh under a stated Node version', () => {
       }));
       // ASSERT
       expect(actual).toEqual(boundaries);
-    });
+      // Nine CLI spawns in series. Under a loaded CI runner that outlasts
+      // vitest's 5s default — measured red on PR #223 at 5s, while 0.6s locally.
+    }, 30_000);
 
     it('refuses a version it cannot read rather than assuming it is new enough', () => {
       // Nothing reports this; a nightly reports `27.0.0-nightly…`, which parses.

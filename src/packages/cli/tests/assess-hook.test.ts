@@ -589,7 +589,10 @@ describe('the assess hook', () => {
       const written = rowsIn(states);
       // ASSERT
       expect(written).toEqual(perState);
-    });
+      // Five hook runs, each spawning the CLI, in series: ten processes. Under a
+      // loaded CI runner that outlasts vitest's 5s default — measured red on
+      // PR #223 at 5s, while 0.5s locally.
+    }, 30_000);
 
     it('writes the header once, however many rows land after it', () => {
       // ARRANGE
