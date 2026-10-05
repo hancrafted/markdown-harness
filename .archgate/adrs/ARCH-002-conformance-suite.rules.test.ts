@@ -533,7 +533,7 @@ describe('the spec-folder rules reach the real tree', () => {
   const SPEC_TIERS = ['body-structure', 'integrated'];
   const tree = [...SPEC_TIERS.flatMap((tier) => realFiles(`fixtures/conformance/${tier}`)), 'CONTEXT.md'];
 
-  function realCtx() {
+  function realCtx(blanked?: string) {
     const violations: Reported[] = [];
     const ctx = {
       projectRoot: ROOT,
@@ -544,7 +544,8 @@ describe('the spec-folder rules reach the real tree', () => {
         return tree.filter((f) => re.test(f));
       },
       async readFile(path: string) {
-        return readFileSync(join(ROOT, path), 'utf8');
+        const text = readFileSync(join(ROOT, path), 'utf8');
+        return path === blanked ? text.replace(/^# Spec: /u, '# ') : text;
       },
       report: { violation: (d: Reported) => violations.push(d), warning: () => {}, info: () => {} },
     } as unknown as RuleContext;
@@ -564,6 +565,20 @@ describe('the spec-folder rules reach the real tree', () => {
       expect(violations).toEqual([]);
     },
   );
+
+  it.each(SPEC_TIERS)('reaches the %s tier, so a folder there that breaks a rule fails', async (tier) => {
+    // A tier the rules do not list passes every rule above over nothing, while
+    // the enumeration below still counts its folders off the disk. One real
+    // config in the tier, read with its spec line spoiled, must be reported.
+    // ARRANGE
+    const spoiled = `fixtures/conformance/${tier}/docs/${foldersOf(tier)[0]}/markdown-harness.config.yaml`;
+    const expected = [spoiled];
+    const { ctx, violations } = realCtx(spoiled);
+    // ACT
+    await ruleSet.rules['spec-line'].check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual(expected);
+  });
 
   it('enumerates every spec folder of both spec-folder tiers, so no rule above passed over nothing', () => {
     // ARRANGE
