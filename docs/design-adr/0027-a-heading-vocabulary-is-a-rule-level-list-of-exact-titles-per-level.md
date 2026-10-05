@@ -49,7 +49,7 @@ by an enumeration, interleaved third-level headings claimed by a vocabulary.
 
 ## What was measured
 
-1. **`levels` cannot be the key.** The brief's lean was a Rule-level `levels:` block. The rejected-config tier holds
+1. **`levels` cannot be the key.** The round's prompt (recorded in #227) leaned to a Rule-level `levels:` block. The rejected-config tier holds
    `body-structure-retired-levels-key`, which freezes `levels` at the Rule as `CONFIG_UNRECOGNISED_KEY`, and 0017 consequence
    3 says the same. Reintroducing the key would change an existing case's verdict, so it is the wrong decision however well
    the word fits. `title`, `required` and `maxDepth` are frozen the same way, at the entry or the Rule, and no key may be chosen that one of those cases already refuses.
@@ -119,10 +119,11 @@ by an enumeration, interleaved third-level headings claimed by a vocabulary.
    Rule may carry `maxLevel` and a vocabulary together, so depth and the second group are no longer exclusive, and depth stays
    first. The second group is judged on the outline before the spine is walked, as depth always was, so a document that
    renamed a section reads "outside the vocabulary `Improved`" and then "missing `Title`".
-8. **`--query` copies the key.** A candidate's `requirements` becomes
+8. **`--query` copies the key.** A candidate's `requirements` gains `vocabulary`, so it becomes
    `{ types?, maxLevel?, undefinedHeadings?, vocabulary?, headings? }`, each copied verbatim, an omitted key staying omitted. An
    agent about to write a file is the reader this is for: it learns the six titles before it writes the seventh and learns it
-   at `--check` otherwise. Every entry's `mayHold` rides inside its entry. **`--audit` is unchanged**, for 0025 decision 7's
+   at `--check` otherwise. What an entry's `mayHold` adds to the answer is
+   [`0028`](./0028-a-section-holds-an-allowed-set-of-block-kinds.md) decision 11's. **`--audit` is unchanged**, for 0025 decision 7's
    reason: it echoes no payload key today. `--assess` is unchanged.
 9. **A vocabulary heading has no section constraint this round.** A vocabulary item carries `level` and `allowed` and no
    `mayHold`, and no entry claims the heading, so the section under `### Added` is judged by nobody (0028). Han's settled scope
@@ -158,7 +159,7 @@ by an enumeration, interleaved third-level headings claimed by a vocabulary.
 
 ## Considered options
 
-**A `levels:` block**, the brief's lean. Rejected under measurement 1: the key is frozen as unrecognised. **An `allowed:` list on
+**A `levels:` block**, the round's prompt's lean. Rejected under measurement 1: the key is frozen as unrecognised. **An `allowed:` list on
 an entry in `headings:`.** Rejected under decision 1. **A map keyed by level.** Rejected under measurement 2: it spells a level
 as a string and differs from every other level in the config. **Fuzzy or case-insensitive matching, or a regular expression in
 the list.** Refused by Han, and the `pattern` of an entry is the spelling for either. **Order or a per-version count in the

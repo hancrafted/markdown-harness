@@ -18,7 +18,7 @@ they serve is [#227](https://github.com/hancrafted/markdown-harness/issues/227).
 A spine says which headings a document has and in what order, and says nothing about what is under them. An ADR's context is
 prose, each of its decisions is a numbered list, and its references are a bulleted list, and a Contributor's agent that is told
 the headings and nothing else writes a bulleted list where the order matters. Han settled the shape and none of it is reopened
-here. **A heading entry, of either purpose, may declare the kinds of block its section may hold.** The starting vocabulary is
+here. **A heading entry, of either purpose, may declare the kinds of block its section may hold.** The starting set of kinds is
 `prose`, `ordered-list` and `unordered-list`. **Omitting the key leaves the section unconstrained**, which is every entry that
 exists, so no existing case changes. **Declaring it names an allowed set**: any mix, any order, any count of the listed kinds,
 and a block of an unlisted kind is a violation with a new code. `[prose, ordered-list]` admits paragraphs and numbered lists
@@ -28,7 +28,7 @@ shaped to anticipate them.
 
 ## What was measured
 
-All against the repository's own lexer configuration, `marked` 18.0.14 narrowed to 0014's three ATX openings, on 2026-10-05,
+All against the repository's own lexer configuration, `marked` 18.0.14 narrowed so that an ATX heading needs a space, a tab or the line end after its `#`s (0014; setext headings are headings too), on 2026-10-05,
 in a scratch directory outside the repository. The top-level token sequence, which is the document's children, for each input:
 
 | input                                                                          | top-level tokens                                        |
@@ -75,12 +75,14 @@ Conformance tier going red or staying green, covers this too.
 
 ## Decisions
 
-1. **The key is `mayHold`, a list of kinds.** The brief's working name was `content`. That word already means a heading's raw
+1. **The key is `mayHold`, a list of kinds.** The round's prompt (recorded in #227) used the working name `content`. That word already means a heading's raw
    inline source in 0014 and in the `content` field of `HEADING_UNDEFINED`, and a key and a violation field with one name for
    two things is how a reader of a response misreads it. `mayHold` says what it is, a permission and never a requirement, which
    matters because a `holds: [prose]` would read as "the section must contain prose" and an allowed set says no such thing.
    **This is this record's decision, not Han's.**
-2. **A section is the blocks from its heading to the next top-level heading of any level.** A subsection's content is
+2. **A section is the blocks from its heading to the next top-level heading of any level.** Throughout these records and #227,
+   "section" means this body section and never a Module's section of the config; the glossary says so, and where both could be read the
+   config one is written as such. A subsection's content is
    therefore governed by its own entry and never by its parent's: `## Decision` holding `### 1.` and `### 2.` has an own
    section of nothing, and each anchor's blocks are the anchor's. This confirms the lean. The alternative, a parent's section
    running to the next heading at its own level or above, would make a parent that lists `prose` condemn every list in its
@@ -95,8 +97,8 @@ Conformance tier going red or staying green, covers this too.
    an open spine, and a heading a vocabulary admits, has a section nobody judges. The reasons are 0025 decision 4's: those
    headings are already behind a finding of their own, or are permitted on purpose, and a second report about the same
    heading is what that decision forbids; and a misplaced heading is moved before its content is judged, which the
-   Contributor learns on the next run. **A parent's `mayHold` never reaches a subsection no entry claims**, which was the
-   brief's lean about unclaimed headings' sections, confirmed.
+   Contributor learns on the next run. **A parent's `mayHold` never reaches a subsection no entry claims**, which confirms the lean the
+   round's prompt (recorded in #227) stated about unclaimed headings' sections.
 5. **Block kinds: three are named and everything else is transparent.** The mapping from token to kind is total and written
    here so a reimplementation can match it.
 
@@ -108,11 +110,10 @@ Conformance tier going red or staying green, covers this too.
    | `code`, `blockquote`, `table` | transparent: not a kind, never reported, never counted |
    | `html`, `hr`, `def`, `space`  | transparent                                            |
 
-   A transparent block is **neither allowed nor forbidden**, because the vocabulary has no name for it and so no Rule can list
+   A transparent block is **neither allowed nor forbidden**, because the set of block kinds has no name for it and so no Rule can list
    it. The alternatives were each wrong: counting a fenced block as `prose` is a lie about what prose is, and would change
    what `[prose]` means the day a `code` kind is added; making any unlisted block a violation would give an Operator a finding
-   about a table that no spelling of the Rule can silence; and naming `code`, `table`, `quote` and `html` now widens a
-   vocabulary Han called a start. Each of the four is considered when someone asks for a kind of it. **The cost is accepted and
+   about a table that no spelling of the Rule can silence; and naming `code`, `table`, `quote` and `html` now widens a set of kinds Han called a start. Each of the four is considered when someone asks for a kind of it. **The cost is accepted and
    stated:** a section whose entry lists only `ordered-list` may hold a fence, a table or a quote without a finding, and adding
    a kind later is a contract change that moves cases and is reviewed as one. Paragraphs of inline HTML, and an HTML comment
    in the middle of a prose section, are why `html` is not `prose`.

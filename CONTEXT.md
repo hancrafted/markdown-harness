@@ -320,34 +320,24 @@ opt-in per Rule and never a default, and it excludes `maxLevel`, which is the de
 _Avoid_: strict mode, exhaustive spine, sealed
 
 **undefined heading**:
-In a closed spine, a heading of the body that no entry of the spine matches and whose level no heading vocabulary governs,
-at any level and the title included. It is decided by matching and not by what the walk did with the heading: one that an
-entry matches but that repeats, is out of order or lies outside an enumeration's run is defined, and that entry reports it.
-A heading at a vocabulary's level is never undefined: it is one of the vocabulary's titles or it is outside the vocabulary.
+In a closed spine, a heading that no entry of the spine matches and whose level no heading vocabulary governs, at any level and
+the title included.
 _Avoid_: unknown heading, extra heading, unclaimed heading (the walk claims a heading, and an unclaimed one may
 still be defined)
 
 **heading vocabulary**:
-The exact titles a Rule allows at one heading level, written as `vocabulary:` items of `{ level, allowed }` beside the spine.
-It is a set: any order, any number of times, no grouping and no position, and a title matches a heading's raw content whole,
-exactly and case-sensitively. Every heading at a vocabulary's level must be one of its titles, so a level is held either to a
-vocabulary or to spine entries and never both. A heading it admits counts as claimed, which is what lets a closed spine govern
-a changelog whose third-level headings repeat under every release.
-_Avoid_: title list, enum, taxonomy; **Type vocabulary** (the `type` values a repo recognises, a different thing, which the
-two are qualified against wherever both are in view)
+The exact titles a Rule allows at one heading level, written as `vocabulary:` items of `{ level, allowed }`.
+_Avoid_: title list, enum, taxonomy; **Type vocabulary** (the `type` values a repo recognises, a different thing, which the two
+are qualified against wherever both are in view)
 
 **section**:
-The blocks of a body from one top-level heading to the next top-level heading of any level, so a subsection's blocks are its own
-and never its parent's. Blocks before the first heading belong to no section. A section is judged by the entry that claimed its
-heading, and by nobody else: a heading the walk left over, an undefined heading and a heading a vocabulary admits have sections
-no one judges.
-_Avoid_: content (a heading's raw inline source, in 0014), body (the whole file below the frontmatter), part, chapter
+The blocks of a body from one top-level heading to the next, of any level, judged by the entry that claimed its heading. Always
+a body section: not a Module's section of the config, which is named as such wherever both could be read.
+_Avoid_: content (a heading's raw inline source), part, chapter; the bare word where a Module's config section is also in view
 
 **block kind**:
-One of `prose` (a paragraph), `ordered-list` and `unordered-list`, the three names a heading entry's `mayHold` may list. A list
-nested in a list item belongs to the outer list, and a bold label ahead of a list is a paragraph, so it is prose. Every other
-block the lexer returns, a fence, a table, a block quote, HTML, a thematic break and a link reference definition, is
-transparent: neither allowed nor forbidden, because nothing names it.
+One of `prose` (a paragraph), `ordered-list` and `unordered-list`, the names a heading entry's `mayHold` may list; every other
+block is transparent.
 _Avoid_: block type, element, content type, node
 
 **Governed file**:
@@ -469,11 +459,9 @@ and not a **rejected-config case**.
 _Avoid_ as a name for this: phantom path, synthetic path, negative fixture
 
 **verbatim case**:
-A document the corpus holds byte for byte as it exists elsewhere in the repository, unmarked, outside a tier's `docs/` and
-outside `.md`, because a marker would change the bytes it exists to preserve and the tier's walk reads every markdown file as a
-case. Its expectation is a **golden expectation** beside the tier config, and its stored length and SHA-256 are pinned there, so
-an edit that makes a Rule pass fails. The first holds the ADR Contract, `GEN-001`. Not a Conformance case.
-_Avoid_ as a name for this: copied fixture, snapshot, golden file, dogfood case
+A document the corpus holds byte for byte, unmarked, outside a tier's `docs/` and outside `.md`, with its expectation and its
+SHA-256 pinned in a **golden expectation**. Not a Conformance case.
+_Avoid_ as a name for this: copied fixture, snapshot, golden file
 
 **fixture**:
 Ordinary test data anywhere in the repo that pins nothing — coverage, not contract. Every

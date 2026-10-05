@@ -54,8 +54,8 @@ second title needs a name.
 
 ## The four commands
 
-> Amended by [`0027`](./0027-a-heading-vocabulary-is-a-rule-level-list-of-exact-titles-per-level.md): `--query` copies `vocabulary` into each candidate's requirements, and every entry's `mayHold` rides
-> inside its entry. `--audit` and `--assess` are unchanged.
+> Amended by [`0027`](./0027-a-heading-vocabulary-is-a-rule-level-list-of-exact-titles-per-level.md) and [`0028`](./0028-a-section-holds-an-allowed-set-of-block-kinds.md): `--query` copies `vocabulary` into each candidate's requirements (0027
+> decision 8), and every entry's `mayHold` rides inside its entry (0028 decision 11). `--audit` and `--assess` are unchanged.
 
 > Amended by [`0025`](./0025-a-closed-spine-is-opt-in-per-rule-and-reports-undefined-headings.md): `--query` copies `undefinedHeadings` into each candidate's requirements, beside
 > `types`, `maxLevel` and `headings`. `--audit` and `--assess` are unchanged.
