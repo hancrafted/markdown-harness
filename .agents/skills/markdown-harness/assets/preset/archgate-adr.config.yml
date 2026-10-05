@@ -1,0 +1,94 @@
+# preset: archgate-adr
+#
+# The Archgate ADR contract (GEN-001 in hancrafted/markdown-harness) as markdown-harness rules.
+# Applied into a project's markdown-harness.config.yaml by assets/applying-a-preset.md. This
+# file is a fragment, never a config of its own: each rule below is copied under the section
+# key it sits under here, and keeps its ruleId so a later apply finds and replaces it.
+#
+# Default location: .archgate/adrs/, flat, which is where `archgate init` puts them. A folder
+# token carries no recursion, so an ADR in a subfolder is governed by nothing until that
+# folder is named on BOTH rules.
+#
+# What this does not hold, and `archgate check` does: the id matching the filename prefix,
+# `rules: true` iff a sibling `.rules.ts` exists, `domain` being a registered one, the inline
+# flow form of the globs, the size budget, and the 📜 Rule markers.
+
+frontmatter:
+  rules:
+    - ruleId: archgate-adr
+      folders: [.archgate/adrs/]
+      intent: 'Archgate reads an ADR by its frontmatter: what it is, which domain it governs and which files its rules inspect'
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: adr, intent: 'An Architecture Decision Record that archgate loads and checks.' }
+        id:
+          presence: required
+          pattern: '^[A-Z]+-[0-9]{3}$'
+          intent: 'A domain prefix and a three-digit number, the same as the filename prefix: GEN-001'
+        title: { presence: required }
+        domain: { presence: required }
+        rules:
+          presence: required
+          allowed:
+            - { value: true, intent: 'A sibling .rules.ts holds the decision mechanically.' }
+            - { value: false, intent: 'The decision is held by review alone.' }
+        files: { presence: required, minItems: 1 }
+        paths: { minItems: 1 }
+
+body-structure:
+  rules:
+    - ruleId: archgate-adr
+      folders: [.archgate/adrs/]
+      intent: 'An ADR has a title and the six canonical sections in order: context, numbered decision anchors each holding a numbered list, numbered do and dont lists, consequences, compliance and enforcement, and bulleted references.'
+      # Open spine, as GEN-001 is: the six sections are required and ordered, and a section of
+      # the ADR's own between them passes. `undefinedHeadings: forbid` closes it.
+      headings:
+        - { purpose: heading, level: 1, intent: 'The decision, as a short noun phrase.' }
+        - purpose: heading
+          level: 2
+          allowed: [{ title: Context, intent: 'Why the decision is needed.' }]
+        - purpose: heading
+          level: 2
+          allowed: [{ title: Decision, intent: 'The numbered anchors, each a subsection.' }]
+          headings:
+            - purpose: enumeration
+              level: 3
+              pattern: '^[0-9]+\. '
+              minCount: 1
+              mayHold: [ordered-list]
+              intent: 'One anchor per decision, `### 1. Title`, holding a numbered list restarting at 1.'
+        - purpose: heading
+          level: 2
+          allowed: [{ title: "Do's and Don'ts", intent: 'The decision in short form.' }]
+          headings:
+            - purpose: heading
+              level: 3
+              allowed: [{ title: "Do's" }]
+              mayHold: [ordered-list]
+              intent: 'Numbered items, each opening with **DO**.'
+            - purpose: heading
+              level: 3
+              allowed: [{ title: "Don'ts" }]
+              mayHold: [ordered-list]
+              intent: "Numbered items, each opening with **DON'T**."
+        - purpose: heading
+          level: 2
+          allowed: [{ title: Consequences, intent: 'What gets easier, what gets harder, and what could go wrong.' }]
+          mayHold: [prose, ordered-list]
+          # Bold labels (`**Positive:**`) ahead of numbered lists are GEN-001's own form; a
+          # heading per kind is the other, and its sections hold any block.
+          headings:
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Positive }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Negative }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Risks }] }
+        - purpose: heading
+          level: 2
+          allowed:
+            [{ title: Compliance and Enforcement, intent: 'Which enforcer holds each part, and what review holds.' }]
+          mayHold: [prose, ordered-list]
+        - purpose: heading
+          level: 2
+          allowed: [{ title: References, intent: 'Where to read more.' }]
+          mayHold: [unordered-list]

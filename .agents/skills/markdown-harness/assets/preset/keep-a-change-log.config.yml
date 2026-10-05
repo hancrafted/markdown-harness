@@ -1,0 +1,67 @@
+# preset: keep-a-change-log
+#
+# Keep a Changelog 1.1.0 (https://keepachangelog.com/en/1.1.0/) as markdown-harness rules.
+# Applied into a project's markdown-harness.config.yaml by assets/applying-a-preset.md. This
+# file is a fragment, never a config of its own: each rule below is copied under the section
+# key it sits under here, and keeps its ruleId so a later apply finds and replaces it.
+#
+# Default location: CHANGELOG.md at the repository root. To move it, edit `folders` (one
+# folder token, trailing `/`, `./` for the root) and `fileNames` on BOTH rules.
+
+frontmatter:
+  rules:
+    # A changelog is plain markdown read on the forge and in the package. Frontmatter there
+    # renders as a stray table, and the convention carries none.
+    - ruleId: keep-a-changelog
+      folders: [./]
+      fileNames: [CHANGELOG.md]
+      intent: 'A changelog is plain markdown for humans and carries no frontmatter'
+      frontmatter: forbidden
+
+body-structure:
+  rules:
+    - ruleId: keep-a-changelog
+      folders: [./]
+      fileNames: [CHANGELOG.md]
+      intent: 'A changelog lists the notable changes of each version for humans: an Unreleased section on top, then one section per release, newest first, each grouping its changes under the six change types.'
+      undefinedHeadings: forbid
+      headings:
+        - purpose: heading
+          level: 1
+          allowed: [{ title: Changelog }]
+          mayHold: [prose]
+          intent: 'The title, then a short paragraph naming the convention and the versioning scheme.'
+        - purpose: heading
+          level: 2
+          presence: optional
+          # Linked in the convention (`[Unreleased]: <compare url>` at the foot), plain where a
+          # project has no compare URL. The raw heading text is matched, brackets included.
+          allowed:
+            - { title: '[Unreleased]', intent: 'Upcoming changes, linked to the compare view since the last release.' }
+            - { title: Unreleased, intent: 'Upcoming changes, for a project without a compare URL.' }
+          headings: &keep-a-changelog-change-types
+            # The convention names six types and its own changelog writes them in any order,
+            # so one enumeration takes any of them in any order. `maxCount: 6` catches the
+            # worst repeat; a type written twice within six still passes. For one heading per
+            # type in a fixed order, see the strict changelog in authoring-body-structure.md step 5.
+            - purpose: enumeration
+              level: 3
+              minCount: 0
+              maxCount: 6
+              allowed:
+                - { title: Added, intent: 'New features.' }
+                - { title: Changed, intent: 'Changes in existing functionality.' }
+                - { title: Deprecated, intent: 'Soon-to-be removed features.' }
+                - { title: Removed, intent: 'Now removed features.' }
+                - { title: Fixed, intent: 'Any bug fixes.' }
+                - { title: Security, intent: 'In case of vulnerabilities.' }
+              mayHold: [unordered-list]
+              intent: 'Changes grouped by type, one bullet per change.'
+        - purpose: enumeration
+          level: 2
+          minCount: 0
+          # `## [1.1.1] - 2023-03-05`: a linked semantic version, an ISO 8601 date, and
+          # ` [YANKED]` on a release pulled for a serious bug.
+          pattern: '^\[[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?\] - [0-9]{4}-[0-9]{2}-[0-9]{2}( \[YANKED\])?$'
+          intent: 'One section per release, newest first: `## [x.y.z] - YYYY-MM-DD`, with ` [YANKED]` on a pulled release.'
+          headings: *keep-a-changelog-change-types
