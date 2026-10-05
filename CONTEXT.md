@@ -268,14 +268,17 @@ Module that ships it rather than here.
 _Avoid_ as a name for this: path rule, matcher, policy
 
 **selector**:
-How a Rule says which files it is about, on two literal axes — folders and file names. A folder token
-is a literal path from the repo root carrying a mandatory trailing `/` and selecting **that folder
-alone**, and the corpus root is `./`; a file name is one literal basename with its extension,
-compared case-sensitively. An absent axis means every, which is the only spelling "all" has, because
-a selector carries no wildcard anywhere. Being literal is what makes it host-independent: literal
-names compare the same way on every filesystem, where a glob matcher turns case-insensitive inside a
-wildcard-bearing segment. Nothing compares two selectors to each other — a Rule is only ever asked
-whether it selects one file.
+How a Rule says which files it is about, on two literal path axes — folders and file names — plus,
+in `body-structure` alone, a `types` axis. A folder token is a literal path from the repo root
+carrying a mandatory trailing `/` and selecting **that folder alone**, and the corpus root is `./`; a
+file name is one literal basename with its extension, compared case-sensitively; a `types` token is
+one literal frontmatter `type` value, compared by exact string equality, so a file with no string
+`type` selects no Rule that writes the axis. Every axis the Rule writes must match. An absent axis
+means every, which is the only spelling "all" has, because a selector carries no wildcard anywhere;
+an axis written as an empty list is refused rather than read as none. Being literal is what makes it
+host-independent: literal names compare the same way on every filesystem, where a glob matcher turns
+case-insensitive inside a wildcard-bearing segment. Nothing compares two selectors to each other — a
+Rule is only ever asked whether it selects one file.
 _Avoid_ as a name for this: glob, pattern, path spec, matcher
 
 **folder tree**:
@@ -296,13 +299,19 @@ _Avoid_ as a name for anything this repo's config language currently admits: glo
 pattern
 
 **claim**:
-What one Module asks of one path: which Rule won, and what that Rule requires. It does not name
-the Module.
+What one candidate Rule asks of one path: the Rule, and what that Rule requires. A Module may make
+zero, one or several claims on a path. `frontmatter` decides its Rule from the path alone, so it
+makes at most one, the Rule that won; `body-structure` cannot read the `type` of a file not yet
+written, so it makes one per Rule that could still win. A claim does not name the Module; composition
+does.
 _Avoid_ as a name for this: assertion (taken by **Constraint**), declaration, requirement, fact
 
 **Constraint**:
-One assertion a Rule makes about one frontmatter field, keyed by field address. Constraints
-are shape-specific by construction: `minLength` names strings, `minItems` names lists.
+One assertion a Rule makes about the files it selects, in the Module's own vocabulary. In
+`frontmatter`, one assertion about one field, keyed by field address, and shape-specific by
+construction: `minLength` names strings, `minItems` names lists. In `body-structure`, one assertion
+about the body's headings: a **spine** entry, a **heading vocabulary**, `maxLevel`, or
+`undefinedHeadings`.
 _Avoid_: validation, assertion, check
 
 **spine**:
