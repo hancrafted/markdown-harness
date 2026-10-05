@@ -12,7 +12,7 @@ import type { ConfigFaultCode } from '../config-contract/index.ts';
 
 /**
  * Every code the tier undertakes to reach, in the order §3.5's catalog declares
- * them: the four that name the config FILE first, then the eleven that name a
+ * them: the four that name the config FILE first, then the twenty-two that name a
  * key inside it.
  *
  * The `satisfies` check holds one direction — a code spelled wrong, or one the

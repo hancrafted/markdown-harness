@@ -2,7 +2,9 @@
 //
 // SPECIFICATION: every case states its verdict in an `<!-- expect: -->` marker,
 // and `expected-findings.json` freezes, for every GOVERNED case, the Rule that
-// wins it and its exact violations. Both were written from the spec in #221 and
+// wins it and its exact violations. The one exception is the verbatim case, a
+// byte-identical copy that cannot carry a marker and states its verdict in
+// `verbatim-cases.json` instead (design-ADR 0030). Both were written from the spec in #221 and
 // never from an implementation, so a disagreement here is answered by deciding
 // which side is wrong — never by editing a case, a marker or a frozen finding to
 // agree with the code (ARCH-010).
@@ -180,11 +182,11 @@ function winnersIn(audit: ToolRun): string {
     .join(', ');
 }
 
-/** Ask one case alone, in a root holding nothing but its own bytes at its own path. */
-async function answerAlone(path: string, index: number): Promise<CaseAnswer> {
-  const root = join(scratch, `case-${index}`);
-  mkdirSync(dirname(join(root, path)), { recursive: true });
-  copyFileSync(join(CORPUS_ROOT, path), join(root, path));
+/**
+ * Ask a root already seeded with one file: its verdict and, when governed, its
+ * finding — or the refusal that stopped the tool answering at all.
+ */
+async function answerSeeded(root: string): Promise<CaseAnswer> {
   const [check, audit] = await Promise.all([
     mh(['--check', '--root', root, '--config', TYPED_CONFIG]),
     mh(['--audit', '--root', root, '--config', TYPED_CONFIG]),
@@ -197,6 +199,14 @@ async function answerAlone(path: string, index: number): Promise<CaseAnswer> {
     verdict: violations.length > 0 ? FAILS : PASSES,
     finding: { ruleId: winnersIn(audit), violations },
   };
+}
+
+/** Ask one case alone, in a root holding nothing but its own bytes at its own path. */
+async function answerAlone(path: string, index: number): Promise<CaseAnswer> {
+  const root = join(scratch, `case-${index}`);
+  mkdirSync(dirname(join(root, path)), { recursive: true });
+  copyFileSync(join(CORPUS_ROOT, path), join(root, path));
+  return answerSeeded(root);
 }
 
 beforeAll(async () => {
@@ -547,14 +557,12 @@ describe('the tool answers each body-structure case as it states', () => {
 /** The verbatim cases, beside the config. */
 const VERBATIM_FILE = 'verbatim-cases.json';
 
-interface VerbatimCase {
+interface VerbatimCase extends Finding {
   readonly stored: string;
   readonly source: string;
   readonly bytes: number;
   readonly sha256: string;
   readonly verdict: string;
-  readonly ruleId: string;
-  readonly violations: readonly unknown[];
 }
 
 const verbatimCases = JSON.parse(readTierText(VERBATIM_FILE)) as Record<string, VerbatimCase>;
@@ -566,18 +574,7 @@ async function answerVerbatim(path: string, index: number): Promise<CaseAnswer> 
   const root = join(scratch, `verbatim-${index}`);
   mkdirSync(dirname(join(root, path)), { recursive: true });
   writeFileSync(join(root, path), storedBytes(path));
-  const [check, audit] = await Promise.all([
-    mh(['--check', '--root', root, '--config', TYPED_CONFIG]),
-    mh(['--audit', '--root', root, '--config', TYPED_CONFIG]),
-  ]);
-  const refusal = refusalOf(check) ?? refusalOf(audit);
-  if (refusal !== undefined) return { refusal };
-  if (envelopeOf(check).result?.summary?.governedFiles === 0) return { verdict: UNGOVERNED };
-  const violations = violationsIn(check);
-  return {
-    verdict: violations.length > 0 ? FAILS : PASSES,
-    finding: { ruleId: winnersIn(audit), violations },
-  };
+  return answerSeeded(root);
 }
 
 describe('the tool answers the verbatim body-structure case as it states', () => {
