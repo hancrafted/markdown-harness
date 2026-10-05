@@ -79,6 +79,7 @@ export type {
 } from './lib/response.types.ts';
 export { FIELD_VIOLATION_CODES } from './lib/violation.pure.ts';
 export type {
+  BlockKindNotAllowedViolation,
   BodyStructureViolation,
   CrossFieldViolation,
   CrossFieldViolationOf,
@@ -89,9 +90,11 @@ export type {
   FrontmatterUnparseableViolation,
   HeadingCountViolation,
   HeadingEntryViolation,
+  HeadingNotInVocabularyViolation,
   HeadingRequirement,
   HeadingUndefinedViolation,
   LevelTooDeepViolation,
   UnknownKeyViolation,
   Violation,
+  VocabularyRequirement,
 } from './lib/violation.types.ts';

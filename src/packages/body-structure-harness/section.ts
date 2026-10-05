@@ -10,10 +10,12 @@
 // spelling for them.
 
 export type {
+  BlockKind,
   BodyStructureConfig,
   BodyStructureRule,
   HeadingEntry,
   HeadingPresence,
   HeadingPurpose,
   UndefinedHeadings,
+  VocabularyItem,
 } from './lib/section/section.types.ts';

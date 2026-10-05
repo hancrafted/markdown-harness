@@ -181,8 +181,18 @@ export interface HeadingRequirement {
   minCount?: number;
   /** `enumeration` only: most repeats. */
   maxCount?: number;
+  /** The kinds of block the entry's section may hold, an allowed set; absent leaves it unconstrained (design-ADR 0028). */
+  mayHold?: readonly ('prose' | 'ordered-list' | 'unordered-list')[];
   /** What the section should contain: Steering, never enforced. */
   intent?: string;
+}
+
+/** One level's heading vocabulary, as the Operator wrote it (design-ADR 0027). */
+export interface VocabularyRequirement {
+  /** The level the vocabulary holds. */
+  level: number;
+  /** The exact titles a heading at `level` may take. */
+  allowed: readonly string[];
 }
 
 /** A level deeper than the Rule's `maxLevel`, one violation per level rather than per heading. */
@@ -211,6 +221,43 @@ export interface HeadingUndefinedViolation {
   content: string;
   /** The key, as the Rule wrote it: only `forbid` closes a spine. */
   requirement: { undefinedHeadings: 'forbid' };
+}
+
+/**
+ * A heading at a vocabulary's level whose raw content is none of its titles,
+ * one per heading (design-ADR 0027). It has no `entry` and no `found`: no entry
+ * owns it, and the requirement is the vocabulary item, so the Contributor reads
+ * the whole list in the violation that names the stranger.
+ */
+export interface HeadingNotInVocabularyViolation {
+  /** The one outcome this shape reports. */
+  violation: 'BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY';
+  /** The heading's level. */
+  level: number;
+  /** The heading's raw inline source (design-ADR 0014). */
+  content: string;
+  /** The vocabulary item for the heading's level, verbatim. */
+  requirement: VocabularyRequirement;
+}
+
+/**
+ * A section holding blocks of a kind its entry's `mayHold` does not list, one
+ * per section and kind (design-ADR 0028). A violation carries no line, so one
+ * per block would make two paragraphs indistinguishable duplicates.
+ */
+export interface BlockKindNotAllowedViolation {
+  /** The one outcome this shape reports. */
+  violation: 'BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED';
+  /** The zero-based index of the entry that claimed the section's heading. */
+  entry: number;
+  /** The section's heading, as its raw inline source, which tells one repeat from another. */
+  content: string;
+  /** The offending kind. */
+  kind: 'prose' | 'ordered-list' | 'unordered-list';
+  /** How many blocks of that kind the section holds. */
+  found: number;
+  /** The entry, verbatim, so the allowed set travels with the finding. */
+  requirement: HeadingRequirement;
 }
 
 /** A heading entry with no heading to claim, or whose heading lies before an earlier entry's. */
@@ -244,4 +291,9 @@ export interface HeadingCountViolation {
  * (design-ADR 0019).
  */
 export type BodyStructureViolation =
-  LevelTooDeepViolation | HeadingUndefinedViolation | HeadingEntryViolation | HeadingCountViolation;
+  | LevelTooDeepViolation
+  | HeadingUndefinedViolation
+  | HeadingNotInVocabularyViolation
+  | HeadingEntryViolation
+  | HeadingCountViolation
+  | BlockKindNotAllowedViolation;

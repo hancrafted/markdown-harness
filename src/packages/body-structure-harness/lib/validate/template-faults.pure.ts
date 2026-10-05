@@ -11,8 +11,8 @@
  * Walk order within an entry, so two implementations agree: unrecognised keys,
  * `purpose`, `level`, `pattern`, the keys the purpose forbids (`minCount`,
  * `maxCount`, then `presence`), `presence`, `minCount`, `maxCount`, inverted
- * bounds, a missing count, an anchored-literal pattern, `intent`, a level beyond
- * the Rule's `maxLevel`.
+ * bounds, a missing count, an anchored-literal pattern, `intent`, `mayHold`, a level
+ * beyond the Rule's `maxLevel` (design-ADR 0029).
  *
  * An empty `pattern` would match every heading at its level and a pattern that
  * does not compile under the `u` flag could never fire: both are
@@ -24,6 +24,7 @@ import { invalidValue, unrecognisedKeys } from '../../../foundation/selector-fau
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { HeadingEntry, HeadingPresence, HeadingPurpose } from '../../section.ts';
 import { closesSpine } from '../section/spine-closure.pure.ts';
+import { mayHoldFaults } from './block-kind-faults.pure.ts';
 import { compiles, isAnchoredLiteral } from './pattern-dialect.pure.ts';
 
 /** Every key a heading entry may carry, keyed by the type declaring them so the two cannot drift. */
@@ -34,6 +35,7 @@ const HEADING_KEYS: Record<keyof HeadingEntry, true> = {
   presence: true,
   minCount: true,
   maxCount: true,
+  mayHold: true,
   intent: true,
 };
 
@@ -196,6 +198,7 @@ function headingEntryFaults(
     ...patternFaults(entry, at),
     ...(isPurpose(entry.purpose) ? purposeFaultsFor(entry, entry.purpose, at) : []),
     ...intentFaults(entry, at),
+    ...mayHoldFaults(entry, at),
     ...beyondMaxLevelFaults(entry, at, maxLevel),
   ];
 }

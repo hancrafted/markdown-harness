@@ -16,7 +16,7 @@
  */
 
 import type { FieldConstraints } from '../../config-contract/index.ts';
-import type { HeadingRequirement } from './violation.types.ts';
+import type { HeadingRequirement, VocabularyRequirement } from './violation.types.ts';
 
 /** Either some Module claimed the path, or the whole config passed it by. */
 export type QueryResult = GovernedPath | InvisiblePath;
@@ -93,7 +93,9 @@ export interface BodyStructureRequirements {
   maxLevel?: number;
   /** `forbid` closes the spine, `allow` is the open spine written out; echoed as written (design-ADR 0025). */
   undefinedHeadings?: 'allow' | 'forbid';
-  /** The Rule's spine, verbatim, each `intent` included. */
+  /** The Rule's heading vocabulary, verbatim: the exact titles each named level may take (design-ADR 0027). */
+  vocabulary?: readonly VocabularyRequirement[];
+  /** The Rule's spine, verbatim, each `intent` and `mayHold` included. */
   headings?: readonly HeadingRequirement[];
 }
 
