@@ -6,8 +6,15 @@
  * partially-understood invocation to model.
  */
 
-/** The four commands that report. Each is a word on the command line: `mh check`. */
-export type ReportingCommand = 'check' | 'query' | 'audit' | 'assess';
+import type { REPORTING_COMMANDS } from './reporting-commands.pure.ts';
+
+/**
+ * The four commands that report. Each is a word on the command line: `mh check`.
+ *
+ * Also the Module port's verbs: a Module implements a command by carrying the
+ * member of the same name. Derived from `REPORTING_COMMANDS`, never written out.
+ */
+export type ReportingCommand = (typeof REPORTING_COMMANDS)[number];
 
 /**
  * The four commands that report, plus `help`, which answers about the tool

@@ -53,7 +53,7 @@ Alternatives weighed:
 **Positive:**
 
 1. **A Module is one Package plus one set entry.** Its shapes and codes arrive in the response through the derived union; no contract file changes.
-2. **The response stays closed.** The derived code union is exhaustive-switchable, so a widened union fails `tsc` in `src/packages/cli/tests/declared-module.test.ts`.
+2. **The response stays closed.** The derived code union is closed, so a widened union fails `tsc` in `src/packages/cli/tests/declared-module.test.ts`.
 3. **Two Modules cannot mint one code.** Each Module's codes carry its own prefix.
 
 **Negative:**
@@ -70,7 +70,7 @@ Alternatives weighed:
 
 **Enforcer per Discipline:** `ARCH-012-module-free-contracts.rules.ts` holds §1.1 at the `error` tier with `contracts-name-no-module`. It derives the Module set from `src/packages/cli/module-set.ts` and each Module's `module.ts` `key:`, blanks comments, and scans every `.ts` file under both contract Packages line by line. It is textual rather than AST-based because archgate transpiles before parsing and `config-contract` is type-only, so an AST rule would see an empty body there (trap 5). `files:` includes `module-set.ts` so a change to the Module set re-runs it. The sibling `.rules.test.ts` proves what the rule decides; reach was proved on the real tree by planting a Module-named type in `response-contract` and watching `archgate check` fail.
 
-**§2.1 is held by the type checker:** `tests/declared-module.test.ts` switches exhaustively over the derived violation-code union, and `conformance/config-fault-catalog.ts` pins its hand-written list against the derived fault-code union from both sides.
+**§2.1 is held by the type checker:** `tests/declared-module.test.ts` pins a hand-written code list against the derived violation-code union from both sides and keys its `MINTED_BY` record exhaustively by that union, and `conformance/config-fault-catalog.ts` pins its hand-written list against the derived fault-code union from both sides.
 
 **Manual review duties** (never linted): §1.2 and §1.3 — a shape one Module produces is not left generic-in-name but Module-specific in content; comments stay accurate.
 

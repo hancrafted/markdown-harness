@@ -7,20 +7,22 @@
  * every Module's shapes is computed, never written out, and adding a Module is
  * one Package plus one entry in the set (ARCH-008). Nothing here is checked at
  * run time: the derivation is types only, and a Module whose answers widen to
- * `unknown` would widen these with it, which `tests/module-set.test.ts` closes
- * with an exhaustive switch over the derived codes.
+ * `unknown` would widen these with it, which `tests/declared-module.test.ts`
+ * closes by pinning the derived codes from both sides and keying `MINTED_BY`
+ * exhaustively by them.
  */
 
 import type { ConfigFaultCode } from '../../../config-contract/index.ts';
 import type { CheckResult, MarkdownHarnessResponse, QueryResult } from '../../../response-contract/index.ts';
 import type { MODULE_SET } from '../../module-set.ts';
-import type { Implementing, Verb } from './module-answers.types.ts';
+import type { ReportingCommand } from '../argv/argv.types.ts';
+import type { Implementing } from './module-answers.types.ts';
 
 /** Any one declared Module's descriptor. */
 type DeclaredModule = (typeof MODULE_SET)[number];
 
 /** What a verb answers on each descriptor carrying it, distributed over a union of descriptors. */
-type Returned<TModule, TVerb extends Verb> =
+type Returned<TModule, TVerb extends ReportingCommand> =
   TModule extends Readonly<Record<TVerb, (...args: never[]) => infer TAnswer>> ? TAnswer : never;
 
 /**
@@ -30,7 +32,7 @@ type Returned<TModule, TVerb extends Verb> =
  * implement the verb: one that does not contributes nothing to the union,
  * rather than an `undefined` it never answers.
  */
-type AnswerTo<TVerb extends Verb> = Returned<Implementing<DeclaredModule, TVerb>, TVerb>;
+type AnswerTo<TVerb extends ReportingCommand> = Returned<Implementing<DeclaredModule, TVerb>, TVerb>;
 
 /** What a claim from any declared Module requires: the union of every Module's requirement shape. */
 export type DeclaredRequirements = AnswerTo<'query'>[number]['requirements'];
