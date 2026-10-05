@@ -25,7 +25,8 @@
 //    docs/agents/verification.md): it measures `dist/`, never `src/`.
 
 import { spawn } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -69,6 +70,7 @@ interface HeadingEntry {
   readonly minCount?: number;
   readonly maxCount?: number;
   readonly intent?: string;
+  readonly mayHold?: readonly string[];
 }
 
 interface RuleSpec {
@@ -80,6 +82,7 @@ interface RuleSpec {
   readonly types?: readonly string[];
   readonly excludeFiles?: readonly unknown[];
   readonly maxLevel?: number;
+  readonly vocabulary?: readonly { level: number; allowed: readonly string[] }[];
   readonly headings?: readonly HeadingEntry[];
 }
 
@@ -265,16 +268,21 @@ const RULE_KEYS = [
   'excludeFiles',
   'maxLevel',
   'undefinedHeadings',
+  'vocabulary',
   'headings',
 ];
-const ENTRY_KEYS = ['purpose', 'level', 'pattern', 'presence', 'minCount', 'maxCount', 'intent'];
+const ENTRY_KEYS = ['purpose', 'level', 'pattern', 'presence', 'minCount', 'maxCount', 'intent', 'mayHold'];
 const PURPOSE_VALUES = ['heading', 'enumeration'];
 const PRESENCE_VALUES = ['required', 'optional'];
 const UNDEFINED_HEADINGS_VALUES = ['allow', 'forbid'];
+// A vocabulary item has two keys and a `mayHold` set has three kinds (#227, design-ADRs 0027 and 0028):
+// the config writes every key and every kind, and no other.
+const VOCABULARY_ITEM_KEYS = ['level', 'allowed'];
+const BLOCK_KIND_VALUES = ['prose', 'ordered-list', 'unordered-list'];
 
 describe('the body-structure tier states one coherent specification', () => {
   describe('success cases', () => {
-    it('proves coverage and closure for the section, rule, entry, purpose, presence and undefinedHeadings vocabularies together', () => {
+    it('proves coverage and closure for the section, rule, entry, purpose, presence, undefinedHeadings, vocabulary-item and block-kind vocabularies together', () => {
       // Read off the config as WRITTEN, so this holds whatever the loader
       // answers; the suite below asks the loader and the tool.
       // ARRANGE
@@ -295,6 +303,11 @@ describe('the body-structure tier states one coherent specification', () => {
       const undefinedHeadings = rules.flatMap((rule) =>
         rule.undefinedHeadings === undefined ? [] : [rule.undefinedHeadings],
       );
+      // `vocabulary` is a Rule key whose items carry two keys, and `mayHold` an entry key whose
+      // values are the three block kinds (#227): the config writes every one and no other.
+      const items = rules.flatMap((rule) => rule.vocabulary ?? []);
+      const itemKeys = items.flatMap((item) => Object.keys(item));
+      const blockKinds = entries.flatMap((entry) => entry.mayHold ?? []);
       // ACT
       const actual = {
         section: coverageAndClosure(SECTION_KEYS, sectionKeys, sectionKeys),
@@ -303,6 +316,8 @@ describe('the body-structure tier states one coherent specification', () => {
         purpose: coverageAndClosure(PURPOSE_VALUES, purposes, purposes),
         presence: coverageAndClosure(PRESENCE_VALUES, presences, presences),
         undefinedHeadings: coverageAndClosure(UNDEFINED_HEADINGS_VALUES, undefinedHeadings, undefinedHeadings),
+        vocabularyItem: coverageAndClosure(VOCABULARY_ITEM_KEYS, itemKeys, itemKeys),
+        blockKind: coverageAndClosure(BLOCK_KIND_VALUES, blockKinds, blockKinds),
       };
       // ASSERT
       expect(actual).toEqual({
@@ -312,17 +327,20 @@ describe('the body-structure tier states one coherent specification', () => {
         purpose: complete,
         presence: complete,
         undefinedHeadings: complete,
+        vocabularyItem: complete,
+        blockKind: complete,
       });
     });
 
-    it('writes maxLevel on some Rules and omits it on others, and writes presence: optional twice', () => {
+    it('writes maxLevel on some Rules and omits it on others, and writes presence: optional eight times', () => {
       // The listing: "`maxLevel` both written and omitted and with `presence:
       // optional` written" -- once in #221, and twice since #225 added
-      // `closed-record`'s `Consequences` entry as the second. #221's "written once"
+      // `closed-record`'s `Consequences` entry as the second, and eight since #227 added the
+      // six optional entries of `section-kinds`. #221's "written once"
       // described that round's config and not a property of the Module. A tier that
       // always wrote it, or never wrote it, could not tell open depth from forbidden depth.
       // ARRANGE
-      const expected = { writesMaxLevel: true, omitsMaxLevel: true, optionalEntries: 2 };
+      const expected = { writesMaxLevel: true, omitsMaxLevel: true, optionalEntries: 8 };
       // ACT
       const actual = {
         writesMaxLevel: rules.some((rule) => rule.maxLevel !== undefined),
@@ -390,9 +408,9 @@ describe('the body-structure tier states one coherent specification', () => {
     });
 
     it('tallies the verdicts and violations the spec states', () => {
-      // #221's expected counts, as #225 extends them: 91 PASSES, 110 FAILS, 17 UNGOVERNED, 123 violations.
+      // #221's expected counts, as #225 and then #227 extend them: 127 PASSES, 149 FAILS, 18 UNGOVERNED, 172 violations.
       // ARRANGE
-      const expected = { passes: 91, fails: 110, ungoverned: 17, violations: 123 };
+      const expected = { passes: 127, fails: 149, ungoverned: 18, violations: 172 };
       // ACT
       const actual = {
         passes: stated(PASSES).length,
@@ -424,6 +442,11 @@ describe('the body-structure tier states one coherent specification', () => {
         emptyHeadings: ['##', '## '],
         bareLineFeeds: 0,
         lastBytes: '\r\n',
+        // #227: the nested items of three section-content cases. An editor that stripped an
+        // indent would turn a nested list into a second one and move a verdict with every check green.
+        nestedInOrdered: ['   - A bullet inside it.', '   - Another.', '   1. A numbered item inside it.'],
+        looseParagraph: ['   More about the first.'],
+        nestedInBullets: ['  1. A numbered item inside it.', '  2. Another.'],
       };
       const bytes = (path: string): Buffer => readFileSync(join(CORPUS_ROOT, path));
       const linesOf = (path: string): string[] => bytes(path).toString('utf8').split('\n');
@@ -448,6 +471,11 @@ describe('the body-structure tier states one coherent specification', () => {
         emptyHeadings: linesOf('docs/recognition/empty-h2-twice.md').filter((line) => /^##\s*$/u.test(line)),
         bareLineFeeds: crlf.split('\n').length - crlf.split('\r\n').length,
         lastBytes: crlf.slice(-expected.lastBytes.length),
+        nestedInOrdered: linesOf('docs/section-kinds/ordered-nested.md').filter((line) => line.startsWith('   ')),
+        looseParagraph: linesOf('docs/section-kinds/ordered-loose.md').filter((line) => line.startsWith('   ')),
+        nestedInBullets: linesOf('docs/section-kinds/bullets-nested-ordered.md').filter((line) =>
+          line.startsWith('  '),
+        ),
       };
       // ASSERT
       expect(actual).toEqual(expected);
@@ -506,6 +534,98 @@ describe('the tool answers each body-structure case as it states', () => {
 });
 
 // ---------------------------------------------------------------------------
+// The verbatim case (#227, design-ADR 0030): `GEN-001` byte for byte.
+//
+// A byte-identical copy cannot carry the `expect` marker ARCH-002 §2.1 requires in every
+// case under `docs/`, so the copy is held outside `docs/` and outside `.md`, in
+// `verbatim/`, and `verbatim-cases.json` states what the tier's config must answer for it.
+// It is asked exactly as a case is: alone, in a root of its own, at the path the entry's key
+// names. It does NOT read `.archgate/`: the corpus is the portable specification and
+// adopters never receive that directory (design-ADR 0030 decision 5).
+// ---------------------------------------------------------------------------
+
+/** The verbatim cases, beside the config. */
+const VERBATIM_FILE = 'verbatim-cases.json';
+
+interface VerbatimCase {
+  readonly stored: string;
+  readonly source: string;
+  readonly bytes: number;
+  readonly sha256: string;
+  readonly verdict: string;
+  readonly ruleId: string;
+  readonly violations: readonly unknown[];
+}
+
+const verbatimCases = JSON.parse(readTierText(VERBATIM_FILE)) as Record<string, VerbatimCase>;
+
+const storedBytes = (path: string): Buffer => readFileSync(join(CORPUS_ROOT, verbatimCases[path].stored));
+
+/** Ask one verbatim case alone: its stored bytes at its own path, in a root holding nothing else. */
+async function answerVerbatim(path: string, index: number): Promise<CaseAnswer> {
+  const root = join(scratch, `verbatim-${index}`);
+  mkdirSync(dirname(join(root, path)), { recursive: true });
+  writeFileSync(join(root, path), storedBytes(path));
+  const [check, audit] = await Promise.all([
+    mh(['--check', '--root', root, '--config', TYPED_CONFIG]),
+    mh(['--audit', '--root', root, '--config', TYPED_CONFIG]),
+  ]);
+  const refusal = refusalOf(check) ?? refusalOf(audit);
+  if (refusal !== undefined) return { refusal };
+  if (envelopeOf(check).result?.summary?.governedFiles === 0) return { verdict: UNGOVERNED };
+  const violations = violationsIn(check);
+  return {
+    verdict: violations.length > 0 ? FAILS : PASSES,
+    finding: { ruleId: winnersIn(audit), violations },
+  };
+}
+
+describe('the tool answers the verbatim body-structure case as it states', () => {
+  describe('success cases', () => {
+    it.each(Object.keys(verbatimCases))(
+      'answers %s under the Rule it names, with the violations it states',
+      async (path) => {
+        // ARRANGE
+        const stated = verbatimCases[path];
+        const expected = { verdict: stated.verdict, finding: { ruleId: stated.ruleId, violations: stated.violations } };
+        // ACT
+        const actual = await answerVerbatim(path, Object.keys(verbatimCases).indexOf(path));
+        // ASSERT
+        expect(actual).toEqual(expected);
+      },
+    );
+  });
+
+  describe('failure cases', () => {
+    it.each(Object.keys(verbatimCases))(
+      'holds the stored bytes of %s to the length and hash the entry states',
+      (path) => {
+        // An edit to the copy goes red here, before any tool is asked.
+        // ARRANGE
+        const stated = verbatimCases[path];
+        const expected = { bytes: stated.bytes, sha256: stated.sha256 };
+        // ACT
+        const stored = storedBytes(path);
+        const actual = { bytes: stored.length, sha256: createHash('sha256').update(stored).digest('hex') };
+        // ASSERT
+        expect(actual).toEqual(expected);
+      },
+    );
+  });
+
+  describe('edge cases', () => {
+    it('never enumerates a stored file as a case, which is what the .verbatim name is for', () => {
+      // ARRANGE
+      const stored = Object.values(verbatimCases).map((entry) => entry.stored);
+      // ACT
+      const enumerated = stored.filter((file) => corpus.includes(file));
+      // ASSERT
+      expect(enumerated).toEqual([]);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // The whole tier at the process boundary: --check, --audit, --query, --assess.
 // ---------------------------------------------------------------------------
 
@@ -553,6 +673,15 @@ const AUDIT_ROWS = [
   { ruleId: 'closed-sources', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'open-sources', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'closed-bare', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'vocab-changelog', won: 13, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'vocab-closed', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'vocab-levels', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'vocab-depth', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'section-kinds', won: 29, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'section-steps', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'section-nested', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'section-closed', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'adr-contract', won: 13, shadowed: 0, shadowedBy: [], excluded: 0 },
 ];
 
 /** The `--query` candidates #221 freezes, per path asked, in order. */
@@ -572,6 +701,10 @@ const QUERY_CANDIDATES: readonly (readonly [string, readonly string[]])[] = [
   ['docs/closed-record/x.md', ['guides', 'closed-record']],
   ['docs/open-sources/x.md', ['guides', 'open-sources']],
   ['docs/closed-bare/x.md', ['guides', 'closed-bare']],
+  ['docs/vocab-changelog/x.md', ['guides', 'vocab-changelog']],
+  ['docs/vocab-levels/x.md', ['guides', 'vocab-levels']],
+  ['docs/section-kinds/x.md', ['guides', 'section-kinds']],
+  ['docs/adr/x.md', ['guides', 'adr-contract']],
 ];
 
 /** A Rule's selector as written: an axis it never wrote is left out entirely. */
@@ -590,6 +723,7 @@ function candidateBlock(ruleId: string): unknown {
     types: rule.types,
     maxLevel: rule.maxLevel,
     undefinedHeadings: rule.undefinedHeadings,
+    vocabulary: rule.vocabulary,
     headings: rule.headings,
   };
   const requirements = Object.fromEntries(Object.entries(written).filter(([, value]) => value !== undefined));
@@ -677,7 +811,7 @@ describe('the tool answers for the whole body-structure tier', () => {
       const expected = {
         code: 1,
         refusal: undefined,
-        summary: { governedFiles: 201, invalidFiles: 110, totalViolations: 123 },
+        summary: { governedFiles: 276, invalidFiles: 149, totalViolations: 172 },
       };
       // ACT
       const actual = {
@@ -725,7 +859,7 @@ describe('the tool answers for the whole body-structure tier', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('audits the thirty-six Rules in config order, so a shadowed or excluded file is visible', () => {
+    it('audits the forty-five Rules in config order, so a shadowed or excluded file is visible', () => {
       // ARRANGE
       const expected = {
         code: 0,

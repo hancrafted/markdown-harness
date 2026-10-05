@@ -10,7 +10,7 @@ describe('Conformance tier records', () => {
           name: 'body-structure',
           caseKind: 'markdown',
           configFile: 'valid-test-config.yaml',
-          caseCount: 218,
+          caseCount: 294,
         },
         {
           name: 'frontmatter',

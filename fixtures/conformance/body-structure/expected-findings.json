@@ -1,4 +1,191 @@
 {
+  "docs/adr/anchor-bullets-second.md": {
+    "ruleId": "adr-contract",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 3,
+        "content": "2. Second anchor",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 3,
+          "pattern": "^[0-9]+\\. ",
+          "minCount": 1,
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/adr/anchor-prose.md": {
+    "ruleId": "adr-contract",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 3,
+        "content": "1. First anchor",
+        "kind": "prose",
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 3,
+          "pattern": "^[0-9]+\\. ",
+          "minCount": 1,
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/adr/anchor-sequence.md": {
+    "ruleId": "adr-contract",
+    "violations": []
+  },
+  "docs/adr/consequences-bullets.md": {
+    "ruleId": "adr-contract",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 7,
+        "content": "Consequences",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Consequences$",
+          "mayHold": [
+            "prose",
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/adr/context-list.md": {
+    "ruleId": "adr-contract",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Context",
+        "kind": "ordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Context$",
+          "mayHold": [
+            "prose"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/adr/donts-first.md": {
+    "ruleId": "adr-contract",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 6,
+        "requirement": {
+          "purpose": "heading",
+          "level": 3,
+          "pattern": "^Don'ts$",
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/adr/dos-prose.md": {
+    "ruleId": "adr-contract",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 5,
+        "content": "Do's",
+        "kind": "prose",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 3,
+          "pattern": "^Do's$",
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/adr/extra-section.md": {
+    "ruleId": "adr-contract",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 2,
+        "content": "Notes",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/adr/item-shape.md": {
+    "ruleId": "adr-contract",
+    "violations": []
+  },
+  "docs/adr/no-consequences.md": {
+    "ruleId": "adr-contract",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 7,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Consequences$",
+          "mayHold": [
+            "prose",
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/adr/passes-condensed.md": {
+    "ruleId": "adr-contract",
+    "violations": []
+  },
+  "docs/adr/references-numbered.md": {
+    "ruleId": "adr-contract",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 9,
+        "content": "References",
+        "kind": "ordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^References$",
+          "mayHold": [
+            "unordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/adr/stray-decision-prose.md": {
+    "ruleId": "adr-contract",
+    "violations": []
+  },
   "docs/alternation/both.md": {
     "ruleId": "closed-set",
     "violations": []
@@ -1642,6 +1829,530 @@
       }
     ]
   },
+  "docs/section-closed/both.md": {
+    "ruleId": "section-closed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 2,
+        "content": "Appendix",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Summary",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Summary$",
+          "mayHold": [
+            "prose"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-closed/claimed-fails.md": {
+    "ruleId": "section-closed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Summary",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Summary$",
+          "mayHold": [
+            "prose"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-closed/passes.md": {
+    "ruleId": "section-closed",
+    "violations": []
+  },
+  "docs/section-closed/undefined-section.md": {
+    "ruleId": "section-closed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 2,
+        "content": "Appendix",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/adjacent-lists.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Ordered",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Ordered$",
+          "presence": "optional",
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/anything-passes.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/bullets-nested-ordered.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/bullets-ordered.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 2,
+        "content": "Bullets",
+        "kind": "ordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Bullets$",
+          "presence": "optional",
+          "mayHold": [
+            "unordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/bullets-passes.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/empty-sections.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/free-passes.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/list-split-by-paragraph.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Ordered",
+        "kind": "prose",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Ordered$",
+          "presence": "optional",
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/misplaced-heading.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Bullets$",
+          "presence": "optional",
+          "mayHold": [
+            "unordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/mixed-bold-labels.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/mixed-bullets.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 3,
+        "content": "Mixed",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Mixed$",
+          "presence": "optional",
+          "mayHold": [
+            "prose",
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/mixed-passes.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/ordered-bold-label.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Ordered",
+        "kind": "prose",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Ordered$",
+          "presence": "optional",
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/ordered-loose.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/ordered-nested.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/ordered-passes.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/ordered-prose.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Ordered",
+        "kind": "prose",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Ordered$",
+          "presence": "optional",
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/preamble.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/prose-bullets.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 0,
+        "content": "Prose",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Prose$",
+          "presence": "optional",
+          "mayHold": [
+            "prose"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/prose-ordered.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 0,
+        "content": "Prose",
+        "kind": "ordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Prose$",
+          "presence": "optional",
+          "mayHold": [
+            "prose"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/prose-passes.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/quote-heading.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/repeated-heading.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": 1,
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Ordered$",
+          "presence": "optional",
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/setext-ends-section.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/transparent.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/two-kinds.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Ordered",
+        "kind": "prose",
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Ordered$",
+          "presence": "optional",
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Ordered",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Ordered$",
+          "presence": "optional",
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/two-sections.md": {
+    "ruleId": "section-kinds",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 0,
+        "content": "Prose",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Prose$",
+          "presence": "optional",
+          "mayHold": [
+            "prose"
+          ]
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Ordered",
+        "kind": "prose",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Ordered$",
+          "presence": "optional",
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-kinds/unclaimed-section.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-kinds/unclaimed-subsection.md": {
+    "ruleId": "section-kinds",
+    "violations": []
+  },
+  "docs/section-nested/child-prose.md": {
+    "ruleId": "section-nested",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "2. Second anchor",
+        "kind": "prose",
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 3,
+          "pattern": "^[0-9]+\\. ",
+          "minCount": 1,
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-nested/parent-list.md": {
+    "ruleId": "section-nested",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 0,
+        "content": "Decision",
+        "kind": "ordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "pattern": "^Decision$",
+          "mayHold": [
+            "prose"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-nested/passes.md": {
+    "ruleId": "section-nested",
+    "violations": []
+  },
+  "docs/section-steps/every-repeat.md": {
+    "ruleId": "section-steps",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Step: Prepare",
+        "kind": "prose",
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Step: ",
+          "minCount": 1,
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Step: Cook",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Step: ",
+          "minCount": 1,
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-steps/passes.md": {
+    "ruleId": "section-steps",
+    "violations": []
+  },
+  "docs/section-steps/second-repeat.md": {
+    "ruleId": "section-steps",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": 1,
+        "content": "Step: Cook",
+        "kind": "unordered-list",
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "pattern": "^Step: ",
+          "minCount": 1,
+          "mayHold": [
+            "ordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/section-steps/unclaimed-sub.md": {
+    "ruleId": "section-steps",
+    "violations": []
+  },
   "docs/sentence/bare.md": {
     "ruleId": "sentence-titles",
     "violations": [
@@ -1973,6 +2684,325 @@
         }
       }
     ]
+  },
+  "docs/vocab-changelog/any-order.md": {
+    "ruleId": "vocab-changelog",
+    "violations": []
+  },
+  "docs/vocab-changelog/before-any-release.md": {
+    "ruleId": "vocab-changelog",
+    "violations": []
+  },
+  "docs/vocab-changelog/before-title.md": {
+    "ruleId": "vocab-changelog",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "Improved",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Added",
+            "Changed",
+            "Deprecated",
+            "Removed",
+            "Fixed",
+            "Security"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/vocab-changelog/case-mismatch.md": {
+    "ruleId": "vocab-changelog",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "added",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Added",
+            "Changed",
+            "Deprecated",
+            "Removed",
+            "Fixed",
+            "Security"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/vocab-changelog/closing-hashes.md": {
+    "ruleId": "vocab-changelog",
+    "violations": []
+  },
+  "docs/vocab-changelog/content-not-governed.md": {
+    "ruleId": "vocab-changelog",
+    "violations": []
+  },
+  "docs/vocab-changelog/deeper-level.md": {
+    "ruleId": "vocab-changelog",
+    "violations": []
+  },
+  "docs/vocab-changelog/disallowed.md": {
+    "ruleId": "vocab-changelog",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "Improved",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Added",
+            "Changed",
+            "Deprecated",
+            "Removed",
+            "Fixed",
+            "Security"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/vocab-changelog/interleaved.md": {
+    "ruleId": "vocab-changelog",
+    "violations": []
+  },
+  "docs/vocab-changelog/missing-title.md": {
+    "ruleId": "vocab-changelog",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "Improved",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Added",
+            "Changed",
+            "Deprecated",
+            "Removed",
+            "Fixed",
+            "Security"
+          ]
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": 0,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "pattern": "^Changelog$"
+        }
+      }
+    ]
+  },
+  "docs/vocab-changelog/no-third-level.md": {
+    "ruleId": "vocab-changelog",
+    "violations": []
+  },
+  "docs/vocab-changelog/raw-markup.md": {
+    "ruleId": "vocab-changelog",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "**Added**",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Added",
+            "Changed",
+            "Deprecated",
+            "Removed",
+            "Fixed",
+            "Security"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/vocab-changelog/substring.md": {
+    "ruleId": "vocab-changelog",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "Added things",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Added",
+            "Changed",
+            "Deprecated",
+            "Removed",
+            "Fixed",
+            "Security"
+          ]
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "Fix",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Added",
+            "Changed",
+            "Deprecated",
+            "Removed",
+            "Fixed",
+            "Security"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/vocab-closed/other-levels.md": {
+    "ruleId": "vocab-closed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "Improved",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Added",
+            "Changed",
+            "Deprecated",
+            "Removed",
+            "Fixed",
+            "Security"
+          ]
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 4,
+        "content": "Detail",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 2,
+        "content": "Unreleased",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/vocab-closed/outside-vocabulary.md": {
+    "ruleId": "vocab-closed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "Improved",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Added",
+            "Changed",
+            "Deprecated",
+            "Removed",
+            "Fixed",
+            "Security"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/vocab-closed/passes.md": {
+    "ruleId": "vocab-closed",
+    "violations": []
+  },
+  "docs/vocab-closed/release-undefined.md": {
+    "ruleId": "vocab-closed",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 2,
+        "content": "Unreleased",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/vocab-depth/passes.md": {
+    "ruleId": "vocab-depth",
+    "violations": []
+  },
+  "docs/vocab-depth/too-deep-and-outside.md": {
+    "ruleId": "vocab-depth",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+        "level": 4,
+        "found": 1,
+        "requirement": {
+          "maxLevel": 3
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "Improved",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Added",
+            "Fixed"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/vocab-levels/both-levels.md": {
+    "ruleId": "vocab-levels",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 3,
+        "content": "Sample",
+        "requirement": {
+          "level": 3,
+          "allowed": [
+            "Example"
+          ]
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+        "level": 2,
+        "content": "Install",
+        "requirement": {
+          "level": 2,
+          "allowed": [
+            "Overview",
+            "Usage"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/vocab-levels/passes.md": {
+    "ruleId": "vocab-levels",
+    "violations": []
+  },
+  "docs/vocab-levels/title-unconstrained.md": {
+    "ruleId": "vocab-levels",
+    "violations": []
   },
   "docs/windowed/conclusion-twice.md": {
     "ruleId": "windowed",
