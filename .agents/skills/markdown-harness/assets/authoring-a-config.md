@@ -21,9 +21,10 @@ Bring the candidates to the first question. "You have 34 files under `docs/resea
 already carry `sources:`" is a question the user can answer; "what would you like to govern?" is not.
 
 **If a config is already there, read its selectors before its rules.** A `path:` key, a `fileName:`
-key, or any glob (a `*` inside a selector value) is the grammar this skill no longer teaches — read
-[`migrating-a-config.md`](migrating-a-config.md) and translate every rule before doing anything else.
-The rest of this workflow assumes the config in front of you is already on `folders:` / `fileNames:`.
+key, any glob (a `*` inside a selector value), or a `vocabulary:` key is a grammar the current CLI
+refuses — run [`migrating.md`](migrating.md) before doing anything else, since a gate on that config
+usually still carries the retired `mh --check` too. The rest of this workflow assumes the config in
+front of you loads.
 
 _Done when_ you can name each governable directory, roughly how many files it holds, and what its
 files already declare.
