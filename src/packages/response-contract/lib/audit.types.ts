@@ -1,11 +1,11 @@
 /**
- * What `--audit` answers about every rule in the config.
+ * What `audit` answers about every rule in the config.
  *
  * The stated cost of first-match is that every LOSING rule is silent: a rule
  * that wins no file reports nothing, so an ordering mistake or a glob typo is
  * invisible in exactly the direction a trust tool cannot afford. This is the
  * diagnostic that makes them visible, and it is the Operator's instrument —
- * which is why none of it rides in `--check`, whose reader can act on none of it.
+ * which is why none of it rides in `check`, whose reader can act on none of it.
  */
 
 /** Every Module's rule tallies across one corpus. */
@@ -68,6 +68,6 @@ export interface SelectorRef {
   folders?: readonly string[];
   /** The literal basenames the rule listed. */
   fileNames?: readonly string[];
-  /** The frontmatter `type` values a `body-structure` Rule listed. */
+  /** The frontmatter `type` values the rule listed, for a Module whose rules also select on a file's `type`. */
   types?: readonly string[];
 }

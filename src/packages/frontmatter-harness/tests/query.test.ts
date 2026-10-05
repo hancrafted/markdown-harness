@@ -1,4 +1,4 @@
-// Integration suite for this Module's half of `--query`, at the grain a caller sees.
+// Integration suite for this Module's half of `query`, at the grain a caller sees.
 //
 // Every case runs against the committed conformance config rather than a rule
 // written for the occasion, so the ordering assertions are made about the same
@@ -175,7 +175,7 @@ describe('queryPath', () => {
       // reaches this path as readily as the `.md` beside it. What tells them
       // apart is the same predicate the walk uses, asked here because there is
       // no walk on this command to have filtered one out — and claiming a file
-      // `--check` will never report on is the one way this command can mislead
+      // `check` will never report on is the one way this command can mislead
       // an agent about to create one.
       // ARRANGE
       const notMarkdown = 'docs/reference/never-written.txt';

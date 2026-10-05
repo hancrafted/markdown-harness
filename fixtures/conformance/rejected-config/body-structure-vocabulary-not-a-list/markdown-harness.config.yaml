@@ -1,3 +1,0 @@
-# body-structure rejected-config case: vocabulary not a list.
-# Frozen faults are in expected-rejection.json beside this file; see the vocabulary and section-content spec (#227).
-body-structure: { rules: [{ ruleId: sound, folders: [docs/], intent: 'A sound rule, so the only fault reported is the one below.', vocabulary: { level: 3, allowed: [Added] } }] }

@@ -187,12 +187,25 @@ describe('selector faults', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('leaves an empty Core axis and keys outside the axes alone', () => {
+    it('refuses an empty Core axis at the axis, and leaves keys outside the axes alone', () => {
       // ARRANGE
+      // An empty list names no folder and no file name, so the Rule would
+      // select nothing; leaving the key out is what means every.
       const rule = { folders: [], fileNames: [], intent: 'x', ruleId: 'r' };
-      const expected = [[], []];
+      const refused = [invalid(`${AT}.folders`), invalid(`${AT}.fileNames`)];
+      const expected = [refused, refused];
       // ACT
       const actual = [axisFaults(rule, AT), tokenFaults(rule, AT)];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('refuses an exclusion whose only axis is empty, at the key', () => {
+      // ARRANGE
+      const rule = { excludeFiles: [{ folders: [] }] };
+      const expected = [invalid(EXCLUDE_AT)];
+      // ACT
+      const actual = exclusionFaults(rule, AT);
       // ASSERT
       expect(actual).toEqual(expected);
     });

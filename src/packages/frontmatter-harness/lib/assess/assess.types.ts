@@ -1,5 +1,5 @@
 /**
- * The seams inside `--assess`.
+ * The seams inside `assess`.
  *
  * ONE shape now, and the other one is the gate's. What sits at a path is
  * `foundation`'s `FileRead` — text, absence or unreadability — because that

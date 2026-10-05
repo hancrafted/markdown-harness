@@ -8,8 +8,8 @@ saying "a decision record has Status, Context and Decision". Nothing checks it. 
 section moves the template into the config, so one declaration steers the agent that writes the file
 and checks the file afterwards.
 
-The workflow is `authoring-a-config.md`'s: one Rule at a time, with `mh --query`, `mh --audit` and
-`mh --check` as the loop. This file holds what differs for headings. The **Operator** is the person who
+The workflow is `authoring-a-config.md`'s: one Rule at a time, with `mh query`, `mh audit` and
+`mh check` as the loop. This file holds what differs for headings. The **Operator** is the person who
 approves each Rule and decides what a finding means; the **Contributors** are the people and agents who
 write the documents it governs.
 
@@ -23,8 +23,8 @@ page of a folder of look-alikes. Read two or three real documents of the kind an
 headings. The Operator confirms which headings are the template and which are one author's habit.
 
 _Done when_ you can state the template as a numbered list: each heading's level, what it may say,
-whether it may be absent, whether it repeats, whether its title is one of a fixed set that repeats
-under other sections, which kinds of block sit under it (paragraphs, a numbered list, a bulleted
+whether it may be absent, whether it repeats, whether its title is one of a fixed set, which headings
+belong inside it rather than beside it, which kinds of block sit under it (paragraphs, a numbered list, a bulleted
 list), and how the kind is told apart, by its folder or by its `type`.
 
 ## 2. Choose what the Rule selects
@@ -39,7 +39,7 @@ the file goes ungoverned and nothing says so. Prefer `folders:` when the kind li
 only `type` tells the kind apart, pair the Rule with a `frontmatter:` Rule that requires `type` and
 lists its `allowed` values, because the two sections never read each other.
 
-`mh --query` answers with every Rule that could win a path, in config order, each with the `types` it
+`mh query` answers with every Rule that could win a path, in config order, each with the `types` it
 needs: a path alone cannot say which `type` the file will carry.
 
 _Done when_ the Operator has named the paths or types the Rule governs, and a `types:` Rule has its
@@ -56,10 +56,11 @@ entry has a `purpose` and a `level` (1 to 6):
   and `maxCount`, at least one of them. `minCount: 0` is its optional. It takes no `presence`, and it
   never pins one title: a fixed title is a `heading`.
 
-An entry matches a heading by `level` and `pattern` together, and an entry with no `pattern` matches
-any heading at its level. Only top-level headings count: a `#` inside a fence, a blockquote, a list
-item or the frontmatter is not a heading. The spine is flat. An enumeration ends at the first heading a
-later entry matches, so a Conclusion entry written after a run of Sources keeps the run from taking it.
+An entry matches a heading by `level` and by its title, named either by a `pattern` or by an `allowed`
+list (step 4), and an entry with neither matches any heading at its level. Only top-level headings
+count: a `#` inside a fence, a blockquote, a list item or the frontmatter is not a heading. An
+enumeration ends at the first heading a later entry matches, so a Conclusion entry written after a run
+of Sources keeps the run from taking it. A list of entries may sit under one heading, which is step 5.
 
 **Write an `intent` on every entry that carries a `pattern`.** A violation shows the Contributor the
 entry as written, so an entry without an `intent` shows a raw regular expression.
@@ -85,12 +86,23 @@ body-structure:
 A key an entry may not carry, or a count range turned around, comes back from the exit-2 loop with its
 location; let it say so rather than guessing.
 
-_Done when_ every line of the template from step 1 is an entry, is set aside for step 5's vocabulary
-(a title from a fixed set that repeats), or the Operator has dropped it.
+_Done when_ every line of the template from step 1 is an entry, is set aside for step 5 (a heading that
+belongs under another heading), or the Operator has dropped it.
 
-## 4. Anchor every title
+## 4. Name every title exactly
 
-**When a pattern names a fixed title, anchor it: `^Decision$`, with any regular-expression
+An entry names the titles it accepts one of two ways, never both: a `pattern` beside `allowed` is
+`CONFIG_PATTERN_WITH_ALLOWED` at `allowed`.
+
+- **`allowed`** is a list of exact titles, `{ title, intent? }` each, the same shape as a frontmatter
+  `allowed` value. Use it for a fixed title or a fixed set: `allowed: [{ title: Decision }]`. A title
+  matches whole, exactly and case-sensitively, never searched, so `### added` fails against `Added`
+  and `## Decision record` fails against `Decision`. A title is compared with the heading's raw source,
+  so `### **Added**` is `**Added**`. On an enumeration a title may repeat inside the run, as a pattern
+  match may. A title an earlier item of the same list holds is `CONFIG_DUPLICATE_VOCABULARY_TITLE`.
+- **`pattern`** is a regular expression, for a shape: a prefix such as `^Source: `, or a length.
+
+**Prefer `allowed` for a fixed title. When a pattern names one anyway, anchor it: `^Decision$`, with any regular-expression
 metacharacter escaped (`^C\+\+$`). Drop the anchors only when the Operator asks for a substring
 match.** A pattern is _searched_, so an unanchored `Decision` also passes `## Decisions` and
 `## Decision record`: the entry loosens silently, and the check stays green over headings nobody
@@ -104,58 +116,105 @@ A pattern is tried against the heading's raw source, so `## **Findings**` is `**
 a length. The dialect is ECMAScript with the `u` flag. **Single-quote every pattern**: an unquoted
 `^Source: ` carries a `: ` and the config is rejected as `CONFIG_NOT_YAML`.
 
-_Done when_ every fixed title is anchored, and each unanchored pattern is one the Operator asked for.
+_Done when_ every fixed title is an `allowed` item or an anchored pattern, and each unanchored pattern
+is one the Operator asked for.
 
-## 5. Choose a vocabulary or a pattern
+## 5. Nest the headings that belong under a heading
 
-Two keys decide which titles a heading may carry, and each answers a different question.
+A `heading` or an `enumeration` entry may carry its own **`headings:`** list, a **nested spine**. It is
+checked over the headings under each heading the entry claims: the headings after it, up to the next
+heading at its level or shallower. That is wider than the heading's own section (step 6), which ends
+at the next heading of any level. An enumeration's nested list is checked again under every repeat,
+so every release of a changelog gets the same nested spine, and a nested spine never reaches into the
+next release. A nested list has the same grammar as the Rule's own and nests again, down to level 6.
+Every entry in it sits deeper than its parent; one that does not could never match, and is
+`CONFIG_NESTED_ENTRY_NOT_DEEPER` at its `level`. A heading under a parent the walk never claimed, a
+missing or repeated one, has no nested list checked under it.
 
-- **A `pattern`** on an entry says what the heading at that place in the spine looks like, so use it
-  for a fixed title (`^Decision$`), a shape (`^Source: `), or whenever order or count matters.
-- **A `vocabulary`** says which exact titles a level may take wherever it sits in the document, so use
-  it when the same few titles repeat under every section, as `### Added` and `### Fixed` do under
-  every release of a changelog.
-
-A vocabulary is a Rule key beside `headings:`, a list of `{ level, allowed }` items with one item per
-level. It is a **set**: any order, any number of times. "`Added` before `Changed`" and "one `### Added`
-per release" are conventions this key leaves out, and an Operator who wants either has asked for more
-than a set. A title matches whole, exactly and case-sensitively, so `### added` fails against `Added`,
-and a title is compared as the heading's raw source, so `### **Added**` is `**Added**`.
+A strict [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) file: one optional entry per change
+type, in the convention's order, under every release.
 
 ```yaml
 body-structure:
   rules:
     - ruleId: changelog
       folders: [docs/changelog/]
-      intent: 'A changelog has one title and a heading per release, and the headings under a release come from one fixed set, in any order and any number of times.'
+      intent: 'A changelog has one title and a heading per release, and each release lists its changes under at most one heading per change type, in the order Keep a Changelog gives them.'
+      undefinedHeadings: forbid
       headings:
-        - { purpose: heading, level: 1, pattern: '^Changelog$', intent: 'The file is the changelog.' }
-        - {
-            purpose: enumeration,
-            level: 2,
-            pattern: '^\[',
-            minCount: 1,
-            intent: 'One section per release, newest first.',
-          }
-      vocabulary:
-        - { level: 3, allowed: [Added, Changed, Deprecated, Removed, Fixed, Security] }
+        - { purpose: heading, level: 1, allowed: [{ title: Changelog }], intent: 'The file is the changelog.' }
+        - purpose: enumeration
+          level: 2
+          pattern: '^\['
+          minCount: 1
+          intent: 'One section per release, newest first.'
+          headings:
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Added, intent: 'New features.' }] }
+            - {
+                purpose: heading,
+                level: 3,
+                presence: optional,
+                allowed: [{ title: Changed, intent: 'Changes in existing functionality.' }],
+              }
+            - {
+                purpose: heading,
+                level: 3,
+                presence: optional,
+                allowed: [{ title: Deprecated, intent: 'Soon-to-be removed features.' }],
+              }
+            - {
+                purpose: heading,
+                level: 3,
+                presence: optional,
+                allowed: [{ title: Removed, intent: 'Now removed features.' }],
+              }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Fixed, intent: 'Any bug fixes.' }] }
+            - {
+                purpose: heading,
+                level: 3,
+                presence: optional,
+                allowed: [{ title: Security, intent: 'In case of vulnerabilities.' }],
+              }
 ```
 
-A third-level heading outside the list is one `BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY`, carrying
-its `level`, its `content` and the `requirement`, which is the vocabulary item, so the Contributor
-reads the six titles in the finding that names the seventh. Whatever its position, the heading is
-reported as `HEADING_NOT_IN_VOCABULARY` and as nothing else. Under `undefinedHeadings: forbid`
-(step 7), a heading the vocabulary admits counts as claimed, so it is never also undefined.
+Against that Rule, a second `### Added` inside one release is `HEADING_REPEATED`, `### Fixed` before
+`### Added` in one release is `HEADING_OUT_OF_ORDER`, and a `### Added` written before the first
+release belongs to no release, so under `forbid` it is `HEADING_UNDEFINED`. Each release is checked on
+its own, so `Added` may follow the previous release's `Fixed`. An Operator who wants the change types
+in any order and any number of times writes one enumeration instead, `minCount: 0` with all six titles
+in its `allowed` list.
 
-**Give a level entries or a vocabulary, one of the two.** An entry at level 3 beside a
-vocabulary for level 3 is `CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES` at the vocabulary's `level`, and
-`allowed:` written on an entry is `CONFIG_UNRECOGNISED_KEY`: the list belongs to `vocabulary:`. The
-workaround an enumeration invites, six enumerations each pinned to one title as `^Added$`, is
-`CONFIG_ENUMERATION_PINS_TEXT`, which is why a vocabulary exists. A vocabulary heading's section stays
-unconstrained, since a `vocabulary` item takes no `mayHold`.
+A decision record whose fixed sections each carry their own sub-sections:
 
-_Done when_ each level whose titles are a fixed set is a vocabulary item, each fixed title elsewhere is
-an anchored `pattern`, and every level has entries or a vocabulary.
+```yaml
+body-structure:
+  rules:
+    - ruleId: decision-records
+      folders: [docs/decisions/]
+      intent: 'A decision record weighs at least two options and then states what follows, good and bad.'
+      headings:
+        - { purpose: heading, level: 1, intent: 'The decision, as a short noun phrase.' }
+        - { purpose: heading, level: 2, allowed: [{ title: Context }] }
+        - purpose: heading
+          level: 2
+          allowed: [{ title: Options, intent: 'The choices weighed, one heading each.' }]
+          headings:
+            - { purpose: enumeration, level: 3, pattern: '^Option ', minCount: 2, intent: 'One option per heading.' }
+        - { purpose: heading, level: 2, allowed: [{ title: Decision }] }
+        - purpose: heading
+          level: 2
+          allowed: [{ title: Consequences }]
+          headings:
+            - { purpose: heading, level: 3, allowed: [{ title: Positive }], mayHold: [unordered-list] }
+            - { purpose: heading, level: 3, allowed: [{ title: Negative }], mayHold: [unordered-list] }
+```
+
+An `### Option B` written under `## Decision` is not counted toward `Options`: the headings under
+`## Options` end at `## Decision`. Nesting is the only way to say where a heading belongs: there is no form that admits a
+title at a level wherever it sits.
+
+_Done when_ every heading that belongs under another heading is in that entry's nested list,
+and every nested entry is deeper than its parent.
 
 ## 6. Say what a section may hold
 
@@ -253,9 +312,10 @@ already exists without a finding on every page. Two Rule keys change it:
 - **`maxLevel`** (1 to 6) is the deepest level allowed in an open spine. Headings deeper than it are
   one `BODY_STRUCTURE__LEVEL_TOO_DEEP` per level.
 - **`undefinedHeadings`** is `allow` (the default, written out) or `forbid`, which **closes** the
-  spine. A heading no entry matches and no vocabulary admits, at any level and the title included, is then one
-  `BODY_STRUCTURE__HEADING_UNDEFINED` carrying its `level` and `content`, so a closed spine needs a
-  level 1 entry. Any other value, `closed` or `Forbid` included, is `CONFIG_INVALID_VALUE`.
+  spine at every depth. A heading no entry matches at its position, at any level and the title
+  included, is then one `BODY_STRUCTURE__HEADING_UNDEFINED` carrying its `level` and `content`, so a
+  closed spine needs a level 1 entry. At its position means an entry of the Rule's own list, or of a
+  nested list walked under a heading it sits under. Any other value, `closed` or `Forbid` included, is `CONFIG_INVALID_VALUE`.
 
 Only `forbid` excludes `maxLevel`: `allow` beside `maxLevel` is valid, and `maxLevel` beside `forbid`
 is `CONFIG_MAX_LEVEL_ON_CLOSED_SPINE` at `maxLevel`. Either repair works, and the Operator chooses:
@@ -273,21 +333,24 @@ body-structure:
       undefinedHeadings: forbid
       headings:
         - { purpose: heading, level: 1, intent: 'The decision, as a short noun phrase.' }
-        - { purpose: heading, level: 2, pattern: '^Status$', intent: 'Proposed, accepted or superseded.' }
-        - { purpose: heading, level: 2, pattern: '^Context$', intent: 'The forces that made the decision necessary.' }
-        - { purpose: heading, level: 2, pattern: '^Decision$', intent: 'What was decided, and why.' }
+        - { purpose: heading, level: 2, allowed: [{ title: Status, intent: 'Proposed, accepted or superseded.' }] }
         - {
             purpose: heading,
             level: 2,
-            pattern: '^Consequences$',
+            allowed: [{ title: Context, intent: 'The forces that made the decision necessary.' }],
+          }
+        - { purpose: heading, level: 2, allowed: [{ title: Decision, intent: 'What was decided, and why.' }] }
+        - {
+            purpose: heading,
+            level: 2,
+            allowed: [{ title: Consequences, intent: 'What gets easier and what gets harder.' }],
             presence: optional,
-            intent: 'What gets easier and what gets harder.',
           }
 ```
 
-A heading some entry matches, or a vocabulary admits (step 5), is not undefined. A second `## Decision` is `HEADING_REPEATED` and a
+A heading some entry matches at its position (step 5) is not undefined. A second `## Decision` is `HEADING_REPEATED` and a
 misplaced `## Context` is `HEADING_OUT_OF_ORDER`, each reported by its entry. In a closed spine an
-enumeration's run holds its repeats and nothing else. `mh --query` copies `undefinedHeadings` into its
+enumeration's run holds its repeats and nothing else. `mh query` copies `undefinedHeadings` into its
 answer, so an agent about to write the file hears that no other heading is welcome.
 
 **Closing is the Operator's choice, and open is where to start.** A closed spine reports one violation
@@ -300,7 +363,7 @@ _Done when_ the Operator has said open or closed for this Rule, and a closed Rul
 
 Put the Rule in front of the Operator in their terms before the file changes: which paths or types it
 governs, the spine as a numbered list (level, what the heading says, absent or repeated, and the block
-kinds it holds when it has a `mayHold`), each vocabulary as its level and titles, whether it is open or
+kinds it holds when it has a `mayHold`), each nested list under the heading it belongs to, whether it is open or
 closed and what that means for a document with an extra section, and the `intent` sentence. Do not
 write it to the config until the Operator approves it.
 
@@ -309,24 +372,27 @@ _Done when_ the Operator has approved this Rule in words, and you have written i
 ## 9. Verify, then read what the check says
 
 ```sh
-mh --query docs/decisions/anything.md --config markdown-harness.config.yaml
+mh query docs/decisions/anything.md --config markdown-harness.config.yaml
 ```
 
-Read the candidates back: the `types`, `undefinedHeadings`, every `vocabulary` item and every entry,
-`mayHold` included, should be what the Operator approved. Exit 2 names the key to fix in `location`, as `authoring-a-config.md` step 4 says, and
-`mh --audit` (step 5 there) shows whether the Rule wins the files meant.
+Read the candidates back: the `types`, `undefinedHeadings` and every entry at every depth, `allowed`
+and `mayHold` included, should be what the Operator approved. Exit 2 names the key to fix in `location`, as `authoring-a-config.md` step 4 says, and
+`mh audit` (step 5 there) shows whether the Rule wins the files meant.
 
-Then run `mh --check`. It takes no path and reads the whole corpus, so read the findings for the files
+Then run `mh check`. It takes no path and reads the whole corpus, so read the findings for the files
 the new Rule governs, filtered by `ruleId`; when the report is large, group it by code before deciding
-anything. Each spine violation names its `entry`, the zero-based index in `headings:`, except
-`HEADING_UNDEFINED` and `HEADING_NOT_IN_VOCABULARY`, which name a `level` and the `content` found, and
-`LEVEL_TOO_DEEP`, which names a `level` and a `found` count. `BLOCK_KIND_NOT_ALLOWED` names the `entry`
-that claimed the heading, the section's `content`, the `kind` and how many were `found`.
+anything. Each spine violation names its `entry`, the path of zero-based indexes from the Rule's
+`headings:` down (`[1]` is the second top-level entry, `[1, 0]` the first entry of its nested list), and
+a violation inside a nested list also names `under`, the raw text of the heading the list was checked
+under, so the Contributor knows which release to fix. `HEADING_UNDEFINED` names a `level` and the
+`content` found instead, and `LEVEL_TOO_DEEP` a `level` and a `found` count. `BLOCK_KIND_NOT_ALLOWED`
+names the `entry` that claimed the heading, its `under` when nested, the section's `content`, the `kind`
+and how many were `found`.
 
 `SKILL.md`'s line holds here: the tool reports, and the Operator decides, one finding at a time. A
 finding means the document is wrong and a Contributor fixes it, or the Rule is wrong and the Operator
 changes it (a missing entry, an optional title, `allow` instead of `forbid`), or it waits. Edit a
 document only when the Operator asks, and never to turn a count green.
 
-_Done when_ `--query` shows the approved Rule, and the Operator has decided what to do about each
+_Done when_ `query` shows the approved Rule, and the Operator has decided what to do about each
 finding the Rule's files carry.

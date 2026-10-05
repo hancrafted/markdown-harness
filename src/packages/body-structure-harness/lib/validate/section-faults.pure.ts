@@ -11,10 +11,10 @@
  * Rule, mirroring the first Module: unrecognised keys, `ruleId`, `intent`, a
  * missing selector, each axis's shape, `excludeFiles`, the Rule-level empty
  * payload, `maxLevel`, `undefinedHeadings`, the exclusion of `maxLevel` by
- * `undefinedHeadings: forbid`, `vocabulary`, then `headings`.
+ * `undefinedHeadings: forbid`, then `headings`, at every depth.
  */
 
-import type { ConfigFault } from '../../../config-contract/index.ts';
+import { intentFaults } from '../../../foundation/intent-faults.ts';
 import {
   axisFaults,
   exclusionFaults,
@@ -26,8 +26,9 @@ import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { BodyStructureConfig, BodyStructureRule } from '../../section.ts';
 import { writesClosureBeyondDefault } from '../section/spine-closure.pure.ts';
 import { closedSpineFaults, undefinedHeadingsFaults } from './closed-spine-faults.pure.ts';
-import { headingsFaults, intentFaults, maxLevelFaults } from './template-faults.pure.ts';
-import { vocabularyFaults } from './vocabulary-faults.pure.ts';
+import { fault } from './fault.pure.ts';
+import type { BodyStructureFault } from './fault.types.ts';
+import { headingsFaults, maxLevelFaults } from './spine-faults.pure.ts';
 
 /** The section's own address. */
 const SECTION = 'body-structure';
@@ -36,7 +37,7 @@ const RULES = `${SECTION}.rules`;
 /** Every key the section defines, keyed by the type defining them so a key added there cannot be forgotten here. */
 const SECTION_KEYS: Record<keyof BodyStructureConfig, true> = { rules: true };
 
-/** Every key a Rule may carry, keyed by the type declaring them. `maxDepth`, `levels`, `title` and `prefix` are deliberately absent. */
+/** Every key a Rule may carry, keyed by the type declaring them. `maxDepth`, `levels`, `title`, `prefix` and the retired `vocabulary` are deliberately absent. */
 const RULE_KEYS: Record<keyof BodyStructureRule, true> = {
   ruleId: true,
   intent: true,
@@ -46,40 +47,39 @@ const RULE_KEYS: Record<keyof BodyStructureRule, true> = {
   excludeFiles: true,
   maxLevel: true,
   undefinedHeadings: true,
-  vocabulary: true,
   headings: true,
 };
 
 /**
  * This Module's own selector axis, handed to Core's selector validation: a
  * `type` is any non-empty string in a list of at least one, because a Rule that
- * can never win would show in `--query` as a candidate nobody can satisfy.
+ * can never win would show in `query` as a candidate nobody can satisfy.
  */
 const TYPES_AXIS = { types: (tokens: readonly string[]) => tokens.length > 0 && tokens.every((token) => token !== '') };
 
 /** The Rule's name and reason, both mandatory, each with its own way of being absent. */
-function identityFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
+function identityFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   const named = typeof rule.ruleId === 'string' && rule.ruleId !== '';
   return [
     ...(named ? [] : [invalidValue(`${at}.ruleId`)]),
-    ...('intent' in rule ? intentFaults(rule, at) : [{ code: 'CONFIG_MISSING_RULE_INTENT', location: at } as const]),
+    ...('intent' in rule ? intentFaults(rule, at) : [fault('CONFIG_MISSING_RULE_INTENT', at)]),
   ];
 }
 
 /**
- * A Rule that writes none of `headings`, `maxLevel`, `vocabulary` and a closure
+ * A Rule that writes none of `headings`, `maxLevel` and a closure
  * beyond the default asks nothing of a body: `allow` alone is the default
  * written out. An empty list is reported at the list
  * instead, and an invalid `undefinedHeadings` at the key, so neither is also
  * called empty.
  */
-function payloadFaults(rule: Record<string, unknown>, at: string): readonly ConfigFault[] {
-  const payload = 'maxLevel' in rule || 'headings' in rule || 'vocabulary' in rule || writesClosureBeyondDefault(rule);
-  return payload ? [] : [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: at }];
+function payloadFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
+  const payload = 'maxLevel' in rule || 'headings' in rule || writesClosureBeyondDefault(rule);
+  return payload ? [] : [fault('CONFIG_EMPTY_CONSTRAINT', at)];
 }
 
 /** Every fault one Rule carries, in walk order. */
-function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
+function ruleFaults(rule: unknown, at: string): readonly BodyStructureFault[] {
   if (!isMapping(rule)) return [invalidValue(at)];
   return [
     ...unrecognisedKeys(rule, RULE_KEYS, at),
@@ -91,19 +91,17 @@ function ruleFaults(rule: unknown, at: string): readonly ConfigFault[] {
     ...maxLevelFaults(rule, at),
     ...undefinedHeadingsFaults(rule, at),
     ...closedSpineFaults(rule, at),
-    ...vocabularyFaults(rule, at),
     ...headingsFaults(rule, at),
   ];
 }
 
 /** One fault per id an earlier Rule already claimed, pointing at the LATER occurrence. */
-function duplicateIdFaults(rules: readonly unknown[]): readonly ConfigFault[] {
+function duplicateIdFaults(rules: readonly unknown[]): readonly BodyStructureFault[] {
   const claimed = new Set<string>();
-  const faults: ConfigFault[] = [];
+  const faults: BodyStructureFault[] = [];
   rules.forEach((rule, index) => {
     if (!isMapping(rule) || typeof rule.ruleId !== 'string') return;
-    if (claimed.has(rule.ruleId))
-      faults.push({ code: 'CONFIG_DUPLICATE_RULE_ID', location: `${RULES}[${index}].ruleId` });
+    if (claimed.has(rule.ruleId)) faults.push(fault('CONFIG_DUPLICATE_RULE_ID', `${RULES}[${index}].ruleId`));
     claimed.add(rule.ruleId);
   });
   return faults;
@@ -114,14 +112,14 @@ function duplicateIdFaults(rules: readonly unknown[]): readonly ConfigFault[] {
  *
  * @param section The value written under `body-structure:`, whatever it parsed to.
  */
-export function sectionFaults(section: unknown): readonly ConfigFault[] {
+export function sectionFaults(section: unknown): readonly BodyStructureFault[] {
   if (!isMapping(section)) return [invalidValue(SECTION)];
 
   const keys = unrecognisedKeys(section, SECTION_KEYS, SECTION);
   const rules = section.rules;
-  if (rules === undefined) return [...keys, { code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
+  if (rules === undefined) return [...keys, fault('CONFIG_EMPTY_RULE_LIST', RULES)];
   if (!Array.isArray(rules)) return [...keys, invalidValue(RULES)];
-  if (rules.length === 0) return [...keys, { code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
+  if (rules.length === 0) return [...keys, fault('CONFIG_EMPTY_RULE_LIST', RULES)];
 
   return [
     ...keys,

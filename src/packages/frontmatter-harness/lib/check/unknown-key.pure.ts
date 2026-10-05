@@ -7,11 +7,11 @@
  * contract is the config fragment exactly as written.
  */
 
-import type { UnknownKeyViolation } from '../../../response-contract/index.ts';
-import { FIELD_VIOLATION_CODES } from '../../../response-contract/index.ts';
 import type { FrontmatterRule } from '../../section.ts';
 import type { FrontmatterMapping } from './check.types.ts';
 import { evidenceFor } from './field-evidence.pure.ts';
+import { FIELD_VIOLATION_CODES } from './violation.pure.ts';
+import type { UnknownKeyViolation } from './violation.types.ts';
 
 /** The set keys, in the order §4.6 declares them. */
 const SET_KEYS = ['exactlyOneOf', 'anyOf', 'allOf'] as const;

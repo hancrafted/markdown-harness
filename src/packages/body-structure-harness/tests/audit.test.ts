@@ -1,8 +1,8 @@
-// Integration suite for `--audit`, at the grain a caller sees.
+// Integration suite for `audit`, at the grain a caller sees.
 //
 // Unlike the first Module's, this audit opens files: whether a Rule writing
 // `types` selected a file depends on its `type`. a
-// candidate that cannot be read refuse the audit at exit 2, as `--check`
+// candidate that cannot be read refuse the audit at exit 2, as `check`
 // refuses, so this suite proves against real files which ones are candidates.
 
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -87,7 +87,7 @@ describe('auditRules', () => {
 
   describe('failure cases', () => {
     it('refuses, naming the file, when a file only a Rule without types reaches cannot be read', () => {
-      // `--check` opens `notes/locked.md` and refuses over it, so the audit
+      // `check` opens `notes/locked.md` and refuses over it, so the audit
       // must too, although no `type` could change the `notes` row.
       // ARRANGE
       const files = ['docs/report.md', 'notes/locked.md', 'notes/note.md'];
@@ -99,7 +99,7 @@ describe('auditRules', () => {
     });
 
     it('refuses when a file a typed Rule excludes is not there to read', () => {
-      // No Rule reaches `docs/scratch.md`, so `--check` never opens it, but
+      // No Rule reaches `docs/scratch.md`, so `check` never opens it, but
       // the `excluded` count needs its type.
       // ARRANGE
       const files = ['docs/report.md', 'docs/phantom-scratch.md'];

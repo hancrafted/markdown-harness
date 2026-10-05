@@ -11,11 +11,11 @@
 
 export type { BlockKind } from './lib/document/document.types.ts';
 export type {
+  AllowedTitle,
   BodyStructureConfig,
   BodyStructureRule,
   HeadingEntry,
   HeadingPresence,
   HeadingPurpose,
   UndefinedHeadings,
-  VocabularyItem,
 } from './lib/section/section.types.ts';

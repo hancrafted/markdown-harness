@@ -1,5 +1,5 @@
 /**
- * What `--query` answers for a path not yet written: every Rule that could win
+ * What `query` answers for a path not yet written: every Rule that could win
  * it.
  *
  * The command opens no file, so it cannot know the `type` a file does not yet
@@ -11,14 +11,16 @@
  * ends the list.
  *
  * Each candidate is one claim (design-ADR 0011): the Rule, and
- * its `types`, `maxLevel`, `undefinedHeadings`, `vocabulary` and `headings` copied verbatim, an omitted
- * key staying omitted — the Steering payload, every heading `intent` and `mayHold` included, so an agent
- * about to write the file learns the titles a level may take and what each section may hold.
+ * its `types`, `maxLevel`, `undefinedHeadings` and `headings` copied verbatim, an omitted key staying
+ * omitted — the Steering payload, every heading `intent`, `mayHold`, `allowed` list and nested spine
+ * included, so an agent about to write the file learns the titles each section may take, what sits
+ * inside it, and what each may hold.
  */
 
-import type { BodyStructureRequirements, ModuleClaim } from '../../../response-contract/index.ts';
+import type { ModuleClaim } from '../../../response-contract/index.ts';
 import type { BodyStructureRule } from '../../section.ts';
 import { candidatesFor } from '../rules/body-rules.pure.ts';
+import type { BodyStructureRequirements } from './requirements.types.ts';
 
 /** One Rule's requirements as written, a key it never wrote left out. */
 function requirementsOf(rule: BodyStructureRule): BodyStructureRequirements {
@@ -26,7 +28,6 @@ function requirementsOf(rule: BodyStructureRule): BodyStructureRequirements {
     ...(rule.types === undefined ? {} : { types: rule.types }),
     ...(rule.maxLevel === undefined ? {} : { maxLevel: rule.maxLevel }),
     ...(rule.undefinedHeadings === undefined ? {} : { undefinedHeadings: rule.undefinedHeadings }),
-    ...(rule.vocabulary === undefined ? {} : { vocabulary: rule.vocabulary }),
     ...(rule.headings === undefined ? {} : { headings: rule.headings }),
   };
 }
@@ -37,7 +38,10 @@ function requirementsOf(rule: BodyStructureRule): BodyStructureRequirements {
  * @param path A normalised, root-relative corpus path.
  * @param rules The section's Rules, in config order.
  */
-export function candidateClaims(path: string, rules: readonly BodyStructureRule[]): readonly ModuleClaim[] {
+export function candidateClaims(
+  path: string,
+  rules: readonly BodyStructureRule[],
+): readonly ModuleClaim<BodyStructureRequirements>[] {
   return candidatesFor(path, rules).map((rule) => ({
     rule: { ruleId: rule.ruleId, intent: rule.intent },
     requirements: requirementsOf(rule),

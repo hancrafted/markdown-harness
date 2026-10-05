@@ -1,5 +1,5 @@
 /**
- * Compose every Module's claim on one path into the answer `--query` returns.
+ * Compose every Module's claim on one path into the answer `query` returns.
  *
  * The mirror of `corpus-verdict.pure.ts`, and deliberately its shape: an agent
  * that learned to read one report should not have to learn a second one. What
@@ -21,8 +21,11 @@ import type { ModuleAnswer, QueryAnswer } from './module-answers.types.ts';
  * @param path The queried path, normalised — the spelling the answer echoes back.
  * @param answers Each Module's answer under its own config key, IN DECLARED MODULE ORDER — the order the blocks are reported in.
  */
-export function pathGovernance(path: string, answers: readonly ModuleAnswer<QueryAnswer>[]): QueryResult {
-  const modules: ModuleRequirements[] = [];
+export function pathGovernance<TRequirements>(
+  path: string,
+  answers: readonly ModuleAnswer<QueryAnswer<TRequirements>>[],
+): QueryResult<TRequirements> {
+  const modules: ModuleRequirements<TRequirements>[] = [];
 
   for (const answer of answers) {
     for (const claim of answer.answer) {

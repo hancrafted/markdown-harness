@@ -18,7 +18,13 @@ import { dirname, join } from 'node:path';
 import { MEMORY_DIR, recordActivity } from './activity-log.mjs';
 
 const PACKAGE = '@hancrafted/markdown-harness';
-const CHECK = 'mh --check';
+const CHECK = 'mh check';
+/**
+ * The flag form `mh check` replaced. Pre-1.0 it was removed rather than
+ * aliased, so a gate still carrying it exits 2 on every run; the gate step
+ * rewrites it in place instead of appending a second check beside it.
+ */
+const RETIRED_CHECK = 'mh --check';
 const HOOK_COMMAND = 'node "${CLAUDE_PROJECT_DIR}/.agents/skills/markdown-harness/scripts/assess-hook.mjs"';
 
 /** Repo-relative and forward-slashed, because a .gitignore entry is not a host path. */
@@ -107,7 +113,15 @@ const steps = [];
   manifest.scripts ??= {};
   const existing = manifest.scripts[gate];
 
-  if (typeof existing === 'string' && existing.includes(CHECK)) {
+  if (typeof existing === 'string' && existing.includes(RETIRED_CHECK)) {
+    manifest.scripts[gate] = existing.replaceAll(RETIRED_CHECK, CHECK);
+    writeJson(manifestPath, manifest);
+    steps.push({
+      step: 'gate',
+      done: dryRun ? 'would-migrate' : 'migrated',
+      detail: `${gate}: ${manifest.scripts[gate]}`,
+    });
+  } else if (typeof existing === 'string' && existing.includes(CHECK)) {
     steps.push({ step: 'gate', done: 'already', detail: `${gate}: ${existing}` });
   } else if (typeof existing === 'string') {
     manifest.scripts[gate] = `${existing} && ${CHECK}`;

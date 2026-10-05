@@ -1,4 +1,4 @@
-// Integration suite for `--check`, at the grain a caller sees.
+// Integration suite for `check`, at the grain a caller sees.
 //
 // Exercises the entry point against real files in a tmpdir, which makes the
 // read edge observable: the pure units below are handed text, but only this
@@ -67,7 +67,7 @@ describe('checkCorpus', () => {
             violations: [
               {
                 violation: 'BODY_STRUCTURE__HEADING_MISSING',
-                entry: 0,
+                entry: [0],
                 requirement: { purpose: 'heading', level: 2, pattern: '^Findings$' },
               },
             ],
@@ -79,7 +79,7 @@ describe('checkCorpus', () => {
             violations: [
               {
                 violation: 'BODY_STRUCTURE__HEADING_MISSING',
-                entry: 0,
+                entry: [0],
                 requirement: { purpose: 'heading', level: 1 },
               },
             ],

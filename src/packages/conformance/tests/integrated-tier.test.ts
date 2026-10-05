@@ -10,7 +10,7 @@
 // A PROCESS-BOUNDARY test by specification (#221): it spawns the compiled `mh`
 // with `--root` and `--config` written exactly as below, because the response
 // echoes both as typed, and compares the response with `expected-check.json`.
-// It then asks `--query` for every path `expected-query.json` freezes, which is
+// It then asks `query` for every path `expected-query.json` freezes, which is
 // composition seen from the Steering side.
 // Parsed and deep-compared rather than byte-compared: the listing states that key
 // order inside an object is not part of the contract. Build before running this
@@ -49,7 +49,7 @@ const frozenQueries = JSON.parse(queryText.text) as Record<string, ToolEnvelope>
 const corpus = casesIn(TIER.name);
 const stated = (verdict: string): string[] => [...casesStating(TIER.name, verdict)];
 
-const spawned = spawnSync(process.execPath, [toolEntry(), '--check', '--root', TYPED_ROOT, '--config', TYPED_CONFIG], {
+const spawned = spawnSync(process.execPath, [toolEntry(), 'check', '--root', TYPED_ROOT, '--config', TYPED_CONFIG], {
   encoding: 'utf8',
 });
 const run: ToolRun = { stdout: spawned.stdout, stderr: spawned.stderr, code: spawned.status };
@@ -61,7 +61,7 @@ function answered(): ToolEnvelope {
 
 describe('the integrated tier at the process boundary', () => {
   describe('success cases', () => {
-    it('answers --check with the frozen whole-corpus response and exits 1', () => {
+    it('answers check with the frozen whole-corpus response and exits 1', () => {
       // ARRANGE
       const expected = { code: 1, refusal: undefined, response: frozen };
       // ACT
@@ -70,11 +70,11 @@ describe('the integrated tier at the process boundary', () => {
       expect(actual).toEqual(expected);
     });
 
-    it.each(Object.keys(frozenQueries))('answers --query %s with the frozen response and exits 0', (path) => {
+    it.each(Object.keys(frozenQueries))('answers query %s with the frozen response and exits 0', (path) => {
       // ARRANGE
       const expected = { code: 0, refusal: undefined, response: frozenQueries[path] };
       // ACT
-      const asked = spawnSync(process.execPath, [toolEntry(), '--query', path, '--config', TYPED_CONFIG], {
+      const asked = spawnSync(process.execPath, [toolEntry(), 'query', path, '--config', TYPED_CONFIG], {
         encoding: 'utf8',
       });
       const queried: ToolRun = { stdout: asked.stdout, stderr: asked.stderr, code: asked.status };
@@ -139,9 +139,10 @@ describe('the integrated tier at the process boundary', () => {
     it('tallies the verdicts the spec states', () => {
       // #221: 18 cases, of which 5 PASSES, 12 FAILS and 1 UNGOVERNED; #225 extends it to 25 cases,
       // of which 7 PASSES, 16 FAILS and 2 UNGOVERNED; #227 extends it to 29 cases, of which 9 PASSES,
-      // 18 FAILS and 2 UNGOVERNED.
+      // 18 FAILS and 2 UNGOVERNED; #229 adds one nested-spine case, so 30 cases, of which 9 PASSES,
+      // 19 FAILS and 2 UNGOVERNED.
       // ARRANGE
-      const expected = { passes: 9, fails: 18, ungoverned: 2 };
+      const expected = { passes: 9, fails: 19, ungoverned: 2 };
       // ACT
       const actual = {
         passes: stated(PASSES).length,

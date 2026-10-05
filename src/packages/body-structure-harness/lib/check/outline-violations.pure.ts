@@ -1,12 +1,12 @@
 /**
  * The checks judged on a body's outline alone, before any spine is walked:
- * depth (`maxLevel`), and the headings nothing lists, which are the closure
- * (`undefinedHeadings: forbid`) and the heading vocabulary.
+ * depth (`maxLevel`), and the headings no list at their position names under
+ * a closed spine (`undefinedHeadings: forbid`).
  */
 
-import type { BodyStructureViolation } from '../../../response-contract/index.ts';
 import type { OutlineHeading } from '../document/document.types.ts';
-import type { Listing } from './body-check.types.ts';
+import type { Listing, WalkedSpine } from './body-check.types.ts';
+import type { BodyStructureViolation } from './violation.types.ts';
 
 /**
  * Every level deeper than `maxLevel` the outline uses, ascending, each with how
@@ -34,45 +34,39 @@ export function levelViolations(
     }));
 }
 
-/**
- * The finding one heading earns from the outline alone, if any.
- * A heading at a vocabulary's level is judged by the vocabulary
- * and by nothing else, so it is never also undefined; any other heading is
- * undefined when the spine is closed and no entry matches it.
- */
-function unlistedFinding(
-  { closed, vocabulary, matchers }: Listing,
-  heading: OutlineHeading,
-): BodyStructureViolation | undefined {
-  const { level, content } = heading;
-  const item = vocabulary.find((candidate) => candidate.level === level);
-  if (item !== undefined) {
-    return item.allowed.includes(content)
-      ? undefined
-      : { violation: 'BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY', level, content, requirement: item };
-  }
-  if (!closed || matchers.some((matches) => matches(heading))) return undefined;
-  return {
-    violation: 'BODY_STRUCTURE__HEADING_UNDEFINED',
-    level,
-    content,
-    requirement: { undefinedHeadings: 'forbid' },
-  };
+/** Whether one walked list's stretch holds the heading at `position` and one of its entries matches it. */
+function defines({ start, spine }: WalkedSpine, position: number, heading: OutlineHeading): boolean {
+  const relative = position - start;
+  return relative >= 0 && relative < spine.outline.length && spine.matchers.some((matches) => matches(heading));
 }
 
 /**
- * Every heading no entry and no vocabulary lists, in document order whatever
- * the level: those outside a vocabulary, and, under a closed spine, those no
- * entry matches. Decided by asking each entry's matcher and never from the
- * walk, so a heading the walk left over is still defined when an entry matches
- * it.
+ * Every heading no list at its position names, in document order whatever the
+ * level, when the spine is closed. A heading is defined when an entry of a
+ * list whose stretch holds it matches it: the Rule's own list holds every
+ * heading, and a nested spine only the headings under the heading it was
+ * walked under.
+ * Decided by asking each entry's matcher and never from the walk, so a heading
+ * the walk left over is still defined when an entry matches it.
  *
- * @param listing What lists a heading besides the outline itself: the closure, the vocabulary and the entries' matchers.
+ * @param listing Whether the spine is closed, and every list walked.
  * @param outline The body's top-level headings.
  */
 export function unlistedViolations(
-  listing: Listing,
+  { closed, spines }: Listing,
   outline: readonly OutlineHeading[],
 ): readonly BodyStructureViolation[] {
-  return outline.flatMap((heading) => unlistedFinding(listing, heading) ?? []);
+  if (!closed) return [];
+  return outline.flatMap((heading, position): readonly BodyStructureViolation[] =>
+    spines.some((walked) => defines(walked, position, heading))
+      ? []
+      : [
+          {
+            violation: 'BODY_STRUCTURE__HEADING_UNDEFINED',
+            level: heading.level,
+            content: heading.content,
+            requirement: { undefinedHeadings: 'forbid' },
+          },
+        ],
+  );
 }

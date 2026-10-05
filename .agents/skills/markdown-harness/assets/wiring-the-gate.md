@@ -1,8 +1,8 @@
-# Putting `mh --check` in the gate
+# Putting `mh check` in the gate
 
-Reference for the "Put `mh --check` in the gate on its own" row of `SKILL.md`.
+Reference for the "Put `mh check` in the gate on its own" row of `SKILL.md`.
 
-`mh --check` reports every governed file's violations and sets its exit code from the result. Putting
+`mh check` reports every governed file's violations and sets its exit code from the result. Putting
 it in the command CI already runs is what turns "the build is green" into a claim about the corpus
 rather than only about the code.
 
@@ -11,7 +11,7 @@ rather than only about the code.
 Whichever script CI actually runs, which is not reliably the one named `verify`. Look in
 `.github/workflows/*.yml` (or the equivalent) for the command it invokes, and read `package.json`
 scripts to see what that command chains together. A repository whose CI runs `npm test` and has no
-`verify` script gets `mh --check` in `test`; one with a `Makefile` gate gets it there.
+`verify` script gets `mh check` in `test`; one with a `Makefile` gate gets it there.
 
 Appending to a script nobody runs is the failure mode this step exists to prevent, and it looks
 exactly like success.
@@ -21,7 +21,7 @@ _Done when_ you can name the script CI runs, having read it rather than assumed 
 ## 2. Append the command
 
 ```json
-{ "scripts": { "verify": "... && mh --check" } }
+{ "scripts": { "verify": "... && mh check" } }
 ```
 
 Last in the chain is usually right: the fast, cheap checks fail first, and a corpus report is more
@@ -37,7 +37,7 @@ Three exit codes, and the distinction between the last two is the point:
 | 1    | the corpus is wrong — the violations are listed on stdout | **fail**         |
 | 2    | it could not report at all — usually a rejected config    | **fail**         |
 
-`--check` is the only command that ever exits 1. Exit 2 is not a stricter 1: **nothing was checked**,
+`check` is the only command that ever exits 1. Exit 2 is not a stricter 1: **nothing was checked**,
 so a 2 that is allowed to pass is a gate that has silently stopped running. Measured against 0.0.2:
 
 ```
@@ -50,10 +50,10 @@ one governed file in violation     exit 1
 `&&` already does the right thing with both, because the shell stops on any non-zero status. So the
 work here is refusing two temptations rather than adding anything:
 
-- **Never `mh --check || true`.** That is the "governance drifts while checks stay green" failure the
+- **Never `mh check || true`.** That is the "governance drifts while checks stay green" failure the
   tool exists to prevent, written in one command.
-- **Never pipe it.** `mh --check | head` puts `head`'s status in `$?` and reports success over a
-  failed run. To read the JSON, capture it first: `out=$(mh --check); code=$?`.
+- **Never pipe it.** `mh check | head` puts `head`'s status in `$?` and reports success over a
+  failed run. To read the JSON, capture it first: `out=$(mh check); code=$?`.
 
 ## 4. Break something and watch it go red
 
@@ -79,5 +79,5 @@ Two honest ways forward, and the user picks:
   Governance is opt-in, so a rule that matches less is a smaller promise rather than a broken one.
 
 There is no ignore list, and that is deliberate. The way to exempt a path is a rule that does not
-match it, which is visible in the config and reported by `mh --audit`, rather than a suppression that
+match it, which is visible in the config and reported by `mh audit`, rather than a suppression that
 is visible nowhere.

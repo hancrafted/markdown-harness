@@ -8,10 +8,11 @@
  * violation is caught. That is measurement rather than tidiness, and it is why
  * these declarations moved out of `config-contract`.
  *
- * What `config-contract` still holds is the vocabulary a section is BUILT from
- * — `Selector`, `FieldAddress`, `FieldConstraints` — plus the port and the
- * fault type. Those are Core's, taken as given, and this Module builds no
- * translation layer over them.
+ * What `config-contract` still holds is the Module-free part of the vocabulary
+ * a section is built from — `Selector` — plus the port and the fault type.
+ * Those are Core's, taken as given, and this Module builds no translation layer
+ * over them. `FieldAddress` and `FieldConstraints` are this Module's own, in
+ * `./constraints.types.ts`.
  *
  * Below the root rather than at it: ARCH-004 §2.4 fails a classified file at a
  * Package root, so the declarations sit here and `../../section.ts` re-exports
@@ -21,17 +22,18 @@
  *
  * There is no Floor. `type` is an ordinary field, so a repo's vocabulary is the
  * union of `allowed` values across its rules — derivable, no longer declared.
- * What a rule asserts about one field lives in `config-contract`.
+ * What a rule asserts about one field lives in `./constraints.types.ts`.
  */
 
-import type { FieldAddress, FieldConstraints, Selector } from '../../../config-contract/index.ts';
+import type { Selector } from '../../../config-contract/index.ts';
+import type { FieldAddress, FieldConstraints } from './constraints.types.ts';
 
 /**
  * The conditions a file can be assessed against.
  *
  * ONE condition ships. `stale` is the only one that needs a clock, and
  * therefore the only one that needs a command of its own: `unverified`,
- * `unsourced` and `invalid` are all answerable by `--check` today through
+ * `unsourced` and `invalid` are all answerable by `check` today through
  * `presence` and `minItems`, and restating them here would move work out of the
  * tier that already covers it. Any other key under `assess:` is
  * `CONFIG_UNRECOGNISED_KEY`.
@@ -199,7 +201,7 @@ export interface ConstrainingPayload {
    * make now and expensive to defer. Three reasons it is replacement:
    * §3's "the first matching rule is the complete set" survives replacement and
    * dies under merge; per-key merging recreates the silent-provenance problem
-   * `--audit` exists to solve; and deleting a rule's block is then one visible
+   * `audit` exists to solve; and deleting a rule's block is then one visible
    * act rather than a one-line diff that silently reactivates a global.
    *
    * A rule with no block of its own gets the Module default whole. Which of the

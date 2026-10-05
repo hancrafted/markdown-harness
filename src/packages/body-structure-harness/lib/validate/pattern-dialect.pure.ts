@@ -1,7 +1,10 @@
 /**
- * The heading-pattern dialect as config validation needs it:
- * ECMAScript with the `u` flag and no other, searched and never anchored.
+ * What this Module asks of a heading pattern beyond the config's one dialect,
+ * which `foundation` builds for every Module: that it is non-empty, and whether
+ * it is an anchored literal.
  */
+
+import { compiles } from '../../../foundation/pattern-dialect.ts';
 
 /**
  * One literal character of an anchored literal: any character the dialect gives
@@ -10,29 +13,13 @@
 const LITERAL_RUN = /^\^(?:[^\\^$.|?*+()[\]{}]|\\[\\^$.|?*+()[\]{}])*\$$/u;
 
 /**
- * The one place the dialect is built: a pattern as a `RegExp` with the `u` flag
- * and no other. Validation asks whether it compiles; matching searches with it.
+ * Whether a written `pattern` is one this Module accepts: a non-empty string
+ * that compiles under the `u` flag.
  *
- * @param pattern The pattern as the Operator wrote it; throws when the engine refuses it.
+ * @param value A `pattern` straight off the YAML.
  */
-export function dialectPattern(pattern: string): RegExp {
-  return new RegExp(pattern, 'u');
-}
-
-/**
- * Whether a string compiles as a regular expression under the `u` flag, the
- * dialect. A pattern the engine refuses could never fire,
- * and `^Source\-` is one: an unnecessary escape is a syntax error under `u`.
- *
- * @param pattern The pattern as the Operator wrote it.
- */
-export function compiles(pattern: string): boolean {
-  try {
-    dialectPattern(pattern);
-    return true;
-  } catch {
-    return false;
-  }
+export function isPattern(value: unknown): value is string {
+  return typeof value === 'string' && value !== '' && compiles(value);
 }
 
 /**

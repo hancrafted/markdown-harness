@@ -58,7 +58,7 @@ describe('one file verdict', () => {
         {
           field: null,
           value: { keys: ['type', 'description'] },
-          violation: 'FRONTMATTER_FORBIDDEN',
+          violation: 'FRONTMATTER__FORBIDDEN',
           requirement: { frontmatter: 'forbidden' },
         },
       ];
@@ -74,7 +74,7 @@ describe('one file verdict', () => {
       // value out of the source text by eye is not available to the harness.
       // ARRANGE
       const file = '---\ntype: plain\ntags: [okf, provenance\n---\n';
-      const expected = [{ field: null, violation: 'FRONTMATTER_UNPARSEABLE' }];
+      const expected = [{ field: null, violation: 'FRONTMATTER__UNPARSEABLE' }];
       // ACT
       const actual = violationsForFile(frontmatterOf(file), PLAIN);
       // ASSERT
@@ -83,13 +83,15 @@ describe('one file verdict', () => {
 
     it('reports a broken block under a forbidding rule with its value key omitted', () => {
       // The rule's complaint — that there is a block at all — is true whether or
-      // not the bytes are well-formed, so `FRONTMATTER_FORBIDDEN` fires and
-      // `FRONTMATTER_UNPARSEABLE` is not additionally reported: deletion is the
+      // not the bytes are well-formed, so `FRONTMATTER__FORBIDDEN` fires and
+      // `FRONTMATTER__UNPARSEABLE` is not additionally reported: deletion is the
       // fix either way. The keys cannot be extracted from bytes that never
       // parsed, so there is no evidence to carry.
       // ARRANGE
       const file = '---\ntype: plain\n  title: indented under a scalar\n---\n';
-      const expected = [{ field: null, violation: 'FRONTMATTER_FORBIDDEN', requirement: { frontmatter: 'forbidden' } }];
+      const expected = [
+        { field: null, violation: 'FRONTMATTER__FORBIDDEN', requirement: { frontmatter: 'forbidden' } },
+      ];
       // ACT
       const actual = violationsForFile(frontmatterOf(file), INDEX);
       // ASSERT
@@ -103,7 +105,7 @@ describe('one file verdict', () => {
       // what lets `presence: required` speak at all here.
       // ARRANGE
       const file = '# Notes that never opened a block\n\nProse only.\n';
-      const expected = ['MISSING_REQUIRED_FIELD'];
+      const expected = ['FRONTMATTER__MISSING_REQUIRED_FIELD'];
       // ACT
       const actual = violationsForFile(frontmatterOf(file), PLAIN).map((found) => found.violation);
       // ASSERT
@@ -119,7 +121,7 @@ describe('one file verdict', () => {
         {
           field: null,
           value: { keys: [] },
-          violation: 'FRONTMATTER_FORBIDDEN',
+          violation: 'FRONTMATTER__FORBIDDEN',
           requirement: { frontmatter: 'forbidden' },
         },
       ];
@@ -132,7 +134,7 @@ describe('one file verdict', () => {
     it('fires presence rather than skipping on an immediately closed fence', () => {
       // ARRANGE
       const file = '---\n---\n';
-      const expected = ['MISSING_REQUIRED_FIELD'];
+      const expected = ['FRONTMATTER__MISSING_REQUIRED_FIELD'];
       // ACT
       const actual = violationsForFile(frontmatterOf(file), PLAIN).map((found) => found.violation);
       // ASSERT
@@ -152,7 +154,12 @@ describe('one file verdict', () => {
         fields: { type: { presence: 'required' }, slug: { pattern: '^[a-z]+$', intent: 'lowercase' } },
       };
       const file = '---\nslug: NOT_LOWER\nstray: 1\n---\n';
-      const expected = ['MISSING_REQUIRED_FIELD', 'PATTERN_MISMATCH', 'ALL_OF_UNSATISFIED', 'UNKNOWN_KEY_FORBIDDEN'];
+      const expected = [
+        'FRONTMATTER__MISSING_REQUIRED_FIELD',
+        'FRONTMATTER__PATTERN_MISMATCH',
+        'FRONTMATTER__ALL_OF_UNSATISFIED',
+        'FRONTMATTER__UNKNOWN_KEY_FORBIDDEN',
+      ];
       // ACT
       const actual = violationsForFile(frontmatterOf(file), rule).map((found) => found.violation);
       // ASSERT

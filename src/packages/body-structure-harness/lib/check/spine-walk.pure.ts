@@ -19,9 +19,9 @@
  * section-content claims, so it is walked once and handed to both.
  */
 
+import { dialectPattern } from '../../../foundation/pattern-dialect.ts';
 import type { HeadingEntry } from '../../section.ts';
 import type { OutlineHeading } from '../document/document.types.ts';
-import { dialectPattern } from '../validate/pattern-dialect.pure.ts';
 import type { EntryFinding, HeadingMatcher, Spine, Walk } from './body-check.types.ts';
 
 /** The mutable position of a walk: the cursor, and every outline position an entry has taken. */
@@ -35,10 +35,26 @@ function positions(count: number): readonly number[] {
   return Array.from({ length: count }, (_, position) => position);
 }
 
-/** One entry's matcher: the level equal, and the pattern, when written, searched with the `u` flag and no other. */
+/**
+ * One entry's matcher: the level equal, then the pattern, when written,
+ * searched with the `u` flag and no other, or the content, when `allowed` is
+ * written, equal to one of its titles whole and case-sensitively.
+ */
 export function matcherFor(entry: HeadingEntry): HeadingMatcher {
   const pattern = entry.pattern === undefined ? undefined : dialectPattern(entry.pattern);
-  return (heading) => heading.level === entry.level && (pattern === undefined || pattern.test(heading.content));
+  const titles = entry.allowed?.map(({ title }) => title);
+  return (heading) =>
+    heading.level === entry.level &&
+    (pattern === undefined || pattern.test(heading.content)) &&
+    (titles === undefined || titles.includes(heading.content));
+}
+
+/**
+ * The positions of the headings one entry claimed: the heading a `heading`
+ * entry matched, or the repeats of an enumeration's run.
+ */
+export function claimedPositions({ claimed, repeats }: EntryFinding): readonly number[] {
+  return claimed === undefined ? repeats : [claimed];
 }
 
 /** One `heading` entry: the first untaken match at or after the cursor, else misplaced or missing. */
@@ -78,8 +94,8 @@ export function walkSpine(spine: Spine): Walk {
   const findings = entries.map((entry, index) =>
     entry.purpose === 'enumeration' ? walkEnumeration(spine, index, state) : walkHeading(spine, index, state),
   );
-  const leftovers = positions(outline.length).filter((position) => !state.taken.has(position));
-  return { findings, given: leftoversPerEntry(spine, findings, leftovers) };
+  const untaken = positions(outline.length).filter((position) => !state.taken.has(position));
+  return { findings, leftovers: leftoversPerEntry(spine, findings, untaken) };
 }
 
 /** The index of the entry a leftover heading is given to, when there is one. */

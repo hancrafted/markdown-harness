@@ -1,6 +1,0 @@
-# body-structure rejected-config case: vocabulary allowed wrong shape.
-# Frozen faults are in expected-rejection.json beside this file; see the vocabulary and section-content spec (#227).
-body-structure:
-  rules:
-    - { ruleId: first, folders: [docs/a/], intent: 'A first sound rule, so only the fault below is reported.', vocabulary: [{ level: 3 }] }
-    - { ruleId: second, folders: [docs/b/], intent: 'A second sound rule, so only the fault below is reported.', vocabulary: [{ level: 3, allowed: Added }] }

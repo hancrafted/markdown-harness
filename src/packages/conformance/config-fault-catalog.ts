@@ -2,33 +2,31 @@
 //
 // HAND-WRITTEN DELIBERATELY, for the reason the frontmatter runner already
 // states about its case count: a list derived from the thing it is checking
-// cannot fail. Generating this from `ConfigFaultCode` would make coverage and
+// cannot fail. Generating this from `DeclaredFaultCode` would make coverage and
 // closure agree with the contract by construction, and a retired code would
 // leave the tier silently one case heavier than the catalog it specifies.
 //
 // The cost of writing it by hand is drift, and the pin below is what pays it.
 
-import type { ConfigFaultCode } from '../config-contract/index.ts';
+// The contract is the WHOLE catalog: the Core's codes and every declared
+// Module's own. `config-contract` holds only the Core's, so the union is the one
+// `cli` derives from the declared Module set.
+import type { DeclaredFaultCode } from '../cli/declared-module.ts';
 
 /**
  * Every code the tier undertakes to reach, in the order §3.5's catalog declares
- * them: the four that name the config FILE first, then the twenty-two that name a
+ * them: the four that name the config FILE first, then the twenty-one that name a
  * key inside it.
  *
  * The `satisfies` check holds one direction — a code spelled wrong, or one the
  * catalog never had, does not compile. Its intersection holds the other.
  *
- * Twenty-six. It was twenty-one, before the five codes the heading vocabulary and the section content bring (#227);
- * twenty, before `CONFIG_MAX_LEVEL_ON_CLOSED_SPINE` (#225); fifteen, before the five
- * `body-structure` codes of #221 below that; and fourteen before that: `CONFIG_SELECTOR_AMBIGUOUS` was retired with the
- * grammar that made it reachable — `folders:` and `fileNames:` intersect rather
- * than exclude, so a rule carrying both is spelling an exact path rather than
- * asking two questions at once — and its case directory was deleted in the same
- * change. `CONFIG_NO_MODULE_SECTION` arrived the other way round, with
- * `rejected-config/no-module-section/` beside it in the same change. Halves that
- * land apart leave the suite red in one direction or the other, which is the
- * machinery working rather than a hole to paper over: a code with no case fails
- * coverage, and a case with no code fails closure.
+ * Twenty-five today. The count is not history to keep here — `git log` holds
+ * that — but the rule for changing it is: a code is retired together with its
+ * case directory, and a code arrives together with its case, in the same
+ * change. Halves that land apart leave the suite red in one direction or the
+ * other, which is the machinery working rather than a hole to paper over: a
+ * code with no case fails coverage, and a case with no code fails closure.
  */
 const declaredCodes = [
   'CONFIG_NOT_FOUND',
@@ -52,15 +50,14 @@ const declaredCodes = [
   'CONFIG_COUNT_BOUNDS_INVERTED',
   'CONFIG_ENTRY_BEYOND_MAX_LEVEL',
   'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE',
-  'CONFIG_DUPLICATE_VOCABULARY_LEVEL',
   'CONFIG_DUPLICATE_VOCABULARY_TITLE',
-  'CONFIG_VOCABULARY_BEYOND_MAX_LEVEL',
-  'CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES',
   'CONFIG_DUPLICATE_BLOCK_KIND',
+  'CONFIG_NESTED_ENTRY_NOT_DEEPER',
+  'CONFIG_PATTERN_WITH_ALLOWED',
 ] as const;
 
 /** Whatever the catalog declares and the list above has not claimed. */
-type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
+type UnreachedCodes = Exclude<DeclaredFaultCode, (typeof declaredCodes)[number]>;
 
 /**
  * The two-sided catalog proof, HELD BY THE TYPE CHECKER AND NEVER BY THE TEST RUNNER.
@@ -75,5 +72,5 @@ type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
  * conditional distributing over the union, which would make a partially
  * covered catalog answer `unknown` rather than `never`.
  */
-export const DECLARED_CODES = declaredCodes satisfies readonly ConfigFaultCode[] &
+export const DECLARED_CODES = declaredCodes satisfies readonly DeclaredFaultCode[] &
   ([UnreachedCodes] extends [never] ? unknown : never);

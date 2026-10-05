@@ -1,4 +1,4 @@
-// Colocated unit test for the `--query` candidate resolver: every Rule that
+// Colocated unit test for the `query` candidate resolver: every Rule that
 // could win a path not yet written, in config order, ending at the first one
 // that carries no `types`.
 
@@ -84,15 +84,20 @@ describe('candidateClaims', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('copies the vocabulary verbatim, and every entry mayHold rides inside its entry', () => {
+    it('copies nested lists and allowed titles verbatim, and every entry mayHold rides inside its entry', () => {
       // ARRANGE
-      const vocabulary = [{ level: 3, allowed: ['Added', 'Fixed'] }];
       const headings = [
-        { purpose: 'heading', level: 2, pattern: '^Context$', mayHold: ['prose', 'ordered-list'] },
-        { purpose: 'enumeration', level: 3, minCount: 1, mayHold: ['ordered-list'] },
+        { purpose: 'heading', level: 2, allowed: [{ title: 'Context', intent: 'Why.' }], mayHold: ['prose'] },
+        {
+          purpose: 'enumeration',
+          level: 2,
+          pattern: '^\\[',
+          minCount: 1,
+          headings: [{ purpose: 'heading', level: 3, presence: 'optional', allowed: [{ title: 'Added' }] }],
+        },
       ] as const;
-      const rule: BodyStructureRule = { ruleId: 'v', intent: 'V.', folders: ['docs/'], vocabulary, headings };
-      const expected = [{ vocabulary, headings }];
+      const rule: BodyStructureRule = { ruleId: 'v', intent: 'V.', folders: ['docs/'], headings };
+      const expected = [{ headings }];
       // ACT
       const actual = candidateClaims('docs/a.md', [rule]).map((claim) => claim.requirements);
       // ASSERT
@@ -112,7 +117,7 @@ describe('candidateClaims', () => {
   });
 
   describe('edge cases', () => {
-    it('writes every key in the order the wire has it in: types, maxLevel, undefinedHeadings, vocabulary, headings', () => {
+    it('writes every key in the order the wire has it in: types, maxLevel, undefinedHeadings, headings', () => {
       // ARRANGE
       const rule: BodyStructureRule = {
         ruleId: 'all',
@@ -120,10 +125,9 @@ describe('candidateClaims', () => {
         types: ['t'],
         maxLevel: 2,
         undefinedHeadings: 'allow',
-        vocabulary: [{ level: 3, allowed: ['A'] }],
         headings: [{ purpose: 'heading', level: 1 }],
       };
-      const expected = ['types', 'maxLevel', 'undefinedHeadings', 'vocabulary', 'headings'];
+      const expected = ['types', 'maxLevel', 'undefinedHeadings', 'headings'];
       // ACT
       const actual = candidateClaims('a.md', [rule]).map((claim) => Object.keys(claim.requirements));
       // ASSERT
@@ -135,24 +139,6 @@ describe('candidateClaims', () => {
       const expected = [{ rule: { ruleId: 'bare', intent: 'Bare.' }, requirements: { maxLevel: 2 } }];
       // ACT
       const actual = candidateClaims('a.md', [{ ruleId: 'bare', intent: 'Bare.', maxLevel: 2 }]);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('leaves vocabulary out of the claim of a Rule that never wrote it, and keeps a vocabulary-only Rule headings-free', () => {
-      // ARRANGE
-      const expected = [{ maxLevel: 2 }, { maxLevel: 3, vocabulary: [{ level: 3, allowed: ['A'] }] }];
-      // ACT
-      const actual = [
-        { ruleId: 'bare', intent: 'Bare.', folders: ['docs/'], maxLevel: 2 },
-        {
-          ruleId: 'depth',
-          intent: 'Depth.',
-          folders: ['docs/'],
-          maxLevel: 3,
-          vocabulary: [{ level: 3, allowed: ['A'] }],
-        },
-      ].flatMap((rule) => candidateClaims('docs/a.md', [rule]).map((claim) => claim.requirements));
       // ASSERT
       expect(actual).toEqual(expected);
     });

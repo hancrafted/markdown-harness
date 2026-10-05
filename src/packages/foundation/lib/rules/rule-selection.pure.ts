@@ -6,13 +6,13 @@
  * folder as a string, and a file name to its basename. An absent axis means
  * every. Both comparisons are case-sensitive on every host.
  *
- * Both Modules select with these functions, so `--query`, `--check` and
- * `--audit` cannot drift apart about what selecting means. A Module with an
+ * Both Modules select with these functions, so `query`, `check` and
+ * `audit` cannot drift apart about what selecting means. A Module with an
  * axis of its own (`body-structure-harness`'s `types`) asks the question this
  * file answers and then narrows it — it never restates the two axes
  *.
  *
- * REACH is the one definition `--check`, `--query` and `--audit` share
+ * REACH is the one definition `check`, `query` and `audit` share
  *: a Rule reaches a path when its folder and file-name axes
  * match it and its own `excludeFiles` does not remove it.
  */

@@ -14,8 +14,8 @@
  */
 
 import { isMapping } from '../../../foundation/yaml-document.ts';
-import type { ConfigFault } from '../../../response-contract/index.ts';
 import { STALE_AFTER } from '../assess/freshness.pure.ts';
+import type { FrontmatterFault } from './fault.types.ts';
 
 /**
  * Every condition the `assess:` vocabulary defines.
@@ -54,13 +54,13 @@ export function hasStalePrompt(block: unknown): boolean {
  * @param block The value written under `assess:`, or `undefined` if the key was never written.
  * @param at The block's address in the config's own notation, e.g. `frontmatter.rules[3].assess`.
  */
-export function assessBlockFaults(block: unknown, at: string): readonly ConfigFault[] {
+export function assessBlockFaults(block: unknown, at: string): readonly FrontmatterFault[] {
   if (block === undefined) return [];
   if (!isMapping(block)) return [{ code: 'CONFIG_INVALID_VALUE', location: at }];
 
   const unrecognised = Object.keys(block)
     .filter((key) => !ASSESS_KEYS.includes(key))
-    .map((key): ConfigFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${at}.${key}` }));
+    .map((key): FrontmatterFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${at}.${key}` }));
 
   const written = STALE in block;
   const usable = typeof block[STALE] === 'string' && block[STALE] !== '';
@@ -100,7 +100,7 @@ export function unfireableAssessFaults(
   rule: Record<string, unknown>,
   at: string,
   moduleAssess: unknown,
-): readonly ConfigFault[] {
+): readonly FrontmatterFault[] {
   if (rule.frontmatter === 'forbidden') return [];
 
   const effective = 'assess' in rule ? rule.assess : moduleAssess;

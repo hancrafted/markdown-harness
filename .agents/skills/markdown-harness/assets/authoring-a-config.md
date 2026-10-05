@@ -4,7 +4,7 @@ Reference for the `Author the first config, or add, change or debug one rule` ro
 
 Six steps, in order. They are the same six whether the config is new or already exists — an edit is
 this workflow entered at step 2, with step 1 spent reading the config that is there instead of the
-tree. `mh --query` is the whole validation loop, so nothing here restates the schema. Ask the tool.
+tree. `mh query` is the whole validation loop, so nothing here restates the schema. Ask the tool.
 
 ## 1. Survey before asking
 
@@ -40,7 +40,7 @@ one at a time and point at the one they want to change:
 1. **Which paths** — `folders:`, one repo-root-relative folder per token with no recursion, or
    `fileNames:`, one literal basename matched at any depth. At least one axis is required; an absent
    axis means every, so folders alone is every file in those folders and names alone is that name
-   anywhere in the corpus.
+   anywhere in the corpus. An axis written as an empty list is refused, never read as none.
 2. **Why, in one sentence** — `intent:`, mandatory, in their words. It travels back with every
    violation this rule reports, so the failure says why the rule exists rather than only which check
    fired.
@@ -113,7 +113,7 @@ _Done when_ each rule either carries both keys or neither.
 Run the query against a path the rule should govern. It needs no file to exist:
 
 ```sh
-mh --query docs/research/anything.md --config markdown-harness.config.yaml
+mh query docs/research/anything.md --config markdown-harness.config.yaml
 ```
 
 **Exit 0** returns the winning rule and the requirements it imposes. Read them back — a config that
@@ -146,7 +146,7 @@ _Done when_ the query exits 0 and the requirements it prints are the ones intend
 A rule that parses can still govern zero files. Run the audit over the real corpus:
 
 ```sh
-mh --audit --config markdown-harness.config.yaml
+mh audit --config markdown-harness.config.yaml
 ```
 
 Each rule reports `won`, `shadowed` and `shadowedBy`. **`won: 0` means the rule is dead** — and
@@ -172,10 +172,10 @@ Report what changed in the user's terms before touching the file: which paths ar
 each rule asks for, what contributors have to add to existing files, and any follow-up left over. A
 YAML dump is not a summary — the user already has the file.
 
-Then run `mh --check` and tell them the count. A config that governs existing files usually goes red
+Then run `mh check` and tell them the count. A config that governs existing files usually goes red
 on the first run, and that number is the real cost of the rules they just approved.
 
-_Done when_ the user has approved the change, the file is written, and they know what `mh --check`
+_Done when_ the user has approved the change, the file is written, and they know what `mh check`
 currently reports.
 
 ## A rule over headings
@@ -185,10 +185,10 @@ The steps above write the `frontmatter:` section. A rule over a document's **hea
 workflow, entry by entry. One habit decides whether the rule says what the user meant: when a `pattern`
 names a fixed title, anchor it, `^Decision$`, with any metacharacter escaped, and drop the anchors only
 when the user asks for a substring match. A pattern is searched, so an unanchored `Decision` also
-passes `## Decision record`: the rule loosens silently and `mh --check` stays green.
+passes `## Decision record`: the rule loosens silently and `mh check` stays green.
 
-Two more choices belong to that section, and steps 5 and 6 of `authoring-body-structure.md` hold them.
-Use a `vocabulary` for the exact titles a level may take anywhere in the document, in any order, and a
-`pattern` for one heading's place in the spine. An entry declares `mayHold`, the block kinds its
+More choices belong to that section, and steps 4 to 6 of `authoring-body-structure.md` hold them.
+Name a fixed title with an exact `allowed` list and a shape with a `pattern`, and put the headings that
+belong inside one section in that entry's nested `headings:` list. An entry declares `mayHold`, the block kinds its
 section allows, and a section the user leaves permissive carries none. A bold label ahead of a list
 is prose, and the shape inside a list item is not governed.

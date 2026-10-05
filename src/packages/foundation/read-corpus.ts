@@ -9,7 +9,7 @@
 //: `type` extraction stays in `body-structure-harness`.
 //
 // `parseDocument` ships beside `readCorpus` for the one caller that reads a
-// single file outside a batch: `--assess`, whose absent-is-advice policy is its
+// single file outside a batch: `assess`, whose absent-is-advice policy is its
 // own and so cannot go through a corpus refusal.
 
 export type {

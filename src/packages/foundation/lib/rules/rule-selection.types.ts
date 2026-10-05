@@ -21,7 +21,7 @@ export type RuleHead = Selector & {
 /**
  * How one Rule stands towards one file.
  *
- * Three states rather than a boolean, because `--audit` has to tell the two
+ * Three states rather than a boolean, because `audit` has to tell the two
  * ways of not selecting apart: `unselected` is a Rule that never reached the
  * file, `excluded` is a Rule whose own `excludeFiles` took it back.
  */

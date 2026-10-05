@@ -24,14 +24,14 @@ import type { PinnedModule } from './lib/run/module-answers.types.ts';
  * `satisfies` rather than an annotation, so each entry keeps its own section
  * and answer types for a caller that names one descriptor while the list as a
  * whole still has to be a set of descriptors. The two are compatible because
- * the port keeps every type parameter in RETURN position. Its four verb members
- * close over their own descriptor and ask `sectionFor` for the section keyed by
+ * the port keeps every type parameter in RETURN position. Its verb members —
+ * each optional, so a Module carries only the ones it answers — close over their own descriptor and ask `sectionFor` for the section keyed by
  * that descriptor identity; no widened caller supplies a section argument, so
  * the variance hole stays closed.
  *
  * The set is also held to the answers `cli` composes from (`PinnedModule`):
  * `config-contract` is type-only and cannot name them, so this is the one place
- * a Module answering `--query` with a bare claim, or `--audit` with a shape the
+ * a Module answering `query` with a bare claim, or `audit` with a shape the
  * composers cannot settle, stops compiling.
  *
  * ONE COMPILE-TIME GUARANTEE IS SPENT HERE. A whole-config interface could not

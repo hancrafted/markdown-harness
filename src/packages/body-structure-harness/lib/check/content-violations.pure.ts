@@ -6,9 +6,9 @@
  * claimed: that is the walk's, in `body-violations.pure.ts`.
  */
 
-import type { BodyStructureViolation } from '../../../response-contract/index.ts';
 import type { BlockKind, OutlineSection } from '../document/document.types.ts';
-import type { Claim } from './body-check.types.ts';
+import type { Placement } from './body-check.types.ts';
+import type { BodyStructureViolation } from './violation.types.ts';
 
 /** How many blocks of each kind a section holds, in the order each kind first appears. */
 function countsByKind(blocks: readonly BlockKind[]): ReadonlyMap<BlockKind, number> {
@@ -19,7 +19,7 @@ function countsByKind(blocks: readonly BlockKind[]): ReadonlyMap<BlockKind, numb
 
 /** One violation per unlisted kind of one claimed section. */
 function sectionViolations(
-  { entry, index }: Claim,
+  { entry, locator }: Placement,
   allowed: readonly BlockKind[],
   { heading, blocks }: OutlineSection,
 ): readonly BodyStructureViolation[] {
@@ -27,7 +27,7 @@ function sectionViolations(
     .filter(([kind]) => !allowed.includes(kind))
     .map(([kind, found]) => ({
       violation: 'BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED',
-      entry: index,
+      ...locator,
       content: heading.content,
       kind,
       found,
@@ -37,15 +37,17 @@ function sectionViolations(
 
 /**
  * Every block of an unlisted kind in a claimed section, one violation per
- * section and kind with the count of its blocks, ordered by entry, then section
+ * section and kind with the count of its blocks, ordered by placement, then section
  * in document order, then kind in the order it first appears. An entry that
  * writes no `mayHold` leaves its sections unconstrained.
  *
- * @param claims One per entry of the spine, in index order.
+ * @param placements One per entry of every list walked, lists in walk order and entries in index order.
  */
-export function contentViolations(claims: readonly Claim[]): readonly BodyStructureViolation[] {
-  return claims.flatMap((claim) => {
-    const { mayHold } = claim.entry;
-    return mayHold === undefined ? [] : claim.sections.flatMap((section) => sectionViolations(claim, mayHold, section));
+export function contentViolations(placements: readonly Placement[]): readonly BodyStructureViolation[] {
+  return placements.flatMap((placement) => {
+    const { mayHold } = placement.entry;
+    return mayHold === undefined
+      ? []
+      : placement.sections.flatMap((section) => sectionViolations(placement, mayHold, section));
   });
 }

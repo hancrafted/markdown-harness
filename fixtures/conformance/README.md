@@ -4,25 +4,22 @@ This directory is not a corpus. It holds **tiers**, one directory each, and a ti
 runner points at. The runner Package is `src/packages/conformance/`, and `ARCH-002` is the
 governing record.
 
-| tier               | holds                                                        | runner                               |
-| ------------------ | ------------------------------------------------------------ | ------------------------------------ |
-| `frontmatter/`     | the `frontmatter` Module's config plus its Conformance cases | `tests/frontmatter-tier.test.ts`     |
-| `rejected-config/` | config bytes a load must refuse, and no markdown at all      | `tests/rejected-config-tier.test.ts` |
+| tier               | holds                                                                             | runner                               |
+| ------------------ | --------------------------------------------------------------------------------- | ------------------------------------ |
+| `body-structure/`  | the `body-structure` Module's config plus its Conformance cases                   | `tests/body-structure-tier.test.ts`  |
+| `frontmatter/`     | the `frontmatter` Module's config plus its Conformance cases                      | `tests/frontmatter-tier.test.ts`     |
+| `integrated/`      | one config both Modules govern at once, its cases, and the frozen check and query | `tests/integrated-tier.test.ts`      |
+| `rejected-config/` | config bytes a load must refuse, and no markdown at all                           | `tests/rejected-config-tier.test.ts` |
 
-One tier per Module, plus one for config the loader refuses. The two sets — the directories here
-and the `*-tier.test.ts` files there — are derived from the tree and asserted equal by
-`tests/tier-enrolment.test.ts`, so a tier added without a runner fails rather than sitting
-unnoticed.
+One tier per Module, one where every Module governs one tree together, and one for config the loader
+refuses. The two sets — the directories here and the `*-tier.test.ts` files there — are derived from
+the tree and asserted equal by `tests/tier-enrolment.test.ts`, so a tier added without a runner
+fails rather than sitting unnoticed.
 
-**The integrated tier is absent.** A corpus two Modules govern at once cannot be written while one
-Module exists, so it arrives with the second. Its absence is derived from the same two sets rather
-than recorded as a gap: it is missing from both sides today, and the enrolment check is what refuses
-to let it arrive on only one.
-
-**A tier root is a synthetic repo root.** The `frontmatter` tier holds its own
+**A tier root is a synthetic repo root.** Each markdown tier holds its own
 `valid-test-config.yaml`, whose selectors are written relative to that tier directory — which is
-why the tier moved as a unit and every selector in it is byte-identical to what it was under the
-old layout.
+why a tier moves as a unit, and why every selector in the `frontmatter` tier stayed byte-identical
+when it moved out of the old layout.
 
 **This file is markdown and is not a Conformance case.** It carries no `expect:` marker and none is
 wanted: the enforcement rule's case glob reaches `<tier>/docs/**/*.md` and stops there. It is also
@@ -31,7 +28,7 @@ and fails its declared case count.
 
 **Unreadable Assessment is a response-contract change, not a Conformance case.** A case must be a
 document carrying its own marker, while an unreadable path is deliberately not a readable document.
-The `unreadable` state is therefore frozen at the `assessPath` and `mh --assess` seams with a
+The `unreadable` state is therefore frozen at the `assessPath` and `mh assess` seams with a
 directory named `*.md`; this keeps it distinct from `unassessable`, which is a readable document
 whose frontmatter makes no freshness claim.
 

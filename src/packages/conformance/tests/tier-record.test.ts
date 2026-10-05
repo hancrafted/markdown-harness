@@ -23,13 +23,13 @@ describe('Conformance tier records', () => {
           name: 'integrated',
           caseKind: 'markdown',
           configFile: 'valid-test-config.yaml',
-          caseCount: 29,
+          caseCount: 30,
         },
         {
           name: 'rejected-config',
           caseKind: 'rejected-config',
           configFile: 'markdown-harness.config.yaml',
-          caseCount: 82,
+          caseCount: 85,
         },
       ];
       // ACT

@@ -16,11 +16,11 @@
 //
 // 1. Per-case governance is asked of a corpus of ONE, and that rests on one
 //    premise: A BODY-STRUCTURE VERDICT IS A FUNCTION OF THE CONFIG PLUS ONE
-//    FILE'S PATH AND BYTES. A `--check` response lists only failing files and
+//    FILE'S PATH AND BYTES. A `check` response lists only failing files and
 //    counts the governed ones, so it cannot tell a PASSES file from an
 //    UNGOVERNED one. Each case is therefore copied byte for byte into a root of
 //    its own and asked there: `governedFiles` is then that file's governance,
-//    the `--check` block its violations, and the one `--audit` row that won it
+//    the `check` block its violations, and the one `audit` row that won it
 //    names its Rule. A Module whose verdict read a second file would break the
 //    premise, and this seam with it.
 // 2. Build before running this file alone (trap 9 in
@@ -73,6 +73,8 @@ interface HeadingEntry {
   readonly maxCount?: number;
   readonly intent?: string;
   readonly mayHold?: readonly string[];
+  readonly allowed?: readonly { readonly title: string; readonly intent?: string }[];
+  readonly headings?: readonly HeadingEntry[];
 }
 
 interface RuleSpec {
@@ -84,7 +86,6 @@ interface RuleSpec {
   readonly types?: readonly string[];
   readonly excludeFiles?: readonly unknown[];
   readonly maxLevel?: number;
-  readonly vocabulary?: readonly { level: number; allowed: readonly string[] }[];
   readonly headings?: readonly HeadingEntry[];
 }
 
@@ -112,6 +113,16 @@ const ruleNamed = (ruleId: string): RuleSpec => {
   if (rule === undefined) throw new Error(`the tier config has no Rule ${ruleId}`);
   return rule;
 };
+
+/** Every entry of a list and of every list nested under it, depth-first in config order. */
+function entriesWithin(list: readonly HeadingEntry[] | undefined): readonly HeadingEntry[] {
+  return (list ?? []).flatMap((entry) => [entry, ...entriesWithin(entry.headings)]);
+}
+
+/** How many lists deep a list goes: 1 for a list nothing is nested under, 0 for none. */
+function depthOf(list: readonly HeadingEntry[] | undefined): number {
+  return list === undefined ? 0 : 1 + Math.max(0, ...list.map((entry) => depthOf(entry.headings)));
+}
 
 const frozen = JSON.parse(readTierText(FINDINGS_FILE)) as Record<string, Finding>;
 
@@ -165,14 +176,14 @@ const answers = new Map<string, CaseAnswer>();
 let tierCheck: ToolRun;
 let tierAudit: ToolRun;
 
-/** This Module's violations in one `--check` run, across every file it reports. */
+/** This Module's violations in one `check` run, across every file it reports. */
 function violationsIn(check: ToolRun): readonly unknown[] {
   const files = envelopeOf(check).result?.files ?? [];
   const blocks = files.flatMap((file) => file.modules).filter((block) => block.module === MODULE);
   return blocks.flatMap((block) => block.violations ?? []);
 }
 
-/** Every Rule of this Module that won a file in one `--audit` run, joined in config order. */
+/** Every Rule of this Module that won a file in one `audit` run, joined in config order. */
 function winnersIn(audit: ToolRun): string {
   const blocks = (envelopeOf(audit).result?.modules ?? []).filter((block) => block.module === MODULE);
   const rows = blocks.flatMap((block) => block.rules ?? []);
@@ -188,8 +199,8 @@ function winnersIn(audit: ToolRun): string {
  */
 async function answerSeeded(root: string): Promise<CaseAnswer> {
   const [check, audit] = await Promise.all([
-    mh(['--check', '--root', root, '--config', TYPED_CONFIG]),
-    mh(['--audit', '--root', root, '--config', TYPED_CONFIG]),
+    mh(['check', '--root', root, '--config', TYPED_CONFIG]),
+    mh(['audit', '--root', root, '--config', TYPED_CONFIG]),
   ]);
   const refusal = refusalOf(check) ?? refusalOf(audit);
   if (refusal !== undefined) return { refusal };
@@ -215,8 +226,8 @@ beforeAll(async () => {
   const alone = await inPool(corpus, width, (path) => answerAlone(path, corpus.indexOf(path)));
   corpus.forEach((path, index) => answers.set(path, alone[index]));
   [tierCheck, tierAudit] = await Promise.all([
-    mh(['--check', '--root', TYPED_ROOT, '--config', TYPED_CONFIG]),
-    mh(['--audit', '--root', TYPED_ROOT, '--config', TYPED_CONFIG]),
+    mh(['check', '--root', TYPED_ROOT, '--config', TYPED_CONFIG]),
+    mh(['audit', '--root', TYPED_ROOT, '--config', TYPED_CONFIG]),
   ]);
 }, 120_000);
 
@@ -231,13 +242,15 @@ const IN_PROCESS_CONFIG = join(CORPUS_ROOT, TIER.configFile);
  * The Module's own `check` answer for the whole tier, IN PROCESS, reached through
  * the declared Module set and the port every Module implements — never through
  * a Module's own files, which this suite must not name. While the section is
- * refused or no descriptor carries the key, the answer is the reason why.
+ * refused, no descriptor carries the key or it implements no `check`, the
+ * answer is the reason why.
  */
 function inProcessCheck(): unknown {
   const loaded = loadConfig(IN_PROCESS_CONFIG, MODULE_SET);
   if (loaded.config === undefined) return { refused: loaded.faults };
   const descriptor = MODULE_SET.find((candidate) => candidate.key === MODULE);
   if (descriptor === undefined) return { refused: `no descriptor keyed ${MODULE} in the declared Module set` };
+  if (descriptor.check === undefined) return { refused: `the ${MODULE} Module implements no check` };
   return projected(descriptor.check(CORPUS_ROOT, corpus, loaded.config));
 }
 
@@ -278,28 +291,39 @@ const RULE_KEYS = [
   'excludeFiles',
   'maxLevel',
   'undefinedHeadings',
-  'vocabulary',
   'headings',
 ];
-const ENTRY_KEYS = ['purpose', 'level', 'pattern', 'presence', 'minCount', 'maxCount', 'intent', 'mayHold'];
+const ENTRY_KEYS = [
+  'purpose',
+  'level',
+  'pattern',
+  'allowed',
+  'presence',
+  'minCount',
+  'maxCount',
+  'intent',
+  'mayHold',
+  'headings',
+];
 const PURPOSE_VALUES = ['heading', 'enumeration'];
 const PRESENCE_VALUES = ['required', 'optional'];
 const UNDEFINED_HEADINGS_VALUES = ['allow', 'forbid'];
-// A vocabulary item has two keys and a `mayHold` set has three kinds (#227):
+// An `allowed` item has two keys (#229) and a `mayHold` set has three kinds (#227):
 // the config writes every key and every kind, and no other.
-const VOCABULARY_ITEM_KEYS = ['level', 'allowed'];
+const ALLOWED_ITEM_KEYS = ['title', 'intent'];
 const BLOCK_KIND_VALUES = ['prose', 'ordered-list', 'unordered-list'];
 
 describe('the body-structure tier states one coherent specification', () => {
   describe('success cases', () => {
-    it('proves coverage and closure for the section, rule, entry, purpose, presence, undefinedHeadings, vocabulary-item and block-kind vocabularies together', () => {
+    it('proves coverage and closure for the section, rule, entry, purpose, presence, undefinedHeadings, allowed-item and block-kind vocabularies together', () => {
       // Read off the config as WRITTEN, so this holds whatever the loader
       // answers; the suite below asks the loader and the tool.
       // ARRANGE
       const complete = { unreached: [], undeclared: [] };
       const sectionKeys = Object.keys(writtenSection);
       const ruleKeys = rules.flatMap((rule) => Object.keys(rule));
-      const entries = rules.flatMap((rule) => rule.headings ?? []);
+      // Every entry at every depth (#229): a nested list is written in the same grammar as the top one.
+      const entries = rules.flatMap((rule) => entriesWithin(rule.headings));
       const entryKeys = entries.flatMap((entry) => Object.keys(entry));
       const purposes = entries.map((entry) => entry.purpose);
       // A `heading` entry that omits `presence` is required: that is the default the
@@ -313,9 +337,9 @@ describe('the body-structure tier states one coherent specification', () => {
       const undefinedHeadings = rules.flatMap((rule) =>
         rule.undefinedHeadings === undefined ? [] : [rule.undefinedHeadings],
       );
-      // `vocabulary` is a Rule key whose items carry two keys, and `mayHold` an entry key whose
+      // `allowed` is an entry key whose items carry two keys (#229), and `mayHold` an entry key whose
       // values are the three block kinds (#227): the config writes every one and no other.
-      const items = rules.flatMap((rule) => rule.vocabulary ?? []);
+      const items = entries.flatMap((entry) => entry.allowed ?? []);
       const itemKeys = items.flatMap((item) => Object.keys(item));
       const blockKinds = entries.flatMap((entry) => entry.mayHold ?? []);
       // ACT
@@ -326,7 +350,7 @@ describe('the body-structure tier states one coherent specification', () => {
         purpose: coverageAndClosure(PURPOSE_VALUES, purposes, purposes),
         presence: coverageAndClosure(PRESENCE_VALUES, presences, presences),
         undefinedHeadings: coverageAndClosure(UNDEFINED_HEADINGS_VALUES, undefinedHeadings, undefinedHeadings),
-        vocabularyItem: coverageAndClosure(VOCABULARY_ITEM_KEYS, itemKeys, itemKeys),
+        allowedItem: coverageAndClosure(ALLOWED_ITEM_KEYS, itemKeys, itemKeys),
         blockKind: coverageAndClosure(BLOCK_KIND_VALUES, blockKinds, blockKinds),
       };
       // ASSERT
@@ -337,26 +361,44 @@ describe('the body-structure tier states one coherent specification', () => {
         purpose: complete,
         presence: complete,
         undefinedHeadings: complete,
-        vocabularyItem: complete,
+        allowedItem: complete,
         blockKind: complete,
       });
     });
 
-    it('writes maxLevel on some Rules and omits it on others, and writes presence: optional eight times', () => {
+    it('writes maxLevel on some Rules and omits it on others, and writes presence: optional fourteen times', () => {
       // The listing: "`maxLevel` both written and omitted and with `presence:
       // optional` written" -- once in #221, and twice since #225 added
       // `closed-record`'s `Consequences` entry as the second, and eight since #227 added the
-      // six optional entries of `section-kinds`. #221's "written once"
+      // six optional entries of `section-kinds`, and fourteen since #229 added the six nested
+      // change types of `nested-changelog`, counted at every depth. #221's "written once"
       // described that round's config and not a property of the Module. A tier that
       // always wrote it, or never wrote it, could not tell open depth from forbidden depth.
       // ARRANGE
-      const expected = { writesMaxLevel: true, omitsMaxLevel: true, optionalEntries: 8 };
+      const expected = { writesMaxLevel: true, omitsMaxLevel: true, optionalEntries: 14 };
       // ACT
       const actual = {
         writesMaxLevel: rules.some((rule) => rule.maxLevel !== undefined),
         omitsMaxLevel: rules.some((rule) => rule.maxLevel === undefined),
-        optionalEntries: rules.flatMap((rule) => rule.headings ?? []).filter((entry) => entry.presence === 'optional')
-          .length,
+        optionalEntries: rules
+          .flatMap((rule) => entriesWithin(rule.headings))
+          .filter((entry) => entry.presence === 'optional').length,
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('nests a list under a heading entry and under an enumeration, four lists deep at most', () => {
+      // #229 decision 1: both purposes may carry `headings:`, at any depth down to level 6. A tier that
+      // nested under one purpose only, or one level only, could not tell a depth-bound walk from a general one.
+      // ARRANGE
+      const expected = { underHeading: true, underEnumeration: true, deepest: 4 };
+      // ACT
+      const parents = rules.flatMap((rule) => entriesWithin(rule.headings)).filter((entry) => entry.headings);
+      const actual = {
+        underHeading: parents.some((entry) => entry.purpose === 'heading'),
+        underEnumeration: parents.some((entry) => entry.purpose === 'enumeration'),
+        deepest: Math.max(...rules.map((rule) => depthOf(rule.headings))),
       };
       // ASSERT
       expect(actual).toEqual(expected);
@@ -418,9 +460,11 @@ describe('the body-structure tier states one coherent specification', () => {
     });
 
     it('tallies the verdicts and violations the spec states', () => {
-      // #221's expected counts, as #225 and then #227 extend them: 128 PASSES, 149 FAILS, 18 UNGOVERNED, 172 violations.
+      // #221's expected counts, as #225 and #227 extend them and #229 reshapes them: the 22 heading-vocabulary
+      // cases retire with the key, and 22 nested-spine and allowed-title cases take their place.
+      // 122 PASSES, 155 FAILS, 18 UNGOVERNED, 173 violations.
       // ARRANGE
-      const expected = { passes: 128, fails: 149, ungoverned: 18, violations: 172 };
+      const expected = { passes: 122, fails: 155, ungoverned: 18, violations: 173 };
       // ACT
       const actual = {
         passes: stated(PASSES).length,
@@ -623,10 +667,10 @@ describe('the tool answers the verbatim body-structure case as it states', () =>
 });
 
 // ---------------------------------------------------------------------------
-// The whole tier at the process boundary: --check, --audit, --query, --assess.
+// The whole tier at the process boundary: check, audit, query, assess.
 // ---------------------------------------------------------------------------
 
-/** The `--audit` rows #221 freezes for this tier, in config order. */
+/** The `audit` rows #221 freezes for this tier, in config order. */
 const AUDIT_ROWS = [
   { ruleId: 'index-pages', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'decision-records', won: 9, shadowed: 0, shadowedBy: [], excluded: 0 },
@@ -670,10 +714,10 @@ const AUDIT_ROWS = [
   { ruleId: 'closed-sources', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'open-sources', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'closed-bare', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'vocab-changelog', won: 13, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'vocab-closed', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'vocab-levels', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'vocab-depth', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'nested-changelog', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'nested-adr', won: 6, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'nested-depth', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'allowed-titles', won: 6, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'section-kinds', won: 29, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'section-steps', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'section-nested', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
@@ -681,7 +725,7 @@ const AUDIT_ROWS = [
   { ruleId: 'adr-contract', won: 14, shadowed: 0, shadowedBy: [], excluded: 0 },
 ];
 
-/** The `--query` candidates #221 freezes, per path asked, in order. */
+/** The `query` candidates #221 freezes, per path asked, in order. */
 const QUERY_CANDIDATES: readonly (readonly [string, readonly string[]])[] = [
   ['docs/research/anything.md', ['research-reports', 'research-notes', 'research-untyped']],
   ['docs/research/index.md', ['index-pages']],
@@ -698,8 +742,9 @@ const QUERY_CANDIDATES: readonly (readonly [string, readonly string[]])[] = [
   ['docs/closed-record/x.md', ['guides', 'closed-record']],
   ['docs/open-sources/x.md', ['guides', 'open-sources']],
   ['docs/closed-bare/x.md', ['guides', 'closed-bare']],
-  ['docs/vocab-changelog/x.md', ['guides', 'vocab-changelog']],
-  ['docs/vocab-levels/x.md', ['guides', 'vocab-levels']],
+  ['docs/nested-changelog/x.md', ['guides', 'nested-changelog']],
+  ['docs/nested-depth/x.md', ['guides', 'nested-depth']],
+  ['docs/allowed-titles/x.md', ['guides', 'allowed-titles']],
   ['docs/section-kinds/x.md', ['guides', 'section-kinds']],
   ['docs/adr/x.md', ['guides', 'adr-contract']],
 ];
@@ -720,7 +765,6 @@ function candidateBlock(ruleId: string): unknown {
     types: rule.types,
     maxLevel: rule.maxLevel,
     undefinedHeadings: rule.undefinedHeadings,
-    vocabulary: rule.vocabulary,
     headings: rule.headings,
   };
   const requirements = Object.fromEntries(Object.entries(written).filter(([, value]) => value !== undefined));
@@ -728,7 +772,7 @@ function candidateBlock(ruleId: string): unknown {
 }
 
 /**
- * The instant handed to `--assess`. This tier carries no `assess:` marker and its
+ * The instant handed to `assess`. This tier carries no `assess:` marker and its
  * tier record states no instant (#221), because the Module makes no freshness
  * claim; `--now` is supplied only so that no clock is read. The answer below is
  * the same at every instant.
@@ -788,12 +832,12 @@ describe('the tool answers for the whole body-structure tier', () => {
       expect(actual).toEqual(expected);
     });
 
-    it.each(QUERY_CANDIDATES)('answers --query %s with every candidate Rule in config order', async (path, ids) => {
+    it.each(QUERY_CANDIDATES)('answers query %s with every candidate Rule in config order', async (path, ids) => {
       // ARRANGE
       const expected = { refusal: undefined, governance: 'governed', modules: ids.map(candidateBlock) };
       const answered = 0;
       // ACT
-      const run = await mh(['--query', path, '--config', TYPED_CONFIG]);
+      const run = await mh(['query', path, '--config', TYPED_CONFIG]);
       const result = envelopeOf(run).result;
       const actual = { refusal: refusalOf(run), governance: result?.governance, modules: result?.modules };
       // ASSERT
@@ -808,7 +852,7 @@ describe('the tool answers for the whole body-structure tier', () => {
       const expected = {
         code: 1,
         refusal: undefined,
-        summary: { governedFiles: 277, invalidFiles: 149, totalViolations: 172 },
+        summary: { governedFiles: 277, invalidFiles: 155, totalViolations: 173 },
       };
       // ACT
       const actual = {
@@ -821,7 +865,7 @@ describe('the tool answers for the whole body-structure tier', () => {
     });
 
     it.each(['docs/research/report-pass.md', 'docs/research/report-h4-no-h1.md', 'docs/upper/INDEX.md'])(
-      'answers --assess %s as ungoverned, because this Module passes every path by',
+      'answers assess %s as ungoverned, because this Module implements no assess',
       async (path) => {
         // A known imprecision, not a claim that the file is
         // outside every Rule: this Module makes no freshness claim, so a file it
@@ -829,7 +873,7 @@ describe('the tool answers for the whole body-structure tier', () => {
         // ARRANGE
         const expected = { code: 0, refusal: undefined, agentAction: 'PROCEED', state: 'ungoverned' };
         // ACT
-        const run = await mh(['--assess', path, '--config', TIER.configFile, '--now', ASSESSMENT_INSTANT], CORPUS_ROOT);
+        const run = await mh(['assess', path, '--config', TIER.configFile, '--now', ASSESSMENT_INSTANT], CORPUS_ROOT);
         const result = envelopeOf(run).result;
         const actual = {
           code: run.code,

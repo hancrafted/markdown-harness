@@ -1,12 +1,13 @@
 {
   "command": "check",
+  "modules": ["frontmatter", "body-structure"],
   "root": "fixtures/conformance/integrated",
   "config": "fixtures/conformance/integrated/valid-test-config.yaml",
   "result": {
     "summary": {
-      "governedFiles": 27,
-      "invalidFiles": 18,
-      "totalViolations": 28
+      "governedFiles": 28,
+      "invalidFiles": 19,
+      "totalViolations": 30
     },
     "files": [
       {
@@ -59,7 +60,7 @@
             "violations": [
               {
                 "field": "description",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required"
                 }
@@ -93,7 +94,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__UNPARSEABLE"
               }
             ]
           },
@@ -124,7 +125,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__UNPARSEABLE"
               }
             ]
           },
@@ -135,7 +136,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-                "entry": 0,
+                "entry": [0],
                 "found": 2,
                 "requirement": {
                   "purpose": "heading",
@@ -156,7 +157,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__UNPARSEABLE"
               }
             ]
           },
@@ -167,7 +168,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_MISSING",
-                "entry": 0,
+                "entry": [0],
                 "requirement": {
                   "purpose": "heading",
                   "level": 1
@@ -187,7 +188,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_MISSING",
-                "entry": 1,
+                "entry": [1],
                 "requirement": {
                   "purpose": "heading",
                   "level": 2,
@@ -208,7 +209,7 @@
             "violations": [
               {
                 "field": "description",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required"
                 }
@@ -222,7 +223,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_MISSING",
-                "entry": 1,
+                "entry": [1],
                 "requirement": {
                   "purpose": "heading",
                   "level": 2,
@@ -243,7 +244,7 @@
             "violations": [
               {
                 "field": "description",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required"
                 }
@@ -262,7 +263,7 @@
             "violations": [
               {
                 "field": null,
-                "violation": "FRONTMATTER_UNPARSEABLE"
+                "violation": "FRONTMATTER__UNPARSEABLE"
               }
             ]
           }
@@ -279,7 +280,7 @@
               {
                 "field": "type",
                 "value": "reserch",
-                "violation": "VALUE_NOT_ALLOWED",
+                "violation": "FRONTMATTER__VALUE_NOT_ALLOWED",
                 "requirement": {
                   "presence": "required",
                   "allowed": [
@@ -304,7 +305,7 @@
             "violations": [
               {
                 "field": "type",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required",
                   "allowed": [
@@ -317,7 +318,7 @@
               },
               {
                 "field": "description",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required"
                 }
@@ -336,7 +337,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_MISSING",
-                "entry": 1,
+                "entry": [1],
                 "requirement": {
                   "purpose": "heading",
                   "level": 2,
@@ -362,7 +363,7 @@
                     "type"
                   ]
                 },
-                "violation": "FRONTMATTER_FORBIDDEN",
+                "violation": "FRONTMATTER__FORBIDDEN",
                 "requirement": {
                   "frontmatter": "forbidden"
                 }
@@ -376,7 +377,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-                "entry": 0,
+                "entry": [0],
                 "found": 2,
                 "requirement": {
                   "purpose": "heading",
@@ -397,7 +398,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-                "entry": 0,
+                "entry": [0],
                 "found": 2,
                 "requirement": {
                   "purpose": "heading",
@@ -414,18 +415,14 @@
           {
             "module": "body-structure",
             "ruleId": "titles-typed",
-            "ruleIntent": "A typed note names the titles its second-level headings may take and asks nothing else of its structure.",
+            "ruleIntent": "A typed note has one title, and its second-level headings come from a short fixed set and nothing else.",
             "violations": [
               {
-                "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
                 "level": 2,
                 "content": "Improved",
                 "requirement": {
-                  "level": 2,
-                  "allowed": [
-                    "Added",
-                    "Fixed"
-                  ]
+                  "undefinedHeadings": "forbid"
                 }
               }
             ]
@@ -442,7 +439,7 @@
             "violations": [
               {
                 "field": "description",
-                "violation": "MISSING_REQUIRED_FIELD",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
                 "requirement": {
                   "presence": "required"
                 }
@@ -455,20 +452,16 @@
             "ruleIntent": "A note has a title and a prose summary, and the headings under the summary come from a short fixed set.",
             "violations": [
               {
-                "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
                 "level": 3,
                 "content": "Improved",
                 "requirement": {
-                  "level": 3,
-                  "allowed": [
-                    "Added",
-                    "Fixed"
-                  ]
+                  "undefinedHeadings": "forbid"
                 }
               },
               {
                 "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-                "entry": 1,
+                "entry": [1],
                 "content": "Summary",
                 "kind": "unordered-list",
                 "found": 1,
@@ -478,6 +471,76 @@
                   "pattern": "^Summary$",
                   "mayHold": [
                     "prose"
+                  ],
+                  "headings": [
+                    {
+                      "purpose": "enumeration",
+                      "level": 3,
+                      "minCount": 0,
+                      "allowed": [
+                        {
+                          "title": "Added",
+                          "intent": "What the note adds."
+                        },
+                        {
+                          "title": "Fixed"
+                        }
+                      ],
+                      "mayHold": [
+                        "unordered-list"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/titles/nested-holds-prose.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "titles",
+            "ruleIntent": "A note says what it is about.",
+            "violations": [
+              {
+                "field": "description",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required"
+                }
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "titles-notes",
+            "ruleIntent": "A note has a title and a prose summary, and the headings under the summary come from a short fixed set.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [1, 0],
+                "under": "Summary",
+                "content": "Added",
+                "kind": "prose",
+                "found": 1,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 3,
+                  "minCount": 0,
+                  "allowed": [
+                    {
+                      "title": "Added",
+                      "intent": "What the note adds."
+                    },
+                    {
+                      "title": "Fixed"
+                    }
+                  ],
+                  "mayHold": [
+                    "unordered-list"
                   ]
                 }
               }
@@ -496,7 +559,7 @@
               {
                 "field": "type",
                 "value": "research-report",
-                "violation": "VALUE_NOT_ALLOWED",
+                "violation": "FRONTMATTER__VALUE_NOT_ALLOWED",
                 "requirement": {
                   "presence": "required",
                   "allowed": [
@@ -516,7 +579,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-                "entry": 0,
+                "entry": [0],
                 "found": 2,
                 "requirement": {
                   "purpose": "heading",

@@ -73,7 +73,7 @@ describe('bodyViolations', () => {
     it('reports a required heading entry with no matching heading as missing, entry verbatim', () => {
       // ARRANGE
       const outline = [h(1, 'Report'), h(2, 'Source: One')];
-      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 1, requirement: FINDINGS }];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: [1], requirement: FINDINGS }];
       // ACT
       const actual = violationsOf([TITLE, FINDINGS, SOURCES], outline);
       // ASSERT
@@ -84,7 +84,7 @@ describe('bodyViolations', () => {
       // ARRANGE
       const source: HeadingEntry = { purpose: 'heading', level: 2, pattern: '^Source: ' };
       const outline = [h(1, 'Report'), h(2, 'Source: One'), h(2, 'Findings')];
-      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 2, requirement: source }];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: [2], requirement: source }];
       // ACT
       const actual = violationsOf([TITLE, FINDINGS, source], outline);
       // ASSERT
@@ -94,7 +94,7 @@ describe('bodyViolations', () => {
     it('reports a second heading a heading entry matches as repeated, with found one plus the repeats', () => {
       // ARRANGE
       const outline = [h(1, 'One'), h(1, 'Two'), h(1, 'Three')];
-      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_REPEATED', entry: 0, found: 3, requirement: TITLE }];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_REPEATED', entry: [0], found: 3, requirement: TITLE }];
       // ACT
       const actual = violationsOf([TITLE], outline);
       // ASSERT
@@ -145,7 +145,7 @@ describe('bodyViolations', () => {
       // ARRANGE
       const parts: HeadingEntry = { purpose: 'enumeration', level: 2, pattern: '^F', minCount: 0 };
       const outline = [h(2, 'Findings'), h(2, 'Findings')];
-      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_REPEATED', entry: 1, found: 2, requirement: FINDINGS }];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_REPEATED', entry: [1], found: 2, requirement: FINDINGS }];
       // ACT
       const actual = violationsOf([parts, FINDINGS], outline);
       // ASSERT
@@ -158,8 +158,8 @@ describe('bodyViolations', () => {
       const parts: HeadingEntry = { purpose: 'enumeration', level: 2, pattern: '^F', minCount: 0 };
       const outline = [h(2, 'Findings'), h(2, 'Z')];
       const expected = [
-        { violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 1, requirement: FINDINGS },
-        { violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 2, requirement: parts },
+        { violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: [1], requirement: FINDINGS },
+        { violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: [2], requirement: parts },
       ];
       // ACT
       const actual = violationsOf([z, FINDINGS, parts], outline);
@@ -183,7 +183,7 @@ describe('bodyViolations', () => {
     it('searches a pattern and never anchors it, case-sensitively', () => {
       // ARRANGE
       const contains: HeadingEntry = { purpose: 'heading', level: 2, pattern: 'ecis' };
-      const expected = [[], [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 0, requirement: contains }]];
+      const expected = [[], [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: [0], requirement: contains }]];
       // ACT
       const actual = [[h(2, 'A Decision')], [h(2, 'DECISION')]].map((outline) => violationsOf([contains], outline));
       // ASSERT
@@ -194,7 +194,7 @@ describe('bodyViolations', () => {
       // ARRANGE
       const any2: HeadingEntry = { purpose: 'heading', level: 2 };
       const outline = [h(2, 'Findings')];
-      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 1, requirement: FINDINGS }];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: [1], requirement: FINDINGS }];
       // ACT
       const actual = violationsOf([any2, FINDINGS], outline);
       // ASSERT
@@ -204,7 +204,7 @@ describe('bodyViolations', () => {
     it('matches an entry only at its own level', () => {
       // ARRANGE
       const outline = [h(3, 'Findings')];
-      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 0, requirement: FINDINGS }];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: [0], requirement: FINDINGS }];
       // ACT
       const actual = violationsOf([FINDINGS], outline);
       // ASSERT
@@ -340,7 +340,7 @@ describe('bodyViolations: undefinedHeadings', () => {
       const outline = [h(1, 'Report'), h(2, 'Rationale')];
       const expected = [
         undefinedHeading(2, 'Rationale'),
-        { violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 1, requirement: FINDINGS },
+        { violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: [1], requirement: FINDINGS },
       ];
       // ACT
       const actual = closedViolationsOf([TITLE, FINDINGS], bodyOf(outline));
@@ -361,7 +361,7 @@ describe('bodyViolations: undefinedHeadings', () => {
       // ARRANGE
       const expected = [
         undefinedHeading(3, 'Findings'),
-        { violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: 1, requirement: FINDINGS },
+        { violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: [1], requirement: FINDINGS },
       ];
       // ACT
       const actual = closedViolationsOf([TITLE, FINDINGS], bodyOf([h(1, 'Report'), h(3, 'Findings')]));
@@ -393,8 +393,8 @@ describe('bodyViolations: undefinedHeadings', () => {
       // ARRANGE
       const outline = [h(2, 'Conclusion'), h(2, 'Findings'), h(2, 'Findings')];
       const expected = [
-        { violation: 'BODY_STRUCTURE__HEADING_REPEATED', entry: 0, found: 2, requirement: FINDINGS },
-        { violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 1, requirement: CONCLUSION },
+        { violation: 'BODY_STRUCTURE__HEADING_REPEATED', entry: [0], found: 2, requirement: FINDINGS },
+        { violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: [1], requirement: CONCLUSION },
       ];
       // ACT
       const actual = closedViolationsOf([FINDINGS, CONCLUSION], bodyOf(outline));
@@ -405,7 +405,7 @@ describe('bodyViolations: undefinedHeadings', () => {
     it('never reports a repeat outside an enumeration run as undefined: it is out of order and counted', () => {
       // ARRANGE
       const outline = [h(2, 'Source: One'), h(2, 'Conclusion'), h(2, 'Source: Two')];
-      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 0, requirement: SOURCES }];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: [0], requirement: SOURCES }];
       // ACT
       const actual = closedViolationsOf([SOURCES, CONCLUSION], bodyOf(outline));
       // ASSERT
@@ -415,7 +415,7 @@ describe('bodyViolations: undefinedHeadings', () => {
     it('decides from matching and never from the walk, so a misplaced heading is out of order and not undefined', () => {
       // ARRANGE
       const outline = [h(2, 'Conclusion'), h(2, 'Findings')];
-      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: 1, requirement: CONCLUSION }];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_OUT_OF_ORDER', entry: [1], requirement: CONCLUSION }];
       // ACT
       const actual = closedViolationsOf([FINDINGS, CONCLUSION], bodyOf(outline));
       // ASSERT
@@ -470,170 +470,171 @@ const check = (fields: Partial<BodyStructureRule>, body: string) =>
 /** The violation codes alone, in order. */
 const codesOf = (violations: readonly { violation: string }[]) => violations.map(({ violation }) => violation);
 
-const SIX = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
-const RELEASES: HeadingEntry = { purpose: 'enumeration', level: 2, pattern: '^\\[', minCount: 1 };
+const RELEASE_CHANGES: readonly HeadingEntry[] = ['Added', 'Changed', 'Fixed'].map((title) => ({
+  purpose: 'heading',
+  level: 3,
+  presence: 'optional',
+  allowed: [{ title }],
+}));
+const RELEASES: HeadingEntry = {
+  purpose: 'enumeration',
+  level: 2,
+  pattern: '^\\[',
+  minCount: 1,
+  headings: RELEASE_CHANGES,
+};
+const CHANGELOG: readonly HeadingEntry[] = [
+  { purpose: 'heading', level: 1, allowed: [{ title: 'Changelog' }] },
+  RELEASES,
+];
 
-describe('bodyViolations: the heading vocabulary', () => {
+describe('bodyViolations: nested spines and allowed titles', () => {
   describe('success cases', () => {
-    it('lets a closed spine govern a changelog: releases claimed by an enumeration, the rest by the vocabulary', () => {
+    it('walks a nested list once per release, so each release may list its changes in order afresh', () => {
       // ARRANGE
-      const body = '# Changelog\n\n## [2.0.0]\n\n### Added\n\n### Fixed\n\n## [1.0.0]\n\n### Fixed\n\n### Added\n';
+      const body = '# Changelog\n\n## [2.0.0]\n\n### Added\n\n### Fixed\n\n## [1.0.0]\n\n### Added\n\n### Changed\n';
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = check(
-        {
-          undefinedHeadings: 'forbid',
-          headings: [{ purpose: 'heading', level: 1, pattern: '^Changelog$' }, RELEASES],
-          vocabulary: [{ level: 3, allowed: SIX }],
-        },
-        body,
+      const actual = check({ undefinedHeadings: 'forbid', headings: CHANGELOG }, body);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('matches an allowed title by whole, case-sensitive equality and never by search', () => {
+      // ARRANGE
+      const title: HeadingEntry = { purpose: 'heading', level: 1, allowed: [{ title: 'Notes' }, { title: 'Journal' }] };
+      const expected = [[], ['BODY_STRUCTURE__HEADING_MISSING'], ['BODY_STRUCTURE__HEADING_MISSING']];
+      // ACT
+      const actual = ['# Journal\n', '# notes\n', '# Notes and more\n'].map((body) =>
+        codesOf(check({ headings: [title] }, body)),
       );
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('holds a title at its level wherever it sits: before the title and before any release', () => {
+    it('lets an allowed title repeat inside an enumeration run', () => {
       // ARRANGE
-      const body = '### Added\n\n# Changelog\n\n### Fixed\n\n## [1.0.0]\n';
+      const entries: HeadingEntry = { purpose: 'enumeration', level: 2, minCount: 2, allowed: [{ title: 'Entry' }] };
       const expected: readonly unknown[] = [];
       // ACT
-      const actual = check(
-        {
-          headings: [{ purpose: 'heading', level: 1, pattern: '^Changelog$' }, RELEASES],
-          vocabulary: [{ level: 3, allowed: SIX }],
-        },
-        body,
-      );
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('accepts a Rule that writes only a vocabulary, holding no other level to anything', () => {
-      // ARRANGE
-      const body = '# Anything\n\n## Whatever\n\n### Added\n\n#### Deep\n';
-      const expected: readonly unknown[] = [];
-      // ACT
-      const actual = check({ vocabulary: [{ level: 3, allowed: ['Added'] }] }, body);
+      const actual = check({ headings: [entries] }, '## Entry\n\n## Entry\n');
       // ASSERT
       expect(actual).toEqual(expected);
     });
   });
 
   describe('failure cases', () => {
-    it('reports a heading outside the vocabulary with its level, raw content and the whole item', () => {
+    it('reports a stray change heading before any release as undefined under a closed spine', () => {
       // ARRANGE
-      const body = '# T\n\n### Improved\n';
-      const item = { level: 3, allowed: SIX };
+      const body = '# Changelog\n\n### Added\n\n## [1.0.0]\n\n### Added\n';
+      const expected = [undefinedHeading(3, 'Added')];
+      // ACT
+      const actual = check({ undefinedHeadings: 'forbid', headings: CHANGELOG }, body);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reports a second change heading in one release as repeated, with its entry path and the release it is under', () => {
+      // ARRANGE
+      const body = '# Changelog\n\n## [1.0.0]\n\n### Added\n\n### Added\n';
       const expected = [
-        { violation: 'BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY', level: 3, content: 'Improved', requirement: item },
+        {
+          violation: 'BODY_STRUCTURE__HEADING_REPEATED',
+          entry: [1, 0],
+          under: '[1.0.0]',
+          found: 2,
+          requirement: RELEASE_CHANGES[0],
+        },
       ];
       // ACT
-      const actual = check({ vocabulary: [item] }, body);
+      const actual = check({ headings: CHANGELOG }, body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('reports it as outside the vocabulary and never as out of order, though no entry could place it', () => {
+    it('reports an entry missing under the immediate parent heading, at any depth', () => {
       // ARRANGE
-      const body = '### Improved\n\n# Changelog\n\n## [1.0.0]\n';
-      const expected = ['BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY'];
+      const details: HeadingEntry = { purpose: 'heading', level: 5, allowed: [{ title: 'Details' }] };
+      const summary: HeadingEntry = { purpose: 'heading', level: 3, headings: [details] };
+      const parts: HeadingEntry = { purpose: 'enumeration', level: 2, minCount: 1, headings: [summary] };
+      const body = '# Guide\n\n## One\n\n### Summary\n\n##### Details\n\n## Two\n\n### Summary\n';
+      const expected = [
+        { violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: [0, 0, 0, 0], under: 'Summary', requirement: details },
+      ];
       // ACT
-      const actual = codesOf(
-        check(
-          {
-            headings: [{ purpose: 'heading', level: 1, pattern: '^Changelog$' }, RELEASES],
-            vocabulary: [{ level: 3, allowed: SIX }],
-          },
-          body,
-        ),
-      );
+      const actual = check({ headings: [{ purpose: 'heading', level: 1, headings: [parts] }] }, body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('reports a heading outside the vocabulary once under a closed spine, never also as undefined', () => {
+    it('reports a nested entry section holding an unlisted kind under its parent', () => {
       // ARRANGE
-      const body = '# Changelog\n\n## [1.0.0]\n\n### Improved\n';
-      const expected = ['BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY'];
+      const positive: HeadingEntry = { purpose: 'heading', level: 3, mayHold: ['unordered-list'] };
+      const consequences: HeadingEntry = { purpose: 'heading', level: 2, headings: [positive] };
+      const expected = [
+        {
+          violation: 'BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED',
+          entry: [0, 0],
+          under: 'Consequences',
+          content: 'Positive',
+          kind: 'prose',
+          found: 1,
+          requirement: positive,
+        },
+      ];
       // ACT
-      const actual = codesOf(
-        check(
-          {
-            undefinedHeadings: 'forbid',
-            headings: [{ purpose: 'heading', level: 1, pattern: '^Changelog$' }, RELEASES],
-            vocabulary: [{ level: 3, allowed: SIX }],
-          },
-          body,
-        ),
-      );
+      const actual = check({ headings: [consequences] }, '## Consequences\n\n### Positive\n\nProse.\n');
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('is case-sensitive and whole-title: added, Added things and **Added** are all outside', () => {
+    it('reports a heading no nested list at its position names as undefined under a closed spine', () => {
       // ARRANGE
-      const body = '### added\n\n### Added things\n\n### **Added**\n\n### Added\n';
-      const expected = ['added', 'Added things', '**Added**'];
+      const body = '# Changelog\n\n## [1.0.0]\n\n### Improved\n\n#### Detail\n';
+      const expected = [undefinedHeading(3, 'Improved'), undefinedHeading(4, 'Detail')];
       // ACT
-      const actual = check({ vocabulary: [{ level: 3, allowed: ['Added'] }] }, body).map((violation) =>
-        'content' in violation ? violation.content : undefined,
-      );
+      const actual = check({ undefinedHeadings: 'forbid', headings: CHANGELOG }, body);
       // ASSERT
       expect(actual).toEqual(expected);
     });
   });
 
   describe('edge cases', () => {
-    it('orders undefined and out-of-vocabulary headings together in document order, ahead of the spine', () => {
+    it('ends a nested list at the next heading of its parent level or shallower, so a later section is never counted', () => {
       // ARRANGE
-      const body = '### Improved\n\n## Unreleased\n\n#### Deep\n';
-      const expected = [
-        'BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY',
-        'BODY_STRUCTURE__HEADING_UNDEFINED',
-        'BODY_STRUCTURE__HEADING_UNDEFINED',
-        'BODY_STRUCTURE__HEADING_MISSING',
-      ];
+      const options: HeadingEntry = {
+        purpose: 'heading',
+        level: 2,
+        allowed: [{ title: 'Options' }],
+        headings: [{ purpose: 'enumeration', level: 3, minCount: 2 }],
+      };
+      const body = '## Options\n\n### A\n\n## Decision\n\n### B\n';
+      const expected = [[[0, 0], 'Options', 1]];
       // ACT
-      const actual = codesOf(
-        check(
-          {
-            undefinedHeadings: 'forbid',
-            headings: [{ purpose: 'heading', level: 1 }],
-            vocabulary: [{ level: 3, allowed: SIX }],
-          },
-          body,
-        ),
+      const actual = check({ headings: [options] }, body).flatMap((violation) =>
+        'found' in violation && 'entry' in violation ? [[violation.entry, violation.under, violation.found]] : [],
       );
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('lets maxLevel and a vocabulary stand together, depth first', () => {
+    it('walks no nested list under a parent entry that claimed nothing, or under its repeat', () => {
       // ARRANGE
-      const body = '#### Deep\n\n### Improved\n';
-      const expected = ['BODY_STRUCTURE__LEVEL_TOO_DEEP', 'BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY'];
+      const parent: HeadingEntry = { purpose: 'heading', level: 1, headings: [{ purpose: 'heading', level: 2 }] };
+      const expected = [['BODY_STRUCTURE__HEADING_MISSING'], ['BODY_STRUCTURE__HEADING_REPEATED']];
       // ACT
-      const actual = codesOf(check({ maxLevel: 3, vocabulary: [{ level: 3, allowed: ['Added'] }] }, body));
+      const actual = ['## Orphan\n', '# One\n\n## Part\n\n# Two\n'].map((body) =>
+        codesOf(check({ headings: [parent] }, body)),
+      );
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
-    it('reads no heading inside a fence or a quote as a title', () => {
+    it('carries no under on a top-level finding', () => {
       // ARRANGE
-      const body = '```\n### Improved\n```\n\n> ### Improved\n';
-      const expected: readonly unknown[] = [];
+      const expected = [{ violation: 'BODY_STRUCTURE__HEADING_MISSING', entry: [0], requirement: CHANGELOG[0] }];
       // ACT
-      const actual = check({ vocabulary: [{ level: 3, allowed: ['Added'] }] }, body);
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('reports an empty heading as outside the vocabulary', () => {
-      // ARRANGE
-      const body = '###\n';
-      const expected = ['BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY'];
-      // ACT
-      const actual = codesOf(check({ vocabulary: [{ level: 3, allowed: ['Added'] }] }, body));
+      const actual = check({ headings: [CHANGELOG[0] as HeadingEntry] }, '# Other\n');
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -711,8 +712,8 @@ describe('bodyViolations: section content', () => {
       // ARRANGE
       const body = '# T\n\n## Context\n\n- a\n\n1. b\n\n- c\n';
       const expected = [
-        [1, 'Context', 'unordered-list', 2],
-        [1, 'Context', 'ordered-list', 1],
+        [[1], 'Context', 'unordered-list', 2],
+        [[1], 'Context', 'ordered-list', 1],
       ];
       // ACT
       const actual = contentOf(check({ headings: [{ purpose: 'heading', level: 1 }, CONTEXT] }, body));
@@ -726,7 +727,7 @@ describe('bodyViolations: section content', () => {
       const expected = [
         {
           violation: 'BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED',
-          entry: 0,
+          entry: [0],
           content: 'Context',
           kind: 'unordered-list',
           found: 1,
@@ -743,8 +744,8 @@ describe('bodyViolations: section content', () => {
       // ARRANGE
       const body = '### 1. A\n\n1. ok\n\n### 2. B\n\n- bad\n\n### 3. C\n\ntext\n';
       const expected = [
-        [0, '2. B', 'unordered-list', 1],
-        [0, '3. C', 'prose', 1],
+        [[0], '2. B', 'unordered-list', 1],
+        [[0], '3. C', 'prose', 1],
       ];
       // ACT
       const actual = contentOf(check({ headings: [STEP] }, body));
@@ -808,17 +809,12 @@ describe('bodyViolations: section content', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('judges nobody for an undefined heading under a closed spine, or for a heading a vocabulary admits', () => {
+    it('judges nobody for an undefined heading under a closed spine', () => {
       // ARRANGE
-      const body = '## Context\n\nProse.\n\n## Appendix\n\n- bullets\n\n### Added\n\n- bullets\n';
+      const body = '## Context\n\nProse.\n\n## Appendix\n\n- bullets\n';
       const expected = ['BODY_STRUCTURE__HEADING_UNDEFINED'];
       // ACT
-      const actual = codesOf(
-        check(
-          { undefinedHeadings: 'forbid', headings: [CONTEXT], vocabulary: [{ level: 3, allowed: ['Added'] }] },
-          body,
-        ),
-      );
+      const actual = codesOf(check({ undefinedHeadings: 'forbid', headings: [CONTEXT] }, body));
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -836,7 +832,7 @@ describe('bodyViolations: section content', () => {
     it('does not end a section at a heading inside a fence, a quote or a list item', () => {
       // ARRANGE
       const body = '## Context\n\n```\n## in fence\n```\n\n> ## in quote\n\n- ## in item\n';
-      const expected = [[0, 'Context', 'unordered-list', 1]];
+      const expected = [[[0], 'Context', 'unordered-list', 1]];
       // ACT
       const actual = contentOf(check({ headings: [CONTEXT] }, body));
       // ASSERT
@@ -846,7 +842,7 @@ describe('bodyViolations: section content', () => {
     it('treats a bold label as prose, a nested list as part of its outer list, and a fence as nothing', () => {
       // ARRANGE
       const body = '## Context\n\n**Positive:**\n\n```\ncode\n```\n\n1. a\n   - nested\n';
-      const expected = [[0, 'Context', 'ordered-list', 1]];
+      const expected = [[[0], 'Context', 'ordered-list', 1]];
       // ACT
       const actual = contentOf(check({ headings: [CONTEXT] }, body));
       // ASSERT

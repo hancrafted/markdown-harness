@@ -1,6 +1,6 @@
 // Colocated unit test for pairing corpus paths with the rules that won them.
 //
-// This runs BEFORE any file is opened, which is what lets `--check` read only
+// This runs BEFORE any file is opened, which is what lets `check` read only
 // the files it is going to report on. An invisible file is absent from the
 // result for the stronger reason that nothing ever read it.
 

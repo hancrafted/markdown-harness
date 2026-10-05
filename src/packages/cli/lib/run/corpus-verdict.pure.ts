@@ -1,5 +1,5 @@
 /**
- * Compose every Module's answer about one corpus into the verdict `--check`
+ * Compose every Module's answer about one corpus into the verdict `check`
  * returns.
  *
  * This is where a file's findings NEST: each Module hands back what it found,
@@ -20,7 +20,7 @@ import { settledAnswers } from './module-answers.pure.ts';
 import type { CheckAnswer, ModuleAnswer } from './module-answers.types.ts';
 
 /** How many findings one file's blocks carry between them. */
-function countIn(blocks: readonly ModuleViolations[]): number {
+function countIn<TViolation>(blocks: readonly ModuleViolations<TViolation>[]): number {
   return blocks.reduce((total, block) => total + block.violations.length, 0);
 }
 
@@ -30,8 +30,10 @@ function countIn(blocks: readonly ModuleViolations[]): number {
  * Keyed by path rather than by index, because a Module governs a SUBSET of the
  * corpus and two Modules need not govern the same one.
  */
-function blocksByPath(answers: readonly ModuleAnswer<ModuleCheck>[]): Map<string, ModuleViolations[]> {
-  const blocks = new Map<string, ModuleViolations[]>();
+function blocksByPath<TViolation>(
+  answers: readonly ModuleAnswer<ModuleCheck<TViolation>>[],
+): Map<string, ModuleViolations<TViolation>[]> {
+  const blocks = new Map<string, ModuleViolations<TViolation>[]>();
 
   for (const answer of answers) {
     for (const finding of answer.answer.files) {
@@ -69,7 +71,10 @@ function inCorpusOrder(corpus: readonly string[]): (left: string, right: string)
  * @param corpus Every file the walk enumerated, normalised, in walker order.
  * @param answers Each Module's answer under its own config key, IN DECLARED MODULE ORDER — the order the blocks are reported in.
  */
-export function corpusVerdict(corpus: readonly string[], answers: readonly ModuleAnswer<ModuleCheck>[]): CheckResult {
+export function corpusVerdict<TViolation>(
+  corpus: readonly string[],
+  answers: readonly ModuleAnswer<ModuleCheck<TViolation>>[],
+): CheckResult<TViolation> {
   const blocks = blocksByPath(answers);
   const governed = new Set(answers.flatMap((answer) => [...answer.answer.governed]));
 
@@ -96,11 +101,11 @@ export function corpusVerdict(corpus: readonly string[], answers: readonly Modul
  * shell gathers each Module's answer; this pure composer decides which report
  * shape those gathered answers mean.
  */
-export function checkVerdict(
+export function checkVerdict<TViolation>(
   corpus: readonly string[],
-  answers: readonly ModuleAnswer<CheckAnswer>[],
-): { kind: 'checked'; result: CheckResult } | Unreadable {
-  const settled = settledAnswers<Extract<CheckAnswer, { kind: 'checked' }>>(answers);
+  answers: readonly ModuleAnswer<CheckAnswer<TViolation>>[],
+): { kind: 'checked'; result: CheckResult<TViolation> } | Unreadable {
+  const settled = settledAnswers<Extract<CheckAnswer<TViolation>, { kind: 'checked' }>>(answers);
   if ('kind' in settled) return settled;
 
   return {
