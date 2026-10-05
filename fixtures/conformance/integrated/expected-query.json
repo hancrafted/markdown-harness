@@ -29,6 +29,7 @@
             "intent": "A note has a title and a prose summary, and the headings under the summary come from a short fixed set."
           },
           "requirements": {
+            "undefinedHeadings": "forbid",
             "headings": [
               {
                 "purpose": "heading",
@@ -40,15 +41,25 @@
                 "pattern": "^Summary$",
                 "mayHold": [
                   "prose"
-                ]
-              }
-            ],
-            "vocabulary": [
-              {
-                "level": 3,
-                "allowed": [
-                  "Added",
-                  "Fixed"
+                ],
+                "headings": [
+                  {
+                    "purpose": "enumeration",
+                    "level": 3,
+                    "minCount": 0,
+                    "allowed": [
+                      {
+                        "title": "Added",
+                        "intent": "What the note adds."
+                      },
+                      {
+                        "title": "Fixed"
+                      }
+                    ],
+                    "mayHold": [
+                      "unordered-list"
+                    ]
+                  }
                 ]
               }
             ]

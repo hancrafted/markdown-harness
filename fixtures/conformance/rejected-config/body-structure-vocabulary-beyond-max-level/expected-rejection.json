@@ -1,9 +1,0 @@
-{
-  "error": "CONFIG_REJECTED",
-  "faults": [
-    {
-      "code": "CONFIG_VOCABULARY_BEYOND_MAX_LEVEL",
-      "location": "body-structure.rules[0].vocabulary[0].level"
-    }
-  ]
-}

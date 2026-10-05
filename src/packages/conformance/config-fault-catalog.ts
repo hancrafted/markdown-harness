@@ -15,13 +15,15 @@ import type { DeclaredFaultCode as ConfigFaultCode } from '../cli/declared-modul
 
 /**
  * Every code the tier undertakes to reach, in the order §3.5's catalog declares
- * them: the four that name the config FILE first, then the twenty-two that name a
+ * them: the four that name the config FILE first, then the twenty-one that name a
  * key inside it.
  *
  * The `satisfies` check holds one direction — a code spelled wrong, or one the
  * catalog never had, does not compile. Its intersection holds the other.
  *
- * Twenty-six. It was twenty-one, before the five codes the heading vocabulary and the section content bring (#227);
+ * Twenty-five. It was twenty-six before #229 retired the three codes only the Rule-level heading
+ * vocabulary could earn and brought the two a nested spine and an `allowed` list can; the
+ * duplicate-title code survives, now raised inside an entry's `allowed` list. It was twenty-one, before the five codes the heading vocabulary and the section content bring (#227);
  * twenty, before `CONFIG_MAX_LEVEL_ON_CLOSED_SPINE` (#225); fifteen, before the five
  * `body-structure` codes of #221 below that; and fourteen before that: `CONFIG_SELECTOR_AMBIGUOUS` was retired with the
  * grammar that made it reachable — `folders:` and `fileNames:` intersect rather
@@ -55,11 +57,10 @@ const declaredCodes = [
   'CONFIG_COUNT_BOUNDS_INVERTED',
   'CONFIG_ENTRY_BEYOND_MAX_LEVEL',
   'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE',
-  'CONFIG_DUPLICATE_VOCABULARY_LEVEL',
   'CONFIG_DUPLICATE_VOCABULARY_TITLE',
-  'CONFIG_VOCABULARY_BEYOND_MAX_LEVEL',
-  'CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES',
   'CONFIG_DUPLICATE_BLOCK_KIND',
+  'CONFIG_NESTED_ENTRY_NOT_DEEPER',
+  'CONFIG_PATTERN_WITH_ALLOWED',
 ] as const;
 
 /** Whatever the catalog declares and the list above has not claimed. */

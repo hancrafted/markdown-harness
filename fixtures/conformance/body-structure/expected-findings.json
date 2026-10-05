@@ -190,6 +190,100 @@
     "ruleId": "adr-contract",
     "violations": []
   },
+  "docs/allowed-titles/case-mismatch.md": {
+    "ruleId": "allowed-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": [0],
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "allowed": [
+            {
+              "title": "Notes",
+              "intent": "A shared journal."
+            },
+            {
+              "title": "Journal"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "docs/allowed-titles/closing-hashes.md": {
+    "ruleId": "allowed-titles",
+    "violations": []
+  },
+  "docs/allowed-titles/no-entry.md": {
+    "ruleId": "allowed-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": [1],
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "minCount": 1,
+          "allowed": [
+            {
+              "title": "Entry"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "docs/allowed-titles/passes.md": {
+    "ruleId": "allowed-titles",
+    "violations": []
+  },
+  "docs/allowed-titles/raw-markup.md": {
+    "ruleId": "allowed-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": [0],
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "allowed": [
+            {
+              "title": "Notes",
+              "intent": "A shared journal."
+            },
+            {
+              "title": "Journal"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "docs/allowed-titles/substring.md": {
+    "ruleId": "allowed-titles",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": [0],
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "allowed": [
+            {
+              "title": "Notes",
+              "intent": "A shared journal."
+            },
+            {
+              "title": "Journal"
+            }
+          ]
+        }
+      }
+    ]
+  },
   "docs/alternation/both.md": {
     "ruleId": "closed-set",
     "violations": []
@@ -1013,6 +1107,338 @@
         "requirement": {
           "purpose": "heading",
           "level": 1
+        }
+      }
+    ]
+  },
+  "docs/nested-adr/negative-before-positive.md": {
+    "ruleId": "nested-adr",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": [4, 1],
+        "under": "Consequences",
+        "requirement": {
+          "purpose": "heading",
+          "level": 3,
+          "allowed": [
+            {
+              "title": "Negative"
+            }
+          ],
+          "mayHold": [
+            "unordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/nested-adr/negative-missing.md": {
+    "ruleId": "nested-adr",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": [4, 1],
+        "under": "Consequences",
+        "requirement": {
+          "purpose": "heading",
+          "level": 3,
+          "allowed": [
+            {
+              "title": "Negative"
+            }
+          ],
+          "mayHold": [
+            "unordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/nested-adr/one-option.md": {
+    "ruleId": "nested-adr",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": [2, 0],
+        "under": "Options",
+        "found": 1,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 3,
+          "pattern": "^Option ",
+          "minCount": 2
+        }
+      }
+    ]
+  },
+  "docs/nested-adr/options-missing.md": {
+    "ruleId": "nested-adr",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": [2],
+        "requirement": {
+          "purpose": "heading",
+          "level": 2,
+          "allowed": [
+            {
+              "title": "Options",
+              "intent": "The choices weighed, one heading each."
+            }
+          ],
+          "headings": [
+            {
+              "purpose": "enumeration",
+              "level": 3,
+              "pattern": "^Option ",
+              "minCount": 2
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "docs/nested-adr/passes.md": {
+    "ruleId": "nested-adr",
+    "violations": []
+  },
+  "docs/nested-adr/positive-holds-prose.md": {
+    "ruleId": "nested-adr",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+        "entry": [4, 0],
+        "under": "Consequences",
+        "content": "Positive",
+        "kind": "prose",
+        "found": 1,
+        "requirement": {
+          "purpose": "heading",
+          "level": 3,
+          "allowed": [
+            {
+              "title": "Positive"
+            }
+          ],
+          "mayHold": [
+            "unordered-list"
+          ]
+        }
+      }
+    ]
+  },
+  "docs/nested-changelog/out-of-order.md": {
+    "ruleId": "nested-changelog",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+        "entry": [1, 4],
+        "under": "[1.0.0] - 2026-01-01",
+        "requirement": {
+          "purpose": "heading",
+          "level": 3,
+          "presence": "optional",
+          "allowed": [
+            {
+              "title": "Fixed",
+              "intent": "Any bug fixes."
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "docs/nested-changelog/passes.md": {
+    "ruleId": "nested-changelog",
+    "violations": []
+  },
+  "docs/nested-changelog/repeated-in-release.md": {
+    "ruleId": "nested-changelog",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": [1, 0],
+        "under": "[1.0.0] - 2026-01-01",
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 3,
+          "presence": "optional",
+          "allowed": [
+            {
+              "title": "Added",
+              "intent": "New features."
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "docs/nested-changelog/stray-before-release.md": {
+    "ruleId": "nested-changelog",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 3,
+        "content": "Added",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/nested-changelog/unknown-change-type.md": {
+    "ruleId": "nested-changelog",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 4,
+        "content": "Detail",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      },
+      {
+        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+        "level": 3,
+        "content": "Improved",
+        "requirement": {
+          "undefinedHeadings": "forbid"
+        }
+      }
+    ]
+  },
+  "docs/nested-depth/details-missing.md": {
+    "ruleId": "nested-depth",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": [0, 0, 0, 0],
+        "under": "Summary",
+        "requirement": {
+          "purpose": "heading",
+          "level": 5,
+          "allowed": [
+            {
+              "title": "Details"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "docs/nested-depth/no-part.md": {
+    "ruleId": "nested-depth",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+        "entry": [0, 0],
+        "under": "Guide",
+        "found": 0,
+        "requirement": {
+          "purpose": "enumeration",
+          "level": 2,
+          "minCount": 1,
+          "headings": [
+            {
+              "purpose": "heading",
+              "level": 3,
+              "allowed": [
+                {
+                  "title": "Summary"
+                }
+              ],
+              "headings": [
+                {
+                  "purpose": "heading",
+                  "level": 5,
+                  "allowed": [
+                    {
+                      "title": "Details"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "docs/nested-depth/passes.md": {
+    "ruleId": "nested-depth",
+    "violations": []
+  },
+  "docs/nested-depth/second-title.md": {
+    "ruleId": "nested-depth",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+        "entry": [0],
+        "found": 2,
+        "requirement": {
+          "purpose": "heading",
+          "level": 1,
+          "headings": [
+            {
+              "purpose": "enumeration",
+              "level": 2,
+              "minCount": 1,
+              "headings": [
+                {
+                  "purpose": "heading",
+                  "level": 3,
+                  "allowed": [
+                    {
+                      "title": "Summary"
+                    }
+                  ],
+                  "headings": [
+                    {
+                      "purpose": "heading",
+                      "level": 5,
+                      "allowed": [
+                        {
+                          "title": "Details"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "docs/nested-depth/summary-missing.md": {
+    "ruleId": "nested-depth",
+    "violations": [
+      {
+        "violation": "BODY_STRUCTURE__HEADING_MISSING",
+        "entry": [0, 0, 0],
+        "under": "Part one",
+        "requirement": {
+          "purpose": "heading",
+          "level": 3,
+          "allowed": [
+            {
+              "title": "Summary"
+            }
+          ],
+          "headings": [
+            {
+              "purpose": "heading",
+              "level": 5,
+              "allowed": [
+                {
+                  "title": "Details"
+                }
+              ]
+            }
+          ]
         }
       }
     ]
@@ -2688,325 +3114,6 @@
         }
       }
     ]
-  },
-  "docs/vocab-changelog/any-order.md": {
-    "ruleId": "vocab-changelog",
-    "violations": []
-  },
-  "docs/vocab-changelog/before-any-release.md": {
-    "ruleId": "vocab-changelog",
-    "violations": []
-  },
-  "docs/vocab-changelog/before-title.md": {
-    "ruleId": "vocab-changelog",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "Improved",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Added",
-            "Changed",
-            "Deprecated",
-            "Removed",
-            "Fixed",
-            "Security"
-          ]
-        }
-      }
-    ]
-  },
-  "docs/vocab-changelog/case-mismatch.md": {
-    "ruleId": "vocab-changelog",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "added",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Added",
-            "Changed",
-            "Deprecated",
-            "Removed",
-            "Fixed",
-            "Security"
-          ]
-        }
-      }
-    ]
-  },
-  "docs/vocab-changelog/closing-hashes.md": {
-    "ruleId": "vocab-changelog",
-    "violations": []
-  },
-  "docs/vocab-changelog/content-not-governed.md": {
-    "ruleId": "vocab-changelog",
-    "violations": []
-  },
-  "docs/vocab-changelog/deeper-level.md": {
-    "ruleId": "vocab-changelog",
-    "violations": []
-  },
-  "docs/vocab-changelog/disallowed.md": {
-    "ruleId": "vocab-changelog",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "Improved",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Added",
-            "Changed",
-            "Deprecated",
-            "Removed",
-            "Fixed",
-            "Security"
-          ]
-        }
-      }
-    ]
-  },
-  "docs/vocab-changelog/interleaved.md": {
-    "ruleId": "vocab-changelog",
-    "violations": []
-  },
-  "docs/vocab-changelog/missing-title.md": {
-    "ruleId": "vocab-changelog",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "Improved",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Added",
-            "Changed",
-            "Deprecated",
-            "Removed",
-            "Fixed",
-            "Security"
-          ]
-        }
-      },
-      {
-        "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": [0],
-        "requirement": {
-          "purpose": "heading",
-          "level": 1,
-          "pattern": "^Changelog$"
-        }
-      }
-    ]
-  },
-  "docs/vocab-changelog/no-third-level.md": {
-    "ruleId": "vocab-changelog",
-    "violations": []
-  },
-  "docs/vocab-changelog/raw-markup.md": {
-    "ruleId": "vocab-changelog",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "**Added**",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Added",
-            "Changed",
-            "Deprecated",
-            "Removed",
-            "Fixed",
-            "Security"
-          ]
-        }
-      }
-    ]
-  },
-  "docs/vocab-changelog/substring.md": {
-    "ruleId": "vocab-changelog",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "Added things",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Added",
-            "Changed",
-            "Deprecated",
-            "Removed",
-            "Fixed",
-            "Security"
-          ]
-        }
-      },
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "Fix",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Added",
-            "Changed",
-            "Deprecated",
-            "Removed",
-            "Fixed",
-            "Security"
-          ]
-        }
-      }
-    ]
-  },
-  "docs/vocab-closed/other-levels.md": {
-    "ruleId": "vocab-closed",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "Improved",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Added",
-            "Changed",
-            "Deprecated",
-            "Removed",
-            "Fixed",
-            "Security"
-          ]
-        }
-      },
-      {
-        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
-        "level": 4,
-        "content": "Detail",
-        "requirement": {
-          "undefinedHeadings": "forbid"
-        }
-      },
-      {
-        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
-        "level": 2,
-        "content": "Unreleased",
-        "requirement": {
-          "undefinedHeadings": "forbid"
-        }
-      }
-    ]
-  },
-  "docs/vocab-closed/outside-vocabulary.md": {
-    "ruleId": "vocab-closed",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "Improved",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Added",
-            "Changed",
-            "Deprecated",
-            "Removed",
-            "Fixed",
-            "Security"
-          ]
-        }
-      }
-    ]
-  },
-  "docs/vocab-closed/passes.md": {
-    "ruleId": "vocab-closed",
-    "violations": []
-  },
-  "docs/vocab-closed/release-undefined.md": {
-    "ruleId": "vocab-closed",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
-        "level": 2,
-        "content": "Unreleased",
-        "requirement": {
-          "undefinedHeadings": "forbid"
-        }
-      }
-    ]
-  },
-  "docs/vocab-depth/passes.md": {
-    "ruleId": "vocab-depth",
-    "violations": []
-  },
-  "docs/vocab-depth/too-deep-and-outside.md": {
-    "ruleId": "vocab-depth",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
-        "level": 4,
-        "found": 1,
-        "requirement": {
-          "maxLevel": 3
-        }
-      },
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "Improved",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Added",
-            "Fixed"
-          ]
-        }
-      }
-    ]
-  },
-  "docs/vocab-levels/both-levels.md": {
-    "ruleId": "vocab-levels",
-    "violations": [
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 3,
-        "content": "Sample",
-        "requirement": {
-          "level": 3,
-          "allowed": [
-            "Example"
-          ]
-        }
-      },
-      {
-        "violation": "BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY",
-        "level": 2,
-        "content": "Install",
-        "requirement": {
-          "level": 2,
-          "allowed": [
-            "Overview",
-            "Usage"
-          ]
-        }
-      }
-    ]
-  },
-  "docs/vocab-levels/passes.md": {
-    "ruleId": "vocab-levels",
-    "violations": []
-  },
-  "docs/vocab-levels/title-unconstrained.md": {
-    "ruleId": "vocab-levels",
-    "violations": []
   },
   "docs/windowed/conclusion-twice.md": {
     "ruleId": "windowed",

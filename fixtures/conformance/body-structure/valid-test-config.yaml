@@ -289,46 +289,82 @@ body-structure:
       intent: 'A log entry is plain text and carries no heading at all.'
       undefinedHeadings: forbid
 
-    # Heading vocabularies and section content. Every Rule below owns one folder under `docs/`; none
-    # writes a `type` except `adr-contract`, and none can shadow or be shadowed by a Rule above, whose
-    # folders are all different. No Rule above writes `vocabulary` or `mayHold`, because their absence is
-    # the default every case above relies on: any title at a level, and any block in a section.
+    # Nested spines, exact titles and section content. Every Rule below owns one folder under `docs/`;
+    # none writes a `type` except `adr-contract`, and none can shadow or be shadowed by a Rule above, whose
+    # folders are all different. No Rule above writes `allowed`, a nested `headings:` or `mayHold`, because
+    # their absence is the default every case above relies on: any title, nothing asked inside a section,
+    # and any block in it.
     #
-    # The `vocab-` Rules each own a heading vocabulary. `vocab-changelog` and `vocab-closed` are the shape
-    # of a Keep a Changelog file, the open one and the closed one; `vocab-levels` names two levels and
-    # asks nothing else; `vocab-depth` writes `maxLevel` beside a vocabulary, which is allowed.
-    - ruleId: vocab-changelog
-      folders: [docs/vocab-changelog/]
-      intent: 'A changelog has one title and a heading per release, and the headings under a release come from one fixed set, in any order and any number of times.'
-      headings:
-        - { purpose: heading, level: 1, pattern: '^Changelog$' }
-        - { purpose: enumeration, level: 2, pattern: '^\[', minCount: 1 }
-      vocabulary:
-        - { level: 3, allowed: [Added, Changed, Deprecated, Removed, Fixed, Security] }
-
-    - ruleId: vocab-closed
-      folders: [docs/vocab-closed/]
-      intent: 'A closed changelog names its title, its release headings and its one set of third-level headings, and carries no other heading.'
+    # `nested-changelog` is a strict Keep a Changelog file: a closed spine whose release enumeration
+    # carries one optional entry per change type, in the order the convention lists them. Its nested
+    # list is walked once under every release heading the enumeration claims, and covers only that
+    # release's section.
+    - ruleId: nested-changelog
+      folders: [docs/nested-changelog/]
+      intent: 'A changelog has one title and a heading per release, and each release lists its changes under at most one heading per change type, in the order Keep a Changelog gives them.'
       undefinedHeadings: forbid
       headings:
-        - { purpose: heading, level: 1, pattern: '^Changelog$' }
-        - { purpose: enumeration, level: 2, pattern: '^\[', minCount: 1 }
-      vocabulary:
-        - { level: 3, allowed: [Added, Changed, Deprecated, Removed, Fixed, Security] }
+        - { purpose: heading, level: 1, allowed: [{ title: Changelog }] }
+        - purpose: enumeration
+          level: 2
+          pattern: '^\['
+          minCount: 1
+          headings:
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Added, intent: 'New features.' }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Changed, intent: 'Changes in existing functionality.' }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Deprecated, intent: 'Soon-to-be removed features.' }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Removed, intent: 'Now removed features.' }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Fixed, intent: 'Any bug fixes.' }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Security, intent: 'In case of vulnerabilities.' }] }
 
-    - ruleId: vocab-levels
-      folders: [docs/vocab-levels/]
-      intent: 'A manual page names the titles its second- and third-level headings may take and asks nothing else of its structure.'
-      vocabulary:
-        - { level: 2, allowed: [Overview, Usage] }
-        - { level: 3, allowed: [Example] }
+    # `nested-adr` is an open spine whose fixed sections each carry their own sub-template: `Options`
+    # holds a run of `### Option …` headings and `Consequences` holds `### Positive` then `### Negative`.
+    - ruleId: nested-adr
+      folders: [docs/nested-adr/]
+      intent: 'A decision record weighs at least two options and then states what follows, good and bad, each as a bulleted list.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, allowed: [{ title: Context }] }
+        - purpose: heading
+          level: 2
+          allowed: [{ title: Options, intent: 'The choices weighed, one heading each.' }]
+          headings:
+            - { purpose: enumeration, level: 3, pattern: '^Option ', minCount: 2 }
+        - { purpose: heading, level: 2, allowed: [{ title: Decision }] }
+        - purpose: heading
+          level: 2
+          allowed: [{ title: Consequences }]
+          headings:
+            - { purpose: heading, level: 3, allowed: [{ title: Positive }], mayHold: [unordered-list] }
+            - { purpose: heading, level: 3, allowed: [{ title: Negative }], mayHold: [unordered-list] }
 
-    - ruleId: vocab-depth
-      folders: [docs/vocab-depth/]
-      intent: 'A release note stops at the third level, and its third-level headings come from a short fixed set.'
-      maxLevel: 3
-      vocabulary:
-        - { level: 3, allowed: [Added, Fixed] }
+    # `nested-depth` nests four lists deep, one level apart and then skipping one, so a violation's
+    # entry path and its `under` are frozen at every depth.
+    - ruleId: nested-depth
+      folders: [docs/nested-depth/]
+      intent: 'A guide has one title, at least one part, and in every part a summary that gives its details.'
+      headings:
+        - purpose: heading
+          level: 1
+          headings:
+            - purpose: enumeration
+              level: 2
+              minCount: 1
+              headings:
+                - purpose: heading
+                  level: 3
+                  allowed: [{ title: Summary }]
+                  headings:
+                    - { purpose: heading, level: 5, allowed: [{ title: Details }] }
+
+    # `allowed-titles` names its titles by exact list rather than by pattern: a heading entry with two
+    # titles, and an enumeration with one, whose title repeats inside its run.
+    - ruleId: allowed-titles
+      folders: [docs/allowed-titles/]
+      intent: 'A journal is titled Notes or Journal and holds at least one entry, every one titled Entry.'
+      headings:
+        - { purpose: heading, level: 1, allowed: [{ title: Notes, intent: 'A shared journal.' }, { title: Journal }] }
+        - { purpose: enumeration, level: 2, minCount: 1, allowed: [{ title: Entry }] }
 
     # Section content. `section-kinds` writes six optional entries, one per allowed set, so each case
     # needs only the section it is about; the entry order is Prose, Ordered, Bullets, Mixed, Anything,
