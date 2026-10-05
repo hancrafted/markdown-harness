@@ -399,6 +399,26 @@ describe('the body-structure tier states one coherent specification', () => {
       expect(enumerated).toBe(declaredCases);
     });
 
+    it('holds the frozen audit and query files the tier-wide tables were cut into', () => {
+      // ARCH-010 §1.3: the comparison reads `expected-audit.json` and
+      // `expected-query.json` only where a folder holds them, so a deleted one
+      // would pass silently. #231 cut the 45-row audit table into 19 folders
+      // where Rules compete and the 20 frozen query answers into the folders
+      // whose Rules they name; these hand-stated counts make a deletion fail.
+      // ARRANGE
+      const expected = { audits: 19, queries: 20 };
+      // ACT
+      const actual = {
+        audits: folders.filter((folder) => optional(folder.root, 'expected-audit.json') !== undefined).length,
+        queries: folders.reduce(
+          (sum, folder) => sum + Object.keys(JSON.parse(optional(folder.root, 'expected-query.json') ?? '{}')).length,
+          0,
+        ),
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('tallies the verdicts and violations the spec states', () => {
       // #221's counts as #225, #227 and #229 left them — 122 PASSES, 155 FAILS,
       // 18 UNGOVERNED, 173 violations — plus the verbatim PASSES case and the five

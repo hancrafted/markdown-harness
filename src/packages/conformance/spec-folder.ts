@@ -17,6 +17,7 @@ import { hostPath } from '../foundation/host-path.ts';
 import { directoryNamesIn } from '../foundation/list-directory.ts';
 import { listMarkdownFiles } from '../foundation/list-markdown-files.ts';
 import { readTextIn } from '../foundation/read-text.ts';
+import type { HostRun } from '../foundation/run-entry.ts';
 import { runEntry } from '../foundation/run-entry.ts';
 import { tierRoot } from './case-corpus.ts';
 import { expectMarkersIn } from './lib/marker/marker-scan.pure.ts';
@@ -98,10 +99,7 @@ export function statedVerdictsIn(folder: string): readonly { readonly path: stri
  * @param folder The spec folder's host path.
  * @param args The command words after `mh`.
  */
-function mhIn(
-  folder: string,
-  args: readonly string[],
-): { readonly stdout: string; readonly stderr: string; readonly code: number | null } {
+function mhIn(folder: string, args: readonly string[]): HostRun {
   return runEntry(toolEntry(), args, folder);
 }
 
