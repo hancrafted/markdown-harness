@@ -68,6 +68,6 @@ export interface SelectorRef {
   folders?: readonly string[];
   /** The literal basenames the rule listed. */
   fileNames?: readonly string[];
-  /** The frontmatter `type` values a `body-structure` Rule listed (design-ADR 0015). */
+  /** The frontmatter `type` values a `body-structure` Rule listed. */
   types?: readonly string[];
 }

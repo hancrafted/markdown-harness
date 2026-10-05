@@ -367,8 +367,8 @@ body-structure:
         - { purpose: heading, level: 2, pattern: '^Summary$', mayHold: [prose] }
 
     # The ADR Contract (GEN-001) body, dogfooded. Selected by folder and by `type: adr`, so a file with a
-    # misspelt type is the silent miss design-ADR 0021 freezes. It states the body's section shape and the
-    # block kind each section holds, and nothing about what is inside a list item (design-ADR 0027).
+    # misspelt type is the deliberate silent miss. It states the body's section shape and the
+    # block kind each section holds, and nothing about what is inside a list item.
     - ruleId: adr-contract
       folders: [docs/adr/]
       types: [adr]

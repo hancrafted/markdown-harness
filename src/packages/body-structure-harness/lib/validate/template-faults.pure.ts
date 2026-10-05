@@ -1,6 +1,6 @@
 /**
  * Validate the template half of one Rule: its `maxLevel:` and its `headings:`
- * spine (design-ADR 0020, 0026).
+ * spine.
  *
  * What a `purpose` allows decides most of it. A `heading` may never carry a
  * count, an `enumeration` may never carry `presence`, must carry at least one
@@ -12,7 +12,7 @@
  * `purpose`, `level`, `pattern`, the keys the purpose forbids (`minCount`,
  * `maxCount`, then `presence`), `presence`, `minCount`, `maxCount`, inverted
  * bounds, a missing count, an anchored-literal pattern, `intent`, `mayHold`, a level
- * beyond the Rule's `maxLevel` (design-ADR 0029).
+ * beyond the Rule's `maxLevel`.
  *
  * An empty `pattern` would match every heading at its level and a pattern that
  * does not compile under the `u` flag could never fire: both are
@@ -216,7 +216,7 @@ export function maxLevelFaults(rule: Record<string, unknown>, at: string): reado
  * An entry deeper than the Rule's `maxLevel` is a template no file can satisfy,
  * decided only when `maxLevel` and the entry's own `level` are both valid, and
  * not at all beside `undefinedHeadings: forbid`, where `maxLevel` is already
- * refused and names a limit not in force (design-ADR 0026).
+ * refused and names a limit not in force.
  *
  * @param rule One Rule, straight off the YAML.
  * @param at The Rule's address, e.g. `body-structure.rules[0]`.

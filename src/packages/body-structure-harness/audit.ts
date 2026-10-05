@@ -1,7 +1,7 @@
 // How every Rule fared across one corpus, over all three axes.
 //
 // Unlike the first Module's, this audit opens files: whether a Rule writing
-// `types` selected a file depends on its `type` (design-ADR 0015). It opens
+// `types` selected a file depends on its `type`. It opens
 // every file `--check` opens, plus any a typed Rule excludes, and one that will
 // not open refuses the whole audit rather than leaving a row quietly short.
 

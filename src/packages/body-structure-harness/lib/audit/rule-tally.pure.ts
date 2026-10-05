@@ -1,6 +1,5 @@
 /**
- * How every Rule fared across one corpus, counted over all three axes
- * (design-ADR 0015).
+ * How every Rule fared across one corpus, counted over all three axes.
  *
  * The first Module tallies from paths alone. This one cannot: whether a Rule
  * that writes `types` selected a file depends on the file's `type`, so a

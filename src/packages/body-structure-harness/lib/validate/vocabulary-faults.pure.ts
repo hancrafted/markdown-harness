@@ -1,7 +1,7 @@
 /**
  * Validate the Rule-level `vocabulary:` key: a list of `{ level, allowed }`
- * items, one per heading level, each a set of exact titles (design-ADR 0027,
- * 0029).
+ * items, one per heading level, each a set of exact titles.
+ *
  *
  * Walk order, so two implementations agree: the list's own shape and
  * emptiness; every repeated level across the whole list, at the later item;
@@ -102,7 +102,7 @@ function itemFaults(item: unknown, at: string, context: RuleContext): readonly C
  *
  * `maxLevel` is consulted only when it is valid and the spine is open: beside
  * `undefinedHeadings: forbid` it is already refused and names a limit not in
- * force (design-ADR 0026, 0029).
+ * force.
  *
  * @param rule One Rule, straight off the YAML.
  * @param at The Rule's address, e.g. `body-structure.rules[0]`.

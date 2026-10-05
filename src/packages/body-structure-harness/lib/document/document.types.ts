@@ -1,7 +1,7 @@
 /**
  * What this Module reads out of one file: its `type`, its body, and the body's
- * outline — its top-level headings in document order (design-ADR 0014), each
- * with the kinds of the blocks in the section it opens (design-ADR 0028).
+ * outline — its top-level headings in document order, each
+ * with the kinds of the blocks in the section it opens.
  *
  * Only a heading that is a DIRECT child of the document counts; one nested in
  * a blockquote or a list item belongs to the container.
@@ -28,7 +28,7 @@ export interface OutlineSection {
 }
 
 /**
- * The three kinds of block a body section may hold (design-ADR 0028). Every other
+ * The three kinds of block a body section may hold. Every other
  * block, a fence, a table, a quote, HTML, a rule, a link definition, is
  * transparent: neither allowed nor forbidden, because no Rule can name it.
  */

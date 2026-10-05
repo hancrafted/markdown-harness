@@ -99,7 +99,7 @@ export interface ModuleDescriptor<
    *
    * What the answer IS is pinned by `cli`, not here: this Package is type-only
    * and may name neither `foundation` nor `response-contract` (ARCH-008 §1.3).
-   * `cli/module-set.ts` holds every declared Module to (design-ADR 0024):
+   * `cli/module-set.ts` holds every declared Module to:
    * one shape per verb, `query` always answers a list of claims.
    */
   query(path: string, config: LoadedConfig): TQuery;
@@ -109,7 +109,7 @@ export interface ModuleDescriptor<
    *
    * Takes the corpus ROOT as `check` does, because a Module whose Rules select
    * on file content has to open a file to learn which Rule it would fall to
-   * (design-ADR 0015). A Module selecting on paths alone ignores it.
+   *. A Module selecting on paths alone ignores it.
    */
   audit(root: string, files: readonly string[], config: LoadedConfig): TAudit;
 

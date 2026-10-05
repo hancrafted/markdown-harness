@@ -2,7 +2,7 @@
 //
 // Nothing here touches the filesystem, so it cannot know the `type` a file does
 // not yet have. It answers every Rule that could win the path, in config order
-// (design-ADR 0015) — a list of claims rather than one, which the composing
+// — a list of claims rather than one, which the composing
 // Package names block by block. `invisible` is not answered here: it is a
 // claim about the whole config that only the composing Package can make.
 

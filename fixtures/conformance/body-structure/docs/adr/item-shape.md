@@ -5,7 +5,7 @@ title: 'Demo'
 ---
 <!-- expect: PASSES -->
 
-What is inside a list item is not governed: GEN-001 asks for a bold `**DO**` or `**DON’T**` opening on every item and this Rule does not, because item shape is a different feature and is not built (design-ADR 0027). The list is a numbered list, which is all `mayHold` can see, so a do block whose items open with plain text passes. When item shape is designed, this case changes on purpose.
+What is inside a list item is not governed: GEN-001 asks for a bold `**DO**` or `**DON’T**` opening on every item and this Rule does not, because item shape is a different feature and is not built. The list is a numbered list, which is all `mayHold` can see, so a do block whose items open with plain text passes. When item shape is designed, this case changes on purpose.
 
 # Demo ADR
 

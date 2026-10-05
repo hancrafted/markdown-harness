@@ -1,7 +1,7 @@
 // Integration suite for `--audit`, at the grain a caller sees.
 //
 // Unlike the first Module's, this audit opens files: whether a Rule writing
-// `types` selected a file depends on its `type`. design-ADR 0015 makes a
+// `types` selected a file depends on its `type`. a
 // candidate that cannot be read refuse the audit at exit 2, as `--check`
 // refuses, so this suite proves against real files which ones are candidates.
 

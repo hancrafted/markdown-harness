@@ -1,8 +1,8 @@
 /**
  * What the Core hands every Module about one file it read.
  *
- * The Core splits and parses; it never says what a field MEANS (design-ADR
- * 0012). A Module takes `type`, a rule's addresses or a heading outline out of
+ * The Core splits and parses; it never says what a field MEANS.
+ * A Module takes `type`, a rule's addresses or a heading outline out of
  * what is here and nowhere else gets to look at the raw bytes' fences.
  */
 
@@ -27,7 +27,7 @@ export type Frontmatter =
 /** One file, split once: its parsed frontmatter and the Markdown after it. */
 export interface ParsedDocument {
   readonly frontmatter: Frontmatter;
-  /** The Markdown after the block: the whole file when there is none, empty when the block never closes (design-ADR 0014). */
+  /** The Markdown after the block: the whole file when there is none, empty when the block never closes. */
   readonly body: string;
 }
 

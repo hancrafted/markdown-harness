@@ -1,6 +1,5 @@
 /**
- * What one body breaks of one Rule: the whole body check behind one function
- * (design-ADR 0017, 0018, 0019, 0025, 0027, 0028).
+ * What one body breaks of one Rule: the whole body check behind one function.
  *
  * Four checks run over the body, in this order. Depth (`maxLevel`): levels are
  * open by default, one violation per level beyond the limit, never per heading,
@@ -93,8 +92,7 @@ function spineViolations({ entries }: Spine, { findings, given }: Walk): readonl
  * The sections each entry claimed, in index order: a `heading` entry claims the
  * heading it matched and an `enumeration` the repeats of its run. A heading the
  * walk left over, a repeat, a misplaced heading, one outside a run, or one no
- * entry matches, is claimed by nobody and so its section is judged by nobody
- * (design-ADR 0028).
+ * entry matches, is claimed by nobody and so its section is judged by nobody.
  */
 function claimsOf({ entries }: Spine, { findings }: Walk, sections: readonly OutlineSection[]): readonly Claim[] {
   return entries.map((entry, index) => {
@@ -106,7 +104,7 @@ function claimsOf({ entries }: Spine, { findings }: Walk, sections: readonly Out
 
 /**
  * Every violation one body carries against one Rule, in one defined order
- * (design-ADR 0019, 0025, 0027, 0028): the levels beyond `maxLevel`; then the
+ *: the levels beyond `maxLevel`; then the
  * headings the outline alone condemns, undefined and outside a vocabulary
  * together in document order; then spine entries in entry order; then section
  * content by entry.

@@ -19,7 +19,7 @@ import type { PinnedModule } from './lib/run/module-answers.types.ts';
 
 /**
  * Every Module this tool ships, in the order their faults are reported and
- * their blocks nest: `frontmatter`, then `body-structure` (design-ADR 0016).
+ * their blocks nest: `frontmatter`, then `body-structure`.
  *
  * `satisfies` rather than an annotation, so each entry keeps its own section
  * and answer types for a caller that names one descriptor while the list as a
@@ -32,7 +32,7 @@ import type { PinnedModule } from './lib/run/module-answers.types.ts';
  * The set is also held to the answers `cli` composes from (`PinnedModule`):
  * `config-contract` is type-only and cannot name them, so this is the one place
  * a Module answering `--query` with a bare claim, or `--audit` with a shape the
- * composers cannot settle, stops compiling (design-ADR 0024).
+ * composers cannot settle, stops compiling.
  *
  * ONE COMPILE-TIME GUARANTEE IS SPENT HERE. A whole-config interface could not
  * declare a key twice (`TS2300`); a list can, so two descriptors both claiming

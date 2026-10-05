@@ -1,8 +1,7 @@
 /**
  * The checks judged on a body's outline alone, before any spine is walked:
  * depth (`maxLevel`), and the headings nothing lists, which are the closure
- * (`undefinedHeadings: forbid`) and the heading vocabulary
- * (design-ADR 0019, 0025, 0026, 0027).
+ * (`undefinedHeadings: forbid`) and the heading vocabulary.
  */
 
 import type { BodyStructureViolation } from '../../../response-contract/index.ts';
@@ -36,8 +35,8 @@ export function levelViolations(
 }
 
 /**
- * The finding one heading earns from the outline alone, if any (design-ADR
- * 0025, 0027). A heading at a vocabulary's level is judged by the vocabulary
+ * The finding one heading earns from the outline alone, if any.
+ * A heading at a vocabulary's level is judged by the vocabulary
  * and by nothing else, so it is never also undefined; any other heading is
  * undefined when the spine is closed and no entry matches it.
  */
@@ -66,7 +65,7 @@ function unlistedFinding(
  * the level: those outside a vocabulary, and, under a closed spine, those no
  * entry matches. Decided by asking each entry's matcher and never from the
  * walk, so a heading the walk left over is still defined when an entry matches
- * it (design-ADR 0025, 0027).
+ * it.
  *
  * @param listing What lists a heading besides the outline itself: the closure, the vocabulary and the entries' matchers.
  * @param outline The body's top-level headings.

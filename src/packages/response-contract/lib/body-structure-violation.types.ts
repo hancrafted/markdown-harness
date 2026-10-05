@@ -1,12 +1,12 @@
 /**
  * What `body-structure` can find wrong with one file, and the Rule fragments
- * those findings carry (design-ADR 0019, 0025, 0027, 0028).
+ * those findings carry.
  *
  * Split from `violation.types.ts` so each stays under the file-length limit; the
  * union `Violation` there names `BodyStructureViolation` from here.
  */
 
-/** The kinds of block a section may hold, as written in `mayHold` and as reported in a finding (design-ADR 0028). */
+/** The kinds of block a section may hold, as written in `mayHold` and as reported in a finding. */
 type BlockKindName = 'prose' | 'ordered-list' | 'unordered-list';
 
 /**
@@ -21,7 +21,7 @@ export interface HeadingRequirement {
   purpose: 'heading' | 'enumeration';
   /** The level the matching heading sits at. */
   level: number;
-  /** ECMAScript regular expression, `u` flag, searched over the heading's raw content (design-ADR 0018). */
+  /** ECMAScript regular expression, `u` flag, searched over the heading's raw content. */
   pattern?: string;
   /** `heading` only: `required` when absent. */
   presence?: 'required' | 'optional';
@@ -29,13 +29,13 @@ export interface HeadingRequirement {
   minCount?: number;
   /** `enumeration` only: most repeats. */
   maxCount?: number;
-  /** The kinds of block the entry's section may hold, an allowed set; absent leaves it unconstrained (design-ADR 0028). */
+  /** The kinds of block the entry's section may hold, an allowed set; absent leaves it unconstrained. */
   mayHold?: readonly BlockKindName[];
   /** What the section should contain: Steering, never enforced. */
   intent?: string;
 }
 
-/** One level's heading vocabulary, as the Operator wrote it (design-ADR 0027). */
+/** One level's heading vocabulary, as the Operator wrote it. */
 export interface VocabularyRequirement {
   /** The level the vocabulary holds. */
   level: number;
@@ -57,7 +57,7 @@ export interface LevelTooDeepViolation {
 
 /**
  * A heading no entry of a closed spine matches, one per heading and not per
- * level, since each is repaired on its own (design-ADR 0025). It has no `entry`
+ * level, since each is repaired on its own. It has no `entry`
  * and no `found`: no entry owns it.
  */
 export interface HeadingUndefinedViolation {
@@ -65,7 +65,7 @@ export interface HeadingUndefinedViolation {
   violation: 'BODY_STRUCTURE__HEADING_UNDEFINED';
   /** The heading's level. */
   level: number;
-  /** The heading's raw inline source (design-ADR 0014). */
+  /** The heading's raw inline source. */
   content: string;
   /** The key, as the Rule wrote it: only `forbid` closes a spine. */
   requirement: { undefinedHeadings: 'forbid' };
@@ -73,7 +73,7 @@ export interface HeadingUndefinedViolation {
 
 /**
  * A heading at a vocabulary's level whose raw content is none of its titles,
- * one per heading (design-ADR 0027). It has no `entry` and no `found`: no entry
+ * one per heading. It has no `entry` and no `found`: no entry
  * owns it, and the requirement is the vocabulary item, so the Contributor reads
  * the whole list in the violation that names the stranger.
  */
@@ -82,7 +82,7 @@ export interface HeadingNotInVocabularyViolation {
   violation: 'BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY';
   /** The heading's level. */
   level: number;
-  /** The heading's raw inline source (design-ADR 0014). */
+  /** The heading's raw inline source. */
   content: string;
   /** The vocabulary item for the heading's level, verbatim. */
   requirement: VocabularyRequirement;
@@ -90,7 +90,7 @@ export interface HeadingNotInVocabularyViolation {
 
 /**
  * A section holding blocks of a kind its entry's `mayHold` does not list, one
- * per section and kind (design-ADR 0028). A violation carries no line, so one
+ * per section and kind. A violation carries no line, so one
  * per block would make two paragraphs indistinguishable duplicates.
  */
 export interface BlockKindNotAllowedViolation {
@@ -127,7 +127,7 @@ export interface HeadingCountViolation {
     | 'BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM';
   /** The zero-based index in the Rule's `headings:` list. */
   entry: number;
-  /** How many headings the entry accounts for, design-ADR 0017. */
+  /** How many headings the entry accounts for. */
   found: number;
   /** The entry, verbatim, `intent` included. */
   requirement: HeadingRequirement;
@@ -135,8 +135,7 @@ export interface HeadingCountViolation {
 
 /**
  * Everything `body-structure` can find wrong with one file's outline, under
- * the `<MODULE>__<OUTCOME>` code grammar #69 settled for a second Module
- * (design-ADR 0019).
+ * the `<MODULE>__<OUTCOME>` code grammar #69 settled for a second Module.
  */
 export type BodyStructureViolation =
   | LevelTooDeepViolation

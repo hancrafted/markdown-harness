@@ -1,10 +1,10 @@
 /**
  * Validate the selector half of one Rule on Core's two literal axes, and the
- * two fault shapes every section validator raises (design-ADR 0016).
+ * two fault shapes every section validator raises.
  *
  * Both Modules validate the same selector language, so an Operator writing both
  * sections meets one language and one fault order. A Module with an axis of its
- * own (`types`, design-ADR 0012) passes it in as `extraAxes`: its name for the
+ * own (`types`) passes it in as `extraAxes`: its name for the
  * presence check, and the token test for its list. The Core never names it, so
  * the selector stays two axes (design-ADR 0007).
  *

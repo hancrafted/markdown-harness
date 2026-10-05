@@ -43,7 +43,7 @@ body-structure:
       headings:
         - { purpose: heading, level: 1 }
     # Closed spines beside the first Module. `closed-notes` selects by folder alone; the two typed Rules
-    # select by `type` as well, so a miss is the silent miss design-ADR 0021 freezes.
+    # select by `type` as well, so a miss is the deliberate silent miss.
     - ruleId: closed-notes
       folders: [docs/closed/]
       intent: 'A closed note has one title and no other heading, whatever its frontmatter does.'
@@ -66,7 +66,7 @@ body-structure:
         - { purpose: heading, level: 1 }
 
     # Heading vocabularies and section content beside the first Module. `titles-notes` selects by folder
-    # alone; `titles-typed` selects by `type` as well, so a miss is the silent miss design-ADR 0021 freezes.
+    # alone; `titles-typed` selects by `type` as well, so a miss is the deliberate silent miss.
     - ruleId: titles-notes
       folders: [docs/titles/]
       intent: 'A note has a title and a prose summary, and the headings under the summary come from a short fixed set.'

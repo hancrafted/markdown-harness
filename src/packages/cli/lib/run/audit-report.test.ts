@@ -104,7 +104,7 @@ describe('auditVerdict', () => {
     it('refuses the whole audit when one Module could not read a candidate file', () => {
       // A Module that selects on file content has to open a file to tally it.
       // A report leaving that file out would look complete, so the refusal
-      // wins over every other Module's tally (design-ADR 0015).
+      // wins over every other Module's tally.
       // ARRANGE
       const unreadable = '/corpus/docs/locked.md';
       const expected = { kind: 'unreadable', path: unreadable };

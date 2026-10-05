@@ -1,5 +1,5 @@
 // Colocated unit test for the `mayHold` key of one heading entry: its shape,
-// its emptiness, its kinds and the repeats among them (design-ADR 0029).
+// its emptiness, its kinds and the repeats among them.
 
 import { describe, expect, it } from 'vitest';
 import { mayHoldFaults } from './block-kind-faults.pure.ts';

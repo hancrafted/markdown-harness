@@ -6,7 +6,7 @@
 //
 // Every axis a Rule carries must match, an absent axis means every, an
 // exclusion is decided from the path alone, and the first Rule matching on
-// every axis wins (design-ADRs 0012 and 0015).
+// every axis wins.
 
 import { describe, expect, it } from 'vitest';
 import type { BodyStructureRule } from '../../section.ts';

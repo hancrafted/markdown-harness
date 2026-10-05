@@ -5,7 +5,7 @@ title: 'Demo'
 ---
 <!-- expect: UNGOVERNED -->
 
-The Rule needs `type: adr` and the file says `adrr`, so no Rule selects it and the context’s numbered list, which a governed file would be reported for, is never reported. This is the silent type miss that design-ADR 0021 freezes, on a document the shape of GEN-001.
+The Rule needs `type: adr` and the file says `adrr`, so no Rule selects it and the context’s numbered list, which a governed file would be reported for, is never reported. This is the deliberate silent type miss, on a document the shape of GEN-001.
 
 # Demo ADR
 

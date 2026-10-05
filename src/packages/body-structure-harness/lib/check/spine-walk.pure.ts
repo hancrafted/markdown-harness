@@ -1,5 +1,5 @@
 /**
- * The spine walk (design-ADR 0017, 0018): entries processed in index order with
+ * The spine walk: entries processed in index order with
  * one cursor over the outline, and what each entry found.
  *
  * A `heading` entry claims the first unclaimed match at or after the cursor and

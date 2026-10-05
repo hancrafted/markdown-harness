@@ -1,6 +1,6 @@
 /**
  * What `--query` answers for a path not yet written: every Rule that could win
- * it (design-ADR 0019, 0025).
+ * it.
  *
  * The command opens no file, so it cannot know the `type` a file does not yet
  * have. It answers the Rules that REACH the path — folder and file-name axes
@@ -10,11 +10,10 @@
  * exclusion removes the path is not a candidate, so it neither appears nor
  * ends the list.
  *
- * Each candidate is one claim (design-ADR 0019 amending 0011): the Rule, and
+ * Each candidate is one claim (design-ADR 0011): the Rule, and
  * its `types`, `maxLevel`, `undefinedHeadings`, `vocabulary` and `headings` copied verbatim, an omitted
  * key staying omitted — the Steering payload, every heading `intent` and `mayHold` included, so an agent
- * about to write the file learns the titles a level may take and what each section may hold
- * (design-ADR 0027, 0028).
+ * about to write the file learns the titles a level may take and what each section may hold.
  */
 
 import type { BodyStructureRequirements, ModuleClaim } from '../../../response-contract/index.ts';

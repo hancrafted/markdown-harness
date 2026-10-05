@@ -62,7 +62,7 @@ describe('pathGovernance', () => {
     it('names one block per candidate when a Module answers with several claims, in the order it gave them', () => {
       // A Module whose winner depends on file content cannot name one Rule
       // before the file exists, so it hands back every candidate (design-ADR
-      // 0015 amending 0011), and each becomes a block under that Module's name.
+      // 0011), and each becomes a block under that Module's name.
       // ARRANGE
       const path = 'docs/a.md';
       const expected = {

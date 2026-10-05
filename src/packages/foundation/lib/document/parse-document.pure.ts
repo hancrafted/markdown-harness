@@ -1,11 +1,10 @@
 /**
  * Split one file's bytes into parsed frontmatter and body.
  *
- * The fence rule is Core's (design-ADR 0014) and the parse is the one every
+ * The fence rule is Core's and the parse is the one every
  * Module needs: `'empty-mapping'`, because an immediately-closed fence PARSES,
  * to `{}`, which is what lets `presence: required` fire on `---`-then-`---`
- * instead of being skipped. What any key means is the Module's business
- * (design-ADR 0012).
+ * instead of being skipped. What any key means is the Module's business.
  */
 
 import { frontmatterBlock } from '../frontmatter/frontmatter-block.pure.ts';

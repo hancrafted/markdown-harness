@@ -1,6 +1,6 @@
 /**
  * The two questions both halves of the Module ask of a Rule's
- * `undefinedHeadings` key (design-ADR 0025, 0026): the check, which holds a
+ * `undefinedHeadings` key: the check, which holds a
  * typed Rule, and config validation, which holds the YAML as written. One
  * spelling of each, so the halves cannot disagree about what closes a spine.
  */

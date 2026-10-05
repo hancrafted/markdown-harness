@@ -1,6 +1,6 @@
 /**
  * The section-content check: which blocks of a section its entry's `mayHold`
- * does not list (design-ADR 0028).
+ * does not list.
  *
  * It judges what it is handed and never decides which sections an entry
  * claimed: that is the walk's, in `body-violations.pure.ts`.

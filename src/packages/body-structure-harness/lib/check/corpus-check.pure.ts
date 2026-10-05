@@ -3,7 +3,7 @@
  * each winner finds.
  *
  * A Rule that selects by `type` makes the winner a function of the file's
- * bytes (design-ADR 0012, consequence 1), so governance cannot be decided
+ * bytes, so governance cannot be decided
  * before a file is opened the way the first Module decides it. What CAN be
  * decided from the path is which files no Rule reaches — those are never
  * opened — and that split is `pathsToOpen`. Everything else is decided here,
@@ -22,7 +22,7 @@ import { bodyViolations } from './body-violations.pure.ts';
  * for each governed file with a violation, both in source order.
  *
  * Violations come depth-first in ascending level order, then spine entries in
- * entry order, so one file's report has one defined order (design-ADR 0019).
+ * entry order, so one file's report has one defined order.
  *
  * @param documents The files `pathsToOpen` named, read, in corpus order.
  * @param rules The section's Rules, in config order.

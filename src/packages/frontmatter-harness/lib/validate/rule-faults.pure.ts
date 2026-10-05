@@ -3,7 +3,7 @@
  *
  * Every rule is a selector plus a reason plus a payload, and this file states
  * what the reason and the payload owe. The selector half is Core's, validated
- * once in `foundation/selector-faults.ts` for both Modules (design-ADR 0022).
+ * once in `foundation/selector-faults.ts` for both Modules.
  *
  * The exclusivity rule the config language models in its types is re-checked
  * here, because a config arrives as YAML and a type guarantees nothing about

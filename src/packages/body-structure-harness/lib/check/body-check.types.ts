@@ -1,5 +1,5 @@
 /**
- * What the halves of the body check are handed (design-ADR 0017, 0027, 0028):
+ * What the halves of the body check are handed:
  * the spine and what its walk found, what lists a heading besides the spine,
  * and what each entry claimed.
  */

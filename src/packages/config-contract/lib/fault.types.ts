@@ -115,59 +115,57 @@ export type ConfigFaultCode =
   | 'CONFIG_ASSESS_WITHOUT_REQUIRED_FIELD'
   /**
    * A `body-structure` heading entry carrying a key its `purpose` forbids:
-   * `minCount` or `maxCount` on a `heading`, `presence` on an `enumeration`
-   * (design-ADR 0020).
+   * `minCount` or `maxCount` on a `heading`, `presence` on an `enumeration`.
    */
   | 'CONFIG_ENTRY_KEY_NOT_FOR_PURPOSE'
-  /** A `body-structure` enumeration with neither `minCount` nor `maxCount` (design-ADR 0020). */
+  /** A `body-structure` enumeration with neither `minCount` nor `maxCount`. */
   | 'CONFIG_ENUMERATION_WITHOUT_COUNT'
   /**
    * A `body-structure` enumeration whose `pattern` is an anchored literal: a
-   * repeating heading whose text is known is a `heading` (design-ADR 0020).
+   * repeating heading whose text is known is a `heading`.
    */
   | 'CONFIG_ENUMERATION_PINS_TEXT'
   /**
    * A `body-structure` enumeration whose `minCount` exceeds its `maxCount`.
    * Decided only when both bounds are valid, so an invalid bound is reported
-   * once (design-ADR 0020).
+   * once.
    */
   | 'CONFIG_COUNT_BOUNDS_INVERTED'
   /**
    * A `body-structure` heading entry whose `level` exceeds the Rule's `maxLevel`.
-   * Decided only when both are valid (design-ADR 0020).
+   * Decided only when both are valid.
    */
   | 'CONFIG_ENTRY_BEYOND_MAX_LEVEL'
   /**
    * A `body-structure` Rule writing `maxLevel` beside `undefinedHeadings: forbid`,
-   * raised at `maxLevel`. Decided only when both keys are valid (design-ADR 0026).
+   * raised at `maxLevel`. Decided only when both keys are valid.
    */
   | 'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE'
   /**
    * A `body-structure` vocabulary whose `level` an earlier item already names,
    * raised at the later item's `level`. The `yaml` parser refuses a repeated
-   * mapping key, so a list of items needs its own fault (design-ADR 0029).
+   * mapping key, so a list of items needs its own fault.
    */
   | 'CONFIG_DUPLICATE_VOCABULARY_LEVEL'
   /**
    * A title an earlier element of the same `allowed` list already holds, raised
-   * at the later element. Decided over valid titles only (design-ADR 0029).
+   * at the later element. Decided over valid titles only.
    */
   | 'CONFIG_DUPLICATE_VOCABULARY_TITLE'
   /**
    * A vocabulary item whose `level` exceeds the Rule's `maxLevel`: a title no
    * heading can carry. Decided only when both are valid, and not beside
-   * `undefinedHeadings: forbid` (design-ADR 0029).
+   * `undefinedHeadings: forbid`.
    */
   | 'CONFIG_VOCABULARY_BEYOND_MAX_LEVEL'
   /**
    * A vocabulary item at a level some `headings:` entry also names, raised at
-   * the item's `level`: one heading would be behind two kinds of judgement
-   * (design-ADR 0027, 0029).
+   * the item's `level`: one heading would be behind two kinds of judgement.
    */
   | 'CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES'
   /**
    * A kind an earlier element of the same `mayHold` list already holds, raised
-   * at the later element. Decided over valid kinds only (design-ADR 0029).
+   * at the later element. Decided over valid kinds only.
    */
   | 'CONFIG_DUPLICATE_BLOCK_KIND';
 

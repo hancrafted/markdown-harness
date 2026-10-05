@@ -135,7 +135,7 @@ describe('selector faults', () => {
     it('reports a wrongly shaped axis ahead of an axisless entry, one fault at the key, whichever entry comes first', () => {
       // Core's one order: unrecognised key, wrong shape, no axis, malformed token.
       // body-structure-harness used to report the axisless entry here; it now meets
-      // frontmatter-harness's order (design-ADR 0022).
+      // frontmatter-harness's order.
       // ARRANGE
       const shapeThenAxisless = { excludeFiles: [{ folders: 'x' }, {}] };
       const axislessThenShape = { excludeFiles: [{}, { folders: 'x' }] };

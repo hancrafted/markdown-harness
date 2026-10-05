@@ -2,8 +2,8 @@
 //
 // The whole of this Package's registration surface. `cli` holds the one list a
 // Module is declared in, and this is the value that list names — so this Module
-// costs one file like this one plus one entry there (design-ADR 0015,
-// consequence 1). Core still knows no Module by name.
+// costs one file like this one plus one entry there.
+// Core still knows no Module by name.
 
 import type { ModuleDescriptor } from '../config-contract/index.ts';
 import { auditRules } from './audit.ts';
@@ -16,8 +16,8 @@ import { validateBodyStructureSection } from './validate-config.ts';
  * This Module, as the Core sees it.
  *
  * `assess` passes every path by. This Module makes no freshness claim, so a
- * file it alone governs reads `ungoverned` in an Assessment — the imprecision
- * design-ADR 0015 names and leaves open, not a claim that the file is outside
+ * file it alone governs reads `ungoverned` in an Assessment — a known imprecision,
+ * left open, not a claim that the file is outside
  * every Rule.
  */
 export const bodyStructureModule: ModuleDescriptor<

@@ -1,6 +1,6 @@
 // Colocated unit test for the `--query` candidate resolver: every Rule that
 // could win a path not yet written, in config order, ending at the first one
-// that carries no `types` (design-ADR 0019).
+// that carries no `types`.
 
 import { describe, expect, it } from 'vitest';
 import type { BodyStructureRule } from '../../section.ts';

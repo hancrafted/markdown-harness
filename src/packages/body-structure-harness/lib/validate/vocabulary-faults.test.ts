@@ -1,5 +1,5 @@
 // Colocated unit test for the Rule-level `vocabulary:` key: its shape, its
-// items, its titles, and the two cross-key checks (design-ADR 0029).
+// items, its titles, and the two cross-key checks.
 
 import { describe, expect, it } from 'vitest';
 import { vocabularyFaults } from './vocabulary-faults.pure.ts';

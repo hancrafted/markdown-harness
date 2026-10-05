@@ -1,5 +1,5 @@
 /**
- * The heading-pattern dialect as config validation needs it (design-ADR 0018):
+ * The heading-pattern dialect as config validation needs it:
  * ECMAScript with the `u` flag and no other, searched and never anchored.
  */
 
@@ -21,7 +21,7 @@ export function dialectPattern(pattern: string): RegExp {
 
 /**
  * Whether a string compiles as a regular expression under the `u` flag, the
- * dialect of design-ADR 0018. A pattern the engine refuses could never fire,
+ * dialect. A pattern the engine refuses could never fire,
  * and `^Source\-` is one: an unnecessary escape is a syntax error under `u`.
  *
  * @param pattern The pattern as the Operator wrote it.
@@ -36,7 +36,7 @@ export function compiles(pattern: string): boolean {
 }
 
 /**
- * Whether a pattern is an anchored literal (design-ADR 0018): it begins `^`,
+ * Whether a pattern is an anchored literal: it begins `^`,
  * ends in an unescaped `$`, and everything between is a run of literal
  * characters. A syntactic test, never a proof of how many strings the pattern
  * matches: `^(Pros|Cons)$` is not one, however few strings it admits.

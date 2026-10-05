@@ -10,7 +10,7 @@
  * file at a Package root; `../../section.ts` re-exports these type-only.
  *
  * The semantics, the loosening direction of every key and the fault catalog
- * are in design-ADRs 0012, 0017, 0018 and 0020.
+ * are in the specs #221, #225 and #227.
  */
 
 import type { Selector } from '../../../config-contract/index.ts';
@@ -26,7 +26,7 @@ export interface BodyStructureConfig {
  * One Rule: a selector, a reason, and a template.
  *
  * Selects on Core's two literal axes plus `types`, the third axis this Module
- * alone owns (design-ADR 0012). Every axis the Rule carries must match, an
+ * alone owns. Every axis the Rule carries must match, an
  * absent axis means every, and at least one of the three is written.
  */
 export interface BodyStructureRule extends Selector {
@@ -45,23 +45,23 @@ export interface BodyStructureRule extends Selector {
   /**
    * The deepest heading level permitted, an integer from 1 to 6. Absent means
    * any depth is permitted: levels are open by default and forbidding depth is
-   * an explicit act (design-ADR 0017).
+   * an explicit act.
    */
   maxLevel?: number;
   /**
    * Whether a heading no entry matches is permitted. `allow` is the open spine,
    * the default written out and the same as omission; `forbid` closes the spine
-   * and reports each such heading (design-ADR 0025). Mutually exclusive with
-   * `maxLevel` when `forbid` (design-ADR 0026).
+   * and reports each such heading. Mutually exclusive with
+   * `maxLevel` when `forbid`.
    */
   undefinedHeadings?: UndefinedHeadings;
   /**
    * The exact titles each named heading level may take, wherever the heading
-   * sits and however often it repeats (design-ADR 0027). A level is held to a
+   * sits and however often it repeats. A level is held to a
    * vocabulary or walked by entries, never both.
    */
   vocabulary?: readonly VocabularyItem[];
-  /** The document's spine: entries processed in order by the walk of design-ADR 0017. */
+  /** The document's spine: entries processed in order by the spine walk. */
   headings?: readonly HeadingEntry[];
 }
 
@@ -88,7 +88,7 @@ export type HeadingPresence = 'required' | 'optional';
  * A `heading` is exactly one heading and may carry `presence`; an
  * `enumeration` counts the repeats of that entry alone and carries `minCount`,
  * `maxCount` or both. Which keys belong to which purpose is config validation's
- * to enforce (design-ADR 0020), not the type's, so one shape reads straight off
+ * to enforce, not the type's, so one shape reads straight off
  * the YAML and rides the wire verbatim.
  */
 export interface HeadingEntry {
@@ -96,7 +96,7 @@ export interface HeadingEntry {
   purpose: HeadingPurpose;
   /** An integer from 1 to 6. */
   level: number;
-  /** ECMAScript regular expression, `u` flag, searched; absent matches any heading at `level` (design-ADR 0018). */
+  /** ECMAScript regular expression, `u` flag, searched; absent matches any heading at `level`. */
   pattern?: string;
   /** `heading` only; `required` when absent. */
   presence?: HeadingPresence;
@@ -106,7 +106,7 @@ export interface HeadingEntry {
   maxCount?: number;
   /**
    * The kinds of block this entry's section may hold, an allowed set: any mix,
-   * order and count (design-ADR 0028). Absent leaves the section unconstrained.
+   * order and count. Absent leaves the section unconstrained.
    */
   mayHold?: readonly BlockKind[];
   /** What the section should contain: Steering only, never enforced. */

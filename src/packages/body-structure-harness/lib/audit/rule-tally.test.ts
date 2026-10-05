@@ -1,6 +1,5 @@
 // Colocated unit test for the audit tally over all three axes: `won`,
-// `shadowed`, `shadowedBy` and `excluded`, counted with each file's `type`
-// (design-ADR 0015).
+// `shadowed`, `shadowedBy` and `excluded`, counted with each file's `type`.
 
 import { describe, expect, it } from 'vitest';
 import type { BodyStructureRule } from '../../section.ts';

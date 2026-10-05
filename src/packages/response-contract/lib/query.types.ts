@@ -31,7 +31,7 @@ export interface GovernedPath {
    * One block per claim, in declared Module order. Never empty.
    *
    * A Module whose winning Rule depends on file content contributes one block
-   * per candidate Rule, in config order (design-ADR 0019 amending 0011), so one
+   * per candidate Rule, in config order (design-ADR 0011), so one
    * Module may name several blocks here.
    */
   modules: readonly ModuleRequirements[];
@@ -80,7 +80,7 @@ export type Requirements = NoFrontmatterRequirements | ConstrainingRequirements;
 
 /**
  * What one `body-structure` candidate Rule asks of a path, copied verbatim
- * from the Rule, a key it never wrote staying omitted (design-ADR 0019).
+ * from the Rule, a key it never wrote staying omitted.
  *
  * `types` is here because `--query` cannot know a file's `type` before the file
  * exists: a block carrying `types` applies only when the file's `type` is one of
@@ -91,9 +91,9 @@ export interface BodyStructureRequirements {
   types?: readonly string[];
   /** The deepest heading level permitted, as written. */
   maxLevel?: number;
-  /** `forbid` closes the spine, `allow` is the open spine written out; echoed as written (design-ADR 0025). */
+  /** `forbid` closes the spine, `allow` is the open spine written out; echoed as written. */
   undefinedHeadings?: 'allow' | 'forbid';
-  /** The Rule's heading vocabulary, verbatim: the exact titles each named level may take (design-ADR 0027). */
+  /** The Rule's heading vocabulary, verbatim: the exact titles each named level may take. */
   vocabulary?: readonly VocabularyRequirement[];
   /** The Rule's spine, verbatim, each `intent` and `mayHold` included. */
   headings?: readonly HeadingRequirement[];

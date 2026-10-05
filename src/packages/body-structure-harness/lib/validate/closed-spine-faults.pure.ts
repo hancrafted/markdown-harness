@@ -1,6 +1,6 @@
 /**
  * Validate the two keys that close a spine: `undefinedHeadings:` and its
- * exclusion of `maxLevel:` (design-ADR 0026).
+ * exclusion of `maxLevel:`.
  */
 
 import type { ConfigFault } from '../../../config-contract/index.ts';
@@ -20,7 +20,7 @@ function isUndefinedHeadings(value: unknown): value is UndefinedHeadings {
 /**
  * An `undefinedHeadings` that is not `allow` or `forbid`, reported at the key:
  * any other string, a boolean, a list, a number, or the key written with nothing
- * after it (design-ADR 0026).
+ * after it.
  *
  * @param rule One Rule, straight off the YAML.
  * @param at The Rule's address, e.g. `body-structure.rules[0]`.
@@ -33,7 +33,7 @@ export function undefinedHeadingsFaults(rule: Record<string, unknown>, at: strin
 
 /**
  * A `maxLevel` written beside `undefinedHeadings: forbid`, reported at
- * `maxLevel`, the redundant half (design-ADR 0026). Decided only when both keys
+ * `maxLevel`, the redundant half. Decided only when both keys
  * are valid, so one mistake is reported once.
  *
  * @param rule One Rule, straight off the YAML.

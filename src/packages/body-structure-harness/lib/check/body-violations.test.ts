@@ -1,8 +1,8 @@
 // Colocated unit test for the spine check at its one interface, `bodyViolations`:
 // the spine walk: `heading` entries claimed one heading
 // each, `enumeration` entries owning a run, and every leftover given to the
-// first rule that fits (design-ADR 0017), and the `maxLevel` check, one
-// violation per level beyond the limit (design-ADR 0017).
+// first rule that fits, and the `maxLevel` check, one
+// violation per level beyond the limit.
 
 import { describe, expect, it } from 'vitest';
 import type { BodyStructureRule, HeadingEntry } from '../../section.ts';

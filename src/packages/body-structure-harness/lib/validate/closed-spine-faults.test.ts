@@ -1,5 +1,5 @@
 // Colocated unit test for the two keys that close a spine: the `undefinedHeadings:`
-// value set and its exclusion of `maxLevel:` (design-ADR 0026).
+// value set and its exclusion of `maxLevel:`.
 
 import { describe, expect, it } from 'vitest';
 import { closedSpineFaults, undefinedHeadingsFaults } from './closed-spine-faults.pure.ts';

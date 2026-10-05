@@ -60,7 +60,7 @@ export type FieldValue =
  *
  * Five families. The first four are `frontmatter`'s and each carries `field`;
  * the fifth is `body-structure`'s and carries none, because no frontmatter
- * field is at fault (design-ADR 0019). A consumer that read `field` off every
+ * field is at fault. A consumer that read `field` off every
  * member must now narrow on `violation` first.
  */
 export type Violation =

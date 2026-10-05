@@ -37,7 +37,7 @@ function isFence(line: string | undefined): boolean {
  * The BODY is every byte after the closing fence's line, line endings kept, so
  * a reader of the body sees exactly what the author wrote beneath the block. A
  * file that opens no block is all body, its byte order mark dropped; a block
- * that never closes leaves NO body at all (design-ADR 0014), so a structural
+ * that never closes leaves NO body at all, so a structural
  * reader reports what is missing rather than reading YAML as Markdown.
  *
  * @param text The file's full contents.

@@ -10,10 +10,10 @@
  * `--audit` cannot drift apart about what selecting means. A Module with an
  * axis of its own (`body-structure-harness`'s `types`) asks the question this
  * file answers and then narrows it — it never restates the two axes
- * (design-ADR 0022, which amends design-ADR 0020).
+ *.
  *
  * REACH is the one definition `--check`, `--query` and `--audit` share
- * (design-ADR 0015): a Rule reaches a path when its folder and file-name axes
+ *: a Rule reaches a path when its folder and file-name axes
  * match it and its own `excludeFiles` does not remove it.
  */
 

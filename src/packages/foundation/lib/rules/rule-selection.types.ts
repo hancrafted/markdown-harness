@@ -3,7 +3,7 @@
  * exclusions that give files back.
  *
  * Both Modules' Rule types satisfy it structurally, and a Module's own extra
- * axis (`types` for `body-structure-harness`, design-ADR 0012) rides on the
+ * axis (`types` for `body-structure-harness`) rides on the
  * Module's Rule type and is consulted through a callback, never named here —
  * which is what keeps the Core selector at two literal axes (design-ADR 0007).
  */

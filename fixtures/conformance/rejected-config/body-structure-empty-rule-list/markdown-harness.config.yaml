@@ -1,3 +1,3 @@
 # body-structure rejected-config case: empty rule list.
-# Frozen faults are in expected-rejection.json beside this file; see the round-two spec (#221, design-ADR 0020).
+# Frozen faults are in expected-rejection.json beside this file; see the round-two spec (#221).
 body-structure: { rules: [] }

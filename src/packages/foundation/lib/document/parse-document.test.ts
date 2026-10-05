@@ -76,7 +76,7 @@ describe('document parse', () => {
     });
 
     it('reports a fence that never closes as unterminated, and leaves no body', () => {
-      // design-ADR 0014: nothing after an unclosed fence is read as Markdown.
+      // Nothing after an unclosed fence is read as Markdown.
       // ARRANGE
       const file = '---\ntype: plain\ntitle: The fence that never closes\n\n# Looks like a title\n';
       const expected = { frontmatter: { kind: 'unterminated' }, body: '' };

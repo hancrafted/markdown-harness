@@ -1,5 +1,5 @@
 /**
- * Validate the `body-structure:` section as a whole (design-ADR 0020).
+ * Validate the `body-structure:` section as a whole.
  *
  * The loader owns the faults that name the config FILE and orders every
  * Module's faults by the declared Module set; everything from the
@@ -11,7 +11,7 @@
  * Rule, mirroring the first Module: unrecognised keys, `ruleId`, `intent`, a
  * missing selector, each axis's shape, `excludeFiles`, the Rule-level empty
  * payload, `maxLevel`, `undefinedHeadings`, the exclusion of `maxLevel` by
- * `undefinedHeadings: forbid`, `vocabulary`, then `headings` (design-ADR 0026, 0029).
+ * `undefinedHeadings: forbid`, `vocabulary`, then `headings`.
  */
 
 import type { ConfigFault } from '../../../config-contract/index.ts';
@@ -53,8 +53,7 @@ const RULE_KEYS: Record<keyof BodyStructureRule, true> = {
 /**
  * This Module's own selector axis, handed to Core's selector validation: a
  * `type` is any non-empty string in a list of at least one, because a Rule that
- * can never win would show in `--query` as a candidate nobody can satisfy
- * (design-ADR 0020).
+ * can never win would show in `--query` as a candidate nobody can satisfy.
  */
 const TYPES_AXIS = { types: (tokens: readonly string[]) => tokens.length > 0 && tokens.every((token) => token !== '') };
 
@@ -70,7 +69,7 @@ function identityFaults(rule: Record<string, unknown>, at: string): readonly Con
 /**
  * A Rule that writes none of `headings`, `maxLevel`, `vocabulary` and a closure
  * beyond the default asks nothing of a body: `allow` alone is the default
- * written out (design-ADR 0026, 0029). An empty list is reported at the list
+ * written out. An empty list is reported at the list
  * instead, and an invalid `undefinedHeadings` at the key, so neither is also
  * called empty.
  */

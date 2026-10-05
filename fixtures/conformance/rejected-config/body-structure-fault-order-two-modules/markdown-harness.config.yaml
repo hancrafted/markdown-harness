@@ -1,4 +1,4 @@
 # body-structure rejected-config case: fault order two modules.
-# Frozen faults are in expected-rejection.json beside this file; see the round-two spec (#221, design-ADR 0020).
+# Frozen faults are in expected-rejection.json beside this file; see the round-two spec (#221).
 body-structure: { rules: [{ ruleId: unexplained, folders: [docs/], headings: [{ purpose: heading, level: 1 }] }] }
 frontmatter: { rules: [{ ruleId: explained-by-nothing, folders: [docs/], intent: '' }] }

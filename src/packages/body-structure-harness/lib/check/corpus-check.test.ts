@@ -1,6 +1,6 @@
 // Colocated unit test for judging a corpus: which files must be opened, which
 // Rule wins each, and what each winner finds — depth violations first, then
-// spine violations (design-ADRs 0012, 0017 and 0019).
+// spine violations.
 
 import { describe, expect, it } from 'vitest';
 import { parseDocument } from '../../../foundation/read-corpus.ts';

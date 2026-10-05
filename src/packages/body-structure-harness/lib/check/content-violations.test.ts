@@ -1,5 +1,5 @@
 // Colocated unit test for the section-content check: given each entry and the
-// sections it claimed, which blocks does its `mayHold` not list (design-ADR 0028).
+// sections it claimed, which blocks does its `mayHold` not list.
 //
 // The walk that decides which sections an entry claimed is `bodyViolations`'s
 // and is tested there; this file states only what is reported for a claim.

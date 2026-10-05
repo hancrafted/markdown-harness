@@ -4,7 +4,7 @@
 // and `expected-findings.json` freezes, for every GOVERNED case, the Rule that
 // wins it and its exact violations. The one exception is the verbatim case, a
 // byte-identical copy that cannot carry a marker and states its verdict in
-// `verbatim-cases.json` instead (design-ADR 0030). Both were written from the spec in #221 and
+// `verbatim-cases.json` instead. Both were written from the spec in #221 and
 // never from an implementation, so a disagreement here is answered by deciding
 // which side is wrong — never by editing a case, a marker or a frozen finding to
 // agree with the code (ARCH-010).
@@ -285,7 +285,7 @@ const ENTRY_KEYS = ['purpose', 'level', 'pattern', 'presence', 'minCount', 'maxC
 const PURPOSE_VALUES = ['heading', 'enumeration'];
 const PRESENCE_VALUES = ['required', 'optional'];
 const UNDEFINED_HEADINGS_VALUES = ['allow', 'forbid'];
-// A vocabulary item has two keys and a `mayHold` set has three kinds (#227, design-ADRs 0027 and 0028):
+// A vocabulary item has two keys and a `mayHold` set has three kinds (#227):
 // the config writes every key and every kind, and no other.
 const VOCABULARY_ITEM_KEYS = ['level', 'allowed'];
 const BLOCK_KIND_VALUES = ['prose', 'ordered-list', 'unordered-list'];
@@ -544,14 +544,14 @@ describe('the tool answers each body-structure case as it states', () => {
 });
 
 // ---------------------------------------------------------------------------
-// The verbatim case (#227, design-ADR 0030): `GEN-001` byte for byte.
+// The verbatim case (#227): `GEN-001` byte for byte.
 //
 // A byte-identical copy cannot carry the `expect` marker ARCH-002 §2.1 requires in every
 // case under `docs/`, so the copy is held outside `docs/` and outside `.md`, in
 // `verbatim/`, and `verbatim-cases.json` states what the tier's config must answer for it.
 // It is asked exactly as a case is: alone, in a root of its own, at the path the entry's key
 // names. It does NOT read `.archgate/`: the corpus is the portable specification and
-// adopters never receive that directory (design-ADR 0030 decision 5).
+// adopters never receive that directory.
 // ---------------------------------------------------------------------------
 
 /** The verbatim cases, beside the config. */
@@ -823,7 +823,7 @@ describe('the tool answers for the whole body-structure tier', () => {
     it.each(['docs/research/report-pass.md', 'docs/research/report-h4-no-h1.md', 'docs/upper/INDEX.md'])(
       'answers --assess %s as ungoverned, because this Module passes every path by',
       async (path) => {
-        // The named imprecision of design-ADR 0019, not a claim that the file is
+        // A known imprecision, not a claim that the file is
         // outside every Rule: this Module makes no freshness claim, so a file it
         // governs reads `ungoverned` in an Assessment all the same.
         // ARRANGE

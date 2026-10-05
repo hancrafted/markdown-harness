@@ -1,6 +1,6 @@
 /**
  * Validate the `mayHold:` key of one heading entry: the kinds of block its
- * section may hold (design-ADR 0028, 0029).
+ * section may hold.
  *
  * Decided whatever the entry's `purpose` is, because what a section may hold
  * depends on neither the purpose, the level nor the pattern, so an invalid

@@ -346,7 +346,7 @@ describe('termination', () => {
 
     it('terminates audit with an unreadable candidate file as exit 2 with message on stderr and empty stdout', () => {
       // A Module selecting on frontmatter `type` must open a file to tally it,
-      // so an audit can now be refused the way a check is (design-ADR 0015).
+      // so an audit can now be refused the way a check is.
       // ARRANGE
       const cannotReport = 2;
       const empty = '';

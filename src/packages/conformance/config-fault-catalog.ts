@@ -18,8 +18,8 @@ import type { ConfigFaultCode } from '../config-contract/index.ts';
  * The `satisfies` check holds one direction — a code spelled wrong, or one the
  * catalog never had, does not compile. Its intersection holds the other.
  *
- * Twenty-six. It was twenty-one, before the five codes the heading vocabulary and the section content bring (#227,
- * design-ADRs 0027 and 0028); twenty, before `CONFIG_MAX_LEVEL_ON_CLOSED_SPINE` (#225, design-ADR 0026); fifteen, before the five
+ * Twenty-six. It was twenty-one, before the five codes the heading vocabulary and the section content bring (#227);
+ * twenty, before `CONFIG_MAX_LEVEL_ON_CLOSED_SPINE` (#225); fifteen, before the five
  * `body-structure` codes of #221 below that; and fourteen before that: `CONFIG_SELECTOR_AMBIGUOUS` was retired with the
  * grammar that made it reachable — `folders:` and `fileNames:` intersect rather
  * than exclude, so a rule carrying both is spelling an exact path rather than

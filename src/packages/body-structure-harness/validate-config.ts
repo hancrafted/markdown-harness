@@ -1,4 +1,4 @@
-// This Module's half of the config catalog (design-ADR 0016).
+// This Module's half of the config catalog.
 //
 // The section arrives as an opaque value, and what goes back is the section
 // itself when it is sound, already typed, alongside every fault it carries.

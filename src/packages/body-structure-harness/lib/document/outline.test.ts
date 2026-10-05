@@ -1,9 +1,9 @@
 // Colocated unit test for the outline: a body's top-level headings, in
 // document order, each with its level and its raw content, and the blocks of
-// the section each one opens (design-ADR 0014, 0028).
+// the section each one opens.
 //
-// The expected outlines are written by hand from design-ADR 0014's table of
-// what counts as a heading and design-ADR 0028's table of what a block is,
+// The expected outlines are written by hand from CommonMark's rules of
+// what counts as a heading and the three block kinds,
 // never read back off the lexer.
 
 import { describe, expect, it } from 'vitest';
@@ -99,7 +99,7 @@ describe('headings of the outline', () => {
       expect(actual).toEqual(expected);
     });
 
-    // design-ADR 0014 admits a space, a tab or the line end after the `#` run,
+    // A heading opening admits a space, a tab or the line end after the `#` run,
     // as CommonMark does. The lexer also accepts any other whitespace there,
     // so each of these four would otherwise read as a heading.
     it.each([
@@ -145,7 +145,7 @@ describe('headings of the outline', () => {
 
   describe('edge cases', () => {
     it('reads a # line that is not an ATX heading as setext content when an underline follows', () => {
-      // design-ADR 0014: such a line is paragraph text, and a setext
+      // Such a line is paragraph text, and a setext
       // underline makes paragraph text a heading whose content it is. A form
       // feed is the fourth character; it takes the setext path the same way.
       // ARRANGE

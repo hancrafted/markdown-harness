@@ -28,7 +28,7 @@ export function auditReport(answers: readonly ModuleAnswer<ModuleAudit>[]): Audi
  * Refuse an incomplete audit, or compose every Module's tally.
  *
  * A Module that selects on file content has to open a file to tally it
- * (design-ADR 0015), so an audit can now fail to read one. The first refusal
+ *, so an audit can now fail to read one. The first refusal
  * in declared Module order wins before anything is composed, for the same
  * reason `checkVerdict` refuses: a report quietly missing a file looks
  * complete.

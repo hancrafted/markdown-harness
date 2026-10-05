@@ -4,14 +4,14 @@
  *
  * Selection is on three axes: Core's two literal axes, decided from the path by
  * `foundation`, and `types`, decided from the file's frontmatter `type`
- * (design-ADR 0012). Callers never combine `reaches` with `types` themselves;
+ *. Callers never combine `reaches` with `types` themselves;
  * the invariant that a Rule carrying no `types` ENDS the candidate list lives
  * here, once, and `pathsToOpen`, `candidatesFor` and `winnerFor` all follow it.
  *
  * Every axis a Rule carries must match and an absent axis means every. This
  * file owns only the `types` axis and composes it with Core's answer; the two
  * literal axes, exclusion and REACH are Core's and are not restated here
- * (design-ADR 0022, amending design-ADR 0020). An exclusion is Core's selector,
+ *. An exclusion is Core's selector,
  * so it is decided from the path, and a Rule whose exclusion removes a path
  * cannot win the file whatever its `type`.
  */
@@ -93,7 +93,7 @@ export function pathsToOpen(paths: readonly string[], rules: readonly BodyStruct
  * `--check` and the audit refuse over the same unreadable file, and every path
  * a Rule writing `types` matches on its path axes even where its own exclusion
  * removes it, because an `excluded` count needs all three axes to match and so
- * needs that file's `type` (design-ADR 0015).
+ * needs that file's `type`.
  *
  * @param paths The corpus, normalised, in walker order.
  * @param rules The section's Rules, in config order.
@@ -101,7 +101,7 @@ export function pathsToOpen(paths: readonly string[], rules: readonly BodyStruct
 export function pathsToAudit(paths: readonly string[], rules: readonly BodyStructureRule[]): readonly string[] {
   // A deliberate second statement of which Rules carry `types`: a typed Rule
   // that excludes a path is no candidate for it, yet the `excluded` count needs
-  // that file's `type` (design-ADR 0015), so `candidatesFor` cannot answer this.
+  // that file's `type`, so `candidatesFor` cannot answer this.
   return paths.filter(
     (path) =>
       candidatesFor(path, rules).length > 0 ||

@@ -4,8 +4,7 @@
 // Published from this gate-owned Package because two Modules validate the same
 // selector language and neither may import the other (ARCH-008 §1.1). A Module
 // with an axis of its own passes it in; the Core never names it (design-ADR
-// 0007, 0012). design-ADR 0022 amends the design-ADR 0020 point that restating
-// this per Module was deliberate.
+// 0007).
 
 export {
   axisFaults,

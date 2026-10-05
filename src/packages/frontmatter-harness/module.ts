@@ -44,14 +44,14 @@ export const frontmatterModule: ModuleDescriptor<
     return validateFrontmatterSection(raw);
   },
   // One winning Rule at most, so the list holds one claim or none. The port
-  // answers a list for every Module (design-ADR 0024); `queryPath` keeps the
+  // answers a list for every Module; `queryPath` keeps the
   // single-claim answer its Conformance callers read.
   query(path, config) {
     const claim = queryPath(path, config.sectionFor(frontmatterModule));
     return claim === undefined ? [] : [claim];
   },
   // The corpus root goes unused: this Module's Rules select on paths alone, so
-  // its audit never opens a file (design-ADR 0015).
+  // its audit never opens a file.
   audit(_root, files, config) {
     return auditRules(files, config.sectionFor(frontmatterModule));
   },

@@ -73,7 +73,7 @@ describe('documentTypeOf', () => {
 
   describe('edge cases', () => {
     it('keeps a quoted type exactly as written, leading space and case included', () => {
-      // design-ADR 0012: exact, case-sensitive equality and no trimming.
+      // Exact, case-sensitive equality and no trimming.
       // ARRANGE
       const text = "---\ntype: ' Research'\n---\n";
       const expected = ' Research';

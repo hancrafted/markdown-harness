@@ -1,5 +1,5 @@
 // Colocated unit test for the pattern dialect: what compiles under the `u` flag,
-// and what an anchored literal is (design-ADR 0018).
+// and what an anchored literal is.
 
 import { describe, expect, it } from 'vitest';
 import { compiles, isAnchoredLiteral } from './pattern-dialect.pure.ts';

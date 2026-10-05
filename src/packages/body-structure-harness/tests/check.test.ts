@@ -3,7 +3,7 @@
 // Exercises the entry point against real files in a tmpdir, which makes the
 // read edge observable: the pure units below are handed text, but only this
 // level can show that a file a Rule reaches is opened, that its `type` is read
-// out of it, and that a file no Rule reaches is never opened (design-ADR 0015).
+// out of it, and that a file no Rule reaches is never opened.
 
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

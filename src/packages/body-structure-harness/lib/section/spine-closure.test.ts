@@ -1,5 +1,5 @@
 // Colocated unit test for the two questions about a Rule's `undefinedHeadings`
-// key, asked alike of a typed Rule and of YAML as written (design-ADR 0025, 0026).
+// key, asked alike of a typed Rule and of YAML as written.
 
 import { describe, expect, it } from 'vitest';
 import { closesSpine, writesClosureBeyondDefault } from './spine-closure.pure.ts';

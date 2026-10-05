@@ -6,7 +6,7 @@
 // its own; a file both governed was parsed twice, and "stop at the first
 // unreadable file" was written twice. Now the Core answers once per file with
 // the frontmatter MAPPING and the body, and never what a field means
-// (design-ADR 0012): `type` extraction stays in `body-structure-harness`.
+//: `type` extraction stays in `body-structure-harness`.
 //
 // `parseDocument` ships beside `readCorpus` for the one caller that reads a
 // single file outside a batch: `--assess`, whose absent-is-advice policy is its

@@ -1,6 +1,6 @@
 // Colocated unit test for the checks judged on a body's outline alone: depth
 // (`maxLevel`), closure (`undefinedHeadings: forbid`) and the heading
-// vocabulary, design-ADR 0019, 0025 and 0027.
+// vocabulary.
 
 import { describe, expect, it } from 'vitest';
 import { levelViolations, unlistedViolations } from './outline-violations.pure.ts';

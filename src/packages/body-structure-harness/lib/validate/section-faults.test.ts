@@ -1,5 +1,5 @@
 // Colocated unit test for the `body-structure:` section as a whole, walked in
-// design-ADR 0020's order: section keys, an empty rule list, duplicate ids
+// validation order: section keys, an empty rule list, duplicate ids
 // across the whole list, then each Rule in turn.
 
 import { describe, expect, it } from 'vitest';
@@ -158,7 +158,7 @@ describe('sectionFaults', () => {
 
     it('reports a Rule intent written with no value as empty, the code the first Module gives it', () => {
       // `intent:` with nothing after it parses to null. That is "written and
-      // left blank" (design-ADR 0020), not a value of the wrong type, and the
+      // left blank", not a value of the wrong type, and the
       // reused code keeps the meaning `frontmatter` gives it.
       // ARRANGE
       const expected = [{ code: 'CONFIG_EMPTY_INTENT', location: 'body-structure.rules[0].intent' }];

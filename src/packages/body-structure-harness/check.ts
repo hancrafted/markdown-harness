@@ -3,7 +3,7 @@
 // One impure–pure–impure pass. Which files no Rule reaches is decided from the
 // paths and those are never opened; every other file is read, because a Rule
 // selecting by `type` makes the winner a function of the file's bytes
-// (design-ADR 0012); then every verdict is computed over what was read.
+//; then every verdict is computed over what was read.
 //
 // Enumeration is NOT here: the corpus arrives as a list of paths, and the
 // walker's refusals belong to `foundation`.

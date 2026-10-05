@@ -1,5 +1,5 @@
 // Colocated unit test for the template half of one Rule: its `maxLevel:` and
-// its `headings:` spine, walked in design-ADR 0020's order.
+// its `headings:` spine, in walk order.
 
 import { describe, expect, it } from 'vitest';
 import { headingsFaults, maxLevelFaults } from './template-faults.pure.ts';
