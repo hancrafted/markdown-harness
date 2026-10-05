@@ -22,6 +22,7 @@
  * `CONFIG_INVALID_VALUE`, a key written with a value outside its declared type.
  */
 
+import { intentFaults } from '../../../foundation/intent-faults.ts';
 import { invalidValue, unrecognisedKeys } from '../../../foundation/selector-faults.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { HeadingEntry, HeadingPurpose } from '../../section.ts';
@@ -30,7 +31,6 @@ import { allowedFaults, writesAllowedList } from './allowed-faults.pure.ts';
 import { mayHoldFaults } from './block-kind-faults.pure.ts';
 import { fault } from './fault.pure.ts';
 import type { BodyStructureFault } from './fault.types.ts';
-import { intentFaults } from './intent-faults.pure.ts';
 import { isPattern } from './pattern-dialect.pure.ts';
 import { purposeFaultsFor } from './purpose-faults.pure.ts';
 

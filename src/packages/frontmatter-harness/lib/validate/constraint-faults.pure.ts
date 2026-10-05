@@ -7,6 +7,7 @@
  * caller concatenates.
  */
 
+import { intentFaults } from '../../../foundation/intent-faults.ts';
 import { compiles } from '../../../foundation/pattern-dialect.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { AllowedValue, FieldConstraints, Format } from '../section/constraints.types.ts';
@@ -62,12 +63,6 @@ const BOUND_KEYS: readonly (keyof FieldConstraints)[] = [
   'itemMaxLength',
 ];
 
-/** An intent key written and left blank, wherever it sits. */
-function emptyIntentAt(carrier: Record<string, unknown>, location: string): readonly FrontmatterFault[] {
-  if (!('intent' in carrier) || carrier.intent) return [];
-  return [{ code: 'CONFIG_EMPTY_INTENT', location: `${location}.intent` }];
-}
-
 /** Every key an `allowed` entry may carry, keyed by the type that declares them. */
 const ALLOWED_KEYS: Record<keyof AllowedValue, true> = { value: true, intent: true };
 
@@ -92,7 +87,7 @@ function allowedEntryFaults(entry: unknown, at: string): readonly FrontmatterFau
   const valueless: readonly FrontmatterFault[] =
     'value' in entry ? [] : [{ code: 'CONFIG_INVALID_VALUE', location: `${at}.value` }];
 
-  return [...unrecognised, ...valueless, ...emptyIntentAt(entry, at)];
+  return [...unrecognised, ...valueless, ...intentFaults(entry, at)];
 }
 
 /** The closed set of permitted values, if the constraint states one. */
@@ -128,7 +123,7 @@ function patternFaults(constraint: Record<string, unknown>, location: string): r
 /**
  * Whether a written key holds something its closed vocabulary does not name.
  *
- * PRESENCE, not truthiness, for the same reason `emptyIntentAt` is not: a bare
+ * PRESENCE, not truthiness, for the same reason `intentFaults` is not: a bare
  * `presence:` parses to `null`, which is outside the vocabulary and so is the
  * Operator saying something wrong rather than saying nothing. A key never
  * written is not a fault here.
@@ -195,7 +190,7 @@ export function constraintFaults(constraint: unknown, location: string): readonl
       .filter((key) => !Object.hasOwn(CONSTRAINT_KEYS, key))
       .map((key): FrontmatterFault => ({ code: 'CONFIG_UNRECOGNISED_KEY', location: `${location}.${key}` })),
     ...vocabularyFaults(constraint, location),
-    ...emptyIntentAt(constraint, location),
+    ...intentFaults(constraint, location),
     ...allowedFaults(constraint, location),
     ...patternFaults(constraint, location),
   ];

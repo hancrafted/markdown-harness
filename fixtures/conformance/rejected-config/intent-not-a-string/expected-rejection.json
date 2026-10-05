@@ -1,0 +1,8 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    { "code": "CONFIG_INVALID_VALUE", "location": "frontmatter.rules[0].intent" },
+    { "code": "CONFIG_INVALID_VALUE", "location": "frontmatter.rules[0].fields.status.intent" },
+    { "code": "CONFIG_INVALID_VALUE", "location": "frontmatter.rules[0].fields.status.allowed[0].intent" }
+  ]
+}
