@@ -4,7 +4,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 3,
+        "entry": [3],
         "content": "2. Second anchor",
         "kind": "unordered-list",
         "found": 1,
@@ -25,7 +25,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 3,
+        "entry": [3],
         "content": "1. First anchor",
         "kind": "prose",
         "found": 1,
@@ -54,7 +54,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 7,
+        "entry": [7],
         "content": "Consequences",
         "kind": "unordered-list",
         "found": 1,
@@ -75,7 +75,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Context",
         "kind": "ordered-list",
         "found": 1,
@@ -95,7 +95,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 6,
+        "entry": [6],
         "requirement": {
           "purpose": "heading",
           "level": 3,
@@ -112,7 +112,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 5,
+        "entry": [5],
         "content": "Do's",
         "kind": "prose",
         "found": 1,
@@ -149,7 +149,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 7,
+        "entry": [7],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -171,7 +171,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 9,
+        "entry": [9],
         "content": "References",
         "kind": "ordered-list",
         "found": 1,
@@ -203,7 +203,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 0,
         "requirement": {
           "purpose": "enumeration",
@@ -220,7 +220,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 3,
         "requirement": {
           "purpose": "enumeration",
@@ -237,7 +237,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 2,
+        "entry": [2],
         "requirement": {
           "purpose": "heading",
           "level": 2
@@ -250,7 +250,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 1,
+        "entry": [1],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -415,7 +415,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 2,
+        "entry": [2],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -438,7 +438,7 @@
       },
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -461,7 +461,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 2,
+        "entry": [2],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -524,7 +524,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "enumeration",
           "level": 2,
@@ -535,7 +535,7 @@
       },
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 3,
         "requirement": {
           "purpose": "enumeration",
@@ -569,7 +569,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 2,
+        "entry": [2],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -588,7 +588,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 4,
+        "entry": [4],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -604,7 +604,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 4,
+        "entry": [4],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -625,7 +625,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 1,
+        "entry": [1],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -641,7 +641,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 3,
+        "entry": [3],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -718,7 +718,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -736,7 +736,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -754,7 +754,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -768,7 +768,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -794,7 +794,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -816,7 +816,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -834,7 +834,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "enumeration",
           "level": 2,
@@ -853,7 +853,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 2,
+        "entry": [2],
         "found": 2,
         "requirement": {
           "purpose": "enumeration",
@@ -869,7 +869,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 2,
         "requirement": {
           "purpose": "enumeration",
@@ -889,7 +889,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -903,7 +903,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -917,7 +917,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -939,7 +939,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -961,7 +961,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -980,7 +980,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -994,7 +994,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -1008,7 +1008,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -1022,7 +1022,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 1,
         "requirement": {
           "purpose": "enumeration",
@@ -1058,7 +1058,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -1072,7 +1072,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 1,
         "requirement": {
           "purpose": "enumeration",
@@ -1088,7 +1088,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 3,
         "requirement": {
           "purpose": "enumeration",
@@ -1129,7 +1129,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -1159,7 +1159,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 2,
         "requirement": {
           "purpose": "enumeration",
@@ -1174,7 +1174,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1
@@ -1219,7 +1219,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 2,
         "requirement": {
           "purpose": "enumeration",
@@ -1242,7 +1242,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1
@@ -1255,7 +1255,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -1273,7 +1273,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 2,
         "requirement": {
           "purpose": "enumeration",
@@ -1304,7 +1304,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -1318,7 +1318,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -1369,7 +1369,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 4,
         "requirement": {
           "purpose": "enumeration",
@@ -1413,7 +1413,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -1428,7 +1428,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 3,
+        "entry": [3],
         "requirement": {
           "purpose": "enumeration",
           "level": 2,
@@ -1448,7 +1448,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 3,
+        "entry": [3],
         "found": 0,
         "requirement": {
           "purpose": "enumeration",
@@ -1469,7 +1469,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 3,
+        "entry": [3],
         "found": 0,
         "requirement": {
           "purpose": "enumeration",
@@ -1494,7 +1494,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 3,
+        "entry": [3],
         "found": 0,
         "requirement": {
           "purpose": "enumeration",
@@ -1511,7 +1511,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 3,
+        "entry": [3],
         "found": 0,
         "requirement": {
           "purpose": "enumeration",
@@ -1528,7 +1528,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 3,
+        "entry": [3],
         "found": 0,
         "requirement": {
           "purpose": "enumeration",
@@ -1545,7 +1545,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 2,
+        "entry": [2],
         "requirement": {
           "purpose": "enumeration",
           "level": 3,
@@ -1569,7 +1569,7 @@
       },
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1
@@ -1616,7 +1616,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1
@@ -1633,7 +1633,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 2,
+        "entry": [2],
         "found": 3,
         "requirement": {
           "purpose": "enumeration",
@@ -1650,7 +1650,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -1660,7 +1660,7 @@
       },
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 3,
+        "entry": [3],
         "found": 0,
         "requirement": {
           "purpose": "enumeration",
@@ -1677,7 +1677,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -1716,7 +1716,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -1739,7 +1739,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -1754,7 +1754,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -1773,7 +1773,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -1792,7 +1792,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -1811,7 +1811,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1
@@ -1824,7 +1824,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -1846,7 +1846,7 @@
       },
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Summary",
         "kind": "unordered-list",
         "found": 1,
@@ -1866,7 +1866,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Summary",
         "kind": "unordered-list",
         "found": 1,
@@ -1903,7 +1903,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Ordered",
         "kind": "unordered-list",
         "found": 1,
@@ -1932,7 +1932,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 2,
+        "entry": [2],
         "content": "Bullets",
         "kind": "ordered-list",
         "found": 1,
@@ -1965,7 +1965,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Ordered",
         "kind": "prose",
         "found": 1,
@@ -1986,7 +1986,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 2,
+        "entry": [2],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -2008,7 +2008,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 3,
+        "entry": [3],
         "content": "Mixed",
         "kind": "unordered-list",
         "found": 1,
@@ -2034,7 +2034,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Ordered",
         "kind": "prose",
         "found": 1,
@@ -2067,7 +2067,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Ordered",
         "kind": "prose",
         "found": 1,
@@ -2092,7 +2092,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 0,
+        "entry": [0],
         "content": "Prose",
         "kind": "unordered-list",
         "found": 1,
@@ -2113,7 +2113,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 0,
+        "entry": [0],
         "content": "Prose",
         "kind": "ordered-list",
         "found": 1,
@@ -2142,7 +2142,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 1,
+        "entry": [1],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -2169,7 +2169,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Ordered",
         "kind": "prose",
         "found": 2,
@@ -2185,7 +2185,7 @@
       },
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Ordered",
         "kind": "unordered-list",
         "found": 1,
@@ -2206,7 +2206,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 0,
+        "entry": [0],
         "content": "Prose",
         "kind": "unordered-list",
         "found": 1,
@@ -2222,7 +2222,7 @@
       },
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Ordered",
         "kind": "prose",
         "found": 1,
@@ -2251,7 +2251,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "2. Second anchor",
         "kind": "prose",
         "found": 1,
@@ -2272,7 +2272,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 0,
+        "entry": [0],
         "content": "Decision",
         "kind": "ordered-list",
         "found": 1,
@@ -2296,7 +2296,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Step: Prepare",
         "kind": "prose",
         "found": 1,
@@ -2312,7 +2312,7 @@
       },
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Step: Cook",
         "kind": "unordered-list",
         "found": 1,
@@ -2337,7 +2337,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-        "entry": 1,
+        "entry": [1],
         "content": "Step: Cook",
         "kind": "unordered-list",
         "found": 1,
@@ -2362,7 +2362,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -2376,7 +2376,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -2394,7 +2394,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -2412,7 +2412,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 5,
         "requirement": {
           "purpose": "enumeration",
@@ -2447,7 +2447,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 1,
         "requirement": {
           "purpose": "enumeration",
@@ -2465,7 +2465,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 1,
         "requirement": {
           "purpose": "enumeration",
@@ -2491,7 +2491,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 0,
         "requirement": {
           "purpose": "enumeration",
@@ -2513,7 +2513,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -2527,7 +2527,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -2541,7 +2541,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -2555,7 +2555,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -2577,7 +2577,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "enumeration",
           "level": 2,
@@ -2591,7 +2591,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 1,
+        "entry": [1],
         "requirement": {
           "purpose": "enumeration",
           "level": 2,
@@ -2605,7 +2605,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 2,
+        "entry": [2],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -2619,7 +2619,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 1,
+        "entry": [1],
         "found": 0,
         "requirement": {
           "purpose": "enumeration",
@@ -2638,7 +2638,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -2652,7 +2652,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -2666,7 +2666,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -2680,7 +2680,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 0,
+        "entry": [0],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -2797,7 +2797,7 @@
       },
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 0,
+        "entry": [0],
         "requirement": {
           "purpose": "heading",
           "level": 1,
@@ -3013,7 +3013,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 3,
+        "entry": [3],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -3036,7 +3036,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-        "entry": 1,
+        "entry": [1],
         "found": 2,
         "requirement": {
           "purpose": "heading",
@@ -3051,7 +3051,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_MISSING",
-        "entry": 3,
+        "entry": [3],
         "requirement": {
           "purpose": "heading",
           "level": 2,
@@ -3065,7 +3065,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
-        "entry": 2,
+        "entry": [2],
         "found": 0,
         "requirement": {
           "purpose": "enumeration",
@@ -3085,7 +3085,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 2,
+        "entry": [2],
         "requirement": {
           "purpose": "enumeration",
           "level": 2,
@@ -3100,7 +3100,7 @@
     "violations": [
       {
         "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
-        "entry": 2,
+        "entry": [2],
         "requirement": {
           "purpose": "enumeration",
           "level": 2,

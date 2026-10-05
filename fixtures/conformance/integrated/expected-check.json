@@ -135,7 +135,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-                "entry": 0,
+                "entry": [0],
                 "found": 2,
                 "requirement": {
                   "purpose": "heading",
@@ -167,7 +167,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_MISSING",
-                "entry": 0,
+                "entry": [0],
                 "requirement": {
                   "purpose": "heading",
                   "level": 1
@@ -187,7 +187,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_MISSING",
-                "entry": 1,
+                "entry": [1],
                 "requirement": {
                   "purpose": "heading",
                   "level": 2,
@@ -222,7 +222,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_MISSING",
-                "entry": 1,
+                "entry": [1],
                 "requirement": {
                   "purpose": "heading",
                   "level": 2,
@@ -336,7 +336,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_MISSING",
-                "entry": 1,
+                "entry": [1],
                 "requirement": {
                   "purpose": "heading",
                   "level": 2,
@@ -376,7 +376,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-                "entry": 0,
+                "entry": [0],
                 "found": 2,
                 "requirement": {
                   "purpose": "heading",
@@ -397,7 +397,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-                "entry": 0,
+                "entry": [0],
                 "found": 2,
                 "requirement": {
                   "purpose": "heading",
@@ -468,7 +468,7 @@
               },
               {
                 "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
-                "entry": 1,
+                "entry": [1],
                 "content": "Summary",
                 "kind": "unordered-list",
                 "found": 1,
@@ -516,7 +516,7 @@
             "violations": [
               {
                 "violation": "BODY_STRUCTURE__HEADING_REPEATED",
-                "entry": 0,
+                "entry": [0],
                 "found": 2,
                 "requirement": {
                   "purpose": "heading",
