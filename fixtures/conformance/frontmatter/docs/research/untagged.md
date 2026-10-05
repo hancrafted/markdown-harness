@@ -9,6 +9,6 @@ sources:
 
 <!-- expect: FAILS -->
 
-`tags` is present and holds no entries, so `minItems: 1` reports `TOO_FEW_ITEMS`. The
+`tags` is present and holds no entries, so `minItems: 1` reports `FRONTMATTER__TOO_FEW_ITEMS`. The
 research rule places no `presence` beside the count bounds, so this is a count fault
-and not `EMPTY_REQUIRED_FIELD`.
+and not `FRONTMATTER__EMPTY_REQUIRED_FIELD`.
