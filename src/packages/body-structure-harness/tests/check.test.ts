@@ -67,7 +67,7 @@ describe('checkCorpus', () => {
             violations: [
               {
                 violation: 'BODY_STRUCTURE__HEADING_MISSING',
-                entry: 0,
+                entry: [0],
                 requirement: { purpose: 'heading', level: 2, pattern: '^Findings$' },
               },
             ],
@@ -79,7 +79,7 @@ describe('checkCorpus', () => {
             violations: [
               {
                 violation: 'BODY_STRUCTURE__HEADING_MISSING',
-                entry: 0,
+                entry: [0],
                 requirement: { purpose: 'heading', level: 1 },
               },
             ],

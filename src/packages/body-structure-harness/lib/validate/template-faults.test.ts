@@ -40,6 +40,21 @@ describe('template faults', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+    it('accepts allowed titles, a nested list deeper than its parent, and nesting under both purposes down to level 6', () => {
+      // ARRANGE
+      const entry = {
+        purpose: 'enumeration',
+        level: 2,
+        minCount: 1,
+        allowed: [{ title: 'Release', intent: 'One per version.' }],
+        headings: [{ purpose: 'heading', level: 3, headings: [{ purpose: 'heading', level: 6 }] }],
+      };
+      const expected: readonly unknown[] = [];
+      // ACT
+      const actual = entryFaults(entry);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
@@ -143,6 +158,44 @@ describe('template faults', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+    it('refuses pattern beside allowed at allowed, and a nested entry no deeper than its parent at its level', () => {
+      // ARRANGE
+      const entry = {
+        purpose: 'heading',
+        level: 2,
+        pattern: '^A$',
+        allowed: [{ title: 'A' }],
+        headings: [{ purpose: 'heading', level: 2 }],
+      };
+      const expected = [
+        { code: 'CONFIG_PATTERN_WITH_ALLOWED', location: `${ENTRY}.allowed` },
+        { code: 'CONFIG_NESTED_ENTRY_NOT_DEEPER', location: `${ENTRY}.headings[0].level` },
+      ];
+      // ACT
+      const actual = entryFaults(entry);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('refuses an allowed list that is no list or empty, a bad item, and a repeated title at the later title', () => {
+      // ARRANGE
+      const items = [{ title: 'A' }, 'A', { title: ' A' }, { title: 'A', note: 1, intent: '' }];
+      const expected = [
+        [{ code: 'CONFIG_INVALID_VALUE', location: `${ENTRY}.allowed` }],
+        [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: `${ENTRY}.allowed` }],
+        [
+          { code: 'CONFIG_INVALID_VALUE', location: `${ENTRY}.allowed[1]` },
+          { code: 'CONFIG_INVALID_VALUE', location: `${ENTRY}.allowed[2].title` },
+          { code: 'CONFIG_UNRECOGNISED_KEY', location: `${ENTRY}.allowed[3].note` },
+          { code: 'CONFIG_EMPTY_INTENT', location: `${ENTRY}.allowed[3].intent` },
+          { code: 'CONFIG_DUPLICATE_VOCABULARY_TITLE', location: `${ENTRY}.allowed[3].title` },
+        ],
+      ];
+      // ACT
+      const actual = ['A', [], items].map((allowed) => entryFaults({ purpose: 'heading', level: 1, allowed }));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('edge cases', () => {
@@ -230,6 +283,26 @@ describe('template faults', () => {
         entryFaults({ purpose: 'heading', level: 2, mayHold: ['prose'] }),
         entryFaults({ purpose: 'enumeration', level: 2, minCount: 1, mayHold: ['ordered-list'] }),
       ];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+    it('validates a nested list in the same grammar as the top one, maxLevel included, and decides no depth against an invalid parent level', () => {
+      // ARRANGE
+      const entry = {
+        purpose: 'heading',
+        level: 9,
+        headings: [
+          { purpose: 'enumeration', level: 3 },
+          { purpose: 'heading', level: 1 },
+        ],
+      };
+      const expected = [
+        { code: 'CONFIG_INVALID_VALUE', location: `${ENTRY}.level` },
+        { code: 'CONFIG_ENUMERATION_WITHOUT_COUNT', location: `${ENTRY}.headings[0]` },
+        { code: 'CONFIG_ENTRY_BEYOND_MAX_LEVEL', location: `${ENTRY}.headings[0].level` },
+      ];
+      // ACT
+      const actual = entryFaults(entry, 2);
       // ASSERT
       expect(actual).toEqual(expected);
     });

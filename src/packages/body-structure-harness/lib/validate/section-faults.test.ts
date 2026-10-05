@@ -249,25 +249,13 @@ describe('sectionFaults', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('accepts a Rule that writes only a vocabulary: the titles a level may take are a constraint', () => {
-      // ARRANGE
-      const alone = {
-        ruleId: 'v',
-        folders: SOUND.folders,
-        intent: SOUND.intent,
-        vocabulary: [{ level: 3, allowed: ['A'] }],
-      };
-      const expected: readonly unknown[] = [];
-      // ACT
-      const actual = sectionFaults({ rules: [alone] });
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('reports an empty vocabulary list at the list alone, never also as an empty Rule', () => {
+    it('refuses the retired vocabulary key on a Rule as unrecognised, and calls a Rule with nothing else empty', () => {
       // ARRANGE
       const alone = { ruleId: 'v', folders: SOUND.folders, intent: SOUND.intent, vocabulary: [] };
-      const expected = [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: 'body-structure.rules[0].vocabulary' }];
+      const expected = [
+        { code: 'CONFIG_UNRECOGNISED_KEY', location: 'body-structure.rules[0].vocabulary' },
+        { code: 'CONFIG_EMPTY_CONSTRAINT', location: 'body-structure.rules[0]' },
+      ];
       // ACT
       const actual = sectionFaults({ rules: [alone] });
       // ASSERT
@@ -284,19 +272,18 @@ describe('sectionFaults', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('walks vocabulary after the closed-spine exclusion and before headings', () => {
+    it('walks headings at every depth after the closed-spine exclusion', () => {
       // ARRANGE
       const rule = {
         ...SOUND,
         undefinedHeadings: 'forbid',
         maxLevel: 2,
-        vocabulary: [{ level: 3, allowed: ['A', 'A'] }],
-        headings: [{ purpose: 'heading', level: 1, intent: '' }],
+        headings: [{ purpose: 'heading', level: 1, intent: '', headings: [{ purpose: 'heading', level: 1 }] }],
       };
       const expected = [
         { code: 'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE', location: 'body-structure.rules[0].maxLevel' },
-        { code: 'CONFIG_DUPLICATE_VOCABULARY_TITLE', location: 'body-structure.rules[0].vocabulary[0].allowed[1]' },
         { code: 'CONFIG_EMPTY_INTENT', location: 'body-structure.rules[0].headings[0].intent' },
+        { code: 'CONFIG_NESTED_ENTRY_NOT_DEEPER', location: 'body-structure.rules[0].headings[0].headings[0].level' },
       ];
       // ACT
       const actual = sectionFaults({ rules: [rule] });

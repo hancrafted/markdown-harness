@@ -19,7 +19,7 @@ function countsByKind(blocks: readonly BlockKind[]): ReadonlyMap<BlockKind, numb
 
 /** One violation per unlisted kind of one claimed section. */
 function sectionViolations(
-  { entry, index }: Claim,
+  { entry, locator }: Claim,
   allowed: readonly BlockKind[],
   { heading, blocks }: OutlineSection,
 ): readonly BodyStructureViolation[] {
@@ -27,7 +27,7 @@ function sectionViolations(
     .filter(([kind]) => !allowed.includes(kind))
     .map(([kind, found]) => ({
       violation: 'BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED',
-      entry: index,
+      ...locator,
       content: heading.content,
       kind,
       found,
@@ -37,11 +37,11 @@ function sectionViolations(
 
 /**
  * Every block of an unlisted kind in a claimed section, one violation per
- * section and kind with the count of its blocks, ordered by entry, then section
+ * section and kind with the count of its blocks, ordered by claim, then section
  * in document order, then kind in the order it first appears. An entry that
  * writes no `mayHold` leaves its sections unconstrained.
  *
- * @param claims One per entry of the spine, in index order.
+ * @param claims One per entry of every list walked, lists in walk order and entries in index order.
  */
 export function contentViolations(claims: readonly Claim[]): readonly BodyStructureViolation[] {
   return claims.flatMap((claim) => {

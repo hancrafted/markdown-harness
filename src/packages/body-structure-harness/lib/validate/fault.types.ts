@@ -42,32 +42,30 @@ export type BodyStructureFaultCode =
    */
   | 'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE'
   /**
-   * A `body-structure` vocabulary whose `level` an earlier item already names,
-   * raised at the later item's `level`. The `yaml` parser refuses a repeated
-   * mapping key, so a list of items needs its own fault.
-   */
-  | 'CONFIG_DUPLICATE_VOCABULARY_LEVEL'
-  /**
    * A title an earlier element of the same `allowed` list already holds, raised
-   * at the later element. Decided over valid titles only.
+   * at the later element's `title`. Decided over valid titles only. The name
+   * predates the `allowed` key: it was the Rule-level vocabulary's, retired
+   * with it (#229), and is kept so the one duplicate-title outcome keeps one code.
    */
   | 'CONFIG_DUPLICATE_VOCABULARY_TITLE'
-  /**
-   * A vocabulary item whose `level` exceeds the Rule's `maxLevel`: a title no
-   * heading can carry. Decided only when both are valid, and not beside
-   * `undefinedHeadings: forbid`.
-   */
-  | 'CONFIG_VOCABULARY_BEYOND_MAX_LEVEL'
-  /**
-   * A vocabulary item at a level some `headings:` entry also names, raised at
-   * the item's `level`: one heading would be behind two kinds of judgement.
-   */
-  | 'CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES'
   /**
    * A kind an earlier element of the same `mayHold` list already holds, raised
    * at the later element. Decided over valid kinds only.
    */
-  | 'CONFIG_DUPLICATE_BLOCK_KIND';
+  | 'CONFIG_DUPLICATE_BLOCK_KIND'
+  /**
+   * A nested entry whose `level` is not deeper than its parent entry's, raised
+   * at the child's `level`: a heading inside the parent's section is always
+   * deeper, so the entry could never match. Decided only when both are valid.
+   */
+  | 'CONFIG_NESTED_ENTRY_NOT_DEEPER'
+  /**
+   * A heading entry writing both `pattern` and `allowed`, raised at `allowed`:
+   * one entry names its title one way. Decided only when the pattern is valid
+   * and the list non-empty, whatever its items hold, so a bad item is reported
+   * at the item and the exclusion once.
+   */
+  | 'CONFIG_PATTERN_WITH_ALLOWED';
 
 /** One fault in this Module's section. */
 export type BodyStructureFault = ConfigFault<BodyStructureFaultCode>;

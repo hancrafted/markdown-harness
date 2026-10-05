@@ -6,7 +6,7 @@
  * other declared Module's.
  */
 
-import type { HeadingRequirement, VocabularyRequirement } from '../check/violation.types.ts';
+import type { HeadingRequirement } from '../check/violation.types.ts';
 
 /**
  * What one `body-structure` candidate Rule asks of a path, copied verbatim
@@ -23,8 +23,6 @@ export interface BodyStructureRequirements {
   maxLevel?: number;
   /** `forbid` closes the spine, `allow` is the open spine written out; echoed as written. */
   undefinedHeadings?: 'allow' | 'forbid';
-  /** The Rule's heading vocabulary, verbatim: the exact titles each named level may take. */
-  vocabulary?: readonly VocabularyRequirement[];
-  /** The Rule's spine, verbatim, each `intent` and `mayHold` included. */
+  /** The Rule's spine, verbatim, each `intent`, `mayHold`, `allowed` list and nested spine included. */
   headings?: readonly HeadingRequirement[];
 }

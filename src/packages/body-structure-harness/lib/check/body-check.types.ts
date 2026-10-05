@@ -1,13 +1,14 @@
 /**
  * What the halves of the body check are handed:
- * the spine and what its walk found, what lists a heading besides the spine,
- * and what each entry claimed.
+ * the spine and what its walk found, every list walked at every depth, what
+ * lists a heading besides the spine, and what each entry claimed.
  */
 
-import type { HeadingEntry, VocabularyItem } from '../../section.ts';
+import type { HeadingEntry } from '../../section.ts';
 import type { OutlineHeading, OutlineSection } from '../document/document.types.ts';
+import type { EntryLocator } from './violation.types.ts';
 
-/** Whether one heading matches one entry: its level, then its pattern searched over the raw content. */
+/** Whether one heading matches one entry: its level, then its pattern searched or its allowed titles compared. */
 export type HeadingMatcher = (heading: OutlineHeading) => boolean;
 
 /** The spine and the outline it is walked against, with one matcher per entry. */
@@ -35,19 +36,35 @@ export interface Walk {
   given: ReadonlyMap<number, number>;
 }
 
-/** What lists a heading besides the outline itself: whether the spine is closed, the vocabularies, and one matcher per entry. */
+/**
+ * One list walked over its stretch of the outline: the Rule's own `headings:`
+ * over the whole body, or a nested spine over the headings under one heading
+ * its parent entry claimed.
+ */
+export interface WalkedSpine {
+  /** The index path of the parent entry, empty for the Rule's own list. */
+  prefix: readonly number[];
+  /** The parent heading's raw inline source; absent for the Rule's own list. */
+  under?: string;
+  /** The whole-outline position of the stretch's first heading: position 0 of `spine.outline`. */
+  start: number;
+  /** The list, its matchers, and its stretch of the outline. */
+  spine: Spine;
+  /** What walking the list over its stretch found. */
+  walk: Walk;
+}
+
+/** What lists a heading besides the outline itself: whether the spine is closed, and every list walked, each over its own stretch. */
 export interface Listing {
   /** `undefinedHeadings: forbid`. */
   closed: boolean;
-  /** The Rule's heading vocabulary: one item per level it holds. */
-  vocabulary: readonly VocabularyItem[];
-  /** One per entry of the Rule's spine, which may have none. */
-  matchers: readonly HeadingMatcher[];
+  /** Every list walked, at every depth. */
+  scopes: readonly WalkedSpine[];
 }
 
-/** One entry, its index in the spine, and the sections of the headings it claimed, in document order. */
+/** One entry, where it sits in the config, and the sections of the headings it claimed, in document order. */
 export interface Claim {
   entry: HeadingEntry;
-  index: number;
+  locator: EntryLocator;
   sections: readonly OutlineSection[];
 }

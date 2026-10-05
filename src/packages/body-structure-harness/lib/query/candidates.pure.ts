@@ -11,9 +11,10 @@
  * ends the list.
  *
  * Each candidate is one claim (design-ADR 0011): the Rule, and
- * its `types`, `maxLevel`, `undefinedHeadings`, `vocabulary` and `headings` copied verbatim, an omitted
- * key staying omitted — the Steering payload, every heading `intent` and `mayHold` included, so an agent
- * about to write the file learns the titles a level may take and what each section may hold.
+ * its `types`, `maxLevel`, `undefinedHeadings` and `headings` copied verbatim, an omitted key staying
+ * omitted — the Steering payload, every heading `intent`, `mayHold`, `allowed` list and nested spine
+ * included, so an agent about to write the file learns the titles each section may take, what sits
+ * inside it, and what each may hold.
  */
 
 import type { ModuleClaim } from '../../../response-contract/index.ts';
@@ -27,7 +28,6 @@ function requirementsOf(rule: BodyStructureRule): BodyStructureRequirements {
     ...(rule.types === undefined ? {} : { types: rule.types }),
     ...(rule.maxLevel === undefined ? {} : { maxLevel: rule.maxLevel }),
     ...(rule.undefinedHeadings === undefined ? {} : { undefinedHeadings: rule.undefinedHeadings }),
-    ...(rule.vocabulary === undefined ? {} : { vocabulary: rule.vocabulary }),
     ...(rule.headings === undefined ? {} : { headings: rule.headings }),
   };
 }

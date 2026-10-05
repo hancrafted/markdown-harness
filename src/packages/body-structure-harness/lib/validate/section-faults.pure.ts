@@ -11,7 +11,7 @@
  * Rule, mirroring the first Module: unrecognised keys, `ruleId`, `intent`, a
  * missing selector, each axis's shape, `excludeFiles`, the Rule-level empty
  * payload, `maxLevel`, `undefinedHeadings`, the exclusion of `maxLevel` by
- * `undefinedHeadings: forbid`, `vocabulary`, then `headings`.
+ * `undefinedHeadings: forbid`, then `headings`, at every depth.
  */
 
 import {
@@ -26,8 +26,8 @@ import type { BodyStructureConfig, BodyStructureRule } from '../../section.ts';
 import { writesClosureBeyondDefault } from '../section/spine-closure.pure.ts';
 import { closedSpineFaults, undefinedHeadingsFaults } from './closed-spine-faults.pure.ts';
 import type { BodyStructureFault } from './fault.types.ts';
-import { headingsFaults, intentFaults, maxLevelFaults } from './template-faults.pure.ts';
-import { vocabularyFaults } from './vocabulary-faults.pure.ts';
+import { intentFaults } from './intent-faults.pure.ts';
+import { headingsFaults, maxLevelFaults } from './template-faults.pure.ts';
 
 /** The section's own address. */
 const SECTION = 'body-structure';
@@ -36,7 +36,7 @@ const RULES = `${SECTION}.rules`;
 /** Every key the section defines, keyed by the type defining them so a key added there cannot be forgotten here. */
 const SECTION_KEYS: Record<keyof BodyStructureConfig, true> = { rules: true };
 
-/** Every key a Rule may carry, keyed by the type declaring them. `maxDepth`, `levels`, `title` and `prefix` are deliberately absent. */
+/** Every key a Rule may carry, keyed by the type declaring them. `maxDepth`, `levels`, `title`, `prefix` and the retired `vocabulary` are deliberately absent. */
 const RULE_KEYS: Record<keyof BodyStructureRule, true> = {
   ruleId: true,
   intent: true,
@@ -46,7 +46,6 @@ const RULE_KEYS: Record<keyof BodyStructureRule, true> = {
   excludeFiles: true,
   maxLevel: true,
   undefinedHeadings: true,
-  vocabulary: true,
   headings: true,
 };
 
@@ -67,14 +66,14 @@ function identityFaults(rule: Record<string, unknown>, at: string): readonly Bod
 }
 
 /**
- * A Rule that writes none of `headings`, `maxLevel`, `vocabulary` and a closure
+ * A Rule that writes none of `headings`, `maxLevel` and a closure
  * beyond the default asks nothing of a body: `allow` alone is the default
  * written out. An empty list is reported at the list
  * instead, and an invalid `undefinedHeadings` at the key, so neither is also
  * called empty.
  */
 function payloadFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
-  const payload = 'maxLevel' in rule || 'headings' in rule || 'vocabulary' in rule || writesClosureBeyondDefault(rule);
+  const payload = 'maxLevel' in rule || 'headings' in rule || writesClosureBeyondDefault(rule);
   return payload ? [] : [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: at }];
 }
 
@@ -91,7 +90,6 @@ function ruleFaults(rule: unknown, at: string): readonly BodyStructureFault[] {
     ...maxLevelFaults(rule, at),
     ...undefinedHeadingsFaults(rule, at),
     ...closedSpineFaults(rule, at),
-    ...vocabularyFaults(rule, at),
     ...headingsFaults(rule, at),
   ];
 }
