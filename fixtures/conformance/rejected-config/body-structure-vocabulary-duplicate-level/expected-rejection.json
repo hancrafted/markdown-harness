@@ -1,0 +1,9 @@
+{
+  "error": "CONFIG_REJECTED",
+  "faults": [
+    {
+      "code": "CONFIG_DUPLICATE_VOCABULARY_LEVEL",
+      "location": "body-structure.rules[0].vocabulary[1].level"
+    }
+  ]
+}

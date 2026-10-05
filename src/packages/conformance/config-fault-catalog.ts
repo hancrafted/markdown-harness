@@ -18,7 +18,8 @@ import type { ConfigFaultCode } from '../config-contract/index.ts';
  * The `satisfies` check holds one direction — a code spelled wrong, or one the
  * catalog never had, does not compile. Its intersection holds the other.
  *
- * Twenty-one. It was twenty, before `CONFIG_MAX_LEVEL_ON_CLOSED_SPINE` (#225, design-ADR 0026); fifteen, before the five
+ * Twenty-six. It was twenty-one, before the five codes the heading vocabulary and the section content bring (#227,
+ * design-ADRs 0027 and 0028); twenty, before `CONFIG_MAX_LEVEL_ON_CLOSED_SPINE` (#225, design-ADR 0026); fifteen, before the five
  * `body-structure` codes of #221 below that; and fourteen before that: `CONFIG_SELECTOR_AMBIGUOUS` was retired with the
  * grammar that made it reachable — `folders:` and `fileNames:` intersect rather
  * than exclude, so a rule carrying both is spelling an exact path rather than
@@ -51,7 +52,28 @@ const declaredCodes = [
   'CONFIG_COUNT_BOUNDS_INVERTED',
   'CONFIG_ENTRY_BEYOND_MAX_LEVEL',
   'CONFIG_MAX_LEVEL_ON_CLOSED_SPINE',
+  'CONFIG_DUPLICATE_VOCABULARY_LEVEL',
+  'CONFIG_DUPLICATE_VOCABULARY_TITLE',
+  'CONFIG_VOCABULARY_BEYOND_MAX_LEVEL',
+  'CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES',
+  'CONFIG_DUPLICATE_BLOCK_KIND',
 ] as const;
+
+/**
+ * The five codes the heading vocabulary and the section content bring (#227, design-ADRs 0027 and 0028).
+ *
+ * Declared here before the contract's `ConfigFaultCode` union names them, as #221's and #225's Phase 2 did
+ * for theirs: the tier is written first and the Module second. Widening the pin below by exactly these
+ * codes keeps `tsc --noEmit` green until the union gains them, and drops out of the way after: a code the
+ * union later names is simply a member of both sides. The implementation agent deletes this bridge in the
+ * commit that adds the codes to the contract.
+ */
+type PendingCode =
+  | 'CONFIG_DUPLICATE_VOCABULARY_LEVEL'
+  | 'CONFIG_DUPLICATE_VOCABULARY_TITLE'
+  | 'CONFIG_VOCABULARY_BEYOND_MAX_LEVEL'
+  | 'CONFIG_VOCABULARY_LEVEL_HAS_ENTRIES'
+  | 'CONFIG_DUPLICATE_BLOCK_KIND';
 
 /** Whatever the catalog declares and the list above has not claimed. */
 type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
@@ -69,5 +91,5 @@ type UnreachedCodes = Exclude<ConfigFaultCode, (typeof declaredCodes)[number]>;
  * conditional distributing over the union, which would make a partially
  * covered catalog answer `unknown` rather than `never`.
  */
-export const DECLARED_CODES = declaredCodes satisfies readonly ConfigFaultCode[] &
+export const DECLARED_CODES = declaredCodes satisfies readonly (ConfigFaultCode | PendingCode)[] &
   ([UnreachedCodes] extends [never] ? unknown : never);

@@ -1,0 +1,14 @@
+# body-structure rejected-config case: fault order vocabulary and content.
+# Frozen faults are in expected-rejection.json beside this file; see the vocabulary and section-content spec (#227, design-ADRs 0027 to 0029).
+body-structure:
+  rules:
+    - ruleId: ordered
+      folders: [docs/]
+      types: []
+      intent: 'A Rule that carries faults from every stage, so the position of the vocabulary and content faults among them is frozen.'
+      extra: 1
+      maxLevel: 2
+      vocabulary:
+        - { level: 3, allowed: [A, A] }
+      headings:
+        - { purpose: heading, level: 1, intent: '', mayHold: [] }
