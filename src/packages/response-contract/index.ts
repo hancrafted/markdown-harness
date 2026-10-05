@@ -49,6 +49,17 @@ export { isConfigError } from './lib/config-error.pure.ts';
 // `FieldConstraints` back out of `config-contract` — and they are re-exported so
 // that every consumer that already reached for them at this address still can.
 export type { ConfigFault, ConfigFaultCode } from '../config-contract/index.ts';
+export type {
+  BlockKindNotAllowedViolation,
+  BodyStructureViolation,
+  HeadingCountViolation,
+  HeadingEntryViolation,
+  HeadingNotInVocabularyViolation,
+  HeadingRequirement,
+  HeadingUndefinedViolation,
+  LevelTooDeepViolation,
+  VocabularyRequirement,
+} from './lib/body-structure-violation.types.ts';
 export type { ConfigErrorResult } from './lib/config-error.types.ts';
 export type {
   BodyStructureRequirements,
@@ -79,8 +90,6 @@ export type {
 } from './lib/response.types.ts';
 export { FIELD_VIOLATION_CODES } from './lib/violation.pure.ts';
 export type {
-  BlockKindNotAllowedViolation,
-  BodyStructureViolation,
   CrossFieldViolation,
   CrossFieldViolationOf,
   FieldValue,
@@ -88,13 +97,6 @@ export type {
   FieldViolationCode,
   FrontmatterForbiddenViolation,
   FrontmatterUnparseableViolation,
-  HeadingCountViolation,
-  HeadingEntryViolation,
-  HeadingNotInVocabularyViolation,
-  HeadingRequirement,
-  HeadingUndefinedViolation,
-  LevelTooDeepViolation,
   UnknownKeyViolation,
   Violation,
-  VocabularyRequirement,
 } from './lib/violation.types.ts';

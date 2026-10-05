@@ -31,11 +31,13 @@
 
 import type { BodyStructureViolation } from '../../../response-contract/index.ts';
 import type { BodyStructureRule, HeadingEntry } from '../../section.ts';
-import type { OutlineHeading } from '../document/document.types.ts';
-import { outlineOf } from '../document/outline.pure.ts';
+import type { OutlineHeading, OutlineSection } from '../document/document.types.ts';
+import { sectionsOf } from '../document/outline.pure.ts';
 import { closesSpine } from '../section/spine-closure.pure.ts';
 import { dialectPattern } from '../validate/pattern-dialect.pure.ts';
-import { levelViolations, undefinedViolations } from './outline-violations.pure.ts';
+import type { Claim } from './body-check.types.ts';
+import { contentViolations } from './content-violations.pure.ts';
+import { levelViolations, unnamedViolations } from './outline-violations.pure.ts';
 
 /** Whether one heading matches one entry: its level, then its pattern searched over the raw content. */
 type HeadingMatcher = (heading: OutlineHeading) => boolean;
@@ -201,22 +203,42 @@ function spineViolations(spine: Spine): readonly BodyStructureViolation[] {
 }
 
 /**
- * Every violation one body carries against one Rule: the outline checks, which
- * no Rule carries both of (a closed spine excludes `maxLevel`), then spine
- * entries in entry order, so one file's report has one defined order
- * (design-ADR 0019, 0025).
+ * The sections each entry claimed, in index order: a `heading` entry claims the
+ * heading it matched and an `enumeration` the repeats of its run. A heading the
+ * walk left over, a repeat, a misplaced heading, one outside a run, or one no
+ * entry matches, is claimed by nobody and so its section is judged by nobody
+ * (design-ADR 0028).
+ */
+function claimsOf(spine: Spine, sections: readonly OutlineSection[]): readonly Claim[] {
+  const { findings } = walkSpine(spine);
+  return spine.entries.map((entry, index) => {
+    const { claimed, repeats } = findings[index] as EntryFinding;
+    const positions = claimed === undefined ? repeats : [claimed];
+    return { entry, index, sections: positions.map((position) => sections[position] as OutlineSection) };
+  });
+}
+
+/**
+ * Every violation one body carries against one Rule, in one defined order
+ * (design-ADR 0019, 0025, 0027, 0028): the levels beyond `maxLevel`; then the
+ * headings the outline alone condemns, undefined and outside a vocabulary
+ * together in document order; then spine entries in entry order; then section
+ * content by entry.
  *
  * @param rule The Rule that governs the file.
  * @param body The file's markdown below its frontmatter.
  */
 export function bodyViolations(rule: BodyStructureRule, body: string): readonly BodyStructureViolation[] {
-  const outline = outlineOf(body);
+  const sections = sectionsOf(body);
+  const outline = sections.map(({ heading }) => heading);
   const entries = rule.headings ?? [];
   const matchers = entries.map(matcherFor);
-  const undefinedHeadings = closesSpine(rule) ? undefinedViolations(matchers, outline) : [];
+  const naming = { closed: closesSpine(rule), vocabulary: rule.vocabulary ?? [], matchers };
+  const spine = { entries, matchers, outline };
   return [
-    ...undefinedHeadings,
     ...levelViolations(rule.maxLevel, outline),
-    ...spineViolations({ entries, matchers, outline }),
+    ...unnamedViolations(naming, outline),
+    ...spineViolations(spine),
+    ...contentViolations(claimsOf(spine, sections)),
   ];
 }

@@ -16,7 +16,7 @@
  */
 
 import type { FieldConstraints } from '../../config-contract/index.ts';
-import type { HeadingRequirement, VocabularyRequirement } from './violation.types.ts';
+import type { HeadingRequirement, VocabularyRequirement } from './body-structure-violation.types.ts';
 
 /** Either some Module claimed the path, or the whole config passed it by. */
 export type QueryResult = GovernedPath | InvisiblePath;
