@@ -4,11 +4,11 @@
  * Two decisions live here and nowhere else.
  *
  * PRECEDENCE. A block that will not parse means opposite things to the two
- * payload kinds. Under a constraining rule `FRONTMATTER_UNPARSEABLE` is
+ * payload kinds. Under a constraining rule `FRONTMATTER__UNPARSEABLE` is
  * reported ALONE, because no field, `unknownKeys` or cross-field check is
  * answerable against data that never parsed. Under `frontmatter: forbidden` the
  * rule's complaint — that there is a block at all — is true whether or not the
- * bytes are well-formed, so `FRONTMATTER_FORBIDDEN` is what fires and the
+ * bytes are well-formed, so `FRONTMATTER__FORBIDDEN` is what fires and the
  * unparseable code is not additionally reported: deletion is the fix either way.
  *
  * ORDER. Fields in the config's own declaration order, then cross-field sets,
@@ -39,13 +39,13 @@ const FORBIDS = { frontmatter: 'forbidden' } as const;
 function forbiddenVerdict(data: Frontmatter): readonly Violation[] {
   if (data.kind === 'absent') return [];
   if (data.kind === 'unparseable' || data.kind === 'unterminated') {
-    return [{ field: null, violation: FIELD_VIOLATION_CODES.FRONTMATTER_FORBIDDEN, requirement: FORBIDS }];
+    return [{ field: null, violation: FIELD_VIOLATION_CODES.FORBIDDEN, requirement: FORBIDS }];
   }
   return [
     {
       field: null,
       value: evidenceFor(data.data),
-      violation: FIELD_VIOLATION_CODES.FRONTMATTER_FORBIDDEN,
+      violation: FIELD_VIOLATION_CODES.FORBIDDEN,
       requirement: FORBIDS,
     },
   ];
@@ -64,7 +64,7 @@ export function violationsForFile(data: Frontmatter, rule: FrontmatterRule): rea
   if (rule.frontmatter === 'forbidden') return forbiddenVerdict(data);
 
   if (data.kind === 'unparseable' || data.kind === 'unterminated')
-    return [{ field: null, violation: 'FRONTMATTER__FRONTMATTER_UNPARSEABLE' }];
+    return [{ field: null, violation: 'FRONTMATTER__UNPARSEABLE' }];
 
   // A file with no fence at all reads as an empty mapping, which is what lets
   // `presence: required` fire on a file that never opened a block.
