@@ -1,0 +1,94 @@
+// `npm run conformance -- <path>`, asked at the process boundary a human uses:
+// one passing spec folder, one deliberately mismatched scratch copy, and one
+// refused subfolder of a tier that has no spec folders (#231).
+//
+// The script spawns the compiled `mh`, so build first (trap 9 in
+// docs/agents/verification.md).
+
+import { spawnSync } from 'node:child_process';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
+import { conformanceRoot } from '../case-corpus.ts';
+
+const REPOSITORY = join(conformanceRoot(), '..', '..');
+const SCRIPT = join(REPOSITORY, 'src', 'packages', 'conformance', 'run-spec-folder.ts');
+const FOLDER = 'fixtures/conformance/body-structure/docs/maxCount__exactly-two';
+
+function conformance(argument: string): { stdout: string; stderr: string; code: number | null } {
+  const run = spawnSync(process.execPath, [SCRIPT, argument], { cwd: REPOSITORY, encoding: 'utf8' });
+  return { stdout: run.stdout, stderr: run.stderr, code: run.status };
+}
+
+const scratch = mkdtempSync(join(tmpdir(), 'mh-conformance-script-'));
+afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+
+describe('npm run conformance', () => {
+  describe('success cases', () => {
+    it('prints the spec line, each case against its marker and the identical frozen check, and exits 0', () => {
+      // ARRANGE
+      const expected = {
+        code: 0,
+        lines: [
+          'spec  body-structure/docs/maxCount__exactly-two',
+          '  # Spec: An enumeration whose `minCount` and `maxCount` are equal asks for exactly that many repeats.',
+          '  one.md    FAILS       ok',
+          '  three.md  FAILS       ok',
+          '  two.md    PASSES      ok',
+          '  governed: 3 stated, 3 reported  ok',
+          '  expected-check.json  identical',
+          'agrees',
+        ],
+      };
+      // ACT
+      const run = conformance(FOLDER);
+      const actual = { code: run.code, lines: run.stdout.trimEnd().split('\n') };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('names the case and the frozen line that disagree in a mismatched scratch copy, and exits 1', () => {
+      // two.md now claims to fail, and the config asks for three repeats, so
+      // three.md passes where its marker says it fails and the frozen check moves.
+      // ARRANGE
+      const copy = join(scratch, 'mismatched');
+      cpSync(join(REPOSITORY, FOLDER), copy, { recursive: true });
+      const two = join(copy, 'two.md');
+      writeFileSync(two, readFileSync(two, 'utf8').replace('expect: PASSES', 'expect: FAILS'));
+      const config = join(copy, 'markdown-harness.config.yaml');
+      writeFileSync(
+        config,
+        readFileSync(config, 'utf8').replace('minCount: 2, maxCount: 2', 'minCount: 3, maxCount: 3'),
+      );
+      const expected = {
+        code: 1,
+        stderr: '',
+        stdout: expect.stringMatching(
+          / {2}three\.md {2}FAILS {7}MISMATCH {2}\(not reported failing\)\n[\s\S]* {2}expected-check\.json {2}DIFFERS\n {4}-.*"minCount": 2,\n {4}-.*"maxCount": 2\n {4}\+.*"minCount": 3,[\s\S]*\nDISAGREES\n$/u,
+        ),
+      };
+      // ACT
+      const run = conformance(copy);
+      // ASSERT
+      expect(run).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('refuses a frontmatter subfolder with the reason, and exits 2', () => {
+      // ARRANGE
+      const expected = {
+        code: 2,
+        stdout: '',
+        stderr: expect.stringContaining('the frontmatter tier is not split into spec folders'),
+      };
+      // ACT
+      const actual = conformance('fixtures/conformance/frontmatter/docs/reference');
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});
