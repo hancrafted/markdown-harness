@@ -23,7 +23,7 @@ export interface BodyStructureConfig {
 }
 
 /**
- * One Rule: a selector, a reason, and a template.
+ * One Rule: a selector, a reason, and the Constraints it makes.
  *
  * Selects on Core's two literal axes plus `types`, the third axis this Module
  * alone owns. Every axis the Rule carries must match, an

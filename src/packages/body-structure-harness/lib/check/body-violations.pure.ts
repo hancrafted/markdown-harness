@@ -21,26 +21,20 @@
  * callers hold a Rule and a body, never a cursor.
  */
 
-import type { BodyStructureRule, HeadingEntry } from '../../section.ts';
+import type { BodyStructureRule } from '../../section.ts';
 import type { OutlineSection } from '../document/document.types.ts';
 import { sectionsOf } from '../document/outline.pure.ts';
 import { closesSpine } from '../section/spine-closure.pure.ts';
-import type { Claim, EntryFinding, WalkedSpine } from './body-check.types.ts';
+import type { EntryFinding, Placement, Walk, WalkedSpine } from './body-check.types.ts';
 import { contentViolations } from './content-violations.pure.ts';
 import { walkNested } from './nested-walk.pure.ts';
 import { levelViolations, unlistedViolations } from './outline-violations.pure.ts';
 import { claimedPositions } from './spine-walk.pure.ts';
 import type { BodyStructureViolation, EntryLocator } from './violation.types.ts';
 
-/** One entry and where it sits in the config. */
-interface Slot {
-  entry: HeadingEntry;
-  locator: EntryLocator;
-}
-
 /** A `heading` entry: missing or out of order, else repeated. */
 function headingViolations(
-  { entry, locator }: Slot,
+  { entry, locator }: Placement,
   finding: EntryFinding,
   repeats: number,
 ): readonly BodyStructureViolation[] {
@@ -56,7 +50,7 @@ function headingViolations(
 
 /** An `enumeration` entry: out of order when a repeat lay outside its run, then below its minimum or above its maximum. */
 function enumerationViolations(
-  { entry, locator }: Slot,
+  { entry, locator }: Placement,
   found: number,
   outside: number,
 ): readonly BodyStructureViolation[] {
@@ -77,16 +71,14 @@ function locatorOf({ prefix, under }: WalkedSpine, index: number): EntryLocator 
   return { entry: [...prefix, index], ...(under === undefined ? {} : { under }) };
 }
 
-/** Every spine violation one walked list carries, in entry order. */
-function spineViolations(walked: WalkedSpine): readonly BodyStructureViolation[] {
-  const { spine, walk } = walked;
-  return spine.entries.flatMap((entry, index) => {
+/** Every spine violation one walked list carries, in entry order, read off its entries' placements. */
+function spineViolations(walk: Walk, placements: readonly Placement[]): readonly BodyStructureViolation[] {
+  return placements.flatMap((placement, index) => {
     const finding = walk.findings[index] as EntryFinding;
-    const extra = walk.given.get(index) ?? 0;
-    const slot = { entry, locator: locatorOf(walked, index) };
-    return entry.purpose === 'heading'
-      ? headingViolations(slot, finding, extra)
-      : enumerationViolations(slot, finding.repeats.length + extra, extra);
+    const leftover = walk.leftovers.get(index) ?? 0;
+    return placement.entry.purpose === 'heading'
+      ? headingViolations(placement, finding, leftover)
+      : enumerationViolations(placement, finding.repeats.length + leftover, leftover);
   });
 }
 
@@ -96,7 +88,7 @@ function spineViolations(walked: WalkedSpine): readonly BodyStructureViolation[]
  * repeats of its run. A heading the walk left over is claimed by nobody and so
  * its section is judged by nobody.
  */
-function claimsOf(walked: WalkedSpine, sections: readonly OutlineSection[]): readonly Claim[] {
+function placementsOf(walked: WalkedSpine, sections: readonly OutlineSection[]): readonly Placement[] {
   const { spine, walk, start } = walked;
   return spine.entries.map((entry, index) => ({
     entry,
@@ -119,11 +111,12 @@ function claimsOf(walked: WalkedSpine, sections: readonly OutlineSection[]): rea
 export function bodyViolations(rule: BodyStructureRule, body: string): readonly BodyStructureViolation[] {
   const sections = sectionsOf(body);
   const outline = sections.map(({ heading }) => heading);
-  const scopes = walkNested(rule.headings ?? [], outline);
+  const spines = walkNested(rule.headings ?? [], outline);
+  const placed = spines.map((walked) => ({ walk: walked.walk, placements: placementsOf(walked, sections) }));
   return [
     ...levelViolations(rule.maxLevel, outline),
-    ...unlistedViolations({ closed: closesSpine(rule), scopes }, outline),
-    ...scopes.flatMap(spineViolations),
-    ...contentViolations(scopes.flatMap((walked) => claimsOf(walked, sections))),
+    ...unlistedViolations({ closed: closesSpine(rule), spines }, outline),
+    ...placed.flatMap(({ walk, placements }) => spineViolations(walk, placements)),
+    ...contentViolations(placed.flatMap(({ placements }) => placements)),
   ];
 }

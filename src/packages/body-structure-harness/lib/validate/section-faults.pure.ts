@@ -25,9 +25,10 @@ import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { BodyStructureConfig, BodyStructureRule } from '../../section.ts';
 import { writesClosureBeyondDefault } from '../section/spine-closure.pure.ts';
 import { closedSpineFaults, undefinedHeadingsFaults } from './closed-spine-faults.pure.ts';
+import { fault } from './fault.pure.ts';
 import type { BodyStructureFault } from './fault.types.ts';
 import { intentFaults } from './intent-faults.pure.ts';
-import { headingsFaults, maxLevelFaults } from './template-faults.pure.ts';
+import { headingsFaults, maxLevelFaults } from './spine-faults.pure.ts';
 
 /** The section's own address. */
 const SECTION = 'body-structure';
@@ -61,7 +62,7 @@ function identityFaults(rule: Record<string, unknown>, at: string): readonly Bod
   const named = typeof rule.ruleId === 'string' && rule.ruleId !== '';
   return [
     ...(named ? [] : [invalidValue(`${at}.ruleId`)]),
-    ...('intent' in rule ? intentFaults(rule, at) : [{ code: 'CONFIG_MISSING_RULE_INTENT', location: at } as const]),
+    ...('intent' in rule ? intentFaults(rule, at) : [fault('CONFIG_MISSING_RULE_INTENT', at)]),
   ];
 }
 
@@ -74,7 +75,7 @@ function identityFaults(rule: Record<string, unknown>, at: string): readonly Bod
  */
 function payloadFaults(rule: Record<string, unknown>, at: string): readonly BodyStructureFault[] {
   const payload = 'maxLevel' in rule || 'headings' in rule || writesClosureBeyondDefault(rule);
-  return payload ? [] : [{ code: 'CONFIG_EMPTY_CONSTRAINT', location: at }];
+  return payload ? [] : [fault('CONFIG_EMPTY_CONSTRAINT', at)];
 }
 
 /** Every fault one Rule carries, in walk order. */
@@ -100,8 +101,7 @@ function duplicateIdFaults(rules: readonly unknown[]): readonly BodyStructureFau
   const faults: BodyStructureFault[] = [];
   rules.forEach((rule, index) => {
     if (!isMapping(rule) || typeof rule.ruleId !== 'string') return;
-    if (claimed.has(rule.ruleId))
-      faults.push({ code: 'CONFIG_DUPLICATE_RULE_ID', location: `${RULES}[${index}].ruleId` });
+    if (claimed.has(rule.ruleId)) faults.push(fault('CONFIG_DUPLICATE_RULE_ID', `${RULES}[${index}].ruleId`));
     claimed.add(rule.ruleId);
   });
   return faults;
@@ -117,9 +117,9 @@ export function sectionFaults(section: unknown): readonly BodyStructureFault[] {
 
   const keys = unrecognisedKeys(section, SECTION_KEYS, SECTION);
   const rules = section.rules;
-  if (rules === undefined) return [...keys, { code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
+  if (rules === undefined) return [...keys, fault('CONFIG_EMPTY_RULE_LIST', RULES)];
   if (!Array.isArray(rules)) return [...keys, invalidValue(RULES)];
-  if (rules.length === 0) return [...keys, { code: 'CONFIG_EMPTY_RULE_LIST', location: RULES }];
+  if (rules.length === 0) return [...keys, fault('CONFIG_EMPTY_RULE_LIST', RULES)];
 
   return [
     ...keys,

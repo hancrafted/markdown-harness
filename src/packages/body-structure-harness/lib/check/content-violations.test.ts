@@ -2,7 +2,7 @@
 // sections it claimed, which blocks does its `mayHold` not list.
 //
 // The walk that decides which sections an entry claimed is `bodyViolations`'s
-// and is tested there; this file states only what is reported for a claim.
+// and is tested there; this file states only what is reported for a placement.
 
 import { describe, expect, it } from 'vitest';
 import type { BlockKind, HeadingEntry } from '../../section.ts';
@@ -123,7 +123,7 @@ describe('contentViolations', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('orders findings by claim, then section in document order, then kind, each carrying its locator', () => {
+    it('orders findings by placement, then section in document order, then kind, each carrying its locator', () => {
       // ARRANGE
       const expected = [
         [[0], undefined, 'A', 'ordered-list'],

@@ -94,8 +94,8 @@ export function walkSpine(spine: Spine): Walk {
   const findings = entries.map((entry, index) =>
     entry.purpose === 'enumeration' ? walkEnumeration(spine, index, state) : walkHeading(spine, index, state),
   );
-  const leftovers = positions(outline.length).filter((position) => !state.taken.has(position));
-  return { findings, given: leftoversPerEntry(spine, findings, leftovers) };
+  const untaken = positions(outline.length).filter((position) => !state.taken.has(position));
+  return { findings, leftovers: leftoversPerEntry(spine, findings, untaken) };
 }
 
 /** The index of the entry a leftover heading is given to, when there is one. */

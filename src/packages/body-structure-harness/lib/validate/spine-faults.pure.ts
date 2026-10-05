@@ -1,5 +1,5 @@
 /**
- * Validate the template half of one Rule: its `maxLevel:` and its `headings:`
+ * Validate the heading Constraints of one Rule: its `maxLevel:` and its `headings:`
  * spine, at every depth: a nested `headings:` list is the same grammar as the
  * Rule's own, validated by the same walk, and each of its entries must sit
  * deeper than its parent.
@@ -165,7 +165,7 @@ export function maxLevelFaults(rule: Record<string, unknown>, at: string): reado
 /**
  * Every fault in one Rule's `headings:` list, at every depth.
  *
- * An entry deeper than the Rule's `maxLevel` is a template no file can satisfy,
+ * An entry deeper than the Rule's `maxLevel` is a spine no file can satisfy,
  * decided only when `maxLevel` and the entry's own `level` are both valid, and
  * not at all beside `undefinedHeadings: forbid`, where `maxLevel` is already
  * refused and names a limit not in force.

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { levelViolations, unlistedViolations } from './outline-violations.pure.ts';
 
 /** One walked list, as `unlistedViolations` takes it. */
-type WalkedSpine = Parameters<typeof unlistedViolations>[0]['scopes'][number];
+type WalkedSpine = Parameters<typeof unlistedViolations>[0]['spines'][number];
 
 const TITLE = { level: 1, content: 'Report' };
 const ASIDE = { level: 2, content: 'Aside' };
@@ -17,7 +17,7 @@ const MATCHES_H2 = (heading: { level: number }) => heading.level === 2;
 const MATCHES_H3 = (heading: { level: number }) => heading.level === 3;
 
 /** One walked list over `outline` from `start` to its end, with the given matchers; the walk itself is never read here. */
-const scope = (
+const walked = (
   outline: readonly { level: number; content: string }[],
   matchers: readonly ((heading: { level: number }) => boolean)[],
   start = 0,
@@ -25,7 +25,7 @@ const scope = (
   prefix: [],
   start,
   spine: { entries: [], matchers, outline: outline.slice(start) },
-  walk: { findings: [], given: new Map() },
+  walk: { findings: [], leftovers: new Map() },
 });
 
 const undefinedHeading = (level: number, content: string) => ({
@@ -42,7 +42,7 @@ describe('outline violations', () => {
       const outline = [TITLE, ASIDE];
       const expected = [undefinedHeading(2, 'Aside')];
       // ACT
-      const actual = unlistedViolations({ closed: true, scopes: [scope(outline, [MATCHES_TITLE])] }, outline);
+      const actual = unlistedViolations({ closed: true, spines: [walked(outline, [MATCHES_TITLE])] }, outline);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -53,7 +53,7 @@ describe('outline violations', () => {
       const expected: readonly unknown[] = [];
       // ACT
       const actual = unlistedViolations(
-        { closed: true, scopes: [scope(outline, [MATCHES_TITLE]), scope(outline, [MATCHES_H3], 1)] },
+        { closed: true, spines: [walked(outline, [MATCHES_TITLE]), walked(outline, [MATCHES_H3], 1)] },
         outline,
       );
       // ASSERT
@@ -79,7 +79,7 @@ describe('outline violations', () => {
       const expected = [undefinedHeading(3, 'Stray')];
       // ACT
       const actual = unlistedViolations(
-        { closed: true, scopes: [scope(outline, [MATCHES_TITLE, MATCHES_H2]), scope(outline, [MATCHES_H3], 3)] },
+        { closed: true, spines: [walked(outline, [MATCHES_TITLE, MATCHES_H2]), walked(outline, [MATCHES_H3], 3)] },
         outline,
       );
       // ASSERT
@@ -91,7 +91,7 @@ describe('outline violations', () => {
       const outline = [h3('X'), h3('X')];
       const expected = 2;
       // ACT
-      const actual = unlistedViolations({ closed: true, scopes: [scope(outline, [])] }, outline).length;
+      const actual = unlistedViolations({ closed: true, spines: [walked(outline, [])] }, outline).length;
       // ASSERT
       expect(actual).toBe(expected);
     });
@@ -103,8 +103,8 @@ describe('outline violations', () => {
       const expected = [[], [], []];
       // ACT
       const actual = [
-        unlistedViolations({ closed: false, scopes: [scope([ASIDE], [])] }, [ASIDE]),
-        unlistedViolations({ closed: true, scopes: [scope([], [])] }, []),
+        unlistedViolations({ closed: false, spines: [walked([ASIDE], [])] }, [ASIDE]),
+        unlistedViolations({ closed: true, spines: [walked([], [])] }, []),
         levelViolations(undefined, [ASIDE]),
       ];
       // ASSERT
