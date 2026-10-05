@@ -50,8 +50,13 @@ const NOTHING_WRONG = 0;
 /** The corpus is wrong. `check` alone can exit this, and exactly when `invalidFiles > 0`. */
 const CORPUS_IS_WRONG = 1;
 
+/** Could not report: one refusal on stderr, nothing on stdout, exit 2. */
+function cannotReport(stderr: string): Termination {
+  return { stdout: '', stderr, code: CANNOT_REPORT };
+}
+
 /** Usage text on stderr, nothing on stdout, exit 2. */
-const USAGE_ERROR: Termination = { stdout: '', stderr: USAGE, code: CANNOT_REPORT };
+const USAGE_ERROR: Termination = cannotReport(USAGE);
 /** Help text on stdout, nothing on stderr, exit 0. */
 const HELP_ANSWER: Termination = { stdout: HELP, stderr: '', code: NOTHING_WRONG };
 
@@ -154,7 +159,7 @@ function auditTermination(gathered: AuditGathered): Termination {
     // A Module selecting on frontmatter `type` opens files to tally them, so an
     // audit can be refused for an unreadable file on the same terms as a check.
     if (outcome.kind === 'unreadable') {
-      return { stdout: '', stderr: unreadableGovernedFile(outcome.path), code: CANNOT_REPORT };
+      return cannotReport(unreadableGovernedFile(outcome.path));
     }
 
     return fromConfigOutcome(
@@ -176,7 +181,7 @@ function assessTermination(gathered: AssessGathered): Termination {
 function checkTermination(gathered: CheckGathered): Termination {
   return withCorpus(gathered.outcome, (outcome) => {
     if (outcome.kind === 'unreadable') {
-      return { stdout: '', stderr: unreadableGovernedFile(outcome.path), code: CANNOT_REPORT };
+      return cannotReport(unreadableGovernedFile(outcome.path));
     }
 
     return fromConfigOutcome(
@@ -225,9 +230,9 @@ function terminationForCommand(gathered: CommandGathered): Termination {
 export function terminationFor(gathered: Gathered): Termination {
   switch (gathered.kind) {
     case 'runtime-refused':
-      return { stdout: '', stderr: gathered.refusal, code: CANNOT_REPORT };
+      return cannotReport(gathered.refusal);
     case 'argv-refused':
-      return { stdout: '', stderr: usageRefusal(gathered.reason), code: CANNOT_REPORT };
+      return cannotReport(usageRefusal(gathered.reason));
     case 'help':
       return HELP_ANSWER;
     default:

@@ -16,13 +16,12 @@ import { listMarkdownFiles } from '../../../foundation/list-markdown-files.ts';
 import { loadConfig } from '../../../foundation/load-config.ts';
 import { normalisePath } from '../../../foundation/path-shape.ts';
 import { MODULE_SET } from '../../module-set.ts';
-import type { Invocation } from '../argv/argv.types.ts';
+import type { Invocation, ReportingCommand } from '../argv/argv.types.ts';
 import { auditVerdict } from './audit-report.pure.ts';
 import { checkVerdict } from './corpus-verdict.pure.ts';
 import type { DeclaredRequirements, DeclaredViolation } from './declared-module.types.ts';
 import { hostInstant } from './host-instant.impure.ts';
 import { gatherAnswers, implementing, inScope, moduleCommands } from './module-answers.pure.ts';
-import type { Verb } from './module-answers.types.ts';
 import { pathAssessment } from './path-assessment.pure.ts';
 import { pathGovernance } from './path-governance.pure.ts';
 import { resolvedInstant, route, terminationFor, withCorpusGuard } from './termination.pure.ts';
@@ -46,7 +45,7 @@ type LoadedConfiguration = NonNullable<ReturnType<typeof loadConfig>['config']>;
  * against the WHOLE set: it is one file and fails whole, so a fault under
  * another Module's key refuses a scoped run too.
  */
-function asked<TVerb extends Verb>(invocation: Invocation, verb: TVerb) {
+function asked<TVerb extends ReportingCommand>(invocation: Invocation, verb: TVerb) {
   return implementing(inScope(MODULE_SET, invocation.modules), verb);
 }
 

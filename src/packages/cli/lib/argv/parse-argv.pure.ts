@@ -19,13 +19,8 @@
 
 import type { Invocation, ModuleCommands, ParsedArgv, ReportingCommand } from './argv.types.ts';
 import { isAssessmentInstant } from './assessment-instant.pure.ts';
+import { REPORTING_COMMANDS } from './reporting-commands.pure.ts';
 import { DEFAULT_CONFIG, DEFAULT_ROOT } from './usage.pure.ts';
-
-/**
- * The reporting commands, in the order the synopsis lists them — the one list
- * both the parser and the Module-port reading in `module-answers.pure.ts` use.
- */
-export const REPORTING_COMMANDS: readonly ReportingCommand[] = ['check', 'query', 'audit', 'assess'];
 
 /** The commands that take one path after the command word. */
 const PATH_COMMANDS: readonly ReportingCommand[] = ['query', 'assess'];
@@ -36,14 +31,14 @@ const VALUE_FLAGS: readonly string[] = ['--root', '--config', '--now'];
 /** The one flag that takes none. */
 const HELP_FLAG = '--help';
 
-/** The one command `--now` means anything to. */
-const ASSESS = 'assess';
+/** The refusing half of what the parser answers. */
+type Refused = Extract<ParsedArgv, { kind: 'refused' }>;
 
 /** A refusal the usage text alone explains. */
-const REFUSED: ParsedArgv = { kind: 'refused', reason: '' };
+const REFUSED: Refused = { kind: 'refused', reason: '' };
 
 /** A refusal naming the alternatives the synopsis cannot. */
-function refusedFor(reason: string): ParsedArgv {
+function refusedFor(reason: string): Refused {
   return { kind: 'refused', reason };
 }
 
@@ -101,12 +96,13 @@ function listed(names: readonly string[]): string {
 }
 
 /** The keys of the Modules implementing one command, in declared order. */
-function implementing(modules: readonly ModuleCommands[], command: ReportingCommand): string[] {
+function implementerKeys(modules: readonly ModuleCommands[], command: ReportingCommand): string[] {
   return modules.filter((module) => module.commands.includes(command)).map((module) => module.key);
 }
 
 /** What the command words resolved to, before flags are checked against them. */
 interface Resolved {
+  readonly kind: 'resolved';
   readonly command: ReportingCommand;
   readonly modules: readonly string[];
   readonly operands: readonly string[];
@@ -123,17 +119,17 @@ function scoped(
   module: ModuleCommands,
   words: readonly string[],
   modules: readonly ModuleCommands[],
-): Resolved | ParsedArgv {
+): Resolved | Refused {
   const [, command, ...operands] = words;
   if (command === undefined) return refusedFor(`${module.key} needs a command: ${listed(module.commands)}`);
   if (!isCommand(command)) return REFUSED;
   if (!module.commands.includes(command)) {
-    const others = implementing(modules, command);
+    const others = implementerKeys(modules, command);
     const alternatives =
       others.length === 0 ? 'no Module does' : `${listed(others)} ${others.length === 1 ? 'does' : 'do'}`;
     return refusedFor(`${module.key} does not implement ${command}; ${alternatives}`);
   }
-  return { command, modules: [module.key], operands };
+  return { kind: 'resolved', command, modules: [module.key], operands };
 }
 
 /**
@@ -142,13 +138,13 @@ function scoped(
  * No words at all means `check`, unscoped: bare `mh` checks the directory the
  * way `docker compose` finds its own file where you stand.
  */
-function resolved(words: readonly string[], modules: readonly ModuleCommands[]): Resolved | ParsedArgv {
+function resolved(words: readonly string[], modules: readonly ModuleCommands[]): Resolved | Refused {
   const [first, ...rest] = words;
   if (first === undefined || isCommand(first)) {
     const command = first ?? 'check';
-    const keys = implementing(modules, command);
+    const keys = implementerKeys(modules, command);
     if (keys.length === 0) return refusedFor(`no Module implements ${command}`);
-    return { command, modules: keys, operands: rest };
+    return { kind: 'resolved', command, modules: keys, operands: rest };
   }
 
   const module = modules.find((candidate) => candidate.key === first);
@@ -178,7 +174,7 @@ function conflicts(flags: Map<string, string>, { command, operands }: Resolved):
 
   // `--now` beside any command but `assess` would let a caller believe a
   // `check` had been pinned to an instant, and `check` reads no clock.
-  return flags.has('--now') && command !== ASSESS;
+  return flags.has('--now') && command !== 'assess';
 }
 
 /** The invocation, with the two documented defaults applied. */
@@ -218,9 +214,9 @@ export function parseArgv(argv: readonly string[], modules: readonly ModuleComma
   if (tokens === undefined) return REFUSED;
   if (tokens.flags.has(HELP_FLAG)) return helpOf(tokens);
 
-  const words = resolved(tokens.words, modules);
-  if ('kind' in words) return words;
-  if (conflicts(tokens.flags, words)) return REFUSED;
+  const resolution = resolved(tokens.words, modules);
+  if (resolution.kind === 'refused') return resolution;
+  if (conflicts(tokens.flags, resolution)) return REFUSED;
 
   // An unparseable instant is a usage error, decided here because it is a
   // property of the argument alone. A well-formed value naming no day —
@@ -229,5 +225,5 @@ export function parseArgv(argv: readonly string[], modules: readonly ModuleComma
   const now = tokens.flags.get('--now');
   if (now !== undefined && !isAssessmentInstant(now)) return REFUSED;
 
-  return { kind: 'parsed', invocation: invocationOf(tokens.flags, words) };
+  return { kind: 'parsed', invocation: invocationOf(tokens.flags, resolution) };
 }

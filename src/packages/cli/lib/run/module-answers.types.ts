@@ -12,6 +12,7 @@
 import type { ModuleDescriptor } from '../../../config-contract/index.ts';
 import type { Unreadable } from '../../../foundation/read-corpus.ts';
 import type { ModuleAssess, ModuleAudit, ModuleCheck, ModuleClaim } from '../../../response-contract/index.ts';
+import type { ReportingCommand } from '../argv/argv.types.ts';
 
 /**
  * Every claim a Module makes on a path, in the order it gave them; empty when it passes the path by.
@@ -43,16 +44,13 @@ export interface ModuleAnswer<TAnswer> {
   readonly answer: TAnswer;
 }
 
-/** The command verbs of the Module port, every one of them optional. */
-export type Verb = 'query' | 'audit' | 'assess' | 'check';
-
 /**
  * One Module, narrowed to a descriptor that carries the verb.
  *
  * Distributes over a union of descriptors, so each declared Module keeps its
  * own answer type; a Module whose type has no such member drops out entirely.
  */
-export type Implementing<TModule, TVerb extends Verb> = TModule extends unknown
+export type Implementing<TModule, TVerb extends ReportingCommand> = TModule extends unknown
   ? TVerb extends keyof TModule
     ? TModule & { readonly [K in TVerb]-?: NonNullable<TModule[K]> }
     : never

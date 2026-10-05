@@ -8,9 +8,9 @@
  */
 
 import type { Unreadable } from '../../../foundation/read-corpus.ts';
-import type { ModuleCommands } from '../argv/argv.types.ts';
-import { REPORTING_COMMANDS } from '../argv/parse-argv.pure.ts';
-import type { Implementing, ModuleAnswer, Verb } from './module-answers.types.ts';
+import type { ModuleCommands, ReportingCommand } from '../argv/argv.types.ts';
+import { REPORTING_COMMANDS } from '../argv/reporting-commands.pure.ts';
+import type { Implementing, ModuleAnswer } from './module-answers.types.ts';
 
 /**
  * Every Module's answer to one verb, in declared Module order.
@@ -35,10 +35,10 @@ export function gatherAnswers<TModule extends { readonly key: string }, TAnswer>
  * @param modules The declared Module set.
  * @param verb The command verb about to be asked.
  */
-export function implementing<TModule extends Partial<Record<Verb, unknown>>, TVerb extends Verb>(
-  modules: readonly TModule[],
-  verb: TVerb,
-): Implementing<TModule, TVerb>[] {
+export function implementing<
+  TModule extends Partial<Record<ReportingCommand, unknown>>,
+  TVerb extends ReportingCommand,
+>(modules: readonly TModule[], verb: TVerb): Implementing<TModule, TVerb>[] {
   return modules.filter((module): module is Implementing<TModule, TVerb> => module[verb] !== undefined);
 }
 
@@ -53,7 +53,7 @@ export function implementing<TModule extends Partial<Record<Verb, unknown>>, TVe
  *
  * @param modules The declared Module set.
  */
-export function moduleCommands<TModule extends { readonly key: string } & Partial<Record<Verb, unknown>>>(
+export function moduleCommands<TModule extends { readonly key: string } & Partial<Record<ReportingCommand, unknown>>>(
   modules: readonly TModule[],
 ): ModuleCommands[] {
   return modules.map((module) => ({
