@@ -1,0 +1,162 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 9,
+      "invalidFiles": 6,
+      "totalViolations": 6
+    },
+    "files": [
+      {
+        "path": "adr-h4.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "decision-records",
+            "ruleIntent": "A decision record reads the same way every time, so a reviewer finds the status and the reasoning without hunting.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 4,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 3
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "adr-missing-context.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "decision-records",
+            "ruleIntent": "A decision record reads the same way every time, so a reviewer finds the status and the reasoning without hunting.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  2
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Context$",
+                  "intent": "The forces that made a decision necessary."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "adr-optional-misplaced.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "decision-records",
+            "ruleIntent": "A decision record reads the same way every time, so a reviewer finds the status and the reasoning without hunting.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  4
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Consequences$",
+                  "presence": "optional",
+                  "intent": "What gets easier and what gets harder."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "adr-optional-twice.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "decision-records",
+            "ruleIntent": "A decision record reads the same way every time, so a reviewer finds the status and the reasoning without hunting.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  4
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Consequences$",
+                  "presence": "optional",
+                  "intent": "What gets easier and what gets harder."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "adr-status-twice.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "decision-records",
+            "ruleIntent": "A decision record reads the same way every time, so a reviewer finds the status and the reasoning without hunting.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  1
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Status$",
+                  "intent": "Proposed, accepted or superseded, with the date."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "adr-swapped.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "decision-records",
+            "ruleIntent": "A decision record reads the same way every time, so a reviewer finds the status and the reasoning without hunting.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  3
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Decision$",
+                  "intent": "What was decided and why."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

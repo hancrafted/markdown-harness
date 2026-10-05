@@ -1,0 +1,20 @@
+# Spec: A selector axis that lists three values matches any one of them, and a file is selected only when every axis matches.
+# Selector reach: cases keep their tier paths, and every competing Rule is copied byte for byte in declared order,
+# because the first Rule that selects a file wins it.
+body-structure:
+  rules:
+    - ruleId: guides
+      types: [guide]
+      intent: 'A guide is a title and at least two sections, wherever it lives.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 2 }
+
+    - ruleId: triple-plural
+      folders: [docs/tp/one/, docs/tp/two/, docs/tp/three/]
+      fileNames: [a.md, b.md, c.md]
+      types: [t1, t2, t3]
+      intent: 'Every axis lists three values, so a file is governed only when each axis matches and the match need not be the first listed.'
+      headings:
+        - { purpose: heading, level: 1 }

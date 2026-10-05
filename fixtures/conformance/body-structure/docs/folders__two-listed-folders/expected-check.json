@@ -1,0 +1,65 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 4,
+      "invalidFiles": 2,
+      "totalViolations": 2
+    },
+    "files": [
+      {
+        "path": "docs/handbook/second-title.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "open-template",
+            "ruleIntent": "A handbook or manual page opens with a title and an Overview, and may nest as deep as it needs.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/manual/page.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "open-template",
+            "ruleIntent": "A handbook or manual page opens with a title and an Overview, and may nest as deep as it needs.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Overview$",
+                  "intent": "What the page covers, in a paragraph."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

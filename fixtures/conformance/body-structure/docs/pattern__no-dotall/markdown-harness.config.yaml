@@ -1,0 +1,10 @@
+# Spec: A dot in a pattern does not match the line break inside a setext heading.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: no-dotall
+      folders: ['./']
+      intent: 'A dot is not a line break.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Source:.One$' }

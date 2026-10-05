@@ -1,0 +1,29 @@
+# Spec: A `headings` list nested under an enumeration is walked once under every repeat the enumeration claims.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: guides
+      types: [guide]
+      intent: 'A guide is a title and at least two sections, wherever it lives.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 2 }
+
+    - ruleId: nested-changelog
+      folders: ['./']
+      intent: 'A changelog has one title and a heading per release, and each release lists its changes under at most one heading per change type, in the order Keep a Changelog gives them.'
+      undefinedHeadings: forbid
+      headings:
+        - { purpose: heading, level: 1, allowed: [{ title: Changelog }] }
+        - purpose: enumeration
+          level: 2
+          pattern: '^\['
+          minCount: 1
+          headings:
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Added, intent: 'New features.' }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Changed, intent: 'Changes in existing functionality.' }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Deprecated, intent: 'Soon-to-be removed features.' }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Removed, intent: 'Now removed features.' }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Fixed, intent: 'Any bug fixes.' }] }
+            - { purpose: heading, level: 3, presence: optional, allowed: [{ title: Security, intent: 'In case of vulnerabilities.' }] }

@@ -5,6 +5,15 @@ import type { ConformanceTier } from './lib/tier/tier-record.types.ts';
 export type { ConformanceTier } from './lib/tier/tier-record.types.ts';
 
 /**
+ * The adopter's default config file name, which `mh` finds with no flag.
+ *
+ * One constant for every tier whose config sits where an adopter's would: each
+ * spec folder of a spec-folder tier is a synthetic repo root, and each
+ * rejected-config case writes its bytes under the name a load would look for.
+ */
+export const ADOPTER_CONFIG_FILE = 'markdown-harness.config.yaml';
+
+/**
  * Every Conformance tier and the metadata its runner must use.
  *
  * In directory-name order, because the enrolment check compares this list
@@ -16,9 +25,9 @@ export type { ConformanceTier } from './lib/tier/tier-record.types.ts';
 export const CONFORMANCE_TIERS = [
   {
     name: 'body-structure',
-    caseKind: 'markdown',
-    configFile: 'valid-test-config.yaml',
-    caseCount: 295,
+    caseKind: 'spec-folder',
+    configFile: ADOPTER_CONFIG_FILE,
+    caseCount: 301,
   },
   {
     name: 'frontmatter',
@@ -36,7 +45,7 @@ export const CONFORMANCE_TIERS = [
   {
     name: 'rejected-config',
     caseKind: 'rejected-config',
-    configFile: 'markdown-harness.config.yaml',
+    configFile: ADOPTER_CONFIG_FILE,
     caseCount: 85,
   },
 ] as const satisfies readonly ConformanceTier[];

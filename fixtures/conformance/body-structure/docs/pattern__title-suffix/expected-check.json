@@ -1,0 +1,64 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 4,
+      "invalidFiles": 2,
+      "totalViolations": 2
+    },
+    "files": [
+      {
+        "path": "bare.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "suffix-titles",
+            "ruleIntent": "A report is titled as one.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": " Report$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "plural.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "suffix-titles",
+            "ruleIntent": "A report is titled as one.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": " Report$"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

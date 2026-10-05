@@ -1,0 +1,10 @@
+# Spec: `mayHold` on an enumeration applies to every repeat it claims.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: section-steps
+      folders: ['./']
+      intent: 'A procedure has a title and one section per step, and each step holds a numbered list and nothing else.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, pattern: '^Step: ', minCount: 1, mayHold: [ordered-list] }

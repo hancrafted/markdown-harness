@@ -1,0 +1,148 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 8,
+      "invalidFiles": 5,
+      "totalViolations": 5
+    },
+    "files": [
+      {
+        "path": "prefix-bare.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  3
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Source: ",
+                  "minCount": 1,
+                  "intent": "One section per source consulted."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "prefix-lowercase.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  3
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Source: ",
+                  "minCount": 1,
+                  "intent": "One section per source consulted."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "prefix-no-space.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  3
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Source: ",
+                  "minCount": 1,
+                  "intent": "One section per source consulted."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "prefix-plural.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  3
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Source: ",
+                  "minCount": 1,
+                  "intent": "One section per source consulted."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "prefix-setext-two-lines.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  3
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Source: ",
+                  "minCount": 1,
+                  "intent": "One section per source consulted."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

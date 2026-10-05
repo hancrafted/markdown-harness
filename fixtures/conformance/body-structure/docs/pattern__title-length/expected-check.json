@@ -1,0 +1,87 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 6,
+      "invalidFiles": 3,
+      "totalViolations": 3
+    },
+    "files": [
+      {
+        "path": "empty.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "short-titles",
+            "ruleIntent": "A code page has a title of two or three characters.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": "^.{2,3}$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "four.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "short-titles",
+            "ruleIntent": "A code page has a title of two or three characters.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": "^.{2,3}$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "one.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "short-titles",
+            "ruleIntent": "A code page has a title of two or three characters.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": "^.{2,3}$"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

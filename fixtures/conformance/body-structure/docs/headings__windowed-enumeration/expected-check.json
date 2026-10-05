@@ -1,0 +1,162 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 9,
+      "invalidFiles": 6,
+      "totalViolations": 6
+    },
+    "files": [
+      {
+        "path": "conclusion-twice.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "windowed",
+            "ruleIntent": "A chaptered page has an Intro, any number of Parts and a Conclusion, in that order.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  3
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Conclusion$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "intro-twice.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "windowed",
+            "ruleIntent": "A chaptered page has an Intro, any number of Parts and a Conclusion, in that order.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  1
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Intro$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "no-conclusion.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "windowed",
+            "ruleIntent": "A chaptered page has an Intro, any number of Parts and a Conclusion, in that order.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  3
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Conclusion$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "no-parts.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "windowed",
+            "ruleIntent": "A chaptered page has an Intro, any number of Parts and a Conclusion, in that order.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  2
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Part: ",
+                  "minCount": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "part-after-conclusion.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "windowed",
+            "ruleIntent": "A chaptered page has an Intro, any number of Parts and a Conclusion, in that order.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  2
+                ],
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Part: ",
+                  "minCount": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "part-before-intro.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "windowed",
+            "ruleIntent": "A chaptered page has an Intro, any number of Parts and a Conclusion, in that order.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  2
+                ],
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Part: ",
+                  "minCount": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

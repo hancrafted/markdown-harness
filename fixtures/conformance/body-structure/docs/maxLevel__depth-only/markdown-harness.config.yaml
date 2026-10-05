@@ -1,0 +1,8 @@
+# Spec: A Rule that writes only `maxLevel` reports every heading deeper than it and asks nothing else of the outline.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: depth-only
+      folders: ['./']
+      intent: 'A depth-only Rule forbids nesting past the second level and asks nothing else of the outline.'
+      maxLevel: 2

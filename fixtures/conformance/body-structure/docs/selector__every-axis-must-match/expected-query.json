@@ -1,0 +1,151 @@
+{
+  "docs/decisions/new.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "docs/decisions/new.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/decisions/new.md",
+      "modules": [
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "decision-records",
+            "intent": "A decision record reads the same way every time, so a reviewer finds the status and the reasoning without hunting."
+          },
+          "requirements": {
+            "types": [
+              "decision"
+            ],
+            "maxLevel": 3,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1,
+                "intent": "The decision, stated as a short noun phrase."
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Status$",
+                "intent": "Proposed, accepted or superseded, with the date."
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Context$",
+                "intent": "The forces that made a decision necessary."
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Decision$",
+                "intent": "What was decided and why."
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Consequences$",
+                "presence": "optional",
+                "intent": "What gets easier and what gets harder."
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "guides",
+            "intent": "A guide is a title and at least two sections, wherever it lives."
+          },
+          "requirements": {
+            "types": [
+              "guide"
+            ],
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "enumeration",
+                "level": 2,
+                "minCount": 2
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "docs/releases/CHANGELOG.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "docs/releases/CHANGELOG.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/releases/CHANGELOG.md",
+      "modules": [
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "guides",
+            "intent": "A guide is a title and at least two sections, wherever it lives."
+          },
+          "requirements": {
+            "types": [
+              "guide"
+            ],
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "enumeration",
+                "level": 2,
+                "minCount": 2
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "changelogs",
+            "intent": "A changelog is titled as one and carries one section per release."
+          },
+          "requirements": {
+            "types": [
+              "changelog"
+            ],
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1,
+                "pattern": "^Changelog$"
+              },
+              {
+                "purpose": "enumeration",
+                "level": 2,
+                "pattern": "^Release ",
+                "minCount": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

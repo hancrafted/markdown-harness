@@ -1,0 +1,52 @@
+{
+  "command": "audit",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "modules": [
+      {
+        "module": "frontmatter",
+        "rules": []
+      },
+      {
+        "module": "body-structure",
+        "rules": [
+          {
+            "rule": {
+              "ruleId": "guides",
+              "selector": {
+                "types": [
+                  "guide"
+                ]
+              },
+              "intent": "A guide is a title and at least two sections, wherever it lives."
+            },
+            "won": 0,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "allowed-titles",
+              "selector": {
+                "folders": [
+                  "./"
+                ]
+              },
+              "intent": "A journal is titled Notes or Journal and holds at least one entry, every one titled Entry."
+            },
+            "won": 6,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          }
+        ]
+      }
+    ]
+  }
+}

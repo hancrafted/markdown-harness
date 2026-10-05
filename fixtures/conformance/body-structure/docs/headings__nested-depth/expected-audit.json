@@ -1,0 +1,52 @@
+{
+  "command": "audit",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "modules": [
+      {
+        "module": "frontmatter",
+        "rules": []
+      },
+      {
+        "module": "body-structure",
+        "rules": [
+          {
+            "rule": {
+              "ruleId": "guides",
+              "selector": {
+                "types": [
+                  "guide"
+                ]
+              },
+              "intent": "A guide is a title and at least two sections, wherever it lives."
+            },
+            "won": 0,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "nested-depth",
+              "selector": {
+                "folders": [
+                  "./"
+                ]
+              },
+              "intent": "A guide has one title, at least one part, and in every part a summary that gives its details."
+            },
+            "won": 5,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          }
+        ]
+      }
+    ]
+  }
+}

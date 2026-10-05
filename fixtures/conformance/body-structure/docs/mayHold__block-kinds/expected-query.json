@@ -1,0 +1,106 @@
+{
+  "x.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "x.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "x.md",
+      "modules": [
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "guides",
+            "intent": "A guide is a title and at least two sections, wherever it lives."
+          },
+          "requirements": {
+            "types": [
+              "guide"
+            ],
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "enumeration",
+                "level": 2,
+                "minCount": 2
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "section-kinds",
+            "intent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made."
+          },
+          "requirements": {
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Prose$",
+                "presence": "optional",
+                "mayHold": [
+                  "prose"
+                ]
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Ordered$",
+                "presence": "optional",
+                "mayHold": [
+                  "ordered-list"
+                ]
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Bullets$",
+                "presence": "optional",
+                "mayHold": [
+                  "unordered-list"
+                ]
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Mixed$",
+                "presence": "optional",
+                "mayHold": [
+                  "prose",
+                  "ordered-list"
+                ]
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Anything$",
+                "presence": "optional",
+                "mayHold": [
+                  "prose",
+                  "ordered-list",
+                  "unordered-list"
+                ]
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Free$",
+                "presence": "optional"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# Spec: A caret anchors the whole heading content, never each of its lines.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: no-multiline
+      folders: ['./']
+      intent: 'A caret anchors the whole heading, not each of its lines.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^One$' }

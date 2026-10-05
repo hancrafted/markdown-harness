@@ -8,9 +8,9 @@ describe('Conformance tier records', () => {
       const declared = [
         {
           name: 'body-structure',
-          caseKind: 'markdown',
-          configFile: 'valid-test-config.yaml',
-          caseCount: 295,
+          caseKind: 'spec-folder',
+          configFile: 'markdown-harness.config.yaml',
+          caseCount: 301,
         },
         {
           name: 'frontmatter',

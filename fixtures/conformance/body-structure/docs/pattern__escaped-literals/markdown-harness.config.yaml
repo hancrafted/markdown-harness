@@ -1,0 +1,9 @@
+# Spec: A pattern matches characters a regular expression gives meaning to only where they are escaped.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: escaped-literals
+      folders: ['./']
+      intent: 'A title with characters a regular expression gives meaning to.'
+      headings:
+        - { purpose: heading, level: 1, pattern: '^C\+\+ \(draft\)$' }

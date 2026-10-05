@@ -1,0 +1,96 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 4,
+      "invalidFiles": 2,
+      "totalViolations": 3
+    },
+    "files": [
+      {
+        "path": "every-repeat.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-steps",
+            "ruleIntent": "A procedure has a title and one section per step, and each step holds a numbered list and nothing else.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Step: Prepare",
+                "kind": "prose",
+                "found": 1,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Step: ",
+                  "minCount": 1,
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Step: Cook",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Step: ",
+                  "minCount": 1,
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "second-repeat.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-steps",
+            "ruleIntent": "A procedure has a title and one section per step, and each step holds a numbered list and nothing else.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Step: Cook",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Step: ",
+                  "minCount": 1,
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

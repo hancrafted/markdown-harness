@@ -1,0 +1,12 @@
+# Spec: `undefinedHeadings: forbid` reports an undefined heading before, between and after the repeats of an enumeration.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: closed-sources
+      folders: ['./']
+      intent: 'A report has a title, one or two sources and a conclusion, and no other heading.'
+      undefinedHeadings: forbid
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, pattern: '^Source: ', minCount: 1, maxCount: 2 }
+        - { purpose: heading, level: 2, pattern: '^Conclusion$' }

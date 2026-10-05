@@ -1,0 +1,138 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 10,
+      "invalidFiles": 5,
+      "totalViolations": 5
+    },
+    "files": [
+      {
+        "path": "title-bold.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Findings$",
+                  "intent": "What was measured, with numbers."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "title-longer.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Findings$",
+                  "intent": "What was measured, with numbers."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "title-lowercase.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Findings$",
+                  "intent": "What was measured, with numbers."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "title-shorter.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Findings$",
+                  "intent": "What was measured, with numbers."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "title-wrong-level.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Findings$",
+                  "intent": "What was measured, with numbers."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

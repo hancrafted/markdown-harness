@@ -1,0 +1,55 @@
+{
+  "command": "audit",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "modules": [
+      {
+        "module": "frontmatter",
+        "rules": []
+      },
+      {
+        "module": "body-structure",
+        "rules": [
+          {
+            "rule": {
+              "ruleId": "guides",
+              "selector": {
+                "types": [
+                  "guide"
+                ]
+              },
+              "intent": "A guide is a title and at least two sections, wherever it lives."
+            },
+            "won": 0,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "adr-contract",
+              "selector": {
+                "folders": [
+                  "./"
+                ],
+                "types": [
+                  "adr"
+                ]
+              },
+              "intent": "An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list."
+            },
+            "won": 14,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          }
+        ]
+      }
+    ]
+  }
+}

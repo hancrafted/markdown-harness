@@ -1,0 +1,129 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 5,
+      "invalidFiles": 4,
+      "totalViolations": 5
+    },
+    "files": [
+      {
+        "path": "out-of-order.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "nested-changelog",
+            "ruleIntent": "A changelog has one title and a heading per release, and each release lists its changes under at most one heading per change type, in the order Keep a Changelog gives them.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  1,
+                  4
+                ],
+                "under": "[1.0.0] - 2026-01-01",
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 3,
+                  "presence": "optional",
+                  "allowed": [
+                    {
+                      "title": "Fixed",
+                      "intent": "Any bug fixes."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "repeated-in-release.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "nested-changelog",
+            "ruleIntent": "A changelog has one title and a heading per release, and each release lists its changes under at most one heading per change type, in the order Keep a Changelog gives them.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  1,
+                  0
+                ],
+                "under": "[1.0.0] - 2026-01-01",
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 3,
+                  "presence": "optional",
+                  "allowed": [
+                    {
+                      "title": "Added",
+                      "intent": "New features."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "stray-before-release.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "nested-changelog",
+            "ruleIntent": "A changelog has one title and a heading per release, and each release lists its changes under at most one heading per change type, in the order Keep a Changelog gives them.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 3,
+                "content": "Added",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "unknown-change-type.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "nested-changelog",
+            "ruleIntent": "A changelog has one title and a heading per release, and each release lists its changes under at most one heading per change type, in the order Keep a Changelog gives them.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 4,
+                "content": "Detail",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 3,
+                "content": "Improved",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

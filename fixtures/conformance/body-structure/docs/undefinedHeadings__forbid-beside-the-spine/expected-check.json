@@ -1,0 +1,139 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 9,
+      "invalidFiles": 5,
+      "totalViolations": 6
+    },
+    "files": [
+      {
+        "path": "h2-undefined.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-record",
+            "ruleIntent": "A decision record has a title and its sections in a fixed order and nothing else, so a reader finds the status and the decision without hunting through extras.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Rationale",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "h3-undefined.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-record",
+            "ruleIntent": "A decision record has a title and its sections in a fixed order and nothing else, so a reader finds the status and the decision without hunting through extras.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 3,
+                "content": "Notes",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "misplaced.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-record",
+            "ruleIntent": "A decision record has a title and its sections in a fixed order and nothing else, so a reader finds the status and the decision without hunting through extras.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  2
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Decision$",
+                  "intent": "What was decided and why."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "missing-and-undefined.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-record",
+            "ruleIntent": "A decision record has a title and its sections in a fixed order and nothing else, so a reader finds the status and the decision without hunting through extras.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Rationale",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Status$",
+                  "intent": "Proposed, accepted or superseded, with the date."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "repeated.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-record",
+            "ruleIntent": "A decision record has a title and its sections in a fixed order and nothing else, so a reader finds the status and the decision without hunting through extras.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  2
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Decision$",
+                  "intent": "What was decided and why."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

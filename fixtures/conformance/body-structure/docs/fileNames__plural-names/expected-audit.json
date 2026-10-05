@@ -1,0 +1,54 @@
+{
+  "command": "audit",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "modules": [
+      {
+        "module": "frontmatter",
+        "rules": []
+      },
+      {
+        "module": "body-structure",
+        "rules": [
+          {
+            "rule": {
+              "ruleId": "guides",
+              "selector": {
+                "types": [
+                  "guide"
+                ]
+              },
+              "intent": "A guide is a title and at least two sections, wherever it lives."
+            },
+            "won": 0,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "plural-names",
+              "selector": {
+                "fileNames": [
+                  "README.md",
+                  "GUIDE.md",
+                  "NOTES.md"
+                ]
+              },
+              "intent": "Three named files share one shape, so the second and the third name must select as surely as the first."
+            },
+            "won": 4,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          }
+        ]
+      }
+    ]
+  }
+}

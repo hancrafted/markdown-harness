@@ -1,0 +1,146 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 8,
+      "invalidFiles": 5,
+      "totalViolations": 5
+    },
+    "files": [
+      {
+        "path": "five.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "steps",
+            "ruleIntent": "A procedure has a title and between two and four steps.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 5,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Step [0-9]+$",
+                  "minCount": 2,
+                  "maxCount": 4,
+                  "intent": "One action, written as an instruction."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "h3-under-step.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "steps",
+            "ruleIntent": "A procedure has a title and between two and four steps.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 3,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 2
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "misnamed.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "steps",
+            "ruleIntent": "A procedure has a title and between two and four steps.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 1,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Step [0-9]+$",
+                  "minCount": 2,
+                  "maxCount": 4,
+                  "intent": "One action, written as an instruction."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "one.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "steps",
+            "ruleIntent": "A procedure has a title and between two and four steps.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 1,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Step [0-9]+$",
+                  "minCount": 2,
+                  "maxCount": 4,
+                  "intent": "One action, written as an instruction."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "zero.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "steps",
+            "ruleIntent": "A procedure has a title and between two and four steps.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Step [0-9]+$",
+                  "minCount": 2,
+                  "maxCount": 4,
+                  "intent": "One action, written as an instruction."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

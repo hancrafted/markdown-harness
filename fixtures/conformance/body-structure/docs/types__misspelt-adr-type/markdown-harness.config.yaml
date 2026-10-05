@@ -1,0 +1,20 @@
+# Spec: A Rule that writes `types` selects a file only when its `type` is one of them, so a misspelt `type` leaves an ADR ungoverned.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: adr-contract
+      folders: ['./']
+      types: [adr]
+      intent: 'An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.'
+      undefinedHeadings: forbid
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Context$', mayHold: [prose] }
+        - { purpose: heading, level: 2, pattern: '^Decision$' }
+        - { purpose: enumeration, level: 3, pattern: '^[0-9]+\. ', minCount: 1, mayHold: [ordered-list] }
+        - { purpose: heading, level: 2, pattern: "^Do's and Don'ts$" }
+        - { purpose: heading, level: 3, pattern: "^Do's$", mayHold: [ordered-list] }
+        - { purpose: heading, level: 3, pattern: "^Don'ts$", mayHold: [ordered-list] }
+        - { purpose: heading, level: 2, pattern: '^Consequences$', mayHold: [prose, ordered-list] }
+        - { purpose: heading, level: 2, pattern: '^Compliance and Enforcement$', mayHold: [prose, ordered-list] }
+        - { purpose: heading, level: 2, pattern: '^References$', mayHold: [unordered-list] }

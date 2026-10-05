@@ -1,0 +1,64 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 3,
+      "invalidFiles": 2,
+      "totalViolations": 2
+    },
+    "files": [
+      {
+        "path": "lower.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "substring-titles",
+            "ruleIntent": "A log names a decision somewhere in its second-level heading.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "Decision"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "near.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "substring-titles",
+            "ruleIntent": "A log names a decision somewhere in its second-level heading.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "Decision"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
