@@ -1,7 +1,7 @@
 ---
 name: markdown-harness
 description: Govern a folder of markdown with markdown-harness — set it up in a repository, author or change a
-  markdown-harness.config.yaml, put `mh --check` in the gate, or wire the Claude Code hook that reads a freshness
+  markdown-harness.config.yaml, put `mh check` in the gate, or wire the Claude Code hook that reads a freshness
   sentence back to an agent. Use when installing or setting up markdown-harness, deciding what a document must declare
   about its provenance or freshness, adding or changing a rule, converting a document template into a rule over its
   headings, working out why a rule governs nothing, or demonstrating what the tool does.
@@ -25,13 +25,13 @@ than a record of it, so none can go stale.
 | `markdown-harness.config.yaml` at the repo root  | not configured |
 | `docs/markdown-harness/`                         | init never ran |
 | `@hancrafted/markdown-harness` in `package.json` | not installed  |
-| the gate script contains `mh --check`            | not gated      |
+| the gate script contains `mh check`              | not gated      |
 | a `PostToolUse` entry in `.claude/settings.json` | not hooked     |
 
 ## 2. Say where the repository stands
 
 One line, from what the probes found — not a report of five probes. "You have a config and the gate
-runs `mh --check`, but nothing is hooked" is the whole of step 2.
+runs `mh check`, but nothing is hooked" is the whole of step 2.
 
 A one-line welcome explaining what the tool is belongs **only** in the never-set-up state. Anywhere
 else the repository has already answered that question and the user is mid-task.
@@ -56,7 +56,7 @@ one digit.
 | See it work on throwaway files before committing to rules | [`assets/demo.md`](assets/demo.md)                                         |
 | Author the first config, or add, change or debug one rule | [`assets/authoring-a-config.md`](assets/authoring-a-config.md)             |
 | Convert a document template into a rule over its headings | [`assets/authoring-body-structure.md`](assets/authoring-body-structure.md) |
-| Put `mh --check` in the gate on its own                   | [`assets/wiring-the-gate.md`](assets/wiring-the-gate.md)                   |
+| Put `mh check` in the gate on its own                     | [`assets/wiring-the-gate.md`](assets/wiring-the-gate.md)                   |
 | Wire the freshness hook on its own, on Claude Code        | [`assets/wiring-the-hook.md`](assets/wiring-the-hook.md)                   |
 
 `init.md` covers the last two through a script; reach for them directly when init has already run, or

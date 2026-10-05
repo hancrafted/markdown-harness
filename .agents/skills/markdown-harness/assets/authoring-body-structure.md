@@ -8,8 +8,8 @@ saying "a decision record has Status, Context and Decision". Nothing checks it. 
 section moves the template into the config, so one declaration steers the agent that writes the file
 and checks the file afterwards.
 
-The workflow is `authoring-a-config.md`'s: one Rule at a time, with `mh --query`, `mh --audit` and
-`mh --check` as the loop. This file holds what differs for headings. The **Operator** is the person who
+The workflow is `authoring-a-config.md`'s: one Rule at a time, with `mh query`, `mh audit` and
+`mh check` as the loop. This file holds what differs for headings. The **Operator** is the person who
 approves each Rule and decides what a finding means; the **Contributors** are the people and agents who
 write the documents it governs.
 
@@ -39,7 +39,7 @@ the file goes ungoverned and nothing says so. Prefer `folders:` when the kind li
 only `type` tells the kind apart, pair the Rule with a `frontmatter:` Rule that requires `type` and
 lists its `allowed` values, because the two sections never read each other.
 
-`mh --query` answers with every Rule that could win a path, in config order, each with the `types` it
+`mh query` answers with every Rule that could win a path, in config order, each with the `types` it
 needs: a path alone cannot say which `type` the file will carry.
 
 _Done when_ the Operator has named the paths or types the Rule governs, and a `types:` Rule has its
@@ -350,7 +350,7 @@ body-structure:
 
 A heading some entry matches at its position (step 5) is not undefined. A second `## Decision` is `HEADING_REPEATED` and a
 misplaced `## Context` is `HEADING_OUT_OF_ORDER`, each reported by its entry. In a closed spine an
-enumeration's run holds its repeats and nothing else. `mh --query` copies `undefinedHeadings` into its
+enumeration's run holds its repeats and nothing else. `mh query` copies `undefinedHeadings` into its
 answer, so an agent about to write the file hears that no other heading is welcome.
 
 **Closing is the Operator's choice, and open is where to start.** A closed spine reports one violation
@@ -372,14 +372,14 @@ _Done when_ the Operator has approved this Rule in words, and you have written i
 ## 9. Verify, then read what the check says
 
 ```sh
-mh --query docs/decisions/anything.md --config markdown-harness.config.yaml
+mh query docs/decisions/anything.md --config markdown-harness.config.yaml
 ```
 
 Read the candidates back: the `types`, `undefinedHeadings` and every entry at every depth, `allowed`
 and `mayHold` included, should be what the Operator approved. Exit 2 names the key to fix in `location`, as `authoring-a-config.md` step 4 says, and
-`mh --audit` (step 5 there) shows whether the Rule wins the files meant.
+`mh audit` (step 5 there) shows whether the Rule wins the files meant.
 
-Then run `mh --check`. It takes no path and reads the whole corpus, so read the findings for the files
+Then run `mh check`. It takes no path and reads the whole corpus, so read the findings for the files
 the new Rule governs, filtered by `ruleId`; when the report is large, group it by code before deciding
 anything. Each spine violation names its `entry`, the path of zero-based indexes from the Rule's
 `headings:` down (`[1]` is the second top-level entry, `[1, 0]` the first entry of its nested list), and
@@ -394,5 +394,5 @@ finding means the document is wrong and a Contributor fixes it, or the Rule is w
 changes it (a missing entry, an optional title, `allow` instead of `forbid`), or it waits. Edit a
 document only when the Operator asks, and never to turn a count green.
 
-_Done when_ `--query` shows the approved Rule, and the Operator has decided what to do about each
+_Done when_ `query` shows the approved Rule, and the Operator has decided what to do about each
 finding the Rule's files carry.

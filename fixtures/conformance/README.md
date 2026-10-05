@@ -28,7 +28,7 @@ and fails its declared case count.
 
 **Unreadable Assessment is a response-contract change, not a Conformance case.** A case must be a
 document carrying its own marker, while an unreadable path is deliberately not a readable document.
-The `unreadable` state is therefore frozen at the `assessPath` and `mh --assess` seams with a
+The `unreadable` state is therefore frozen at the `assessPath` and `mh assess` seams with a
 directory named `*.md`; this keeps it distinct from `unassessable`, which is a readable document
 whose frontmatter makes no freshness claim.
 

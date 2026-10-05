@@ -5,7 +5,7 @@
 #
 # The rule list is ORDERED and the first match wins outright. Nothing merges and
 # nothing is inherited, so the narrow rule goes first and the catch-all last.
-# `mh --audit` is what proves that landed.
+# `mh audit` is what proves that landed.
 frontmatter:
   rules:
     # ── 1. Vision — narrow, and the only rule a clock reads ───────────────────
