@@ -168,7 +168,7 @@ body-structure:
     - ruleId: adr-contract
       folders: [docs/adr/]
       types: [adr]
-      intent: 'An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.'
+      intent: 'An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, its consequences and compliance sections mix prose with numbered lists, and its references are a bulleted list.'
       undefinedHeadings: forbid
       headings:
         - { purpose: heading, level: 1, intent: 'The decision, as a short noun phrase.' }
@@ -196,8 +196,8 @@ body-structure:
             purpose: heading,
             level: 2,
             pattern: '^Compliance and Enforcement$',
-            mayHold: [prose],
-            intent: 'How the decision is held.',
+            mayHold: [prose, ordered-list],
+            intent: 'How the decision is held, in paragraphs and numbered lists.',
           }
         - {
             purpose: heading,
@@ -216,7 +216,7 @@ What the Operator should hear before approving a `mayHold`:
 
 - **A bold label is prose.** `**Positive:**` ahead of a list is a paragraph, so a section that lists
   only `ordered-list` fails on it, and a section with captioned lists lists both kinds, as
-  `Consequences` does above.
+  `Consequences` and `Compliance and Enforcement` do above.
 - **Fences, tables, quotes, HTML, thematic breaks and link definitions are neither allowed nor refused.**
   The kinds have no name for them, so a section that lists only `ordered-list` may still hold a fence or
   a table without a finding.
