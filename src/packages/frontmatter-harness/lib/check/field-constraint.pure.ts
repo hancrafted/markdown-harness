@@ -96,9 +96,10 @@ function formatViolations(field: string, constraints: FieldConstraints, value: s
   if (format !== undefined && !matchesFormat(format, value)) {
     failures.push(report(field, FIELD_VIOLATION_CODES.FORMAT_MISMATCH, { of: value }));
   }
-  // A `pattern` that will not compile is a config fault caught at load time, so
-  // reaching one here would mean validation let it through.
-  if (pattern !== undefined && !new RegExp(pattern).test(value)) {
+  // A `pattern` that will not compile under the `u` flag is a config fault
+  // caught at load time, so reaching one here would mean validation let it
+  // through. Searched, never anchored, in the dialect load validated it in.
+  if (pattern !== undefined && !new RegExp(pattern, 'u').test(value)) {
     failures.push(report(field, FIELD_VIOLATION_CODES.PATTERN_MISMATCH, { of: value }));
   }
   return failures;

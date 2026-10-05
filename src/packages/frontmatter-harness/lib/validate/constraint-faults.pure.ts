@@ -104,10 +104,15 @@ function allowedFaults(constraint: Record<string, unknown>, location: string): r
   return entries.flatMap((entry: unknown, index: number) => allowedEntryFaults(entry, `${location}.allowed[${index}]`));
 }
 
-/** Whether a string is a regular expression this platform can compile. */
+/**
+ * Whether a string compiles as a regular expression under the `u` flag, the
+ * dialect every `pattern` in the config is read in, in both Modules. A pattern
+ * that compiles only without the flag, such as `^Source\-`, is refused here
+ * rather than read in a second dialect at check time.
+ */
 function compiles(pattern: string): boolean {
   try {
-    new RegExp(pattern);
+    new RegExp(pattern, 'u');
     return true;
   } catch {
     return false;

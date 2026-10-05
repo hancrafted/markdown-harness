@@ -66,6 +66,20 @@ describe('field constraints', () => {
       // ASSERT
       expect(actual).toEqual(clean);
     });
+
+    it('searches a pattern in the u-flag dialect, so a property escape names a letter class', () => {
+      // ARRANGE
+      // Without the `u` flag, `\p{Lu}` is the literal text `p{Lu}` and an
+      // uppercase title would fail; with it, it is any uppercase letter, the
+      // meaning body-structure gives the same pattern.
+      const constraints = { pattern: '\\p{Lu}', intent: 'A title holds a capital.' } as const;
+      const data = { title: 'Émile' };
+      const clean: readonly unknown[] = [];
+      // ACT
+      const actual = fieldViolations('title', constraints, data);
+      // ASSERT
+      expect(actual).toEqual(clean);
+    });
   });
 
   describe('failure cases', () => {
