@@ -18,7 +18,7 @@ export const CONFORMANCE_TIERS = [
     name: 'body-structure',
     caseKind: 'markdown',
     configFile: 'valid-test-config.yaml',
-    caseCount: 294,
+    caseCount: 295,
   },
   {
     name: 'frontmatter',

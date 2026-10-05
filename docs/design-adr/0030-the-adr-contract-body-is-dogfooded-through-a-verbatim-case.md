@@ -70,10 +70,17 @@ byte for byte**, and the failing cases are condensed documents of the same shape
    | each `### N.` under `## Decision` holds an ordered list     | an enumeration at level 3, `mayHold: [ordered-list]`                 |
    | `### Do's` then `### Don'ts`, each an ordered list          | two entries in order, `mayHold: [ordered-list]` each                 |
    | consequences are captioned lists                            | `mayHold: [prose, ordered-list]`, a bold caption being a paragraph   |
+   | compliance is prose, and may carry numbered lists           | `mayHold: [prose, ordered-list]`, as Han reads the contract          |
    | references are links                                        | `mayHold: [unordered-list]`                                          |
    | sequential `### N.` numbers from 1                          | **not expressed**: a pattern cannot count, and a case freezes it     |
    | bold `**DO**` and `**DON'T**` opening each item             | **not expressed**: item shape is out of scope, and a case freezes it |
    | `📜 Rule:` markers, the size budget, the frontmatter bundle | not a body-structure fact; the existing enforcer keeps them          |
+
+   The compliance row is Han's reading of the contract: `## Consequences` and `## Compliance and Enforcement` both hold prose mixed
+   with ordered lists. The Rule therefore allows more than `GEN-001` itself uses, since its own compliance section is prose only and
+   passes either way: the Rule states what the contract permits, not what one file happens to contain. A first draft of this Rule
+   listed `[prose]` there and recorded no reason, which forbade a numbered list the contract allows; no verdict moved, because no
+   case reported on that entry, and `adr-contract/compliance-numbered.md` now holds the permission.
 
    The Rule is also **stricter than the contract** in one way: it requires the six sections in the order the contract lists them,
    which `adr-required-sections` does not.

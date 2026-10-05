@@ -418,9 +418,9 @@ describe('the body-structure tier states one coherent specification', () => {
     });
 
     it('tallies the verdicts and violations the spec states', () => {
-      // #221's expected counts, as #225 and then #227 extend them: 127 PASSES, 149 FAILS, 18 UNGOVERNED, 172 violations.
+      // #221's expected counts, as #225 and then #227 extend them: 128 PASSES, 149 FAILS, 18 UNGOVERNED, 172 violations.
       // ARRANGE
-      const expected = { passes: 127, fails: 149, ungoverned: 18, violations: 172 };
+      const expected = { passes: 128, fails: 149, ungoverned: 18, violations: 172 };
       // ACT
       const actual = {
         passes: stated(PASSES).length,
@@ -678,7 +678,7 @@ const AUDIT_ROWS = [
   { ruleId: 'section-steps', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'section-nested', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
   { ruleId: 'section-closed', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'adr-contract', won: 13, shadowed: 0, shadowedBy: [], excluded: 0 },
+  { ruleId: 'adr-contract', won: 14, shadowed: 0, shadowedBy: [], excluded: 0 },
 ];
 
 /** The `--query` candidates #221 freezes, per path asked, in order. */
@@ -808,7 +808,7 @@ describe('the tool answers for the whole body-structure tier', () => {
       const expected = {
         code: 1,
         refusal: undefined,
-        summary: { governedFiles: 276, invalidFiles: 149, totalViolations: 172 },
+        summary: { governedFiles: 277, invalidFiles: 149, totalViolations: 172 },
       };
       // ACT
       const actual = {
