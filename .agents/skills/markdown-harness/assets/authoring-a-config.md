@@ -186,3 +186,11 @@ workflow, entry by entry. One habit decides whether the rule says what the user 
 names a fixed title, anchor it, `^Decision$`, with any metacharacter escaped, and drop the anchors only
 when the user asks for a substring match. A pattern is searched, so an unanchored `Decision` also
 passes `## Decision record`: the rule loosens silently and `mh --check` stays green.
+
+Two more choices belong to that section, and `authoring-body-structure.md` steps 5 and 6 hold each in
+full. **Vocabulary or `pattern`:** a `pattern` says what one heading in the spine looks like, and a
+`vocabulary` says which exact titles a level may take anywhere in the document, in any order, so use it
+when the same titles repeat under every section. **What a section may hold:** an entry may carry
+`mayHold`, the block kinds (`prose`, `ordered-list`, `unordered-list`) its section is allowed, and a
+section the user leaves permissive carries none. A bold label ahead of a list is a paragraph, so it
+is `prose`: a section that lists only `ordered-list` fails on it.
