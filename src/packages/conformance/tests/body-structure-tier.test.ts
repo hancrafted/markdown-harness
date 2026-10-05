@@ -242,13 +242,15 @@ const IN_PROCESS_CONFIG = join(CORPUS_ROOT, TIER.configFile);
  * The Module's own `check` answer for the whole tier, IN PROCESS, reached through
  * the declared Module set and the port every Module implements — never through
  * a Module's own files, which this suite must not name. While the section is
- * refused or no descriptor carries the key, the answer is the reason why.
+ * refused, no descriptor carries the key or it implements no `check`, the
+ * answer is the reason why.
  */
 function inProcessCheck(): unknown {
   const loaded = loadConfig(IN_PROCESS_CONFIG, MODULE_SET);
   if (loaded.config === undefined) return { refused: loaded.faults };
   const descriptor = MODULE_SET.find((candidate) => candidate.key === MODULE);
   if (descriptor === undefined) return { refused: `no descriptor keyed ${MODULE} in the declared Module set` };
+  if (descriptor.check === undefined) return { refused: `the ${MODULE} Module implements no check` };
   return projected(descriptor.check(CORPUS_ROOT, corpus, loaded.config));
 }
 
@@ -863,7 +865,7 @@ describe('the tool answers for the whole body-structure tier', () => {
     });
 
     it.each(['docs/research/report-pass.md', 'docs/research/report-h4-no-h1.md', 'docs/upper/INDEX.md'])(
-      'answers --assess %s as ungoverned, because this Module passes every path by',
+      'answers --assess %s as ungoverned, because this Module implements no assess',
       async (path) => {
         // A known imprecision, not a claim that the file is
         // outside every Rule: this Module makes no freshness claim, so a file it

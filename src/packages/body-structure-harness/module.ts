@@ -16,18 +16,23 @@ import { validateBodyStructureSection } from './validate-config.ts';
 /**
  * This Module, as the Core sees it.
  *
- * `assess` passes every path by. This Module makes no freshness claim, so a
- * file it alone governs reads `ungoverned` in an Assessment — a known imprecision,
- * left open, not a claim that the file is outside
- * every Rule.
+ * No `assess`: the port's verbs are optional and this Module makes no freshness
+ * claim, so it has nothing to answer and the descriptor's type carries no such
+ * member — `cli` skips it, and it adds nothing to the derived assess answer. A
+ * file it alone governs therefore reads `ungoverned` in an Assessment — a known
+ * imprecision, left open, not a claim that the file is outside every Rule. The
+ * `never` in the omitted verb's slot is unreachable by construction.
  */
-export const bodyStructureModule: ModuleDescriptor<
-  BodyStructureConfig,
-  ReturnType<typeof queryPath>,
-  ReturnType<typeof auditRules>,
-  undefined,
-  ReturnType<typeof checkCorpus>,
-  BodyStructureFaultCode
+export const bodyStructureModule: Omit<
+  ModuleDescriptor<
+    BodyStructureConfig,
+    ReturnType<typeof queryPath>,
+    ReturnType<typeof auditRules>,
+    never,
+    ReturnType<typeof checkCorpus>,
+    BodyStructureFaultCode
+  >,
+  'assess'
 > = {
   key: 'body-structure',
   validateSection(raw: unknown) {
@@ -38,9 +43,6 @@ export const bodyStructureModule: ModuleDescriptor<
   },
   audit(root, files, config) {
     return auditRules(root, files, config.sectionFor(bodyStructureModule));
-  },
-  assess() {
-    return undefined;
   },
   check(root, files, config) {
     return checkCorpus(root, files, config.sectionFor(bodyStructureModule));

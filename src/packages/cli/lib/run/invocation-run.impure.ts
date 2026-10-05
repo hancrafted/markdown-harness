@@ -21,7 +21,7 @@ import { auditVerdict } from './audit-report.pure.ts';
 import { checkVerdict } from './corpus-verdict.pure.ts';
 import type { DeclaredRequirements, DeclaredViolation } from './declared-module.types.ts';
 import { hostInstant } from './host-instant.impure.ts';
-import { gatherAnswers } from './module-answers.pure.ts';
+import { gatherAnswers, implementing } from './module-answers.pure.ts';
 import { pathAssessment } from './path-assessment.pure.ts';
 import { pathGovernance } from './path-governance.pure.ts';
 import { resolvedInstant, route, terminationFor, withCorpusGuard } from './termination.pure.ts';
@@ -53,8 +53,9 @@ function gatherConfig(config: string): ConfigOutcome<LoadedConfiguration> {
 /**
  * What the config asks of one path, before anything exists there.
  *
- * Every declared Module is asked, and each answer is named by the key on ITS
- * OWN DESCRIPTOR rather than by a string written here.
+ * Every declared Module that implements `query` is asked, and each answer is
+ * named by the key on ITS OWN DESCRIPTOR rather than by a string written here.
+ * A Module without the verb is skipped, never asked.
  */
 function gatherQuery({ path, config }: Invocation): QueryGathered {
   const cfg = gatherConfig(config);
@@ -62,7 +63,7 @@ function gatherQuery({ path, config }: Invocation): QueryGathered {
 
   const result = pathGovernance<DeclaredRequirements>(
     normalisePath(path),
-    gatherAnswers(MODULE_SET, (module) => module.query(path, cfg.result)),
+    gatherAnswers(implementing(MODULE_SET, 'query'), (module) => module.query(path, cfg.result)),
   );
   return { kind: 'query', path, config, outcome: { kind: 'answered', result } };
 }
@@ -76,7 +77,9 @@ function gatherAudit({ root, config }: Invocation): AuditGathered {
   const outcome = withCorpusGuard(listMarkdownFiles(root), (files) => {
     const cfg = gatherConfig(config);
     if (cfg.kind === 'rejected') return cfg;
-    const verdict = auditVerdict(gatherAnswers(MODULE_SET, (module) => module.audit(root, files, cfg.result)));
+    const verdict = auditVerdict(
+      gatherAnswers(implementing(MODULE_SET, 'audit'), (module) => module.audit(root, files, cfg.result)),
+    );
     if (verdict.kind === 'unreadable') return verdict;
     return { kind: 'answered' as const, result: verdict.result };
   });
@@ -101,8 +104,9 @@ function gatherAssess({ path, config, now, root }: Invocation): AssessGathered {
   // conflicting input, so this is the current directory by construction.
   // `--assess` keeps its own pair: the Conformance runner composes through
   // `pathAssessment` with this shape, so only the other three verbs ride
-  // `gatherAnswers`.
-  const answers = MODULE_SET.map((module) => ({
+  // `gatherAnswers`. A Module without `assess` is skipped, exactly as one that
+  // passes the path by is dropped there.
+  const answers = implementing(MODULE_SET, 'assess').map((module) => ({
     module: module.key,
     assessment: module.assess({ root, path }, instant, cfg.result),
   }));
@@ -128,7 +132,7 @@ function gatherCheck({ root, config }: Invocation): CheckGathered {
     // take.
     const verdict = checkVerdict<DeclaredViolation>(
       files.map(normalisePath),
-      gatherAnswers(MODULE_SET, (module) => module.check(root, files, cfg.result)),
+      gatherAnswers(implementing(MODULE_SET, 'check'), (module) => module.check(root, files, cfg.result)),
     );
     if (verdict.kind === 'unreadable') return verdict;
     return { kind: 'answered' as const, result: verdict.result };
