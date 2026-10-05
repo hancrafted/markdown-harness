@@ -53,6 +53,11 @@ Read against `bodyViolations` and the 195 `body-structure` cases, on 2026-10-04:
 
 ## Decisions
 
+> Amended by [`0027`](./0027-a-heading-vocabulary-is-a-rule-level-list-of-exact-titles-per-level.md): decision 1's test becomes "no entry matches it and its level has no vocabulary", so a heading at a
+> vocabulary's level is never undefined; decision 3's order shares its first slot with out-of-vocabulary headings; and
+> decision 4's rule that a heading is behind one entry's violations is restated as one source of finding, which adds nothing a
+> closed spine reports twice.
+
 1. **A heading is undefined when no entry of the Rule's spine matches it.** An entry matches by level
    and pattern together, exactly as 0017 defines. The test is applied to every heading of the outline,
    of any level, the title included, and does not read the walk: a heading the walk left over, repeated,

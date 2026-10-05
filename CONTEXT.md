@@ -320,11 +320,35 @@ opt-in per Rule and never a default, and it excludes `maxLevel`, which is the de
 _Avoid_: strict mode, exhaustive spine, sealed
 
 **undefined heading**:
-In a closed spine, a heading of the body that no entry of the spine matches, at any level and the title
-included. It is decided by matching and not by what the walk did with the heading: one that an entry matches
-but that repeats, is out of order or lies outside an enumeration's run is defined, and that entry reports it.
+In a closed spine, a heading of the body that no entry of the spine matches and whose level no heading vocabulary governs,
+at any level and the title included. It is decided by matching and not by what the walk did with the heading: one that an
+entry matches but that repeats, is out of order or lies outside an enumeration's run is defined, and that entry reports it.
+A heading at a vocabulary's level is never undefined: it is one of the vocabulary's titles or it is outside the vocabulary.
 _Avoid_: unknown heading, extra heading, unclaimed heading (the walk claims a heading, and an unclaimed one may
 still be defined)
+
+**heading vocabulary**:
+The exact titles a Rule allows at one heading level, written as `vocabulary:` items of `{ level, allowed }` beside the spine.
+It is a set: any order, any number of times, no grouping and no position, and a title matches a heading's raw content whole,
+exactly and case-sensitively. Every heading at a vocabulary's level must be one of its titles, so a level is held either to a
+vocabulary or to spine entries and never both. A heading it admits counts as claimed, which is what lets a closed spine govern
+a changelog whose third-level headings repeat under every release.
+_Avoid_: title list, enum, taxonomy; **Type vocabulary** (the `type` values a repo recognises, a different thing, which the
+two are qualified against wherever both are in view)
+
+**section**:
+The blocks of a body from one top-level heading to the next top-level heading of any level, so a subsection's blocks are its own
+and never its parent's. Blocks before the first heading belong to no section. A section is judged by the entry that claimed its
+heading, and by nobody else: a heading the walk left over, an undefined heading and a heading a vocabulary admits have sections
+no one judges.
+_Avoid_: content (a heading's raw inline source, in 0014), body (the whole file below the frontmatter), part, chapter
+
+**block kind**:
+One of `prose` (a paragraph), `ordered-list` and `unordered-list`, the three names a heading entry's `mayHold` may list. A list
+nested in a list item belongs to the outer list, and a bold label ahead of a list is a paragraph, so it is prose. Every other
+block the lexer returns, a fence, a table, a block quote, HTML, a thematic break and a link reference definition, is
+transparent: neither allowed nor forbidden, because nothing names it.
+_Avoid_: block type, element, content type, node
 
 **Governed file**:
 A file matched by at least one Rule. Files nothing matches are invisible — never reported on,
@@ -415,9 +439,10 @@ _Avoid_: suite, corpus, fixture group, category
 **Conformance case**:
 One document under a Module tier's `docs/` — `fixtures/conformance/**/docs/` — carrying a
 machine-readable `<!-- expect: -->` marker that names the verdict — PASSES, FAILS, or UNGOVERNED —
-its prose already argues. A case of another kind has no document to mark, so not everything a
-corpus tier holds is one of these: a **rejected-config case** is a directory of config bytes and
-one frozen expectation, and a **witness case** is a path with no document at all.
+its prose already argues. A case of another kind has no document to mark, or none that can carry
+a marker, so not everything a corpus tier holds is one of these: a **rejected-config case** is a
+directory of config bytes and one frozen expectation, a **witness case** is a path with no document
+at all, and a **verbatim case** is a document whose bytes may not change.
 _Avoid_ as a name for this: fixture, test file, example doc
 
 **integrated**:
@@ -433,7 +458,8 @@ _Avoid_ as a name for this: bad config, invalid config fixture, error case
 
 **golden expectation**:
 A file holding the response the harness must produce verbatim, beside a subject that is not a
-Conformance case document. A **rejected-config case** and a **witness case** each carry one.
+Conformance case document. A **rejected-config case**, a **witness case** and a **verbatim case** each
+carry one.
 _Avoid_ as a name for this: snapshot, golden file, expected output
 
 **witness case**:
@@ -441,6 +467,13 @@ A path with no document behind it, plus the answer a **Steering query** must giv
 selector by where it does **not** reach, which a tree of real files cannot do. Not a Conformance case
 and not a **rejected-config case**.
 _Avoid_ as a name for this: phantom path, synthetic path, negative fixture
+
+**verbatim case**:
+A document the corpus holds byte for byte as it exists elsewhere in the repository, unmarked, outside a tier's `docs/` and
+outside `.md`, because a marker would change the bytes it exists to preserve and the tier's walk reads every markdown file as a
+case. Its expectation is a **golden expectation** beside the tier config, and its stored length and SHA-256 are pinned there, so
+an edit that makes a Rule pass fails. The first holds the ADR Contract, `GEN-001`. Not a Conformance case.
+_Avoid_ as a name for this: copied fixture, snapshot, golden file, dogfood case
 
 **fixture**:
 Ordinary test data anywhere in the repo that pins nothing — coverage, not contract. Every
