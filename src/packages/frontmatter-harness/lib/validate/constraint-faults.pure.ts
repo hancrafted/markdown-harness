@@ -7,6 +7,7 @@
  * caller concatenates.
  */
 
+import { compiles } from '../../../foundation/pattern-dialect.ts';
 import { isMapping } from '../../../foundation/yaml-document.ts';
 import type { AllowedValue, FieldConstraints, Format } from '../section/constraints.types.ts';
 import type { FrontmatterFault } from './fault.types.ts';
@@ -102,21 +103,6 @@ function allowedFaults(constraint: Record<string, unknown>, location: string): r
   if (!Array.isArray(entries)) return [{ code: 'CONFIG_INVALID_VALUE', location: `${location}.allowed` }];
 
   return entries.flatMap((entry: unknown, index: number) => allowedEntryFaults(entry, `${location}.allowed[${index}]`));
-}
-
-/**
- * Whether a string compiles as a regular expression under the `u` flag, the
- * dialect every `pattern` in the config is read in, in both Modules. A pattern
- * that compiles only without the flag, such as `^Source\-`, is refused here
- * rather than read in a second dialect at check time.
- */
-function compiles(pattern: string): boolean {
-  try {
-    new RegExp(pattern, 'u');
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 /**

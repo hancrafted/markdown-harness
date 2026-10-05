@@ -1,8 +1,9 @@
-// Colocated unit test for the pattern dialect: what compiles under the `u` flag,
-// and what an anchored literal is.
+// Colocated unit test for what this Module asks of a heading pattern: a
+// non-empty string that compiles in the config's dialect, and what an anchored
+// literal is.
 
 import { describe, expect, it } from 'vitest';
-import { compiles, isAnchoredLiteral } from './pattern-dialect.pure.ts';
+import { isAnchoredLiteral, isPattern } from './pattern-dialect.pure.ts';
 
 describe('pattern dialect', () => {
   describe('success cases', () => {
@@ -16,22 +17,22 @@ describe('pattern dialect', () => {
       expect(actual).toEqual(expected);
     });
 
-    it('compiles an ordinary pattern', () => {
+    it('accepts an ordinary pattern', () => {
       // ARRANGE
       const expected = true;
       // ACT
-      const actual = compiles('^Step [0-9]+$');
+      const actual = isPattern('^Step [0-9]+$');
       // ASSERT
       expect(actual).toBe(expected);
     });
   });
 
   describe('failure cases', () => {
-    it('refuses to compile what the u flag forbids: an unclosed group and an unnecessary escape', () => {
+    it('refuses an empty pattern, a non-string, and one the u flag forbids', () => {
       // ARRANGE
-      const expected = [false, false];
+      const expected = [false, false, false];
       // ACT
-      const actual = ['(unclosed', '^Source\\-'].map(compiles);
+      const actual = ['', 7, '^Source\\-'].map(isPattern);
       // ASSERT
       expect(actual).toEqual(expected);
     });
