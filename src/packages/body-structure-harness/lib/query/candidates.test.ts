@@ -83,6 +83,21 @@ describe('candidateClaims', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('copies the vocabulary verbatim, and every entry mayHold rides inside its entry', () => {
+      // ARRANGE
+      const vocabulary = [{ level: 3, allowed: ['Added', 'Fixed'] }];
+      const headings = [
+        { purpose: 'heading', level: 2, pattern: '^Context$', mayHold: ['prose', 'ordered-list'] },
+        { purpose: 'enumeration', level: 3, minCount: 1, mayHold: ['ordered-list'] },
+      ] as const;
+      const rule: BodyStructureRule = { ruleId: 'v', intent: 'V.', folders: ['docs/'], vocabulary, headings };
+      const expected = [{ vocabulary, headings }];
+      // ACT
+      const actual = candidateClaims('docs/a.md', [rule]).map((claim) => claim.requirements);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
@@ -97,7 +112,7 @@ describe('candidateClaims', () => {
   });
 
   describe('edge cases', () => {
-    it('writes undefinedHeadings between maxLevel and headings, the order the wire has it in', () => {
+    it('writes every key in the order the wire has it in: types, maxLevel, undefinedHeadings, vocabulary, headings', () => {
       // ARRANGE
       const rule: BodyStructureRule = {
         ruleId: 'all',
@@ -105,9 +120,10 @@ describe('candidateClaims', () => {
         types: ['t'],
         maxLevel: 2,
         undefinedHeadings: 'allow',
+        vocabulary: [{ level: 3, allowed: ['A'] }],
         headings: [{ purpose: 'heading', level: 1 }],
       };
-      const expected = ['types', 'maxLevel', 'undefinedHeadings', 'headings'];
+      const expected = ['types', 'maxLevel', 'undefinedHeadings', 'vocabulary', 'headings'];
       // ACT
       const actual = candidateClaims('a.md', [rule]).map((claim) => Object.keys(claim.requirements));
       // ASSERT
@@ -119,6 +135,24 @@ describe('candidateClaims', () => {
       const expected = [{ rule: { ruleId: 'bare', intent: 'Bare.' }, requirements: { maxLevel: 2 } }];
       // ACT
       const actual = candidateClaims('a.md', [{ ruleId: 'bare', intent: 'Bare.', maxLevel: 2 }]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('leaves vocabulary out of the claim of a Rule that never wrote it, and keeps a vocabulary-only Rule headings-free', () => {
+      // ARRANGE
+      const expected = [{ maxLevel: 2 }, { maxLevel: 3, vocabulary: [{ level: 3, allowed: ['A'] }] }];
+      // ACT
+      const actual = [
+        { ruleId: 'bare', intent: 'Bare.', folders: ['docs/'], maxLevel: 2 },
+        {
+          ruleId: 'depth',
+          intent: 'Depth.',
+          folders: ['docs/'],
+          maxLevel: 3,
+          vocabulary: [{ level: 3, allowed: ['A'] }],
+        },
+      ].flatMap((rule) => candidateClaims('docs/a.md', [rule]).map((claim) => claim.requirements));
       // ASSERT
       expect(actual).toEqual(expected);
     });
