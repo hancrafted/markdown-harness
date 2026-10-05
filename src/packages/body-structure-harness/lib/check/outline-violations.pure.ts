@@ -1,11 +1,13 @@
 /**
  * The checks judged on a body's outline alone, before any spine is walked:
- * depth (`maxLevel`) and closure (`undefinedHeadings: forbid`), the two a Rule
- * never carries together (design-ADR 0019, 0025, 0026).
+ * depth (`maxLevel`), and the headings nothing lists, which are the closure
+ * (`undefinedHeadings: forbid`) and the heading vocabulary
+ * (design-ADR 0019, 0025, 0026, 0027).
  */
 
 import type { BodyStructureViolation } from '../../../response-contract/index.ts';
 import type { OutlineHeading } from '../document/document.types.ts';
+import type { Listing } from './body-check.types.ts';
 
 /**
  * Every level deeper than `maxLevel` the outline uses, ascending, each with how
@@ -34,23 +36,44 @@ export function levelViolations(
 }
 
 /**
- * Every heading no entry matches, in document order. Decided by asking each
- * entry's matcher and never from the walk, so a heading the walk left over is
- * still defined when an entry matches it (design-ADR 0025).
+ * The finding one heading earns from the outline alone, if any (design-ADR
+ * 0025, 0027). A heading at a vocabulary's level is judged by the vocabulary
+ * and by nothing else, so it is never also undefined; any other heading is
+ * undefined when the spine is closed and no entry matches it.
+ */
+function unlistedFinding(
+  { closed, vocabulary, matchers }: Listing,
+  heading: OutlineHeading,
+): BodyStructureViolation | undefined {
+  const { level, content } = heading;
+  const item = vocabulary.find((candidate) => candidate.level === level);
+  if (item !== undefined) {
+    return item.allowed.includes(content)
+      ? undefined
+      : { violation: 'BODY_STRUCTURE__HEADING_NOT_IN_VOCABULARY', level, content, requirement: item };
+  }
+  if (!closed || matchers.some((matches) => matches(heading))) return undefined;
+  return {
+    violation: 'BODY_STRUCTURE__HEADING_UNDEFINED',
+    level,
+    content,
+    requirement: { undefinedHeadings: 'forbid' },
+  };
+}
+
+/**
+ * Every heading no entry and no vocabulary lists, in document order whatever
+ * the level: those outside a vocabulary, and, under a closed spine, those no
+ * entry matches. Decided by asking each entry's matcher and never from the
+ * walk, so a heading the walk left over is still defined when an entry matches
+ * it (design-ADR 0025, 0027).
  *
- * @param matchers One per entry of the Rule's spine, which may have none.
+ * @param listing What lists a heading besides the outline itself: the closure, the vocabulary and the entries' matchers.
  * @param outline The body's top-level headings.
  */
-export function undefinedViolations(
-  matchers: readonly ((heading: OutlineHeading) => boolean)[],
+export function unlistedViolations(
+  listing: Listing,
   outline: readonly OutlineHeading[],
 ): readonly BodyStructureViolation[] {
-  return outline
-    .filter((heading) => !matchers.some((matches) => matches(heading)))
-    .map(({ level, content }) => ({
-      violation: 'BODY_STRUCTURE__HEADING_UNDEFINED',
-      level,
-      content,
-      requirement: { undefinedHeadings: 'forbid' },
-    }));
+  return outline.flatMap((heading) => unlistedFinding(listing, heading) ?? []);
 }

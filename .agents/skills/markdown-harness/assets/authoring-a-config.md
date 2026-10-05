@@ -186,3 +186,9 @@ workflow, entry by entry. One habit decides whether the rule says what the user 
 names a fixed title, anchor it, `^Decision$`, with any metacharacter escaped, and drop the anchors only
 when the user asks for a substring match. A pattern is searched, so an unanchored `Decision` also
 passes `## Decision record`: the rule loosens silently and `mh --check` stays green.
+
+Two more choices belong to that section, and steps 5 and 6 of `authoring-body-structure.md` hold them.
+Use a `vocabulary` for the exact titles a level may take anywhere in the document, in any order, and a
+`pattern` for one heading's place in the spine. An entry declares `mayHold`, the block kinds its
+section allows, and a section the user leaves permissive carries none. A bold label ahead of a list
+is prose, and the shape inside a list item is not governed.

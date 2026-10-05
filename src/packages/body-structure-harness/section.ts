@@ -9,6 +9,7 @@
 // address exists so this Module's own files and its two test homes share one
 // spelling for them.
 
+export type { BlockKind } from './lib/document/document.types.ts';
 export type {
   BodyStructureConfig,
   BodyStructureRule,
@@ -16,4 +17,5 @@ export type {
   HeadingPresence,
   HeadingPurpose,
   UndefinedHeadings,
+  VocabularyItem,
 } from './lib/section/section.types.ts';
