@@ -89,10 +89,12 @@ describe('summarise', () => {
       // ARRANGE
       const sessions = [row('n', 'neutralised', true), row('s', 'steered', true)];
       const word = 'DEFECT IN THE CASE';
+      const expected = 'DEFECT IN THE CASE: 1 steering marker hits in the intent-neutralised arm';
       // ACT
       const lines = summarise({ sessions, expected: 2, trialsPerCell: 1, canaryFailure: undefined });
+      const defect = lines.find((line) => line.startsWith(word));
       // ASSERT
-      expect(lines.some((line) => line.startsWith(word))).toBe(true);
+      expect(defect).toBe(expected);
     });
   });
 });

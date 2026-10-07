@@ -1,7 +1,7 @@
 // The canary: one per run, through the session module directly, with a task that
-// forces the Write tool. It proves the hook can fire headless in this Host
-// harness, delivery channel and root layout. A failed canary is an instrument
-// failure for every cell sharing the configuration.
+// forces the Write tool. It proves the hook can fire headless in this
+// Host harness, delivery channel and root layout. A failed canary is an
+// instrument failure for every cell sharing the configuration.
 
 import { deriveArm } from '../../../arms/derive-arms.ts';
 import { drawSteeringMarker } from '../../../arms/steering-markers.ts';
@@ -14,6 +14,11 @@ import type { RunPlan } from './run-plan.types.ts';
 const SEED_DIR = 'evals/suites/steering/seed/research-note';
 const PLACEHOLDER = 'STEERING_CLAUSE_PLACEHOLDER';
 const TARGET = 'docs/research/canary-note.md';
+
+function hostOf(plan: RunPlan): Parameters<typeof runTrial>[0]['host'] {
+  const { command, maxTurns, wallClockMs, tools } = plan.host;
+  return { command, model: 'sonnet', maxTurns, wallClockMs, tools };
+}
 
 function request(plan: RunPlan): Parameters<typeof runTrial>[0] {
   const configText = readText(`${plan.checkout}/${SEED_DIR}/markdown-harness.config.yaml`);
@@ -29,13 +34,6 @@ function request(plan: RunPlan): Parameters<typeof runTrial>[0] {
     placeholder: PLACEHOLDER,
     clause: `Add the code ${steeringMarker}.`,
   });
-  const host = {
-    command: plan.host.command,
-    model: 'sonnet',
-    maxTurns: plan.host.maxTurns,
-    wallClockMs: plan.host.wallClockMs,
-    tools: plan.host.tools,
-  };
   const task = `Use the Write tool to create ${TARGET} with a short note.`;
   const sweepExpectation = { kind: 'exactly', occurrences: derived.substitutions } as const;
   return {
@@ -43,7 +41,7 @@ function request(plan: RunPlan): Parameters<typeof runTrial>[0] {
     sources: sourcesFor(plan.checkout, SEED_DIR),
     heldOut: [],
     derivedConfig: derived.configText,
-    host,
+    host: hostOf(plan),
     task,
     steeringMarker,
     targetPath: TARGET,
