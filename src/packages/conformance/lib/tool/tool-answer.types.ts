@@ -38,6 +38,8 @@ export interface ToolBlock {
 /** A response envelope, as far as any Conformance runner reads it. Every key may be absent. */
 export interface ToolEnvelope {
   readonly command?: string;
+  /** The Modules that ran, in declared Module order. */
+  readonly modules?: readonly string[];
   readonly root?: string;
   readonly config?: string;
   readonly result?: {

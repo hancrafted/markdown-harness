@@ -1,0 +1,410 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 29,
+      "invalidFiles": 12,
+      "totalViolations": 14
+    },
+    "files": [
+      {
+        "path": "adjacent-lists.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Ordered",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Ordered$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "bullets-ordered.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  2
+                ],
+                "content": "Bullets",
+                "kind": "ordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Bullets$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "unordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "list-split-by-paragraph.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Ordered",
+                "kind": "prose",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Ordered$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "misplaced-heading.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  2
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Bullets$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "unordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "mixed-bullets.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  3
+                ],
+                "content": "Mixed",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Mixed$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "prose",
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "ordered-bold-label.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Ordered",
+                "kind": "prose",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Ordered$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "ordered-prose.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Ordered",
+                "kind": "prose",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Ordered$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "prose-bullets.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  0
+                ],
+                "content": "Prose",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Prose$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "prose"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "prose-ordered.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  0
+                ],
+                "content": "Prose",
+                "kind": "ordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Prose$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "prose"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "repeated-heading.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  1
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Ordered$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "two-kinds.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Ordered",
+                "kind": "prose",
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Ordered$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Ordered",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Ordered$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "two-sections.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-kinds",
+            "ruleIntent": "Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  0
+                ],
+                "content": "Prose",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Prose$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "prose"
+                  ]
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Ordered",
+                "kind": "prose",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Ordered$",
+                  "presence": "optional",
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

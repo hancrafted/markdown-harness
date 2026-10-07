@@ -1,0 +1,10 @@
+# Spec: A pattern is compared with a heading as written, inline markup included.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: raw-markup
+      folders: ['./']
+      intent: 'A pattern is compared with a heading as written, inline markup included.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^\*\*Findings\*\*$' }

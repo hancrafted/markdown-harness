@@ -1,0 +1,22 @@
+# Spec: A `headings` list nested under a heading entry is walked over the headings in that section alone.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: nested-adr
+      folders: ['./']
+      intent: 'A decision record weighs at least two options and then states what follows, good and bad, each as a bulleted list.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, allowed: [{ title: Context }] }
+        - purpose: heading
+          level: 2
+          allowed: [{ title: Options, intent: 'The choices weighed, one heading each.' }]
+          headings:
+            - { purpose: enumeration, level: 3, pattern: '^Option ', minCount: 2 }
+        - { purpose: heading, level: 2, allowed: [{ title: Decision }] }
+        - purpose: heading
+          level: 2
+          allowed: [{ title: Consequences }]
+          headings:
+            - { purpose: heading, level: 3, allowed: [{ title: Positive }], mayHold: [unordered-list] }
+            - { purpose: heading, level: 3, allowed: [{ title: Negative }], mayHold: [unordered-list] }

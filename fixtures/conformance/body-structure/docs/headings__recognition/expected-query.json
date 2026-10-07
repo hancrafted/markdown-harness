@@ -1,0 +1,62 @@
+{
+  "x.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "x.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "x.md",
+      "modules": [
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "guides",
+            "intent": "A guide is a title and at least two sections, wherever it lives."
+          },
+          "requirements": {
+            "types": [
+              "guide"
+            ],
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "enumeration",
+                "level": 2,
+                "minCount": 2
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "recognition",
+            "intent": "A recognition case has one title and at most one second-level heading, so a heading read wrongly flips its verdict."
+          },
+          "requirements": {
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "enumeration",
+                "level": 2,
+                "maxCount": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

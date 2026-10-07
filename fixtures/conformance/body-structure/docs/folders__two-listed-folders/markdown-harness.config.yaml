@@ -1,0 +1,19 @@
+# Spec: A `folders` list selects every folder it names, the second as surely as the first, under a spine with no `maxLevel`.
+# Selector reach: cases keep their tier paths, and every competing Rule is copied byte for byte in declared order,
+# because the first Rule that selects a file wins it.
+body-structure:
+  rules:
+    - ruleId: guides
+      types: [guide]
+      intent: 'A guide is a title and at least two sections, wherever it lives.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 2 }
+
+    - ruleId: open-template
+      folders: [docs/handbook/, docs/manual/]
+      intent: 'A handbook or manual page opens with a title and an Overview, and may nest as deep as it needs.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Overview$', intent: 'What the page covers, in a paragraph.' }

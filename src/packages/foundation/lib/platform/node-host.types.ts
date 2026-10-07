@@ -39,3 +39,10 @@ export type HostRead =
   | { kind: 'text'; text: string }
   /** The read failed, carrying whatever the platform called it. */
   | { kind: 'failed'; errorCode: string | undefined };
+
+/** What one child process printed, and its exit code — `null` when it never ran or a signal ended it. */
+export interface HostRun {
+  stdout: string;
+  stderr: string;
+  code: number | null;
+}

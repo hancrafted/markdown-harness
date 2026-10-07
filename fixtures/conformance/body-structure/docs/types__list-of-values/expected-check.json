@@ -1,0 +1,62 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 4,
+      "invalidFiles": 2,
+      "totalViolations": 2
+    },
+    "files": [
+      {
+        "path": "docs/research/memo-long.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-notes",
+            "ruleIntent": "A research note is short, so it has one title and at most three sections.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 4,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "maxCount": 3
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/research/note-memo-joined.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-untyped",
+            "ruleIntent": "A research file whose type names no template here still has exactly one title and nothing beneath it.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 2,
+                "found": 4,
+                "requirement": {
+                  "maxLevel": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

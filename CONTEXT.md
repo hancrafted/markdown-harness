@@ -252,7 +252,7 @@ vocabulary: they live beside the pin in `docs/okf/README.md`.
 Google's Open Knowledge Format. A vocabulary the OKF Preset was written against, never a spec
 this repo owns or implements — and its version label is not a contract boundary, because OKF
 changes normative content in place under a fixed label and publishes no tags or releases.
-_Avoid_: the spec, the standard, OKF v0.2 (as an identifier)
+_Avoid_: the spec (used alone, meaning OKF), the standard, OKF v0.2 (as an identifier)
 
 **Pinned revision**:
 The exact OKF text the OKF Preset's Rules were derived from, vendored byte-identical at
@@ -437,14 +437,24 @@ _Avoid_ as a name for this: fixture corpus (retired for this artifact), test sui
 **corpus tier**:
 One directory under `fixtures/conformance/`, holding what one runner checks: a Module tier holds
 that Module's config and its Conformance cases, and the rejected-config tier holds config bytes a
-load must refuse and no markdown at all. A tier root is a synthetic repo root — the directory a
-tier's own selectors are written relative to — which is why a tier moves whole or not at all. One
+load must refuse and no markdown at all. In a tier not yet split into **spec folders**, the tier
+root is the synthetic repo root its selectors are written relative to, which is why such a tier
+moves whole or not at all. One
 runner per tier, named `<tier>-tier.test.ts`, with both sets derived from the tree and asserted
 equal, so a tier added without a runner fails rather than sitting unnoticed. Say **corpus tier** in
 full wherever ARCH-002 is also in view: that record calls the config vocabulary's four levels
 (rule, constraint, `allowed` entry, named format) **vocabulary tiers**, and a bare "tier" there
 reads as either.
 _Avoid_: suite, corpus, fixture group, category
+
+**spec folder**:
+One directory directly under a corpus tier's `docs/`, and the synthetic repo root of what it holds:
+the config under the adopter's own file name, opening with a sentence that states the spec, the
+Conformance cases that sentence is about, and the output the tool must print there. Named
+`<key>__<behaviour>` after the config key it exercises, so a human can find, read and run one
+behaviour alone. The `body-structure` and `integrated` tiers are split into spec folders; a tier
+root is the synthetic repo root only in the `frontmatter` tier, which is not.
+_Avoid_: test folder, case folder, scenario, the spec (for the folder)
 
 **Conformance case**:
 One document under a Module tier's `docs/` — `fixtures/conformance/**/docs/` — carrying a
@@ -456,7 +466,7 @@ at all, and a **verbatim case** is a document whose bytes may not change.
 _Avoid_ as a name for this: fixture, test file, example doc
 
 **integrated**:
-The corpus tier where one config names more than one Module over one tree. A disagreement
+The corpus tier where every config names more than one Module over one tree. A disagreement
 between two Modules is expressible as a case nowhere else, which is why it is a frozen tier rather
 than a demo.
 _Avoid_ as a name for this: end-to-end, e2e, combined, the whole suite
@@ -479,8 +489,9 @@ and not a **rejected-config case**.
 _Avoid_ as a name for this: phantom path, synthetic path, negative fixture
 
 **verbatim case**:
-A document the corpus holds byte for byte, unmarked, outside a tier's `docs/` and outside `.md`, with its expectation and its
-SHA-256 pinned in a **golden expectation**. Not a Conformance case.
+A document the corpus holds byte for byte and unmarked, with its expectation and its SHA-256
+pinned in a **golden expectation** beside it. It sits in a spec folder like a case and runs like
+one, but carries no marker, so it is not a Conformance case.
 _Avoid_ as a name for this: copied fixture, snapshot, golden file
 
 **fixture**:

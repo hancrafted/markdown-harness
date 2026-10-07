@@ -1,0 +1,22 @@
+# Spec: `mayHold` lists the block kinds a section may hold, read off the blocks CommonMark parses.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: guides
+      types: [guide]
+      intent: 'A guide is a title and at least two sections, wherever it lives.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 2 }
+
+    - ruleId: section-kinds
+      folders: ['./']
+      intent: 'Each section says which kinds of block it may hold, so a reader meets a numbered list where an order matters and prose where an argument is made.'
+      headings:
+        - { purpose: heading, level: 2, pattern: '^Prose$', presence: optional, mayHold: [prose] }
+        - { purpose: heading, level: 2, pattern: '^Ordered$', presence: optional, mayHold: [ordered-list] }
+        - { purpose: heading, level: 2, pattern: '^Bullets$', presence: optional, mayHold: [unordered-list] }
+        - { purpose: heading, level: 2, pattern: '^Mixed$', presence: optional, mayHold: [prose, ordered-list] }
+        - { purpose: heading, level: 2, pattern: '^Anything$', presence: optional, mayHold: [prose, ordered-list, unordered-list] }
+        - { purpose: heading, level: 2, pattern: '^Free$', presence: optional }

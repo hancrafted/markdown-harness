@@ -1,0 +1,38 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 2,
+      "invalidFiles": 1,
+      "totalViolations": 1
+    },
+    "files": [
+      {
+        "path": "too-deep.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "open-sources",
+            "ruleIntent": "The same report shape as closed-sources with the default written out, so headings no entry names are permitted down to the second level.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 3,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 2
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

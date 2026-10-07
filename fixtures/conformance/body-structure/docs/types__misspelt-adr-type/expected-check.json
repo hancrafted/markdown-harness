@@ -1,0 +1,17 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 1,
+      "invalidFiles": 0,
+      "totalViolations": 0
+    },
+    "files": []
+  }
+}

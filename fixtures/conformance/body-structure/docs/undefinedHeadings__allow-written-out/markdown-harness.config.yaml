@@ -1,0 +1,21 @@
+# Spec: `undefinedHeadings: allow` written out is the default, and pairs with `maxLevel` to bound the headings it permits.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: guides
+      types: [guide]
+      intent: 'A guide is a title and at least two sections, wherever it lives.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 2 }
+
+    - ruleId: open-sources
+      folders: ['./']
+      intent: 'The same report shape as closed-sources with the default written out, so headings no entry names are permitted down to the second level.'
+      undefinedHeadings: allow
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, pattern: '^Source: ', minCount: 1, maxCount: 2 }
+        - { purpose: heading, level: 2, pattern: '^Conclusion$' }

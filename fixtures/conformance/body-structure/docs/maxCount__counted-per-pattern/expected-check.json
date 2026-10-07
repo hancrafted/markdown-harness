@@ -1,0 +1,92 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 5,
+      "invalidFiles": 3,
+      "totalViolations": 3
+    },
+    "files": [
+      {
+        "path": "swapped.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "kinds",
+            "ruleIntent": "A trade-off page lists at most one pro and at most one con, counted apart.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Pro: ",
+                  "maxCount": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "two-cons.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "kinds",
+            "ruleIntent": "A trade-off page lists at most one pro and at most one con, counted apart.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+                "entry": [
+                  2
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Con: ",
+                  "maxCount": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "two-pros.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "kinds",
+            "ruleIntent": "A trade-off page lists at most one pro and at most one con, counted apart.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Pro: ",
+                  "maxCount": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

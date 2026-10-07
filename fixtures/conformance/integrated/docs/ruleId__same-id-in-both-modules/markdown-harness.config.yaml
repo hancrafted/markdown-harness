@@ -1,0 +1,34 @@
+# Spec: Two Modules may each name a Rule `research`, and a file both govern counts once, its findings nested in declared Module order.
+#
+# The `body-structure:` section is written FIRST on purpose. The response orders each file's Module
+# blocks by the declared Module set (`frontmatter`, then `body-structure`), never by the order the
+# sections appear here, and a config that writes them the other way round is the only way to show it.
+# Both Modules carry a Rule named `research`: a Rule id belongs to its Module, so the two never collide.
+#
+# Rules copied byte for byte from the tier's former shared config, in declared order, with their
+# folder tokens unchanged: each Module's selector is what this tier composes, so the cases keep
+# their tier-relative paths under docs/.
+body-structure:
+  rules:
+    - ruleId: research
+      folders: [docs/research/]
+      types: [research]
+      intent: 'Research opens with a title and gives its findings, so a reviewer reads it the same way every time.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Findings$' }
+
+frontmatter:
+  rules:
+    - ruleId: research
+      folders: [docs/research/]
+      excludeFiles:
+        - { fileNames: [scratch.md] }
+      intent: 'Research says what it is and what it is about, so an agent can choose it without opening it.'
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: research, intent: 'Findings gathered to settle a question, with sources.' }
+        description: { presence: required }

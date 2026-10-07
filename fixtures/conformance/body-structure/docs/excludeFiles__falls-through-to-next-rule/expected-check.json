@@ -1,0 +1,38 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 2,
+      "invalidFiles": 1,
+      "totalViolations": 1
+    },
+    "files": [
+      {
+        "path": "docs/research/scratch.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-untyped",
+            "ruleIntent": "A research file whose type names no template here still has exactly one title and nothing beneath it.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 2,
+                "found": 2,
+                "requirement": {
+                  "maxLevel": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

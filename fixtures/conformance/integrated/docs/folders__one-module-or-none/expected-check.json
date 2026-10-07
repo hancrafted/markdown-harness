@@ -1,0 +1,41 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 2,
+      "invalidFiles": 1,
+      "totalViolations": 1
+    },
+    "files": [
+      {
+        "path": "docs/shaped/body-only.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "shaped-title",
+            "ruleIntent": "A shaped document has exactly one title.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

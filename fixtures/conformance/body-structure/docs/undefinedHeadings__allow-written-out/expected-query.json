@@ -1,0 +1,70 @@
+{
+  "x.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "x.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "x.md",
+      "modules": [
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "guides",
+            "intent": "A guide is a title and at least two sections, wherever it lives."
+          },
+          "requirements": {
+            "types": [
+              "guide"
+            ],
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "enumeration",
+                "level": 2,
+                "minCount": 2
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "open-sources",
+            "intent": "The same report shape as closed-sources with the default written out, so headings no entry names are permitted down to the second level."
+          },
+          "requirements": {
+            "maxLevel": 2,
+            "undefinedHeadings": "allow",
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "enumeration",
+                "level": 2,
+                "pattern": "^Source: ",
+                "minCount": 1,
+                "maxCount": 2
+              },
+              {
+                "purpose": "heading",
+                "level": 2,
+                "pattern": "^Conclusion$"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

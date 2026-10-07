@@ -1,0 +1,15 @@
+# Spec: A decision-record spine: required entries in order, one optional entry, and nothing deeper than `maxLevel`.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: decision-records
+      folders: ['./']
+      types: [decision]
+      intent: 'A decision record reads the same way every time, so a reviewer finds the status and the reasoning without hunting.'
+      maxLevel: 3
+      headings:
+        - { purpose: heading, level: 1, intent: 'The decision, stated as a short noun phrase.' }
+        - { purpose: heading, level: 2, pattern: '^Status$', intent: 'Proposed, accepted or superseded, with the date.' }
+        - { purpose: heading, level: 2, pattern: '^Context$', intent: 'The forces that made a decision necessary.' }
+        - { purpose: heading, level: 2, pattern: '^Decision$', intent: 'What was decided and why.' }
+        - { purpose: heading, level: 2, pattern: '^Consequences$', presence: optional, intent: 'What gets easier and what gets harder.' }

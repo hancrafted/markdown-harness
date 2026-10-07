@@ -1,0 +1,87 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 4,
+      "invalidFiles": 3,
+      "totalViolations": 3
+    },
+    "files": [
+      {
+        "path": "docs/names/GUIDE.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "plural-names",
+            "ruleIntent": "Three named files share one shape, so the second and the third name must select as surely as the first.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/names/README.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "plural-names",
+            "ruleIntent": "Three named files share one shape, so the second and the third name must select as surely as the first.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/other/NOTES.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "plural-names",
+            "ruleIntent": "Three named files share one shape, so the second and the third name must select as surely as the first.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 6,
+      "invalidFiles": 4,
+      "totalViolations": 4
+    },
+    "files": [
+      {
+        "path": "case-mismatch.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "allowed-titles",
+            "ruleIntent": "A journal is titled Notes or Journal and holds at least one entry, every one titled Entry.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "allowed": [
+                    {
+                      "title": "Notes",
+                      "intent": "A shared journal."
+                    },
+                    {
+                      "title": "Journal"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "no-entry.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "allowed-titles",
+            "ruleIntent": "A journal is titled Notes or Journal and holds at least one entry, every one titled Entry.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "minCount": 1,
+                  "allowed": [
+                    {
+                      "title": "Entry"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "raw-markup.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "allowed-titles",
+            "ruleIntent": "A journal is titled Notes or Journal and holds at least one entry, every one titled Entry.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "allowed": [
+                    {
+                      "title": "Notes",
+                      "intent": "A shared journal."
+                    },
+                    {
+                      "title": "Journal"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "substring.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "allowed-titles",
+            "ruleIntent": "A journal is titled Notes or Journal and holds at least one entry, every one titled Entry.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "allowed": [
+                    {
+                      "title": "Notes",
+                      "intent": "A shared journal."
+                    },
+                    {
+                      "title": "Journal"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -15,7 +15,7 @@ description: 'The corpus half of the Conformance suite under fixtures/conformanc
 
 A corpus tier's documents exercise the full configuration vocabulary and carry the outcomes governed as permanent specification by [ARCH-010](./ARCH-010-conformance-specification.md). An expected outcome carried only by a reasoning paragraph's leading word is indistinguishable in a diff from a wording fix, so markers make those outcomes explicit and diffable. One Module's cases, a refused config, and a corpus two Modules govern at once are three subjects rather than one: hence tiers.
 
-A **fixture** pins nothing; a **corpus** is an adopter's tree. A **corpus tier** is one directory rooted as a synthetic repo root — one config plus the cases it governs, one config per tier, so every location is tier-relative and a tier moves whole.
+A **fixture** pins nothing; a **corpus** is an adopter's tree. A **corpus tier** is one directory; in a spec-folder tier each **spec folder** under its `docs/` is the synthetic repo root, so a human runs one folder alone ([design-ADR 0012](../../docs/design-adr/0012-conformance-spec-folders.md)).
 
 This record governs the **corpus shape** — the bytes under `fixtures/conformance/`. [ARCH-009](./ARCH-009-conformance-runners.md) governs the runners; ARCH-010 governs the specification those two sides form together. The first split follows the glob each Discipline needs; the second follows the cross-artifact contract a reviewer changes as one unit.
 
@@ -23,16 +23,17 @@ This record governs the **corpus shape** — the bytes under `fixtures/conforman
 
 ### 1. Vocabulary and scope
 
-1. The **Conformance suite** is every **corpus tier** under `fixtures/conformance/` plus the runners in `src/packages/conformance/`. This record's scope MUST stay `fixtures/conformance/**`, never `fixtures/**`.
-2. A **Module tier** holds **Conformance case** documents under `docs/`. A **rejected-config case** is one directory under `fixtures/conformance/rejected-config/`: a config the loader MUST refuse plus one `expected-rejection.json` freezing it. That tier MUST hold no markdown.
-3. `fixtures/llm-wiki/` MUST NOT be folded into this record's globs.
-4. Every key of every **vocabulary tier** (rule, constraint, `allowed` entry, named format) MUST be reached, and coverage MUST grow with the vocabulary.
+1. The **Conformance suite** is every **corpus tier** under `fixtures/conformance/` plus its runners. Scope MUST stay `fixtures/conformance/**`.
+2. A **Module tier** holds **Conformance case** documents under `docs/`. A **rejected-config case** is one directory: a config the loader MUST refuse plus `expected-rejection.json`, and no markdown.
+3. `fixtures/llm-wiki/` MUST stay outside this record's globs.
+4. Every key of every **vocabulary tier** (rule, constraint, `allowed` entry, named format) MUST be reached as the vocabulary grows.
 
 ### 2. The expect marker (📜 Rule: `expect-marker`)
 
-1. Every case MUST carry exactly one `<!-- expect: VERDICT -->` marker — PASSES, FAILS or UNGOVERNED — with its reasoning paragraph underneath.
-2. The marker MUST be an HTML comment, never a frontmatter key and never the body's leading word.
-3. The case glob MUST reach tier depth; matching zero files MUST itself be a violation.
+1. Every case MUST carry one `<!-- expect: VERDICT -->` marker — PASSES, FAILS or UNGOVERNED — over its reasoning.
+2. The marker MUST be an HTML comment, never a frontmatter key or leading word.
+3. The case glob MUST reach `docs/<spec>/**`; matching zero files MUST be a violation.
+4. A verbatim case MUST carry no marker; its `verbatim-cases.json` holds its verdict.
 
 ### 3. Vocabulary closure
 
@@ -41,11 +42,18 @@ This record governs the **corpus shape** — the bytes under `fixtures/conforman
 ### 4. The assess marker (📜 Rule: `assess-marker`)
 
 1. A case MAY carry one `<!-- assess: ACTION -->` marker — REVIEW, PROCEED or FIX_FILE. At most one; absence is legal.
-2. The assessment instant MUST NOT live in the config under test; moving it is a §3.1 change.
+2. The assessment instant MUST NOT live in the config under test.
 
 ### 5. Defective bytes stay unformatted
 
-1. Corpus bytes defective on purpose MUST be excluded from prettier, scoped to the directory rather than the files that fail today; `fixtures/conformance/rejected-config/**` MUST carry such an entry.
+1. Corpus bytes defective on purpose MUST be excluded from prettier by directory, `fixtures/conformance/rejected-config/**` included.
+
+### 6. Spec folders
+
+1. A spec folder MUST hold `markdown-harness.config.yaml` opening `# Spec: <sentence>` (📜 Rule: `spec-line`), `expected-check.json` and its cases.
+2. It MUST be named `<key>__<behaviour>`, the key one its config writes or a `CONTEXT.md` term (📜 Rule: `spec-folder-key`).
+3. It MUST hold a PASSES case (📜 Rule: `spec-folder-passes`).
+4. A rejected-config case MUST be named `<module>__<behaviour>` or `file__<behaviour>` (📜 Rule: `rejected-case-name`).
 
 ## Do's and Don'ts
 
@@ -53,25 +61,29 @@ This record governs the **corpus shape** — the bytes under `fixtures/conforman
 
 1. **DO** keep this record's scope at `fixtures/conformance/**`. (Decision 1.1)
 2. **DO** give every case exactly one `<!-- expect: VERDICT -->` marker. (Decision 2.1)
-3. **DO** keep the reasoning paragraph beneath the marker, so a reviewer can check the two agree. (Decision 2.1)
-4. **DO** prove a case glob's reach against the real tree. (Decision 2.3)
+3. **DO** keep the reasoning paragraph beneath the marker. (Decision 2.1)
+4. **DO** prove a glob's reach against the real tree. (Decision 2.3)
 5. **DO** give a rejected-config case one refused config and one `expected-rejection.json`. (Decision 1.2)
 6. **DO** add a case and extend its tier's config in the same change. (Decision 1.4)
 7. **DO** write an `assess:` action as REVIEW, PROCEED or FIX_FILE. (Decision 4, 📜 Rule: `assess-marker`)
 8. **DO** close every vocabulary tier as well as cover it. (Decision 3.1)
 9. **DO** move a `.prettierignore` entry in the change that moves the tree it names. (Decision 5.1)
+10. **DO** open a spec folder config with `# Spec: <sentence>`. (Decision 6, 📜 Rule: `spec-line`)
+11. **DO** add a governed PASSES partner to a folder that lacks one. (Decision 6, 📜 Rule: `spec-folder-passes`)
+12. **DO** name a rejected-config case for its fault's section. (Decision 6, 📜 Rule: `rejected-case-name`)
 
 ### Don'ts
 
-1. **DON'T** fold `fixtures/llm-wiki/` into this record's globs. (Decision 1.3)
-2. **DON'T** record an expected outcome as a frontmatter key or the leading word of the prose. (Decision 2.2)
+1. **DON'T** fold `fixtures/llm-wiki/` into these globs. (Decision 1.3)
+2. **DON'T** record an expected outcome as a frontmatter key or leading word. (Decision 2.2)
 3. **DON'T** leave a case with zero markers, or more than one. (Decision 2, 📜 Rule: `expect-marker`)
 4. **DON'T** write a verdict outside PASSES, FAILS, UNGOVERNED. (Decision 2.1)
 5. **DON'T** leave the case glob pointed where the corpus no longer is. (Decision 2.3)
-6. **DON'T** enumerate only some vocabulary tiers when extending coverage. (Decision 3.1)
+6. **DON'T** extend coverage over only some vocabulary tiers. (Decision 3.1)
 7. **DON'T** file markdown into the rejected-config tier. (Decision 1.2)
-8. **DON'T** write a second `assess:` marker, or put the instant in the config under test. (Decision 4)
-9. **DON'T** let `prettier --write` reach deliberately malformed corpus bytes. (Decision 5.1)
+8. **DON'T** write a second `assess:` marker or put the instant in the tested config. (Decision 4)
+9. **DON'T** let `prettier --write` reach malformed corpus bytes. (Decision 5.1)
+10. **DON'T** name a spec folder for a key its config never writes. (Decision 6, 📜 Rule: `spec-folder-key`)
 
 ## Consequences
 
@@ -87,19 +99,20 @@ This record governs the **corpus shape** — the bytes under `fixtures/conforman
 - **The pinned instant ages.** Every `fresh` case is fresh only relative to a constant in its runner, so the suite says nothing about real elapsed time — deliberately: it is the only way a freshness test is green tomorrow for the reason it was green today.
 - **Semantic drift is unverified.** The rule checks presence, singularity and vocabulary; it cannot check whether the verdict matches the prose.
 - **Authoring ceremony.** A new case needs a marker maintained alongside its prose, and a new tier needs a runner before the suite can be green.
-- **Coverage says nothing about values.** Coverage asserts a key is reached, never that its value survived parsing: an unquoted YAML flow scalar splits on its own commas, so `{ value: log, intent: A history, newest first. }` yields a halved `intent` and a null key named after the tail, every presence check still passing. Five such entries sat undetected — each an Operator's sentence silently truncated — until §3.2's closure duty caught them.
+- **Coverage says nothing about values.** An unquoted flow scalar splits on its commas, every presence check still passing; five such entries sat undetected until closure caught them.
+- **Rules repeat across folders.** A first-match folder copies its competing Rules; the runner holds every copy equal.
 
 ### Risks
 
 - **An unmarked case looks deliberate.** A case that should state a freshness answer and carries none is indistinguishable from one that correctly states none. **Mitigation:** the runner asserts all three actions are exercised, so the suite cannot go silent on a whole action; per-case omissions stay a review duty.
-- **Reviewers treat the marker as ground truth.** Reviewers might trust the verdict without reading the reasoning beneath it. **Mitigation:** a review duty mandates checking the marker against the prose.
-- **Future processing strips comments.** A pipeline might strip HTML comments before rules run. **Mitigation:** `expect-marker` reads committed source directly.
+- **Reviewers treat the marker as ground truth.** **Mitigation:** a review duty mandates checking the marker against the prose.
+- **Future processing strips comments.** **Mitigation:** `expect-marker` reads committed source directly.
 
 ## Compliance and Enforcement
 
-**Enforcer per Discipline:** `ARCH-002-conformance-suite.rules.ts` holds two `error`-tier rules, both looping the case glob `fixtures/conformance/*/docs/**/*.md`. `expect-marker` holds §2 — presence, singularity, verdict membership, and §2.3's empty-match guard. `assess-marker` holds §4.1 — at most one marker and action membership, absence passing silently. They are two rules because their cardinalities differ. Each regex matches only its own keyword, which is why the second marker needed no change to the first — and why, until it existed, an `assess:` marker was **ungoverned** rather than blocked.
+**Enforcer per Discipline:** `ARCH-002-conformance-suite.rules.ts` holds six `error`-tier rules. Two loop the case glob `fixtures/conformance/*/docs/**/*.md`: `expect-marker` holds §2 — presence, singularity, verdict membership, §2.4's manifest, and §2.3's empty-match guard. `spec-line`, `spec-folder-key`, `spec-folder-passes` and `rejected-case-name` hold §6 over EVERY folder or case, not only changed files, each failing on finding none; a §6.4 Module prefix MUST be a top-level key the case config writes, `file` naming a fault outside every section. `assess-marker` holds §4.1 — at most one marker and action membership, absence passing silently. They are two rules because their cardinalities differ. Each regex matches only its own keyword, which is why the second marker needed no change to the first — and why, until it existed, an `assess:` marker was **ungoverned** rather than blocked.
 
-**§2.3's guard, and why only one rule carries it.** Both rules loop the same glob, so one guard proves its reach for both. The loop itself cannot fail — had the corpus moved and the glob stayed, every case would have gone ungoverned under a green run. **The sibling `.rules.test.ts` proves what a rule DECIDES and never what it REACHES**: its context is hand-built, so a glob aimed at a vanished directory passes every test in it. Reach is provable only against the real tree.
+**§2.3's guard, and why only one rule carries it.** Both rules loop the same glob, so one guard proves its reach for both. The loop itself cannot fail. **The sibling `.rules.test.ts` proves what a rule DECIDES and never what it REACHES**: its context is hand-built, so a glob aimed at a vanished directory passes every test in it. Reach is provable only against the real tree.
 
 **§1.4 and §3.1 are enforced from the runner side**, by the coverage, closure and enrolment assertions governed by [ARCH-009](./ARCH-009-conformance-runners.md). Coverage proves the SUITE complete; closure proves the CONFIG complete, which is why neither may stand alone.
 

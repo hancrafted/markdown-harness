@@ -1,0 +1,64 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 3,
+      "invalidFiles": 2,
+      "totalViolations": 2
+    },
+    "files": [
+      {
+        "path": "bare.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "sentence-titles",
+            "ruleIntent": "A how-to is titled in the shape of an instruction.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": "^How to [a-z]+( [a-z]+)*$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "capital.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "sentence-titles",
+            "ruleIntent": "A how-to is titled in the shape of an instruction.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": "^How to [a-z]+( [a-z]+)*$"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

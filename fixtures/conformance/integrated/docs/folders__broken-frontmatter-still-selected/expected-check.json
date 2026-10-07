@@ -1,0 +1,85 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 3,
+      "invalidFiles": 2,
+      "totalViolations": 4
+    },
+    "files": [
+      {
+        "path": "docs/mixed/mangled.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "mixed",
+            "ruleIntent": "A mixed page says what it is.",
+            "violations": [
+              {
+                "field": null,
+                "violation": "FRONTMATTER__UNPARSEABLE"
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "mixed-title",
+            "ruleIntent": "A mixed page has exactly one title, whatever its frontmatter does.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/mixed/unterminated.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "mixed",
+            "ruleIntent": "A mixed page says what it is.",
+            "violations": [
+              {
+                "field": null,
+                "violation": "FRONTMATTER__UNPARSEABLE"
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "mixed-title",
+            "ruleIntent": "A mixed page has exactly one title, whatever its frontmatter does.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

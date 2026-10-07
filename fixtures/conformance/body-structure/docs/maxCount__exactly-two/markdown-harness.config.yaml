@@ -1,0 +1,11 @@
+# Spec: An enumeration whose `minCount` and `maxCount` are equal asks for exactly that many repeats.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: pairs
+      folders: ['./']
+      intent: 'A comparison has a title and exactly two sections, whatever they are called.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 2, maxCount: 2 }

@@ -1,0 +1,9 @@
+# Spec: An unparenthesised alternation anchors each branch at one end only, exactly as written.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: loose-alternation
+      folders: ['./']
+      intent: 'An unparenthesised alternation, written as the Operator wrote it.'
+      headings:
+        - { purpose: heading, level: 1, pattern: '^Pros|Cons$' }

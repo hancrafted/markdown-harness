@@ -1,0 +1,38 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 2,
+      "invalidFiles": 1,
+      "totalViolations": 1
+    },
+    "files": [
+      {
+        "path": "docs/titles-typed/typed-fails.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "titles-typed",
+            "ruleIntent": "A typed note has one title, and its second-level headings come from a short fixed set and nothing else.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Improved",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

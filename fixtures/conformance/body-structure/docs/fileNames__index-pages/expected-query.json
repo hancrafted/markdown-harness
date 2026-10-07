@@ -1,0 +1,33 @@
+{
+  "docs/research/index.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "docs/research/index.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/research/index.md",
+      "modules": [
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "index-pages",
+            "intent": "An index page names its folder and lists what is in it, so it has one title and nothing deeper than the second level."
+          },
+          "requirements": {
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

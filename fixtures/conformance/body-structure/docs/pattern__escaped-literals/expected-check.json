@@ -1,0 +1,64 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 3,
+      "invalidFiles": 2,
+      "totalViolations": 2
+    },
+    "files": [
+      {
+        "path": "no-parens.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "escaped-literals",
+            "ruleIntent": "A title with characters a regular expression gives meaning to.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": "^C\\+\\+ \\(draft\\)$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "one-plus.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "escaped-literals",
+            "ruleIntent": "A title with characters a regular expression gives meaning to.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": "^C\\+\\+ \\(draft\\)$"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

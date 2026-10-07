@@ -1,0 +1,10 @@
+# Spec: A two-line setext heading keeps its line break, so a pattern can name it.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: setext-lines
+      folders: ['./']
+      intent: 'A two-line setext heading keeps its line break, so a pattern can name it.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Source:\nOne$' }

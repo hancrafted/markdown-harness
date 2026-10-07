@@ -1,0 +1,104 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 4,
+      "invalidFiles": 3,
+      "totalViolations": 4
+    },
+    "files": [
+      {
+        "path": "both.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-closed",
+            "ruleIntent": "A brief has a title and a summary written as prose, and no other heading.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Appendix",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Summary",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Summary$",
+                  "mayHold": [
+                    "prose"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "claimed-fails.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-closed",
+            "ruleIntent": "A brief has a title and a summary written as prose, and no other heading.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Summary",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Summary$",
+                  "mayHold": [
+                    "prose"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "undefined-section.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "section-closed",
+            "ruleIntent": "A brief has a title and a summary written as prose, and no other heading.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Appendix",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

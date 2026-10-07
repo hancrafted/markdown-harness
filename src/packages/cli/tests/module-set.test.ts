@@ -164,18 +164,18 @@ describe('the declared Module set', () => {
 
   describe('failure cases', () => {
     it('keeps an audit that refused apart from one that tallied nothing', () => {
-      // The planted refusal. The body-structure tier's config reaches every
-      // file under `docs/`, so a corpus naming one that does not exist makes
+      // The planted refusal. This body-structure spec folder's config reaches
+      // every file under `docs/research/`, so a corpus naming one that does not exist makes
       // the second Module refuse its audit rather than tally it. Read through
       // the same observation the row above uses, a refusal must not come out
       // looking like the empty answer that row expects.
       // ARRANGE
-      const root = 'fixtures/conformance/body-structure';
+      const root = 'fixtures/conformance/body-structure/docs/folders__research-folder-reach';
       const absent = 'docs/research/absent.md';
       const expected = { refused: `${root}/${absent}` };
-      const loaded = loadConfig(`${root}/valid-test-config.yaml`, MODULE_SET);
+      const loaded = loadConfig(`${root}/markdown-harness.config.yaml`, MODULE_SET);
       if (loaded.config === undefined)
-        throw new Error('the body-structure tier config must load for this case to mean anything');
+        throw new Error('the body-structure spec folder config must load for this case to mean anything');
       const config = loaded.config;
       // ACT
       const audit = bodyStructureModule.audit?.(root, [absent], config);

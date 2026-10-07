@@ -1,0 +1,20 @@
+# Spec: `frontmatter: forbidden` and a `types` selector contradict each other: the page that obeys the first Module carries no `type`, so the second judges only the page that breaks the ban.
+#
+# Rules copied byte for byte from the tier's former shared config, in declared order, with their
+# folder tokens unchanged: each Module's selector is what this tier composes, so the cases keep
+# their tier-relative paths under docs/.
+body-structure:
+  rules:
+    - ruleId: sealed-title
+      folders: [docs/sealed/]
+      types: [sealed]
+      intent: 'A sealed page has exactly one title.'
+      headings:
+        - { purpose: heading, level: 1 }
+
+frontmatter:
+  rules:
+    - ruleId: sealed
+      folders: [docs/sealed/]
+      intent: 'A sealed page carries no frontmatter at all.'
+      frontmatter: forbidden

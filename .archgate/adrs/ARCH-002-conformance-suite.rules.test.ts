@@ -19,6 +19,9 @@
 // is what makes that probe produce a violation rather than a green run, and
 // running it is a stated obligation of any change that moves the corpus.
 
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import ruleSet from './ARCH-002-conformance-suite.rules';
 
@@ -27,8 +30,12 @@ interface Reported {
   file?: string;
 }
 
+// `**/` matches zero or more whole directories, as archgate's glob does, so
+// `<folder>/**/*.md` reaches a case at the folder root as well as below it.
 function globToRegExp(pattern: string): RegExp {
   const escaped = pattern
+    .split('**/')
+    .join('\u0000')
     .split('**')
     .map((chunk) =>
       chunk
@@ -36,7 +43,9 @@ function globToRegExp(pattern: string): RegExp {
         .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
         .join('[^/]*'),
     )
-    .join('.*');
+    .join('.*')
+    .split('\u0000')
+    .join('(?:.*/)?');
   return new RegExp(`^${escaped}$`);
 }
 
@@ -275,5 +284,397 @@ describe('assess-marker', () => {
     await rule2.check(ctx);
     // ASSERT
     expect(violations).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Spec folders (#231): the verbatim exception, the `# Spec:` line, the key left
+// of `__`, and at least one PASSES case. Hand-built contexts prove what each
+// rule DECIDES; the reach tests at the end run each rule over the real tree.
+// ---------------------------------------------------------------------------
+
+const FOLDER = 'fixtures/conformance/body-structure/docs/maxLevel__depth-only';
+const SPEC_CONFIG = `# Spec: A Rule that writes only maxLevel reports every heading deeper than it.\nbody-structure:\n  rules:\n    - ruleId: depth-only\n      folders: ['./']\n      intent: 'Shallow.'\n      maxLevel: 2\n`;
+const PASSING = '<!-- expect: PASSES -->\n\n# Title\n';
+const FAILING = '<!-- expect: FAILS -->\n\n### Deep\n';
+
+function folderFiles(overrides: Record<string, string | undefined> = {}): Record<string, string> {
+  const files: Record<string, string | undefined> = {
+    [`${FOLDER}/markdown-harness.config.yaml`]: SPEC_CONFIG,
+    [`${FOLDER}/passes.md`]: PASSING,
+    [`${FOLDER}/deep.md`]: FAILING,
+    'CONTEXT.md': '# Context\n\n**selector**:\nWhat a Rule selects by.\n',
+    ...overrides,
+  };
+  return Object.fromEntries(Object.entries(files).filter((entry): entry is [string, string] => entry[1] !== undefined));
+}
+
+describe('expect-marker on a verbatim case', () => {
+  const VERBATIM = 'fixtures/conformance/body-structure/docs/headings__real-gen-001-adr-passes';
+  const manifest = (verdict: string) => JSON.stringify({ 'GEN-001-adr.md': { verdict } });
+
+  it('passes an unmarked case its manifest lists with a known verdict', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx({
+      [`${VERBATIM}/GEN-001-adr.md`]: '# GEN-001\n',
+      [`${VERBATIM}/verbatim-cases.json`]: manifest('PASSES'),
+    });
+    // ACT
+    await rule.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('fails an unmarked case no manifest lists', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx({ [`${VERBATIM}/GEN-001-adr.md`]: '# GEN-001\n' });
+    // ACT
+    await rule.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([`${VERBATIM}/GEN-001-adr.md`]);
+  });
+
+  it('fails a listed case whose manifest names an unknown verdict', async () => {
+    // ARRANGE
+    const named = "'MAYBE'";
+    const { ctx, violations } = makeCtx({
+      [`${VERBATIM}/GEN-001-adr.md`]: '# GEN-001\n',
+      [`${VERBATIM}/verbatim-cases.json`]: manifest('MAYBE'),
+    });
+    // ACT
+    await rule.check(ctx);
+    // ASSERT
+    expect(violations).toHaveLength(1);
+    expect(violations[0].message).toContain(named);
+  });
+
+  it('fails a listed case that also carries a marker', async () => {
+    // ARRANGE
+    const reason = 'carries an expect marker';
+    const { ctx, violations } = makeCtx({
+      [`${VERBATIM}/GEN-001-adr.md`]: '<!-- expect: PASSES -->\n# GEN-001\n',
+      [`${VERBATIM}/verbatim-cases.json`]: manifest('PASSES'),
+    });
+    // ACT
+    await rule.check(ctx);
+    // ASSERT
+    expect(violations).toHaveLength(1);
+    expect(violations[0].message).toContain(reason);
+  });
+});
+
+describe('spec-line', () => {
+  const specLine = ruleSet.rules['spec-line'];
+
+  it('passes a folder whose config opens with a spec sentence', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx(folderFiles());
+    // ACT
+    await specLine.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('fails a folder whose config opens with anything else', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx(
+      folderFiles({ [`${FOLDER}/markdown-harness.config.yaml`]: `# A comment\n${SPEC_CONFIG}` }),
+    );
+    // ACT
+    await specLine.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([`${FOLDER}/markdown-harness.config.yaml`]);
+  });
+
+  it('fails a folder that holds no config', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx(folderFiles({ [`${FOLDER}/markdown-harness.config.yaml`]: undefined }));
+    // ACT
+    await specLine.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([FOLDER]);
+  });
+
+  it('fails when no spec folder is found at all', async () => {
+    // ARRANGE
+    const reason = 'No spec folder found';
+    const { ctx, violations } = makeCtx({ 'README.md': '# Elsewhere\n' });
+    // ACT
+    await specLine.check(ctx);
+    // ASSERT
+    expect(violations).toHaveLength(1);
+    expect(violations[0].message).toContain(reason);
+  });
+});
+
+describe('spec-folder-key', () => {
+  const folderKey = ruleSet.rules['spec-folder-key'];
+  const renamed = (name: string, config = SPEC_CONFIG) => {
+    const folder = `fixtures/conformance/body-structure/docs/${name}`;
+    return {
+      folder,
+      files: {
+        [`${folder}/markdown-harness.config.yaml`]: config,
+        [`${folder}/passes.md`]: PASSING,
+        'CONTEXT.md': '# Context\n\n**selector**:\nWhat a Rule selects by.\n',
+      },
+    };
+  };
+
+  it('passes a folder named for a key its config writes', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx(folderFiles());
+    // ACT
+    await folderKey.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('passes a dotted key whose every segment the config writes', async () => {
+    // ARRANGE
+    const { files } = renamed('rules.maxLevel__depth-only');
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await folderKey.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('passes a family term CONTEXT.md defines', async () => {
+    // ARRANGE
+    const { files } = renamed('selector__every-axis-must-match');
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await folderKey.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('fails a key the config never writes and CONTEXT.md does not define', async () => {
+    // ARRANGE
+    const { folder, files } = renamed('minCount__depth-only');
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await folderKey.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([folder]);
+  });
+
+  it('does not count a key written only in a comment', async () => {
+    // ARRANGE
+    const { folder, files } = renamed('minCount__depth-only', `${SPEC_CONFIG}# minCount: 2\n`);
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await folderKey.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([folder]);
+  });
+
+  it('fails a folder not named <key>__<behaviour>', async () => {
+    // ARRANGE
+    const { folder, files } = renamed('depth-only');
+    const { ctx, violations } = makeCtx(files);
+    // ACT
+    await folderKey.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([folder]);
+  });
+});
+
+describe('spec-folder-passes', () => {
+  const folderPasses = ruleSet.rules['spec-folder-passes'];
+
+  it('passes a folder holding a PASSES case', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx(folderFiles());
+    // ACT
+    await folderPasses.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('passes a folder whose only PASSES case is a verbatim one', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx(
+      folderFiles({
+        [`${FOLDER}/passes.md`]: undefined,
+        [`${FOLDER}/GEN-001-adr.md`]: '# GEN-001\n',
+        [`${FOLDER}/verbatim-cases.json`]: JSON.stringify({ 'GEN-001-adr.md': { verdict: 'PASSES' } }),
+      }),
+    );
+    // ACT
+    await folderPasses.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('fails a folder that states only failures and ungoverned cases', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx(
+      folderFiles({ [`${FOLDER}/passes.md`]: '<!-- expect: UNGOVERNED -->\n\n# Title\n' }),
+    );
+    // ACT
+    await folderPasses.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([FOLDER]);
+  });
+});
+
+describe('rejected-case-name', () => {
+  const caseName = ruleSet.rules['rejected-case-name'];
+  const TIER = 'fixtures/conformance/rejected-config';
+  const caseFiles = (name: string, config: string | undefined): Record<string, string> => ({
+    [`${TIER}/${name}/expected-rejection.json`]: '{}',
+    ...(config === undefined ? {} : { [`${TIER}/${name}/markdown-harness.config.yaml`]: config }),
+  });
+
+  it('passes a Module case whose config opens that section, and a file case with no config at all', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx({
+      ...caseFiles('frontmatter__duplicate-rule-id', '# Two rules.\nfrontmatter:\n  rules: []\n'),
+      ...caseFiles('body-structure__empty-pattern', 'body-structure: { rules: [] }\n'),
+      ...caseFiles('file__config-not-found', undefined),
+    });
+    // ACT
+    await caseName.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('fails a case named without a prefix, and one whose behaviour is not kebab-case', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx({
+      ...caseFiles('duplicate-rule-id', 'frontmatter:\n'),
+      ...caseFiles('frontmatter__Duplicate_Id', 'frontmatter:\n'),
+    });
+    // ACT
+    await caseName.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([`${TIER}/duplicate-rule-id`, `${TIER}/frontmatter__Duplicate_Id`]);
+  });
+
+  it('fails a Module prefix whose section the config only mentions in a comment or nests', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx({
+      ...caseFiles('body-structure__empty-pattern', '# body-structure:\nfrontmatter:\n  body-structure: 1\n'),
+    });
+    // ACT
+    await caseName.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([`${TIER}/body-structure__empty-pattern`]);
+  });
+
+  it('reports a tier its glob no longer reaches', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx({ 'fixtures/conformance/other/x/expected-rejection.json': '{}' });
+    const expected = [expect.stringContaining('No rejected-config case found')];
+    // ACT
+    await caseName.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.message)).toEqual(expected);
+  });
+});
+
+// REACH over the real tree. A hand-built context proves what a rule decides
+// and nothing about whether its globs reach the committed corpus, so each rule
+// also runs here against the repository itself: every spec folder of every
+// spec-folder tier must be enumerated, and every one must pass.
+describe('the spec-folder rules reach the real tree', () => {
+  const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const realFiles = (dir: string): string[] =>
+    readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory() ? realFiles(`${dir}/${entry.name}`) : [`${dir}/${entry.name}`],
+    );
+  const SPEC_TIERS = ['body-structure', 'integrated'];
+  const tree = [
+    ...SPEC_TIERS.flatMap((tier) => realFiles(`fixtures/conformance/${tier}`)),
+    ...realFiles('fixtures/conformance/rejected-config'),
+    'CONTEXT.md',
+  ];
+
+  function realCtx(blanked?: string) {
+    const violations: Reported[] = [];
+    const ctx = {
+      projectRoot: ROOT,
+      scopedFiles: [],
+      changedFiles: [],
+      async glob(pattern: string) {
+        const re = globToRegExp(pattern);
+        return tree.filter((f) => re.test(f));
+      },
+      async readFile(path: string) {
+        const text = readFileSync(join(ROOT, path), 'utf8');
+        return path === blanked ? text.replace(/^# Spec: /u, '# ') : text;
+      },
+      report: { violation: (d: Reported) => violations.push(d), warning: () => {}, info: () => {} },
+    } as unknown as RuleContext;
+    return { ctx, violations };
+  }
+
+  const foldersOf = (tier: string): string[] => readdirSync(join(ROOT, `fixtures/conformance/${tier}/docs`));
+
+  it.each(['spec-line', 'spec-folder-key', 'spec-folder-passes', 'expect-marker'] as const)(
+    '%s passes every committed spec folder',
+    async (ruleId) => {
+      // ARRANGE
+      const { ctx, violations } = realCtx();
+      // ACT
+      await ruleSet.rules[ruleId].check(ctx);
+      // ASSERT
+      expect(violations).toEqual([]);
+    },
+  );
+
+  it('rejected-case-name passes every committed rejected-config case', async () => {
+    // ARRANGE
+    const { ctx, violations } = realCtx();
+    // ACT
+    await ruleSet.rules['rejected-case-name'].check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('enumerates every rejected-config case directory, so rejected-case-name passed over all of them', () => {
+    // ARRANGE
+    const declared = { cases: 85, expectations: 85 };
+    const cases = readdirSync(join(ROOT, 'fixtures/conformance/rejected-config'));
+    // ACT
+    const expectations = tree.filter((f) =>
+      /^fixtures\/conformance\/rejected-config\/[^/]+\/expected-rejection\.json$/u.test(f),
+    );
+    // ASSERT
+    expect({ cases: cases.length, expectations: expectations.length }).toEqual(declared);
+  });
+
+  it.each(SPEC_TIERS)('reaches the %s tier, so a folder there that breaks a rule fails', async (tier) => {
+    // A tier the rules do not list passes every rule above over nothing, while
+    // the enumeration below still counts its folders off the disk. One real
+    // config in the tier, read with its spec line spoiled, must be reported.
+    // ARRANGE
+    const spoiled = `fixtures/conformance/${tier}/docs/${foldersOf(tier)[0]}/markdown-harness.config.yaml`;
+    const expected = [spoiled];
+    const { ctx, violations } = realCtx(spoiled);
+    // ACT
+    await ruleSet.rules['spec-line'].check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual(expected);
+  });
+
+  it('enumerates every spec folder of both spec-folder tiers, so no rule above passed over nothing', () => {
+    // ARRANGE
+    const fewest = { 'body-structure': 40, integrated: 9 };
+    // ACT
+    const actual = SPEC_TIERS.map((tier) => ({
+      tier,
+      folders: foldersOf(tier).length,
+      configs: tree.filter(
+        (f) => f.startsWith(`fixtures/conformance/${tier}/`) && f.endsWith('/markdown-harness.config.yaml'),
+      ).length,
+    }));
+    // ASSERT
+    for (const row of actual) {
+      expect(row.folders).toBeGreaterThan(fewest[row.tier as keyof typeof fewest]);
+      expect(row.configs).toBe(row.folders);
+    }
   });
 });

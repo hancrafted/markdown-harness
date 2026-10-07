@@ -1,0 +1,111 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 5,
+      "invalidFiles": 4,
+      "totalViolations": 4
+    },
+    "files": [
+      {
+        "path": "conclusion-first.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "swallow",
+            "ruleIntent": "A page of free second-level sections that ends in a Conclusion.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "minCount": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "conclusion-middle.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "swallow",
+            "ruleIntent": "A page of free second-level sections that ends in a Conclusion.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "minCount": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "no-conclusion.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "swallow",
+            "ruleIntent": "A page of free second-level sections that ends in a Conclusion.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  2
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Conclusion$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "no-sections.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "swallow",
+            "ruleIntent": "A page of free second-level sections that ends in a Conclusion.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "minCount": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
