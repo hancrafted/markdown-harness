@@ -1,0 +1,18 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "error": "CONFIG_REJECTED",
+    "faults": [
+      {
+        "code": "CONFIG_NOT_FOUND",
+        "location": "markdown-harness.config.yaml"
+      }
+    ]
+  }
+}
