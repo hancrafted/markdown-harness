@@ -3,6 +3,7 @@
 // the pinned tool. It is run by hand and is a measurement of the instrument, not a
 // test of the product. Each scenario breaks something and expects the wrapper to say so.
 
+import { parse } from 'yaml';
 import { environment, exitWith, nodeExecutable, writeOut } from '../../../platform/host-ambient.ts';
 import { pathExists, readText, readTextFiles } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
@@ -12,8 +13,18 @@ import type { Finding, MatrixRun } from '../checks/self-checks.types.ts';
 const WRAPPER = 'evals/packages/wrapper/run-evals.ts';
 const SHARING = ['promptfoo.app', 'api.promptfoo', 'share.promptfoo'];
 const TRIALS = 2;
-/** The push matrix's cells: the hook with and without the intent, the trusted-prompt control, and the widened shell. */
-const CELLS = 4;
+const MATRIX_CONFIG = 'evals/promptfooconfig.yaml';
+
+/** How many cells the matrix configuration holds, counted by evaluating it, so adding a cell moves the expectation. */
+function cellsInMatrix(): number {
+  const providers = (parse(readText(MATRIX_CONFIG)) as { providers?: unknown }).providers;
+  return Array.isArray(providers) ? providers.length : 0;
+}
+
+/** Sessions one run of the matrix invokes: every cell for every trial, plus the one canary the push matrix owes. */
+function invocationsPerRun(): number {
+  return cellsInMatrix() * TRIALS + 1;
+}
 
 interface Execution {
   readonly exitCode: number;
@@ -65,7 +76,7 @@ function trialsArgs(seed: string, extra: readonly string[] = []): string[] {
 function matrixFindings(): Finding[] {
   const twice = [wrapper(trialsArgs('self-a')), wrapper(trialsArgs('self-b'))];
   return judgeMatrix(twice.map(matrixRun), {
-    invocationsPerRun: CELLS * TRIALS + 1,
+    invocationsPerRun: invocationsPerRun(),
     runs: twice.length,
     sharing: SHARING,
   });
@@ -79,7 +90,7 @@ function breakFindings(): Finding[] {
   ];
   return judgeBreaks(
     { concurrency: matrixRun(concurrency), cacheOn: cacheOn.map(matrixRun) },
-    { invocationsPerRun: CELLS * TRIALS + 1, runs: cacheOn.length, sharing: SHARING },
+    { invocationsPerRun: invocationsPerRun(), runs: cacheOn.length, sharing: SHARING },
   );
 }
 

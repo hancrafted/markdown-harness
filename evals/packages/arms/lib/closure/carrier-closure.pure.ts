@@ -8,8 +8,6 @@
 import { parse } from 'yaml';
 import { intentCarriers } from '../carriers/intent-carriers.pure.ts';
 
-const SHAPE = /\b[A-Z][A-Z0-9_]*PLACEHOLDER[A-Z0-9_]*\b/g;
-
 type Path = readonly (string | number)[];
 
 interface Leaf {
@@ -28,8 +26,10 @@ function keyOf(path: Path): string {
   return path.map(String).join('\u0000');
 }
 
+/** The placeholder-shaped tokens in a text; the global pattern is built per call, so no state is shared. */
 function tokensOf(text: string): string[] {
-  return [...new Set(text.match(SHAPE) ?? [])];
+  const shape = /\b[A-Z][A-Z0-9_]*PLACEHOLDER[A-Z0-9_]*\b/g;
+  return [...new Set(text.match(shape) ?? [])];
 }
 
 interface Evaluated {
