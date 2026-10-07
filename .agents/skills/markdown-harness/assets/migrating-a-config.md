@@ -1,6 +1,6 @@
 # Migrating a config off the glob grammar
 
-Reached from `authoring-a-config.md` step 1, when the config already there carries `path:`,
+Reached from `migrating.md` step 4, or from `authoring-a-config.md` step 1, when the config already there carries `path:`,
 `fileName:`, or any selector value with a `*` in it. That grammar is gone: `mh query` rejects it
 outright, with `CONFIG_UNRECOGNISED_KEY` on the old key and `CONFIG_SELECTOR_MISSING` right behind it,
 because a config on the old grammar has no `folders:` or `fileNames:` for the loader to find.
@@ -59,5 +59,6 @@ change is the migration having moved the boundary of governance without anyone d
 
 _Done when_ every old-grammar key is gone, `mh audit` reports the same `governedFiles` and violation
 counts as before (or states why they differ), and the summary names every rule that lost recursion —
-so the reader knows which folder lists to watch for staleness. Continue at `authoring-a-config.md` step
-2 only if the user also wants to add or change a rule; a pure migration ends here.
+so the reader knows which folder lists to watch for staleness. Return to `migrating.md` step 4 if
+you came from there. Otherwise continue at `authoring-a-config.md` step 2 only if the user also wants
+to add or change a rule; a pure migration ends here.
