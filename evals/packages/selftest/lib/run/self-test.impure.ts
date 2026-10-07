@@ -11,6 +11,7 @@ import type { Finding, MatrixRun } from '../checks/self-checks.types.ts';
 import { antigravityFindings } from './antigravity-findings.impure.ts';
 import { TRIALS, expectExit, expectOutput, matrixArgs, runEvalScript, runWrapper } from './execution.impure.ts';
 import type { Execution } from './execution.types.ts';
+import { probeFindings } from './probe-findings.impure.ts';
 
 const PRESCREEN = 'evals/packages/prescreen/run-prescreen.ts';
 const SHARING = ['promptfoo.app', 'api.promptfoo', 'share.promptfoo'];
@@ -173,6 +174,7 @@ function scenarios(): Finding[] {
     ...breakFindings(),
     ...surfaceFindings(),
     ...antigravityFindings(),
+    ...probeFindings(),
     ...prescreenFindings(),
     expectExit('a graded failure exits zero, whatever the eval tool status (rung 4 nulls)', deaf, 0),
     {

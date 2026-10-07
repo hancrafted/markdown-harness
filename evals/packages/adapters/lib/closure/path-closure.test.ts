@@ -9,7 +9,7 @@ import { transcriptionGuardHits } from '../../../arms/steering-markers.ts';
 import { closureOf, isPackageRoot, namedRoots } from './path-closure.pure.ts';
 
 const EVALS = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
-const TOOL_INVOKED = ['adapters', 'wrapper', 'selftest', 'prescreen'];
+const TOOL_INVOKED = ['adapters', 'wrapper', 'selftest', 'prescreen', 'probe'];
 /** Every committed matrix configuration, as one text: a path any of them names is named. */
 const realConfig = () =>
   readdirSync(EVALS)

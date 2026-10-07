@@ -8,3 +8,6 @@ evals/runs/
 # Agent worktrees (Claude Code isolation) — nested inside the repo,
 # so they must be invisible to git and to any root-level tool scan.
 .claude/worktrees/
+
+# The Antigravity probe record: facts about one machine's agy and account, so never committed.
+evals/probes/

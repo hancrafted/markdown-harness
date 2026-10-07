@@ -136,6 +136,29 @@ describe('scanForLiveScripts', () => {
       expect(report.violations).toContain(expected);
     });
 
+    it('goes red on the real repository once the credential-touching probe script is planted in the verify chain', () => {
+      // ARRANGE
+      const input = realInput();
+      const planted = {
+        ...input,
+        scripts: { ...input.scripts, verify: `${input.scripts.verify} && npm run evals:agy-probe` },
+      };
+      const expected = 'the gate chain reaches evals:agy-probe';
+      // ACT
+      const report = scanForLiveScripts(planted);
+      // ASSERT
+      expect(report.violations).toContain(expected);
+    });
+
+    it('knows the probe script and its entry file by name, so the scanner covers them before anyone can plant them', () => {
+      // ARRANGE
+      const expected = ['evals:agy-probe', 'run-agy-probe'];
+      // ACT
+      const actual = realInput().forbidden;
+      // ASSERT
+      expect(actual).toEqual(expect.arrayContaining(expected));
+    });
+
     it('knows the live Antigravity script by name, so the scanner covers it before anyone can plant it', () => {
       // ARRANGE
       const expected = 'evals:agy';

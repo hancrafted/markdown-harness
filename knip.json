@@ -6,7 +6,8 @@
     "evals/packages/wrapper/*.ts",
     "evals/packages/adapters/*.ts",
     "evals/packages/selftest/*.ts",
-    "evals/packages/prescreen/*.ts"
+    "evals/packages/prescreen/*.ts",
+    "evals/packages/probe/*.ts"
   ],
   "project": ["src/**/*.ts", "evals/**/*.ts", "*.ts", ".archgate/**/*.ts"],
   "exclude": ["types", "nsTypes"]
