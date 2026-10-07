@@ -4,8 +4,10 @@
 
 import { commandLineArguments, exitWith, writeErr, writeOut } from '../../../platform/host-ambient.ts';
 import { pathExists, writeText } from '../../../platform/host-files.ts';
+import { hostRefusal } from '../args/host-gate.pure.ts';
 import { budgetRefusal, parseRunArgs } from '../args/run-args.pure.ts';
-import { describeKey } from '../canary/canary-keys.pure.ts';
+import type { RunArgs } from '../args/run-args.types.ts';
+import { describeKey, unprovableKeys } from '../canary/canary-keys.pure.ts';
 import { MISUSE, deriveExit } from '../exit/exit-contract.pure.ts';
 import { unpairedFields } from '../results/results-reading.pure.ts';
 import { summarise } from '../summary/run-summary.pure.ts';
@@ -48,13 +50,24 @@ function finishWith(plan: RunPlan, canaryFailure: string | undefined, toolFailur
   return verdict.code;
 }
 
+/** A sentence refusing the run before anything is built or spawned, or undefined when it may start. */
+function refusalOf(args: RunArgs, checkout: string): string | undefined {
+  if (!pathExists(`${checkout}/evals/promptfooconfig.yaml`)) return 'run this from the repository root';
+  return hostRefusal(args);
+}
+
+function planRefusal(plan: RunPlan): string | undefined {
+  return unprovableKeys(plan.canaryKeys)[0] ?? budgetRefusal(plan.expected, plan.args.allowOverBudget);
+}
+
 function main(): number {
   const parsed = parseRunArgs(commandLineArguments());
   if (!parsed.ok) return fail(parsed.problem);
   const checkout = process.cwd();
-  if (!pathExists(`${checkout}/evals/promptfooconfig.yaml`)) return fail('run this from the repository root');
+  const early = refusalOf(parsed.args, checkout);
+  if (early !== undefined) return fail(early);
   const plan = planRun(parsed.args, checkout);
-  const refusal = budgetRefusal(plan.expected, parsed.args.allowOverBudget);
+  const refusal = planRefusal(plan);
   if (refusal !== undefined) return fail(refusal);
   const built = buildCurrentMh(checkout);
   if (built !== undefined) return finishWith(plan, built, undefined);

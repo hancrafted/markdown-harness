@@ -4,16 +4,16 @@
 // test of the product. Each scenario breaks something and expects the wrapper to say so.
 
 import { parse } from 'yaml';
-import { environment, exitWith, nodeExecutable, writeOut } from '../../../platform/host-ambient.ts';
+import { exitWith, writeOut } from '../../../platform/host-ambient.ts';
 import { pathExists, readText, readTextFiles } from '../../../platform/host-files.ts';
-import { runProcess } from '../../../platform/host-process.ts';
 import { judgeBreaks, judgeMatrix, parseInvocationLog } from '../checks/self-checks.pure.ts';
 import type { Finding, MatrixRun } from '../checks/self-checks.types.ts';
+import { antigravityFindings } from './antigravity-findings.impure.ts';
+import { TRIALS, expectExit, expectOutput, matrixArgs, runEvalScript, runWrapper } from './execution.impure.ts';
+import type { Execution } from './execution.types.ts';
 
-const WRAPPER = 'evals/packages/wrapper/run-evals.ts';
 const PRESCREEN = 'evals/packages/prescreen/run-prescreen.ts';
 const SHARING = ['promptfoo.app', 'api.promptfoo', 'share.promptfoo'];
-const TRIALS = 2;
 const MATRIX_CONFIG = 'evals/promptfooconfig.yaml';
 
 /** How many cells the matrix configuration holds, counted by evaluating it, so adding a cell moves the expectation. */
@@ -25,30 +25,6 @@ function cellsInMatrix(): number {
 /** Sessions one run of the matrix invokes: every cell for every trial, plus the one canary the push matrix owes. */
 function invocationsPerRun(): number {
   return cellsInMatrix() * TRIALS + 1;
-}
-
-interface Execution {
-  readonly exitCode: number;
-  readonly stdout: string;
-  readonly runDir: string | undefined;
-}
-
-/** Runs one eval script under node with a bare PATH and HOME environment, and reads its exit code and run directory. */
-function runEvalScript(script: string, extra: readonly string[]): Execution {
-  const env = { PATH: environment().PATH ?? '', HOME: environment().HOME ?? '' };
-  const report = runProcess({
-    command: nodeExecutable(),
-    args: [script, ...extra],
-    cwd: process.cwd(),
-    env,
-    timeoutMs: 20 * 60_000,
-  });
-  const runLine = /^run \S+, seed recorded in (.+)$/m.exec(report.stdout);
-  return { exitCode: report.status ?? -1, stdout: `${report.stdout}${report.stderr}`, runDir: runLine?.[1] };
-}
-
-function runWrapper(extra: readonly string[]): Execution {
-  return runEvalScript(WRAPPER, extra);
 }
 
 function textOf(dir: string | undefined, name: string): string {
@@ -69,10 +45,6 @@ function matrixRun(execution: Execution): MatrixRun {
     sessionIds: sessionIdsOf(dir),
     toolText,
   };
-}
-
-function expectExit(check: string, execution: Execution, wanted: number): Finding {
-  return { check, ok: execution.exitCode === wanted, detail: `exit ${execution.exitCode}, wanted ${wanted}` };
 }
 
 function trialsArgs(seed: string, extra: readonly string[] = []): string[] {
@@ -98,14 +70,6 @@ function breakFindings(): Finding[] {
     { concurrency: matrixRun(concurrency), cacheOn: cacheOn.map(matrixRun) },
     { invocationsPerRun: invocationsPerRun(), runs: cacheOn.length, sharing: SHARING },
   );
-}
-
-function expectOutput(check: string, execution: Execution, pattern: RegExp): Finding {
-  return { check, ok: pattern.test(execution.stdout), detail: String(pattern) };
-}
-
-function matrixArgs(matrix: string, seed: string, extra: readonly string[] = []): string[] {
-  return ['--host', 'stub', '--matrix', matrix, '--trials', String(TRIALS), '--seed', seed, ...extra];
 }
 
 function pullFindings(): Finding[] {
@@ -208,6 +172,7 @@ function scenarios(): Finding[] {
     ...matrixFindings(),
     ...breakFindings(),
     ...surfaceFindings(),
+    ...antigravityFindings(),
     ...prescreenFindings(),
     expectExit('a graded failure exits zero, whatever the eval tool status (rung 4 nulls)', deaf, 0),
     {

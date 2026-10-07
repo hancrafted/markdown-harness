@@ -5,6 +5,8 @@ import type { SteeringGrade } from '../../../grading/grade-steering-marker.ts';
 import { armHit } from '../../../grading/grade-steering-marker.ts';
 import type { Localisation, RungObservation } from '../../../grading/localise-rung.ts';
 import { observableTable } from '../../../grading/localise-rung.ts';
+import type { HostProfile } from '../../../session/host-profile.ts';
+import { modelFamilyOf, profileOf } from '../../../session/host-profile.ts';
 import type { InitFacts, ResultFacts } from '../../../session/session-stream.ts';
 import type { CohortSources } from './session-record.types.ts';
 
@@ -26,6 +28,20 @@ export function localisedText(localised: Localisation): string {
   return localised.kind === 'clean' ? 'clean' : 'cannot localise';
 }
 
+/**
+ * What the stream cannot say about the Host harness, from its profile and the run's settings: how far flags
+ * isolate the run, what leaked in when none do, whether a turn cap exists, and the wall-clock bound, which is the
+ * only limit on a session of a Host harness with no turn cap.
+ */
+function hostFacts(profile: HostProfile, settings: CohortSources['settings']): Record<string, unknown> {
+  return {
+    isolation: profile.isolation,
+    leakedSurface: profile.leakedSurface,
+    turnCap: profile.turnCap === 'enforced' ? String(settings.host.maxTurns) : 'none',
+    wallClockMs: settings.host.wallClockMs,
+  };
+}
+
 function run(sources: CohortSources): Record<string, unknown> {
   const { settings, cell, vars } = sources;
   return {
@@ -39,6 +55,7 @@ function run(sources: CohortSources): Record<string, unknown> {
     providerId: sources.providerId,
     seed: settings.seed,
     hostName: cell.hostName,
+    ...hostFacts(profileOf(cell.hostName), settings),
     requestedModel: cell.model,
     evalToolVersion: settings.toolVersion,
     wrapperRevision: settings.wrapperRevision,
@@ -55,6 +72,7 @@ function initFields(init: InitFacts | undefined): Record<string, unknown> {
     permissionMode: init.permissionMode,
     authSource: init.apiKeySource,
     sessionId: init.sessionId,
+    toolCount: init.toolCount,
     skillCount: init.skills.length,
     serverCount: init.mcpServers.length,
     pluginCount: init.plugins.length,
@@ -63,18 +81,26 @@ function initFields(init: InitFacts | undefined): Record<string, unknown> {
 
 function resultFields(result: ResultFacts | undefined, init: InitFacts | undefined): Record<string, unknown> {
   if (result === undefined) return {};
+  const resolved = result.modelsUsed[0] ?? init?.model;
   return {
-    resolvedModel: result.modelsUsed[0] ?? init?.model,
+    resolvedModel: resolved,
+    modelFamily: resolved === undefined ? undefined : modelFamilyOf(resolved),
     turnCount: result.numTurns,
     errorFlag: result.isError,
     terminalReason: result.terminalReason,
   };
 }
 
+/** The fields this Host harness's init event cannot supply, written as `unknown`, the one value the builder allows them. */
+function unobservedFields(profile: HostProfile): Record<string, unknown> {
+  return Object.fromEntries(profile.unobservable.map((field) => [field, 'unknown']));
+}
+
 function session(sources: CohortSources): Record<string, unknown> {
   const { init, result } = sources.parsed;
   const when = { startedAt: new Date(sources.timing.startedAtMs).toISOString(), durationMs: sources.timing.durationMs };
-  return { ...initFields(init), ...resultFields(result, init), ...when };
+  const unobserved = unobservedFields(profileOf(sources.cell.hostName));
+  return { ...initFields(init), ...resultFields(result, init), ...when, ...unobserved };
 }
 
 function steeringFields(sources: CohortSources): Record<string, unknown> {

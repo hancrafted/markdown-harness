@@ -12,10 +12,12 @@ import {
 } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
 import type { FailureKind } from '../failure/failure-classifier.types.ts';
+import { buildAgyArgv, buildAgyEnvironment } from '../host/agy-invocation.pure.ts';
 import { buildChildEnvironment, buildClaudeArgv } from '../host/host-invocation.pure.ts';
 import { sweepForSteeringMarker } from '../leak/leak-sweep.pure.ts';
 import { mintRoot } from '../mint/mint-root.impure.ts';
 import { checkPullAnswer, checkRung1, checkRung2, pullFailureKind } from '../preflight/preconditions.pure.ts';
+import { parseAgyStream } from '../stream/agy-stream.pure.ts';
 import { parseSessionStream } from '../stream/session-stream.pure.ts';
 import { SHIM_PATH, allowedToolsFor, toolsFor } from '../surface/delivery-surface.pure.ts';
 import type { TrialOutcome, TrialRequest } from './trial.types.ts';
@@ -120,8 +122,18 @@ interface SessionRun {
   readonly durationMs: number;
 }
 
-function runSession(root: string, request: TrialRequest): SessionRun {
-  const [command, ...prefix] = request.host.command;
+/** The argv, environment and stream parser of the Host harness a request names. */
+function invocationOf(request: TrialRequest): {
+  argv: string[];
+  env: Record<string, string>;
+  parse: typeof parseSessionStream;
+} {
+  if (request.host.name === 'antigravity')
+    return {
+      argv: buildAgyArgv({ task: request.task, model: request.host.model, wallClockMs: request.host.wallClockMs }),
+      env: buildAgyEnvironment(environment()),
+      parse: parseAgyStream,
+    };
   const argv = buildClaudeArgv({
     task: request.task,
     model: request.host.model,
@@ -129,18 +141,25 @@ function runSession(root: string, request: TrialRequest): SessionRun {
     tools: toolsFor(request.surface.shell, request.host.tools),
     allowedTools: allowedToolsFor(request.surface.shell),
   });
+  return { argv, env: buildChildEnvironment(environment()), parse: parseSessionStream };
+}
+
+function runSession(root: string, request: TrialRequest): SessionRun {
+  const [command, ...prefix] = request.host.command;
+  const invocation = invocationOf(request);
   const report = runProcess({
     command: command ?? '',
-    args: [...prefix, ...argv],
+    args: [...prefix, ...invocation.argv],
     cwd: root,
-    env: buildChildEnvironment(environment()),
+    env: invocation.env,
     timeoutMs: request.host.wallClockMs,
   });
   const raw = {
     spawnError: report.spawnError,
     timedOut: report.timedOut,
     stderr: report.stderr,
-    parsed: parseSessionStream(report.stdout),
+    exitStatus: report.status,
+    parsed: invocation.parse(report.stdout),
   };
   return { raw, startedAtMs: report.startedAtMs, durationMs: report.durationMs };
 }

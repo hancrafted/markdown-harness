@@ -56,7 +56,14 @@ function mint(arm: 'steered' | 'neutralised' | 'control', under?: string) {
 
 function host(mode: string, log?: string) {
   const command = ['node', STUB, '--mode', mode, ...(log === undefined ? [] : ['--log', log])];
-  return { command, model: 'stub', maxTurns: 4, wallClockMs: 20_000, tools: ['Read', 'Write', 'Edit'] };
+  return {
+    name: 'claude-code' as const,
+    command,
+    model: 'stub',
+    maxTurns: 4,
+    wallClockMs: 20_000,
+    tools: ['Read', 'Write', 'Edit'],
+  };
 }
 
 function trial(arm: 'steered' | 'neutralised' | 'control', mode = 'obey') {

@@ -4,13 +4,12 @@
 import type { RawSession } from '../../../session/classify-session.ts';
 import { classifySession } from '../../../session/classify-session.ts';
 import type { TrialOutcome } from '../../../session/run-trial.ts';
-import { readCaseVars, readCellConfig, readRunSettings } from './provider-config.pure.ts';
+import { expectationFor, readCaseVars, readCellConfig, readRunSettings } from './provider-config.pure.ts';
 import { reportFailure } from './session-failure.impure.ts';
 import { gradeSession } from './session-grading.impure.ts';
 import type { SessionCall, SessionReturn, TrialParts } from './session-record.types.ts';
 import { setUpAndRun } from './trial-setup.impure.ts';
 
-const EXPECTATION = { apiKeySource: 'none', expectedPlugins: ['cc-plugin-agents-md', 'cc-plugin-telemetry'] };
 const NO_STREAM = { events: [], init: undefined, result: undefined, unparsedLines: 0, missingKeys: [] };
 
 type Inputs = TrialParts | { readonly missing: string[] };
@@ -32,7 +31,7 @@ function streamOf(outcome: TrialOutcome): RawSession {
 
 function runInputs(call: SessionCall, parts: TrialParts): SessionReturn {
   const { prepared, outcome } = setUpAndRun(parts);
-  const verdict = classifySession(streamOf(outcome), EXPECTATION);
+  const verdict = classifySession(streamOf(outcome), expectationFor(parts.cell));
   if (verdict.outcome === 'graded' && outcome.raw !== undefined)
     return gradeSession({ ...parts, call, prepared, outcome, parsed: outcome.raw.parsed });
   const kind = verdict.outcome === 'instrument-failure' ? verdict.kind : 'no-parseable-stream';

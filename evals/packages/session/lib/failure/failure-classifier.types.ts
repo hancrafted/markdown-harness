@@ -6,6 +6,7 @@ export type FailureKind =
   | 'authentication-failure'
   | 'rate-limit-exhausted'
   | 'wall-clock-timeout'
+  | 'permission-denied'
   | 'no-parseable-stream'
   | 'unrecognised-terminal-reason'
   | 'init-assertion-failed'
@@ -23,6 +24,8 @@ export interface RawSession {
   readonly spawnError: string | undefined;
   readonly timedOut: boolean;
   readonly stderr: string;
+  /** The process exit status, kept for the record only: R0 settled that exit 0 proves nothing about a session. */
+  readonly exitStatus?: number | null;
   readonly parsed: ParsedSession;
   /** A failure a check outside the session already named (a precondition, the canary, the mint); passed through. */
   readonly declared?: FailureKind;
@@ -36,4 +39,8 @@ export type Classification =
 export interface InitExpectation {
   readonly apiKeySource: string;
   readonly expectedPlugins: readonly string[];
+  /** The permission mode the argv asked for, when the Host harness reports one that must match. */
+  readonly permissionMode?: string;
+  /** The model id the cell asked for, when the init event reports one that must match; absent for an alias. */
+  readonly model?: string;
 }

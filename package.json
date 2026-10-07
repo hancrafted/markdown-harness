@@ -45,7 +45,8 @@
     "verify:commit": "lint-staged && archgate check && tsc --noEmit && npm run build && vitest run",
     "evals:self-test": "node evals/packages/selftest/run-self-test.ts",
     "evals:prescreen": "node evals/packages/prescreen/run-prescreen.ts",
-    "evals:live": "node evals/packages/wrapper/run-evals.ts --host claude"
+    "evals:live": "node evals/packages/wrapper/run-evals.ts --host claude",
+    "evals:agy": "node evals/packages/wrapper/run-evals.ts --host agy --matrix agy"
   },
   "dependencies": {
     "marked": "~18.0.14",

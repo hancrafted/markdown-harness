@@ -28,6 +28,8 @@ export interface InitFacts {
   readonly version: string;
   readonly permissionMode: string;
   readonly sessionId: string;
+  /** How many tools the init event lists; for a Host harness with no isolation flag it measures what leaked in. */
+  readonly toolCount: number;
   readonly skills: readonly string[];
   readonly mcpServers: readonly string[];
   readonly plugins: readonly string[];

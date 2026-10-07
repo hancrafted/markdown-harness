@@ -31,7 +31,7 @@ const SCRIPTS = {
   'evals:live': 'node evals/live.ts',
   'evals:self-test': 'npx promptfoo@0.124.0 eval',
 };
-const FORBIDDEN = ['evals:live', 'evals:self-test', 'promptfoo', 'claude -p'];
+const FORBIDDEN = ['evals:live', 'evals:self-test', 'promptfoo', 'claude -p', 'agy -p'];
 const WORKFLOW = {
   '.github/workflows/ci.yml':
     'steps:\n  - run: npx archgate check\n  - run: npm run lint:boundaries\n  - run: npm test\n',
@@ -56,7 +56,7 @@ describe('forbiddenNames', () => {
         'evals:x': 'node evals/packages/x/run-x.ts --flag',
         'evals:y': 'npx tool',
       };
-      const expected = ['evals:x', 'evals:y', 'run-x', 'promptfoo', 'claude -p'];
+      const expected = ['evals:x', 'evals:y', 'run-x', 'promptfoo', 'claude -p', 'agy -p'];
       // ACT
       const actual = forbiddenNames(scripts);
       // ASSERT
@@ -91,7 +91,7 @@ describe('forbiddenNames', () => {
   describe('edge cases', () => {
     it('names only the eval tool and the Host harness invocation when no script is an evals script', () => {
       // ARRANGE
-      const expected = ['promptfoo', 'claude -p'];
+      const expected = ['promptfoo', 'claude -p', 'agy -p'];
       // ACT
       const actual = forbiddenNames({ verify: 'vitest run' });
       // ASSERT
@@ -120,6 +120,29 @@ describe('scanForLiveScripts', () => {
       // ASSERT
       expect(report.violations).toEqual([]);
       expect(report.chain).toEqual(expect.arrayContaining(expectedChain));
+    });
+
+    it('goes red on the real repository once the live Antigravity script is planted in the verify chain', () => {
+      // ARRANGE
+      const input = realInput();
+      const planted = {
+        ...input,
+        scripts: { ...input.scripts, verify: `${input.scripts.verify} && npm run evals:agy` },
+      };
+      const expected = 'the gate chain reaches evals:agy';
+      // ACT
+      const report = scanForLiveScripts(planted);
+      // ASSERT
+      expect(report.violations).toContain(expected);
+    });
+
+    it('knows the live Antigravity script by name, so the scanner covers it before anyone can plant it', () => {
+      // ARRANGE
+      const expected = 'evals:agy';
+      // ACT
+      const actual = realInput().forbidden;
+      // ASSERT
+      expect(actual).toContain(expected);
     });
 
     it('goes red on the real repository once a live script is planted in the verify chain', () => {
@@ -151,9 +174,14 @@ describe('scanForLiveScripts', () => {
     it('goes red when a workflow names the eval tool or a Host harness invocation', () => {
       // ARRANGE
       const workflows = {
-        '.github/workflows/ci.yml': 'steps:\n  - run: npx promptfoo@1 eval\n  - run: claude -p "hi"\n',
+        '.github/workflows/ci.yml':
+          'steps:\n  - run: npx promptfoo@1 eval\n  - run: claude -p "hi"\n  - run: /opt/homebrew/bin/agy -p "hi"\n',
       };
-      const expected = ['.github/workflows/ci.yml names promptfoo', '.github/workflows/ci.yml names claude -p'];
+      const expected = [
+        '.github/workflows/ci.yml names promptfoo',
+        '.github/workflows/ci.yml names claude -p',
+        '.github/workflows/ci.yml names agy -p',
+      ];
       // ACT
       const report = scan({ workflows });
       // ASSERT

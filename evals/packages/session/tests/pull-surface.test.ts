@@ -120,6 +120,7 @@ function trialOn(surface: DeliverySurface, arm: 'steered' | 'neutralised', mode:
     heldOut: [join(CHECKOUT, 'evals/suites/steering/cases')],
     derivedConfig,
     host: {
+      name: 'claude-code',
       command: ['node', STUB, '--mode', mode],
       model: 'stub',
       maxTurns: 4,
@@ -302,7 +303,14 @@ describe('runTrial over a pull surface', () => {
         sources: sourcesFor({ checkout: CHECKOUT, seedRelative: SEED }),
         heldOut: [],
         derivedConfig,
-        host: { command: ['node', STUB], model: 'stub', maxTurns: 4, wallClockMs: 20_000, tools: ['Read'] },
+        host: {
+          name: 'claude-code',
+          command: ['node', STUB],
+          model: 'stub',
+          maxTurns: 4,
+          wallClockMs: 20_000,
+          tools: ['Read'],
+        },
         task: 'x',
         steeringMarkers: [{ steeringMarker: STEERING_MARKER, sweepExpectation: { kind: 'exactly', occurrences: 1 } }],
         targetPath: TARGET,

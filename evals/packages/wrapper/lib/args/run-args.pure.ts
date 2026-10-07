@@ -7,7 +7,7 @@ import type { ArgsResult, MatrixName, RunArgs } from './run-args.types.ts';
 
 export const DEFAULT_TRIALS = 8;
 export const SESSION_LIMIT = 40;
-const MATRICES: readonly MatrixName[] = ['push', 'pull', 'carriers'];
+const MATRICES: readonly MatrixName[] = ['push', 'pull', 'carriers', 'agy'];
 const FLAGS = [
   '--host',
   '--matrix',
@@ -35,7 +35,8 @@ function integer(value: string): number | undefined {
 }
 
 function hostValue(args: RunArgs, value: string): RunArgs | string {
-  return value === 'claude' || value === 'stub' ? { ...args, host: value } : `--host is claude or stub, not ${value}`;
+  if (value === 'claude' || value === 'agy' || value === 'stub') return { ...args, host: value };
+  return `--host is claude, agy or stub, not ${value}`;
 }
 
 function matrixValue(args: RunArgs, value: string): RunArgs | string {

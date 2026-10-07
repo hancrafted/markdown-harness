@@ -6,6 +6,7 @@ import { environment, nowIso, randomHex } from '../../../platform/host-ambient.t
 import { readText } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
 import { isDeliveryChannel } from '../../../session/delivery-surface.ts';
+import { profileOf } from '../../../session/host-profile.ts';
 import { configFileFor } from '../args/run-args.pure.ts';
 import type { RunArgs } from '../args/run-args.types.ts';
 import { canaryKeysFor } from '../canary/canary-keys.pure.ts';
@@ -56,7 +57,8 @@ function hostFor(args: RunArgs, where: { checkout: string; runDir: string }): Ru
     '--log',
     `${runDir}/stub-sessions.log`,
   ];
-  const command = args.host === 'stub' ? stub : [binary ?? 'claude'];
+  const live = args.host === 'agy' ? profileOf('antigravity').binary : profileOf('claude-code').binary;
+  const command = args.host === 'stub' ? stub : [binary ?? live];
   return { command, maxTurns: 6, wallClockMs: args.host === 'stub' ? 60_000 : 600_000, tools: TOOLS };
 }
 

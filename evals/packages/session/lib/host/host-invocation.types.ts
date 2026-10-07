@@ -8,3 +8,11 @@ export interface ClaudeArgvInput {
   /** Shell permission patterns pre-approved for the session; any other shell command is denied in a headless run. */
   readonly allowedTools: readonly string[];
 }
+
+export interface AgyArgvInput {
+  readonly task: string;
+  /** An explicit model id from `agy models`; never the Host harness default. */
+  readonly model: string;
+  /** The wall-clock bound; `agy` has no turn cap, so this is the only limit on a session. */
+  readonly wallClockMs: number;
+}

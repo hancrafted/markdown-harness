@@ -8,6 +8,7 @@ import { parse } from 'yaml';
 import {
   cellLabelOf,
   derivationArmFor,
+  expectationFor,
   fillClause,
   readCaseVars,
   readCellConfig,
@@ -41,6 +42,55 @@ const ENV = {
   EVALS_WRAPPER_DIRTY: 'false',
   EVALS_HOST: '{"command":["x"],"maxTurns":4,"wallClockMs":1000,"tools":["Write"]}',
 };
+
+describe('expectationFor', () => {
+  describe('failure cases', () => {
+    it('does not hold a Claude Code cell to a model id, because it is asked for by alias', () => {
+      // ARRANGE
+      const forbidden = 'model';
+      // ACT
+      const actual = Object.keys(expectationFor({ ...CELL, hostName: 'claude-code', model: 'sonnet' } as never));
+      // ASSERT
+      expect(actual).not.toContain(forbidden);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('holds an Antigravity cell to whatever model id its cell names', () => {
+      // ARRANGE
+      const expected = 'claude-sonnet-5-5-medium';
+      // ACT
+      const actual = expectationFor({ ...CELL, hostName: 'antigravity', model: expected } as never).model;
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+  });
+
+  describe('success cases', () => {
+    it('expects subscription authentication, the two Claude Code plugins and no model id for a Claude Code alias', () => {
+      // ARRANGE
+      const expected = { apiKeySource: 'none', expectedPlugins: ['cc-plugin-agents-md', 'cc-plugin-telemetry'] };
+      // ACT
+      const actual = expectationFor({ ...CELL, hostName: 'claude-code' } as never);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('expects an Antigravity session to run the requested model id under the skip-permissions mode', () => {
+      // ARRANGE
+      const expected = {
+        apiKeySource: 'unknown',
+        expectedPlugins: [],
+        permissionMode: 'always-proceed',
+        model: 'gemini-3.8-flash-low',
+      };
+      // ACT
+      const actual = expectationFor({ ...CELL, hostName: 'antigravity', model: 'gemini-3.8-flash-low' } as never);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});
 
 describe('provider inputs', () => {
   describe('success cases', () => {
@@ -102,6 +152,15 @@ describe('provider inputs', () => {
       expect(actual).toMatch(expected);
     });
 
+    it('refuses a cell naming a Host harness this instrument has no profile for', () => {
+      // ARRANGE
+      const expected = ['config.hostName (codex is not claude-code or antigravity)'];
+      // ACT
+      const actual = readCellConfig({ ...CELL, hostName: 'codex' });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses a case with no tested carrier, and one whose carrier lacks its clause', () => {
       // ARRANGE
       const expected = [['vars.carriers'], ['vars.carriers[0].clauseTemplate']];
@@ -138,6 +197,16 @@ describe('provider inputs', () => {
       ];
       // ASSERT
       expect(actual).toEqual(expected);
+    });
+
+    it('names an Antigravity cell with its Host harness first, so its sidecar never collides with a Claude Code cell', () => {
+      // ARRANGE
+      const agy = { hostName: 'antigravity', deliveryChannel: 'pull', shell: 'query-only', encoding: 'json' };
+      const expected = 'antigravity-pull-json-steered';
+      // ACT
+      const actual = cellLabelOf({ ...CELL, ...agy } as never);
+      // ASSERT
+      expect(actual).toBe(expected);
     });
 
     it('treats an absent case var as missing even when others are present', () => {

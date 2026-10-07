@@ -5,6 +5,7 @@ import { armHit, gradeSteeringMarker } from '../../../grading/grade-steering-mar
 import { localiseRung } from '../../../grading/localise-rung.ts';
 import { nodeVersion } from '../../../platform/host-ambient.ts';
 import { buildCohortRow } from '../../../session/cohort-row.ts';
+import { profileOf } from '../../../session/host-profile.ts';
 import { observeSession } from '../../../session/observe-session.ts';
 import type { TrialOutcome } from '../../../session/run-trial.ts';
 import { carrierHitsOf, cohortFields, localisedText } from './cohort-fields.pure.ts';
@@ -120,7 +121,7 @@ export function gradeSession(parts: GradeParts): SessionReturn {
   const { settings, cell, call } = parts;
   const observation = observationOf(parts);
   const grades = gradesOf(parts);
-  const row = buildCohortRow(fieldsOf(parts, observation, grades), []);
+  const row = buildCohortRow(fieldsOf(parts, observation, grades), profileOf(cell.hostName).unobservable);
   if (!row.ok)
     return reportFailure({
       settings,

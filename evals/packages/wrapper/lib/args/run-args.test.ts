@@ -45,6 +45,18 @@ describe('parseRunArgs', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('reads the Antigravity host and matrix, and maps the matrix to its committed configuration file', () => {
+      // ARRANGE
+      const expected = { host: 'agy', matrix: 'agy' };
+      const expectedFile = 'promptfooconfig.agy.yaml';
+      // ACT
+      const result = parseRunArgs(['--host', 'agy', '--matrix', 'agy']);
+      const file = configFileFor('agy');
+      // ASSERT
+      expect(result).toMatchObject({ ok: true, args: expected });
+      expect(file).toBe(expectedFile);
+    });
+
     it('reads a self-test break against the stub Host harness', () => {
       // ARRANGE
       const expected = { host: 'stub', break: 'concurrency' };

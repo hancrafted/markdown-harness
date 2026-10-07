@@ -1,4 +1,5 @@
 import type { FailureKind, RawSession } from '../failure/failure-classifier.types.ts';
+import type { HostName } from '../host/host-profile.types.ts';
 import type { SweepExpectation } from '../leak/leak-sweep.types.ts';
 import type { MintSources } from '../mint/mint-plan.types.ts';
 import type { ArmKind } from '../observe/session-observation.types.ts';
@@ -6,6 +7,7 @@ import type { DeliverySurface } from '../surface/delivery-surface.types.ts';
 
 /** How a Host harness is invoked: a command prefix, so a self-test can point it at a stub. */
 export interface HostSpec {
+  readonly name: HostName;
   readonly command: readonly string[];
   readonly model: string;
   readonly maxTurns: number;

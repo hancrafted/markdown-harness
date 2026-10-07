@@ -1,5 +1,6 @@
 import type { SectionScope } from '../../../grading/grade-steering-marker.ts';
 import type { DeliveryChannel, Encoding, ShellScope } from '../../../session/delivery-surface.ts';
+import type { HostName } from '../../../session/host-profile.ts';
 import type { ArmKind } from '../../../session/observe-session.ts';
 
 /**
@@ -12,7 +13,7 @@ export interface CellConfig {
   readonly shell: ShellScope;
   readonly encoding: Encoding;
   readonly model: string;
-  readonly hostName: 'claude-code';
+  readonly hostName: HostName;
 }
 
 /** One tested carrier a case declares: the placeholder it holds, the clause to put there, and where the steering marker belongs. */

@@ -57,6 +57,7 @@ function prepare(parts: TrialParts): Prepared {
 function hostFor(parts: TrialParts): Parameters<typeof runTrial>[0]['host'] {
   const { host } = parts.settings;
   return {
+    name: parts.cell.hostName,
     command: host.command,
     model: parts.cell.model,
     maxTurns: host.maxTurns,

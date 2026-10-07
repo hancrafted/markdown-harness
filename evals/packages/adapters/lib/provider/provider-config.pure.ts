@@ -2,8 +2,10 @@
 // and fails the call as an instrument failure rather than becoming a guess.
 
 import type { ArmName } from '../../../arms/derive-arms.ts';
+import type { InitExpectation } from '../../../session/classify-session.ts';
 import type { DeliverySurface } from '../../../session/delivery-surface.ts';
 import { grantsShellWrites, incoherentSurface, isDeliveryChannel } from '../../../session/delivery-surface.ts';
+import { isHostName } from '../../../session/host-profile.ts';
 import type { ArmKind } from '../../../session/observe-session.ts';
 import type { CaseVars, CellConfig, RunSettings, TaskParts } from './provider-config.types.ts';
 
@@ -11,6 +13,12 @@ type Bag = Readonly<Record<string, unknown>>;
 
 function need(bag: Bag, names: readonly string[], where: string): string[] {
   return names.filter((name) => bag[name] === undefined || bag[name] === '').map((name) => `${where}.${name}`);
+}
+
+function cellHostProblem(bag: Bag): string[] {
+  return isHostName(bag.hostName)
+    ? []
+    : [`config.hostName (${String(bag.hostName)} is not claude-code or antigravity)`];
 }
 
 function cellSurfaceProblem(bag: Bag): string[] {
@@ -29,7 +37,7 @@ export function readCellConfig(config: unknown): CellConfig | string[] {
   const bag = (config ?? {}) as Bag;
   const missing = need(bag, ['arm', 'deliveryChannel', 'shell', 'encoding', 'model', 'hostName'], 'config');
   if (missing.length > 0) return missing;
-  const problems = cellSurfaceProblem(bag);
+  const problems = [...cellHostProblem(bag), ...cellSurfaceProblem(bag)];
   return problems.length > 0 ? problems : (bag as unknown as CellConfig);
 }
 
@@ -37,7 +45,8 @@ export function readCellConfig(config: unknown): CellConfig | string[] {
 export function cellLabelOf(cell: CellConfig): string {
   const shell = grantsShellWrites(cell.shell) ? 'shell' : undefined;
   const encoding = cell.deliveryChannel === 'pull' ? cell.encoding : undefined;
-  return [cell.deliveryChannel, shell, encoding, cell.arm].filter((part) => part !== undefined).join('-');
+  const host = cell.hostName === 'claude-code' ? undefined : cell.hostName;
+  return [host, cell.deliveryChannel, shell, encoding, cell.arm].filter((part) => part !== undefined).join('-');
 }
 
 function carrierProblems(carriers: unknown): string[] {
@@ -104,4 +113,19 @@ export function derivationArmFor(arm: ArmKind): ArmName {
     case 'control':
       return 'neutralised';
   }
+}
+
+const CLAUDE_EXPECTATION: InitExpectation = {
+  apiKeySource: 'none',
+  expectedPlugins: ['cc-plugin-agents-md', 'cc-plugin-telemetry'],
+};
+
+/**
+ * What the init event must show for a cell to count. Claude Code is asked for by alias, so only authentication
+ * and plugins are checked. Antigravity is asked for by model id and a permission mode, and its init event
+ * reports both, so a run on another model, or in another mode, is an instrument failure and never a score.
+ */
+export function expectationFor(cell: CellConfig): InitExpectation {
+  if (cell.hostName === 'claude-code') return CLAUDE_EXPECTATION;
+  return { apiKeySource: 'unknown', expectedPlugins: [], permissionMode: 'always-proceed', model: cell.model };
 }

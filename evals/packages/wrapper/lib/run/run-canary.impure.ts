@@ -8,8 +8,10 @@
 import { deriveArm, placeholdersIn } from '../../../arms/derive-arms.ts';
 import { drawSteeringMarker } from '../../../arms/steering-markers.ts';
 import { readText } from '../../../platform/host-files.ts';
+import { sessionCause } from '../../../session/classify-session.ts';
 import type { Canary } from '../../../session/delivery-surface.ts';
 import { CHANNELS } from '../../../session/delivery-surface.ts';
+import { isHostName, profileOf } from '../../../session/host-profile.ts';
 import { sourcesFor } from '../../../session/mint-guards.ts';
 import { runTrial } from '../../../session/run-trial.ts';
 import { describeKey } from '../canary/canary-keys.pure.ts';
@@ -18,9 +20,11 @@ import type { RunPlan } from './run-plan.types.ts';
 
 const TARGET = 'docs/research/canary-note.md';
 
-function hostOf(plan: RunPlan): Parameters<typeof runTrial>[0]['host'] {
+/** The Host harness a key names, with the model its profile canaries with; the key's host was checked before any canary ran. */
+function hostOf(plan: RunPlan, key: CanaryKey): Parameters<typeof runTrial>[0]['host'] {
   const { command, maxTurns, wallClockMs, tools } = plan.host;
-  return { command, model: 'sonnet', maxTurns, wallClockMs, tools };
+  const name = isHostName(key.host) ? key.host : 'claude-code';
+  return { name, command, model: profileOf(name).canaryModel, maxTurns, wallClockMs, tools };
 }
 
 /** One steering marker per placeholder the layout's config holds, each drawn for its own carrier. */
@@ -43,7 +47,7 @@ function request(plan: RunPlan, key: CanaryKey, canary: Canary): Parameters<type
     sources: sourcesFor({ checkout: plan.checkout, seedRelative: key.layout }),
     heldOut: [],
     derivedConfig: derived.configText,
-    host: hostOf(plan),
+    host: hostOf(plan, key),
     task: canary.task(TARGET),
     steeringMarkers: drawn.map((one, index) => ({
       steeringMarker: one.steeringMarker,
@@ -53,20 +57,28 @@ function request(plan: RunPlan, key: CanaryKey, canary: Canary): Parameters<type
   };
 }
 
+type Outcome = ReturnType<typeof runTrial>;
+
+/** What went wrong with the session itself, before its stream is read for the canary's own question. */
+function sessionProblem(outcome: Outcome): string | undefined {
+  if (outcome.declared !== undefined) return `${outcome.declared.kind}: ${outcome.declared.detail}`;
+  if (outcome.raw?.spawnError !== undefined) return `the Host harness could not start (${outcome.raw.spawnError})`;
+  const cause = outcome.raw === undefined ? undefined : sessionCause(outcome.raw);
+  return cause?.outcome === 'instrument-failure' ? `${cause.kind}: ${cause.detail}` : undefined;
+}
+
 function runCanary(plan: RunPlan, key: CanaryKey): string | undefined {
   const canary = CHANNELS[key.channel].canary;
   if (canary === undefined) return `canary failed: the ${key.channel} channel has no canary to run`;
   const outcome = runTrial(request(plan, key, canary));
-  if (outcome.declared !== undefined) return `canary failed: ${outcome.declared.kind}: ${outcome.declared.detail}`;
-  if (outcome.raw?.spawnError !== undefined)
-    return `canary failed: the Host harness could not start (${outcome.raw.spawnError})`;
-  return canary.verdict(outcome.raw?.parsed.events ?? []);
+  const problem = sessionProblem(outcome);
+  return problem === undefined ? canary.verdict(outcome.raw?.parsed.events ?? []) : `canary failed: ${problem}`;
 }
 
 /**
- * Every canary the matrix owes, stopping at the first failure and naming its key. Only one Host harness exists,
- * so the command that drives a key is the plan's one command; a second Host harness will need its own command
- * keyed the same way.
+ * Every canary the matrix owes, stopping at the first failure and naming its key. One run drives one Host
+ * harness, so the command that drives a key is the plan's one command, and the matrix gate has already refused a
+ * key whose Host harness cannot be canaried.
  */
 export function runCanaries(plan: RunPlan): string | undefined {
   for (const key of plan.canaryKeys) {

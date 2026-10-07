@@ -38,7 +38,7 @@ export function scanForLiveScripts(input: ScanInput): ScanReport {
   return { chain, violations: [...empty, ...fromScripts, ...fromChain, ...fromWorkflows] };
 }
 
-const TOOL_AND_HOST = ['promptfoo', 'claude -p'];
+const TOOL_AND_HOST = ['promptfoo', 'claude -p', 'agy -p'];
 
 /**
  * The names a gate chain or workflow must never reach, derived from the manifest so a new live script cannot

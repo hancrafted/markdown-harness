@@ -5,15 +5,12 @@
 // An event class the Host harness did not emit is absent, never an empty
 // placeholder, because absence is how an unobservable rung is told from a clean one.
 
+import { asList, asRecord, asString, missingFrom, parseLine } from './json-values.pure.ts';
+import type { Json } from './json-values.types.ts';
 import type { InitFacts, ParsedSession, ResultFacts, SessionEvent } from './session-stream.types.ts';
 
-type Json = Record<string, unknown>;
 type Draft = SessionEvent extends infer E ? (E extends { seq: number } ? Omit<E, 'seq'> : never) : never;
 
-const asRecord = (value: unknown): Json =>
-  typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Json) : {};
-const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
-const asList = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
 const names = (value: unknown): string[] =>
   asList(value).map((item) => (typeof item === 'string' ? item : asString(asRecord(item).name)));
 
@@ -64,6 +61,7 @@ function initFacts(line: Json): InitFacts {
     version: asString(line.claude_code_version),
     permissionMode: asString(line.permissionMode),
     sessionId: asString(line.session_id),
+    toolCount: asList(line.tools).length,
     skills: names(line.skills),
     mcpServers: names(line.mcp_servers),
     plugins: names(line.plugins),
@@ -93,19 +91,6 @@ const INIT_KEYS = [
   'plugins',
 ];
 const RESULT_KEYS = ['is_error', 'terminal_reason', 'result'];
-
-function missingFrom(line: Json | undefined, keys: readonly string[], label: string): string[] {
-  return line === undefined ? [] : keys.filter((key) => !(key in line)).map((key) => `${label}.${key}`);
-}
-
-function parseLine(text: string): Json | undefined {
-  try {
-    const value: unknown = JSON.parse(text);
-    return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Json) : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 export function parseSessionStream(text: string): ParsedSession {
   const rows = text.split('\n').filter((row) => row.trim() !== '');
