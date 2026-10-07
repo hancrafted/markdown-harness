@@ -62,6 +62,7 @@ const SOURCES: CohortSources = {
     },
     unparsedLines: 0,
     missingKeys: [],
+    unexpectedShapes: [],
   },
   observation: {
     observations: rungObservations({}),

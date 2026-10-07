@@ -10,7 +10,14 @@ import { gradeSession } from './session-grading.impure.ts';
 import type { SessionCall, SessionReturn, TrialParts } from './session-record.types.ts';
 import { setUpAndRun } from './trial-setup.impure.ts';
 
-const NO_STREAM = { events: [], init: undefined, result: undefined, unparsedLines: 0, missingKeys: [] };
+const NO_STREAM = {
+  events: [],
+  init: undefined,
+  result: undefined,
+  unparsedLines: 0,
+  missingKeys: [],
+  unexpectedShapes: [],
+};
 
 type Inputs = TrialParts | { readonly missing: string[] };
 

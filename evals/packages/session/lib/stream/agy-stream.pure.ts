@@ -14,15 +14,25 @@
 // is Bash, view_file is Read. Any other tool name passes through unchanged. No hook event is ever emitted: hook
 // firing in headless `agy` is unprobed, and an event class the Host harness did not emit is absent.
 
-import { asList, asRecord, asString, missingFrom, parseLine } from './json-values.pure.ts';
+import { asList, asRecord, asString } from './json-values.pure.ts';
 import type { Json } from './json-values.types.ts';
-import type { InitFacts, ParsedSession, ResultFacts, SessionEvent } from './session-stream.types.ts';
-
-type Draft = SessionEvent extends infer E ? (E extends { seq: number } ? Omit<E, 'seq'> : never) : never;
+import type { StreamDraft as Draft, InitFacts, ParsedSession, ResultFacts } from './session-stream.types.ts';
+import { assembleStream } from './stream-envelope.pure.ts';
+import type { DraftedEvents, StreamDialect } from './stream-envelope.types.ts';
 
 const TOOL_NAMES: Readonly<Record<string, string>> = { write_to_file: 'Write', run_command: 'Bash', view_file: 'Read' };
-const INIT_KEYS = ['model', 'cwd', 'tools', 'permission_mode'];
-const RESULT_KEYS = ['status', 'response', 'num_turns'];
+
+/** The parameters the parser reads from a finished call, per `agy` tool; a tool absent here is passed through unread. */
+const TOOL_PARAMETERS: Readonly<Record<string, readonly string[]>> = {
+  write_to_file: ['TargetFile', 'CodeContent'],
+  run_command: ['CommandLine'],
+};
+
+/** The keys a step's updates ever carried, whatever their values: a blank value is a key that was there. */
+interface SeenKeys {
+  readonly parameters: ReadonlySet<string>;
+  readonly info: ReadonlySet<string>;
+}
 
 interface Step {
   readonly index: number;
@@ -32,6 +42,7 @@ interface Step {
   readonly parameters: Json;
   readonly output: string;
   readonly text: string;
+  readonly seen: SeenKeys;
 }
 
 function inputOf(tool: string, parameters: Json): Json {
@@ -58,9 +69,10 @@ function mergeRaw(before: Json, update: Json): Json {
   return { ...before, ...present(update), tool_info: info, text };
 }
 
-function toStep(raw: Json): Step {
+function toStep(raw: Json, seen: SeenKeys = { parameters: new Set(), info: new Set() }): Step {
   const info = asRecord(raw.tool_info);
   return {
+    seen,
     index: typeof raw.step_index === 'number' ? raw.step_index : -1,
     type: asString(raw.step_type),
     tool: asString(raw.tool_name),
@@ -84,15 +96,41 @@ function stepDrafts(step: Step): Draft[] {
   return step.type === 'agent_response' && step.text !== '' ? [{ kind: 'assistant-text', text: step.text }] : [];
 }
 
-/** The events of every step in step order: a step that never left ACTIVE is a call with no result. */
-function stepEvents(updates: readonly Json[]): Draft[] {
+/** Which tool_info and parameter keys each step's updates carried, by step index. */
+function seenKeysByStep(updates: readonly Json[]): Map<number, SeenKeys> {
+  const seen = new Map<number, { parameters: Set<string>; info: Set<string> }>();
+  for (const update of updates) {
+    const index = toStep(update).index;
+    const keys = seen.get(index) ?? { parameters: new Set<string>(), info: new Set<string>() };
+    const info = asRecord(update.tool_info);
+    Object.keys(info).forEach((key) => keys.info.add(key));
+    Object.keys(asRecord(info.parameters)).forEach((key) => keys.parameters.add(key));
+    seen.set(index, keys);
+  }
+  return seen;
+}
+
+/** The expected keys a finished write or shell call lacks; a call that failed or never finished is not held to them. */
+function shapeProblems(step: Step): string[] {
+  const wanted = TOOL_PARAMETERS[step.tool];
+  if (step.type !== 'tool' || wanted === undefined || step.state !== 'DONE') return [];
+  const missing = wanted.filter((key) => !step.seen.parameters.has(key));
+  const output = step.seen.info.has('output') || step.seen.info.has('error') ? [] : ['output'];
+  return [...missing, ...output].map((key) => `${step.tool} step-${step.index} lacks ${key}`);
+}
+
+/** The events and shape problems of every step in step order: a step that never left ACTIVE is a call with no result. */
+function stepEvents(updates: readonly Json[]): DraftedEvents {
   const steps = new Map<number, Json>();
+  const seen = seenKeysByStep(updates);
   for (const update of updates) {
     const index = toStep(update).index;
     steps.set(index, mergeRaw(steps.get(index) ?? {}, update));
   }
-  const ordered = [...steps.values()].map(toStep).sort((left, right) => left.index - right.index);
-  return ordered.flatMap(stepDrafts);
+  const ordered = [...steps.values()]
+    .map((raw) => toStep(raw, seen.get(toStep(raw).index)))
+    .sort((left, right) => left.index - right.index);
+  return { drafts: ordered.flatMap(stepDrafts), unexpectedShapes: ordered.flatMap(shapeProblems) };
 }
 
 function initFacts(line: Json): InitFacts {
@@ -124,28 +162,24 @@ function resultFacts(line: Json, model: string): ResultFacts {
   };
 }
 
-function missingKeys(initLine: Json | undefined, resultLine: Json | undefined): string[] {
-  const id = initLine === undefined || 'conversation_id' in initLine ? [] : ['conversation_id'];
-  return [
-    ...missingFrom(initLine && asRecord(initLine.init), INIT_KEYS, 'init'),
-    ...id,
-    ...missingFrom(resultLine && asRecord(resultLine.result), RESULT_KEYS, 'result'),
-  ];
-}
+const dialect: StreamDialect = {
+  isInit: (line) => line.event === 'init',
+  isResult: (line) => line.event === 'result',
+  initBody: (line) => asRecord(line.init),
+  resultBody: (line) => asRecord(line.result),
+  initKeys: ['model', 'cwd', 'tools', 'permission_mode'],
+  resultKeys: ['status', 'response', 'num_turns'],
+  initLineKeys: ['conversation_id'],
+  initFacts,
+  resultFacts: (line, init) => resultFacts(line, init?.model ?? ''),
+  drafted: (lines, init): DraftedEvents => {
+    const updates = lines.filter((line) => line.event === 'step_update').map((line) => asRecord(line.step_update));
+    const steps = stepEvents(updates);
+    const opening: Draft[] = init === undefined ? [] : [{ kind: 'init' }];
+    return { drafts: [...opening, ...steps.drafts], unexpectedShapes: steps.unexpectedShapes };
+  },
+};
 
 export function parseAgyStream(text: string): ParsedSession {
-  const rows = text.split('\n').filter((row) => row.trim() !== '');
-  const parsed = rows.map(parseLine).filter((line): line is Json => line !== undefined);
-  const initLine = parsed.find((line) => line.event === 'init');
-  const resultLine = parsed.find((line) => line.event === 'result');
-  const updates = parsed.filter((line) => line.event === 'step_update').map((line) => asRecord(line.step_update));
-  const init = initLine && initFacts(initLine);
-  const drafts: Draft[] = [...(init === undefined ? [] : [{ kind: 'init' } as const]), ...stepEvents(updates)];
-  return {
-    events: drafts.map((draft, seq) => ({ ...draft, seq }) as SessionEvent),
-    init,
-    result: resultLine && resultFacts(resultLine, init?.model ?? ''),
-    unparsedLines: rows.length - parsed.length,
-    missingKeys: missingKeys(initLine, resultLine),
-  };
+  return assembleStream(text, dialect);
 }

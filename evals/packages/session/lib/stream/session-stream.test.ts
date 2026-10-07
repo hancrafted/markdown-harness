@@ -166,3 +166,59 @@ describe('parseSessionStream', () => {
     });
   });
 });
+
+describe('parseSessionStream tool input shape', () => {
+  const call = (name: string, input: object) =>
+    stream({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 't1', name, input }] } });
+
+  describe('success cases', () => {
+    it('reports no unexpected shape for a write, edit, shell and read that carry their keys', () => {
+      // ARRANGE
+      const text = [
+        call('Write', { file_path: '/r/a.md', content: 'x' }),
+        call('Edit', { file_path: '/r/a.md', old_string: 'a', new_string: 'b' }),
+        call('Bash', { command: 'ls' }),
+        call('Read', { file_path: '/r/a.md' }),
+      ].join('\n');
+      const expected: string[] = [];
+      // ACT
+      const actual = parseSessionStream(text).unexpectedShapes;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('names a write whose path key was renamed', () => {
+      // ARRANGE
+      const text = call('Write', { path: '/r/a.md', content: 'x' });
+      const expected = ['Write t1 lacks file_path'];
+      // ACT
+      const actual = parseSessionStream(text).unexpectedShapes;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('names a shell call whose command key was renamed', () => {
+      // ARRANGE
+      const text = call('Bash', { cmd: 'ls' });
+      const expected = ['Bash t1 lacks command'];
+      // ACT
+      const actual = parseSessionStream(text).unexpectedShapes;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('does not hold a tool it does not interpret to any key', () => {
+      // ARRANGE
+      const text = call('Glob', { pattern: '*.md' });
+      const expected: string[] = [];
+      // ACT
+      const actual = parseSessionStream(text).unexpectedShapes;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});

@@ -64,9 +64,16 @@ function preStream(raw: RawSession): Classification | undefined {
   return raw.parsed.result === undefined ? noResult(raw) : undefined;
 }
 
+/** A tool event that lacks a key the parser reads from it: the parser's field names are guesses a live stream may break. */
+function shapeFailure(parsed: ParsedSession): Classification | undefined {
+  return parsed.unexpectedShapes.length === 0
+    ? undefined
+    : failure('unexpected-stream-shape', parsed.unexpectedShapes.join('; '));
+}
+
 /** The named failure a session shows before any init expectation is held to it, or undefined when it ran clean. */
 export function sessionCause(raw: RawSession): Classification | undefined {
-  return preStream(raw) ?? resultFailure(raw.parsed, raw.stderr);
+  return preStream(raw) ?? resultFailure(raw.parsed, raw.stderr) ?? shapeFailure(raw.parsed);
 }
 
 export function classifySession(raw: RawSession, expectation: InitExpectation): Classification {

@@ -8,6 +8,7 @@ export type FailureKind =
   | 'wall-clock-timeout'
   | 'permission-denied'
   | 'no-parseable-stream'
+  | 'unexpected-stream-shape'
   | 'unrecognised-terminal-reason'
   | 'init-assertion-failed'
   | 'mint-refused'

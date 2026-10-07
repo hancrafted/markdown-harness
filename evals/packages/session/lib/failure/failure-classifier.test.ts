@@ -310,3 +310,58 @@ describe('sessionCause', () => {
     });
   });
 });
+
+describe('classifySession on an unexpected stream shape', () => {
+  const renamedWrite = {
+    event: 'step_update',
+    step_update: {
+      step_index: 1,
+      state: 'DONE',
+      step_type: 'tool',
+      tool_name: 'write_to_file',
+      tool_info: { parameters: { TargetFile: '/r/a.md', FileContent: 'x' }, output: 'ok' },
+    },
+  };
+
+  describe('success cases', () => {
+    it('grades an Antigravity session whose tool events carry the guessed keys', () => {
+      // ARRANGE
+      const expected = { outcome: 'graded' };
+      // ACT
+      const actual = classifySession(agyRaw([AGY_INIT, AGY_RESULT]), AGY_EXPECT);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('names a renamed write key an instrument failure, so it never reads as an empty written text', () => {
+      // ARRANGE
+      const expected = { outcome: 'instrument-failure', kind: 'unexpected-stream-shape' };
+      // ACT
+      const actual = classifySession(agyRaw([AGY_INIT, renamedWrite, AGY_RESULT]), AGY_EXPECT);
+      // ASSERT
+      expect(actual).toMatchObject(expected);
+    });
+
+    it('lets a canary see the same failure through the session cause', () => {
+      // ARRANGE
+      const expected = { outcome: 'instrument-failure', kind: 'unexpected-stream-shape' };
+      // ACT
+      const actual = sessionCause(agyRaw([AGY_INIT, renamedWrite, AGY_RESULT]));
+      // ASSERT
+      expect(actual).toMatchObject(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('names the cause a session already shows before the shape, so a sign-in wall is not read as a shape problem', () => {
+      // ARRANGE
+      const expected = { kind: 'authentication-failure' };
+      // ACT
+      const actual = sessionCause(agyRaw([AGY_INIT, renamedWrite], { stderr: AUTH_STDERR }));
+      // ASSERT
+      expect(actual).toMatchObject(expected);
+    });
+  });
+});

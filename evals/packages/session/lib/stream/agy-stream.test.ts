@@ -246,11 +246,88 @@ describe('parseAgyStream', () => {
 
     it('reads empty output as an empty stream with nothing parsed', () => {
       // ARRANGE
-      const expected = { events: [], init: undefined, result: undefined, unparsedLines: 0, missingKeys: [] };
+      const expected = {
+        events: [],
+        init: undefined,
+        result: undefined,
+        unparsedLines: 0,
+        missingKeys: [],
+        unexpectedShapes: [],
+      };
       // ACT
       const parsed = parseAgyStream('');
       // ASSERT
       expect(parsed).toEqual(expected);
+    });
+  });
+});
+
+describe('parseAgyStream guessed field names', () => {
+  const renamed = (tool: string, parameters: object, output: object = { output: 'ok' }) =>
+    lines(INIT, step(1, 'DONE', { step_type: 'tool', tool_name: tool, tool_info: { parameters, ...output } }), RESULT);
+
+  describe('success cases', () => {
+    it('reports no unexpected shape for a stream whose write, shell and output keys are the guessed ones', () => {
+      // ARRANGE
+      const expected: string[] = [];
+      // ACT
+      const actual = parseAgyStream(SUCCESS).unexpectedShapes;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('names a write whose content parameter was renamed, rather than reading it as empty text', () => {
+      // ARRANGE
+      const stream = renamed('write_to_file', { TargetFile: '/r/docs/a.md', FileContent: 'hello' });
+      const expected = ['write_to_file step-1 lacks CodeContent'];
+      // ACT
+      const actual = parseAgyStream(stream).unexpectedShapes;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('names a shell call whose command parameter was renamed', () => {
+      // ARRANGE
+      const stream = renamed('run_command', { Command: 'ls' });
+      const expected = ['run_command step-1 lacks CommandLine'];
+      // ACT
+      const actual = parseAgyStream(stream).unexpectedShapes;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('names a finished shell call whose output field was renamed', () => {
+      // ARRANGE
+      const stream = renamed('run_command', { CommandLine: 'ls' }, { stdout: 'a' });
+      const expected = ['run_command step-1 lacks output'];
+      // ACT
+      const actual = parseAgyStream(stream).unexpectedShapes;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('accepts an error field in place of output, which is how a denied or failed call reports', () => {
+      // ARRANGE
+      const stream = renamed('run_command', { CommandLine: 'ls' }, { error: 'denied' });
+      const expected: string[] = [];
+      // ACT
+      const actual = parseAgyStream(stream).unexpectedShapes;
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('does not hold a tool it does not interpret to the guessed names', () => {
+      // ARRANGE
+      const stream = renamed('grep_search', { Query: 'x' }, {});
+      const expected: string[] = [];
+      // ACT
+      const actual = parseAgyStream(stream).unexpectedShapes;
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
   });
 });

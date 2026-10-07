@@ -5,11 +5,24 @@
 // An event class the Host harness did not emit is absent, never an empty
 // placeholder, because absence is how an unobservable rung is told from a clean one.
 
-import { asList, asRecord, asString, missingFrom, parseLine } from './json-values.pure.ts';
+import { asList, asRecord, asString } from './json-values.pure.ts';
 import type { Json } from './json-values.types.ts';
-import type { InitFacts, ParsedSession, ResultFacts, SessionEvent } from './session-stream.types.ts';
+import type { StreamDraft as Draft, InitFacts, ParsedSession, ResultFacts } from './session-stream.types.ts';
+import { assembleStream } from './stream-envelope.pure.ts';
+import type { DraftedEvents, StreamDialect } from './stream-envelope.types.ts';
 
-type Draft = SessionEvent extends infer E ? (E extends { seq: number } ? Omit<E, 'seq'> : never) : never;
+/** The keys the parser reads from a tool call's input, per tool; a tool absent here is passed through unread. */
+const TOOL_INPUT_KEYS: Readonly<Record<string, readonly string[]>> = {
+  Write: ['file_path', 'content'],
+  Edit: ['file_path'],
+  Bash: ['command'],
+  Read: ['file_path'],
+};
+
+/** The expected keys a tool call's input lacks, each named by tool, call id and key. */
+function shapeProblems(tool: string, id: string, input: Json): string[] {
+  return (TOOL_INPUT_KEYS[tool] ?? []).filter((key) => !(key in input)).map((key) => `${tool} ${id} lacks ${key}`);
+}
 
 const names = (value: unknown): string[] =>
   asList(value).map((item) => (typeof item === 'string' ? item : asString(asRecord(item).name)));
@@ -80,30 +93,34 @@ function resultFacts(line: Json): ResultFacts {
   };
 }
 
-const INIT_KEYS = [
-  'apiKeySource',
-  'model',
-  'claude_code_version',
-  'permissionMode',
-  'session_id',
-  'skills',
-  'mcp_servers',
-  'plugins',
-];
-const RESULT_KEYS = ['is_error', 'terminal_reason', 'result'];
+const dialect: StreamDialect = {
+  isInit: (line) => line.type === 'system' && line.subtype === 'init',
+  isResult: (line) => line.type === 'result',
+  initBody: (line) => line,
+  resultBody: (line) => line,
+  initKeys: [
+    'apiKeySource',
+    'model',
+    'claude_code_version',
+    'permissionMode',
+    'session_id',
+    'skills',
+    'mcp_servers',
+    'plugins',
+  ],
+  resultKeys: ['is_error', 'terminal_reason', 'result'],
+  initLineKeys: [],
+  initFacts,
+  resultFacts,
+  drafted: (lines): DraftedEvents => {
+    const drafts = lines.flatMap(draftsOf);
+    const unexpectedShapes = drafts.flatMap((draft) =>
+      draft.kind === 'tool-call' ? shapeProblems(draft.tool, draft.id, draft.input) : [],
+    );
+    return { drafts, unexpectedShapes };
+  },
+};
 
 export function parseSessionStream(text: string): ParsedSession {
-  const rows = text.split('\n').filter((row) => row.trim() !== '');
-  const lines = rows.map(parseLine);
-  const parsed = lines.filter((line): line is Json => line !== undefined);
-  const initLine = parsed.find((line) => line.type === 'system' && line.subtype === 'init');
-  const resultLine = parsed.find((line) => line.type === 'result');
-  const events = parsed.flatMap(draftsOf).map((draft, seq) => ({ ...draft, seq }) as SessionEvent);
-  return {
-    events,
-    init: initLine === undefined ? undefined : initFacts(initLine),
-    result: resultLine === undefined ? undefined : resultFacts(resultLine),
-    unparsedLines: rows.length - parsed.length,
-    missingKeys: [...missingFrom(initLine, INIT_KEYS, 'init'), ...missingFrom(resultLine, RESULT_KEYS, 'result')],
-  };
+  return assembleStream(text, dialect);
 }
