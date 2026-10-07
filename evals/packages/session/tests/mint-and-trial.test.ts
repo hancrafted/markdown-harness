@@ -38,7 +38,13 @@ afterEach(() => {
 
 function mint(arm: 'steered' | 'neutralised' | 'control', under?: string) {
   const config = derived(arm === 'steered' ? 'steered' : 'neutralised').configText;
-  return mintRoot({ sources: sourcesFor(CHECKOUT, SEED), arm, derivedConfig: config, heldOut: HELD_OUT, under });
+  return mintRoot({
+    sources: sourcesFor({ checkout: CHECKOUT, seedRelative: SEED }),
+    arm,
+    derivedConfig: config,
+    heldOut: HELD_OUT,
+    under,
+  });
 }
 
 function host(mode: string, log?: string) {
@@ -53,7 +59,7 @@ function trial(arm: 'steered' | 'neutralised' | 'control', mode = 'obey') {
     arm === 'steered' ? ({ kind: 'exactly', occurrences: substitutions } as const) : ({ kind: 'none' } as const);
   return runTrial({
     arm,
-    sources: sourcesFor(CHECKOUT, SEED),
+    sources: sourcesFor({ checkout: CHECKOUT, seedRelative: SEED }),
     heldOut: HELD_OUT,
     derivedConfig,
     host: host(mode),
@@ -185,7 +191,7 @@ describe('runTrial', () => {
       // ACT
       const outcome = runTrial({
         arm: 'steered',
-        sources: sourcesFor(CHECKOUT, SEED),
+        sources: sourcesFor({ checkout: CHECKOUT, seedRelative: SEED }),
         heldOut: HELD_OUT,
         derivedConfig: wrong.configText,
         host: host('obey'),
@@ -206,7 +212,7 @@ describe('runTrial', () => {
       // ACT
       const outcome = runTrial({
         arm: 'neutralised',
-        sources: sourcesFor(CHECKOUT, SEED),
+        sources: sourcesFor({ checkout: CHECKOUT, seedRelative: SEED }),
         heldOut: HELD_OUT,
         derivedConfig: leaking,
         host: host('obey'),

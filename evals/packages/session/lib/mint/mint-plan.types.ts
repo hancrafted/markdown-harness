@@ -25,3 +25,9 @@ export interface TreeEntry {
   readonly path: string;
   readonly kind: 'file' | 'dir' | 'symlink';
 }
+
+/** Where a case's seed lives: the checkout root and the seed directory relative to it. */
+export interface SeedLocation {
+  readonly checkout: string;
+  readonly seedRelative: string;
+}

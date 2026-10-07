@@ -38,7 +38,7 @@ function request(plan: RunPlan): Parameters<typeof runTrial>[0] {
   const sweepExpectation = { kind: 'exactly', occurrences: derived.substitutions } as const;
   return {
     arm: 'steered',
-    sources: sourcesFor(plan.checkout, SEED_DIR),
+    sources: sourcesFor({ checkout: plan.checkout, seedRelative: SEED_DIR }),
     heldOut: [],
     derivedConfig: derived.configText,
     host: hostOf(plan),

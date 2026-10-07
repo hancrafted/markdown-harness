@@ -4,7 +4,7 @@
 // tree, the built `mh` with its manifest and two runtime dependencies, and the
 // hook scripts. The held-out cases directory is excluded by never being in it.
 
-import type { AncestorListing, CopyStep, MintSources, TreeEntry } from './mint-plan.types.ts';
+import type { AncestorListing, CopyStep, MintSources, SeedLocation, TreeEntry } from './mint-plan.types.ts';
 
 /** Names a Host harness reads from a parent directory, so any of them above a minted root leaks into it. */
 const PARENT_LEAKS = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', '.claude'];
@@ -74,8 +74,9 @@ export function isOpaquePath(path: string, parent: string): boolean {
 
 const SKILL_SCRIPTS = '.agents/skills/markdown-harness/scripts';
 
-/** The copy sources for one case, from the checkout root and the case's seed directory (relative to it). */
-export function sourcesFor(checkout: string, seedRelative: string): MintSources {
+/** The copy sources for one case, rooted at its checkout and seed directory. */
+export function sourcesFor(location: SeedLocation): MintSources {
+  const { checkout, seedRelative } = location;
   return {
     seedDir: `${checkout}/${seedRelative}`,
     mhDist: `${checkout}/dist`,

@@ -226,7 +226,7 @@ describe('sourcesFor', () => {
       // ARRANGE
       const expected = { seedDir: '/co/seed/x', mhDist: '/co/dist' };
       // ACT
-      const sources = sourcesFor('/co', 'seed/x');
+      const sources = sourcesFor({ checkout: '/co', seedRelative: 'seed/x' });
       // ASSERT
       expect(sources).toMatchObject(expected);
     });
@@ -237,9 +237,10 @@ describe('sourcesFor', () => {
       // ARRANGE
       const held = '/co/evals/suites/steering/cases';
       // ACT
-      const violations = heldOutViolations(planCopies(sourcesFor('/co', 'evals/suites/steering/seed/research-note')), [
-        held,
-      ]);
+      const violations = heldOutViolations(
+        planCopies(sourcesFor({ checkout: '/co', seedRelative: 'evals/suites/steering/seed/research-note' })),
+        [held],
+      );
       // ASSERT
       expect(violations).toEqual([]);
     });
@@ -250,7 +251,7 @@ describe('sourcesFor', () => {
       // ARRANGE
       const expected = ['/co/.agents/skills/markdown-harness/scripts/query-hook.mjs'];
       // ACT
-      const actual = sourcesFor('/co', 's').hookScripts;
+      const actual = sourcesFor({ checkout: '/co', seedRelative: 's' }).hookScripts;
       // ASSERT
       expect(actual).toEqual(expected);
     });

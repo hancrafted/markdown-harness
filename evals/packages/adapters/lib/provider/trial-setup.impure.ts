@@ -55,7 +55,7 @@ function requestFor(parts: TrialParts, prepared: Prepared): Parameters<typeof ru
   });
   return {
     arm: cell.arm,
-    sources: sourcesFor(settings.checkout, vars.seedDir),
+    sources: sourcesFor({ checkout: settings.checkout, seedRelative: vars.seedDir }),
     heldOut: [`${settings.checkout}/evals/suites/steering/cases`],
     derivedConfig: prepared.derived.configText,
     host: hostFor(parts),
