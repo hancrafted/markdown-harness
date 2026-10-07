@@ -42,3 +42,21 @@ Use these, and list every new term in the spec's Further Notes for a later domai
 - **Suite** and **arm** collide. `CONTEXT.md` forbids "suite" for a per-tier unit, and `arm` was a glossary term retired with the ablation study. Use them only qualified (**eval suite**, **intent-neutralised arm**), and flag both.
 - **Host harness** is always qualified. Bare "harness" is never used. A bare-endpoint tool loop is a **stand-in host** and never a Host harness.
 - Other new terms the R-notes flagged: intent carrier, intent address, failure rung, cohort row, minted root, trial, canary, delivery channel, instrument failure, graded failure.
+
+## Owner direction, given after the gate
+
+Han gave three directions after the specs were first drafted. They supersede D1 and the placement half of D5, and every spec must follow them.
+
+1. **Everything the eval framework creates lives under a top-level `evals/` folder.** This covers its code, its eval suites, its held-out cases, and its gitignored run output. Research notes stay in `docs/research/evals/`, and spec drafts stay in `.scratch/`. That reading of "everything" is the orchestrator's, and Han may correct it. Nothing goes under `src/packages/` or `fixtures/evals/`.
+2. **Existing Archgate ADRs should govern the eval code wherever possible, and Han is open to adjusting them so that one set of records governs both `src/` and `evals/`.** The likely shape is as follows, but a spec may argue for another:
+   - Widen the `files:` globs of the records that bind code layout and purity (ARCH-003, ARCH-004, ARCH-006, ARCH-007, ARCH-008, GEN-003) to cover `evals/**`.
+   - Mirror the Package layout under `evals/`, with the same classifiers, entry-point rule and tests homes.
+   - Amend ARCH-008 §2.1 so that each tree has exactly one platform gate. In `src/` that stays `foundation`, which keeps tenet 3 and never gains a spawn. In `evals/` a platform Package may import `child_process`, `os` and `fetch`.
+   - State an import direction: `src/` never imports `evals/`, and `evals/` reaches `mh` through the compiled CLI, the one oracle.
+   - Widen the tooling scopes to match: eslint's governed glob, the dependency-cruiser target, knip's project and entries, and the `tsconfig` include. `evals/` stays outside the build `tsconfig`, so it never reaches `dist/`.
+
+   Han being open to an adjustment is not approval of any particular text. The amendment is authored by `archgate:adr-author` in a named phase, and Han approves its wording before any code depends on it. A spec must therefore order its phases so that the amendment lands before, or alongside, the first impure eval file.
+
+3. **TypeScript over Python.** deepeval is out. Any eval tool a spec adopts is driven from TypeScript or JavaScript, and its configuration and providers are written in TypeScript where the tool allows it.
+
+D1 is therefore reopened and redirected. The earlier answer, impure code outside `src/` and ungoverned, becomes impure code inside `evals/`, governed by the widened records and the amended ARCH-008.
