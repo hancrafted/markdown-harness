@@ -2,23 +2,51 @@
 // string, at any depth, addressed by its path from the document root.
 //
 // Generic by design — it names no Module's section type, so ARCH-008 §1.1 holds
-// without a carrier list from each Module.
+// without a carrier list from each Module. A list item that is a mapping with a
+// string `ruleId` is addressed by that id rather than its position, so an
+// address survives a reordered Rule list; every other list item is addressed by
+// index, which is how a nested spine is told apart.
 
-function walkMapping(mapping: object, address: string, found: string[]): void {
-  for (const [key, child] of Object.entries(mapping)) {
-    const childAddress = address === '' ? key : `${address}.${key}`;
-    if (key === 'intent' && typeof child === 'string') found.push(childAddress);
-    else walk(child, childAddress, found);
+import type { IntentCarrier } from './intent-carriers.types.ts';
+
+type Key = string | number;
+
+interface Position {
+  readonly address: string;
+  readonly path: readonly Key[];
+}
+
+function itemLabel(item: unknown, index: number): string {
+  const ruleId = typeof item === 'object' && item !== null ? (item as { ruleId?: unknown }).ruleId : undefined;
+  return typeof ruleId === 'string' ? `[ruleId=${ruleId}]` : `[${index}]`;
+}
+
+function child(at: Position, key: Key, label: string): Position {
+  return { address: `${at.address}${label}`, path: [...at.path, key] };
+}
+
+function walkMapping(mapping: object, at: Position, found: IntentCarrier[]): void {
+  for (const [key, value] of Object.entries(mapping)) {
+    const next = child(at, key, at.address === '' ? key : `.${key}`);
+    if (key === 'intent' && typeof value === 'string') found.push(next);
+    else walk(value, next, found);
   }
 }
 
-function walk(value: unknown, address: string, found: string[]): void {
-  if (Array.isArray(value)) value.forEach((item, index) => walk(item, `${address}[${index}]`, found));
-  else if (typeof value === 'object' && value !== null) walkMapping(value, address, found);
+function walk(value: unknown, at: Position, found: IntentCarrier[]): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => walk(item, child(at, index, itemLabel(item, index)), found));
+  } else if (typeof value === 'object' && value !== null) {
+    walkMapping(value, at, found);
+  }
+}
+
+export function intentCarriers(document: unknown): IntentCarrier[] {
+  const found: IntentCarrier[] = [];
+  walk(document, { address: '', path: [] }, found);
+  return found;
 }
 
 export function intentCarrierAddresses(document: unknown): string[] {
-  const found: string[] = [];
-  walk(document, '', found);
-  return found;
+  return intentCarriers(document).map((carrier) => carrier.address);
 }

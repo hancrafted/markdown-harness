@@ -1,19 +1,62 @@
 // Colocated unit test for the intent-carrier walk.
 //
 // The walk is generic: it names no Module's section type, so the seam is a plain
-// parsed document in and a list of addresses out.
+// parsed document in and a list of carriers out.
 
 import { describe, expect, it } from 'vitest';
-import { intentCarrierAddresses } from './intent-carriers.pure';
+import { intentCarrierAddresses, intentCarriers } from './intent-carriers.pure.ts';
 
 describe('intentCarrierAddresses', () => {
   describe('success cases', () => {
-    it('finds a string intent at any depth and addresses it from the root', () => {
+    it('addresses a Rule by its ruleId and anything else below a list by index', () => {
       // ARRANGE
-      const document = { frontmatter: { rules: [{ id: 'a', intent: 'x' }, { id: 'b' }] }, intent: 'top' };
-      const expected = ['frontmatter.rules[0].intent', 'intent'];
+      const document = {
+        frontmatter: {
+          rules: [
+            { ruleId: 'a', intent: 'x' },
+            { id: 'b', intent: 'y' },
+          ],
+        },
+        intent: 'top',
+      };
+      const expected = ['frontmatter.rules[ruleId=a].intent', 'frontmatter.rules[1].intent', 'intent'];
       // ACT
       const actual = intentCarrierAddresses(document);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reaches an intent nested several spine levels below a Rule, not only the top level', () => {
+      // ARRANGE
+      const document = {
+        rules: [
+          {
+            ruleId: 'r',
+            intent: 'rule',
+            headings: [
+              { level: 1 },
+              { level: 2, intent: 'entry', headings: [{ level: 3, allowed: [{ title: 'Added', intent: 'deep' }] }] },
+            ],
+          },
+        ],
+      };
+      const expected = [
+        'rules[ruleId=r].intent',
+        'rules[ruleId=r].headings[1].intent',
+        'rules[ruleId=r].headings[1].headings[0].allowed[0].intent',
+      ];
+      // ACT
+      const actual = intentCarrierAddresses(document);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('hands a writer the keys that reach each carrier', () => {
+      // ARRANGE
+      const document = { rules: [{ ruleId: 'r', intent: 'x' }] };
+      const expected = [['rules', 0, 'intent']];
+      // ACT
+      const actual = intentCarriers(document).map((carrier) => carrier.path);
       // ASSERT
       expect(actual).toEqual(expected);
     });
