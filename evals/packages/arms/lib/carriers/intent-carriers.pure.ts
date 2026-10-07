@@ -29,9 +29,22 @@ function child(at: Position, key: PathKey, label: string): Position {
   return { address: `${at.address}${label}`, path: [...at.path, key] };
 }
 
-/** Whether a string at this key is a carrier: an `intent`, or the `stale` sentence directly under `assess`. */
+/**
+ * The mapping keys whose string value is Operator-written intent, each with the key its parent mapping must have, when
+ * it has to have one. These name config keys, never a Module's section type, so ARCH-008 §1.1 still holds: the walk
+ * learns what to look for from this table, and no Module's grammar is read to build it.
+ */
+const CARRIER_KEYS: readonly { readonly key: string; readonly parent?: string }[] = [
+  { key: 'intent' },
+  { key: 'stale', parent: 'assess' },
+];
+
+/** Whether a string at this key is a carrier: a declared key, directly under its declared parent when it names one. */
 function carries(key: string, at: Position): boolean {
-  return key === 'intent' || (key === 'stale' && at.path[at.path.length - 1] === 'assess');
+  const parent = at.path[at.path.length - 1];
+  return CARRIER_KEYS.some(
+    (carrier) => carrier.key === key && (carrier.parent === undefined || carrier.parent === parent),
+  );
 }
 
 function walkMapping(mapping: object, at: Position, found: IntentCarrier[]): void {
