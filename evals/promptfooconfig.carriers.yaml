@@ -1,6 +1,6 @@
 # The carriers matrix: one case with two tested carriers (the Findings entry's intent and the frontmatter Rule's
 # intent), one steering marker each, delivered through the pull command's raw JSON. A steered session that
-# follows one marker and not the other is rung 9, and the profile names the carrier that decayed. The push hook
+# follows one steering marker and not the other is rung 9, and the profile names the carrier that decayed. The push hook
 # renders body-structure only, so this matrix has no push cell; the case file says why.
 #
 # Run it through the wrapper (`--matrix carriers`), never directly.

@@ -63,7 +63,7 @@ function hostFor(parts: TrialParts): Parameters<typeof runTrial>[0]['host'] {
   };
 }
 
-function markersFor(parts: TrialParts, prepared: Prepared): Parameters<typeof runTrial>[0]['markers'] {
+function steeringMarkersFor(parts: TrialParts, prepared: Prepared): Parameters<typeof runTrial>[0]['steeringMarkers'] {
   const steered = parts.cell.arm === 'steered';
   return prepared.carriers.map((carrier) => ({
     steeringMarker: carrier.steeringMarker,
@@ -90,7 +90,7 @@ function requestFor(parts: TrialParts, prepared: Prepared): Parameters<typeof ru
     derivedConfig: prepared.derived.configText,
     host: hostFor(parts),
     task,
-    markers: markersFor(parts, prepared),
+    steeringMarkers: steeringMarkersFor(parts, prepared),
     targetPath: vars.targetPath,
   };
 }

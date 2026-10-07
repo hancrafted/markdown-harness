@@ -127,7 +127,7 @@ function trialOn(surface: DeliverySurface, arm: 'steered' | 'neutralised', mode:
       tools: ['Read', 'Write', 'Edit'],
     },
     task: `Write a note in ${TARGET}.`,
-    markers: [
+    steeringMarkers: [
       {
         steeringMarker: STEERING_MARKER,
         sweepExpectation: arm === 'steered' ? { kind: 'exactly', occurrences: occurrences[0] ?? 0 } : { kind: 'none' },
@@ -304,7 +304,7 @@ describe('runTrial over a pull surface', () => {
         derivedConfig,
         host: { command: ['node', STUB], model: 'stub', maxTurns: 4, wallClockMs: 20_000, tools: ['Read'] },
         task: 'x',
-        markers: [{ steeringMarker: STEERING_MARKER, sweepExpectation: { kind: 'exactly', occurrences: 1 } }],
+        steeringMarkers: [{ steeringMarker: STEERING_MARKER, sweepExpectation: { kind: 'exactly', occurrences: 1 } }],
         targetPath: TARGET,
       });
       // ASSERT

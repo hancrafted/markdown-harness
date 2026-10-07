@@ -14,7 +14,7 @@ export interface HostSpec {
 }
 
 /** One tested carrier's steering marker, and what the root must hold of it before the session starts. */
-export interface TrialMarker {
+export interface TrialSteeringMarker {
   readonly steeringMarker: string;
   readonly sweepExpectation: SweepExpectation;
 }
@@ -32,7 +32,7 @@ export interface TrialRequest {
   readonly host: HostSpec;
   readonly task: string;
   /** One entry per tested carrier. */
-  readonly markers: readonly TrialMarker[];
+  readonly steeringMarkers: readonly TrialSteeringMarker[];
   readonly targetPath: string;
   /** A parent for the mint; defaults to the system temporary directory. */
   readonly under?: string;

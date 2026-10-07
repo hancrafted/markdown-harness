@@ -11,12 +11,12 @@ import type { Delivery, ToolCall } from './session-observation.types.ts';
 const NOTICE_PATH = /markdown-harness: (\S+) is a new file/;
 const QUERY_PATH = /\bmh query\s+(?:--\S+\s+)*["']?([^\s"']+)/;
 
-function holdsAll(text: string, markers: readonly string[]): boolean {
-  return markers.every((marker) => text.includes(marker));
+function holdsAll(text: string, steeringMarkers: readonly string[]): boolean {
+  return steeringMarkers.every((steeringMarker) => text.includes(steeringMarker));
 }
 
-function pushDelivery(events: readonly SessionEvent[], markers: readonly string[]): Delivery | undefined {
-  const found = events.find((event) => event.kind === 'hook-response' && holdsAll(event.output, markers));
+function pushDelivery(events: readonly SessionEvent[], steeringMarkers: readonly string[]): Delivery | undefined {
+  const found = events.find((event) => event.kind === 'hook-response' && holdsAll(event.output, steeringMarkers));
   return found?.kind === 'hook-response' ? { seq: found.seq, path: NOTICE_PATH.exec(found.output)?.[1] } : undefined;
 }
 
@@ -31,10 +31,10 @@ function resultOf(events: readonly SessionEvent[], call: ToolCall): SessionEvent
   return events.find((event) => event.kind === 'tool-result' && event.id === call.id);
 }
 
-function pullDelivery(events: readonly SessionEvent[], markers: readonly string[]): Delivery | undefined {
+function pullDelivery(events: readonly SessionEvent[], steeringMarkers: readonly string[]): Delivery | undefined {
   for (const call of queryCalls(events)) {
     const result = resultOf(events, call);
-    if (result?.kind === 'tool-result' && !result.isError && holdsAll(result.text, markers))
+    if (result?.kind === 'tool-result' && !result.isError && holdsAll(result.text, steeringMarkers))
       return { seq: result.seq, path: QUERY_PATH.exec(commandOf(call))?.[1] };
   }
   return undefined;
@@ -43,8 +43,8 @@ function pullDelivery(events: readonly SessionEvent[], markers: readonly string[
 export function findDelivery(
   events: readonly SessionEvent[],
   channel: DeliveryChannel,
-  markers: readonly string[],
+  steeringMarkers: readonly string[],
 ): Delivery | undefined {
-  if (channel === 'push') return pushDelivery(events, markers);
-  return channel === 'pull' ? pullDelivery(events, markers) : undefined;
+  if (channel === 'push') return pushDelivery(events, steeringMarkers);
+  return channel === 'pull' ? pullDelivery(events, steeringMarkers) : undefined;
 }

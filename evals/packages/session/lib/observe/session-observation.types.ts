@@ -27,8 +27,8 @@ export interface SessionObservation {
   readonly unionHasSteeringMarker: boolean;
   readonly finalHasSteeringMarker: boolean;
   /** How many steering markers the final file holds, out of how many the case carries: the partial-action profile. */
-  readonly markersInFinal: number;
-  readonly markerCount: number;
+  readonly steeringMarkersInFinal: number;
+  readonly steeringMarkerCount: number;
   /** Steering content reached the agent: a hook response (push) or a query result (pull) holding every steering marker. */
   readonly delivered: boolean;
   /** The agent ran the query command at all; meaningful for pull. */

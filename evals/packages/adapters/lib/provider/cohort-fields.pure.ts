@@ -94,7 +94,7 @@ function steeringFields(sources: CohortSources): Record<string, unknown> {
     unionHasSteeringMarker: observation.unionHasSteeringMarker,
     finalHasSteeringMarker: observation.finalHasSteeringMarker,
     carrierCount: grades.length,
-    carriersPresent: observation.markersInFinal,
+    carriersPresent: observation.steeringMarkersInFinal,
     carrierProfile: Object.entries(hits)
       .map(([address, hit]) => `${address}=${hit ? 'hit' : 'miss'}`)
       .join('; '),

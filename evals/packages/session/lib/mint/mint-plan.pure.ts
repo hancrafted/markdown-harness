@@ -9,7 +9,7 @@ import type { AncestorListing, CopyStep, MintSources, SeedLocation, TreeEntry } 
 /** Names a Host harness reads from a parent directory, so any of them above a minted root leaks into it. */
 const PARENT_LEAKS = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', '.claude'];
 const INSTRUCTION_FILES = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md'];
-// The literal word "marker" stays in this list on purpose: the list exists to catch that word in a minted root,
+// The bare giveaway word stays in this list on purpose: the list exists to catch that word in a minted root,
 // where it would give the eval away. It is data to match, not vocabulary the code uses.
 const GIVEAWAY_WORDS = /eval|steer|neutral|control|arm\b|marker|case/i;
 

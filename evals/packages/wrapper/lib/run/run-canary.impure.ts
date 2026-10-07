@@ -55,7 +55,7 @@ function request(plan: RunPlan, key: CanaryKey): Parameters<typeof runTrial>[0] 
     derivedConfig: derived.configText,
     host: hostOf(plan),
     task: taskFor(key.channel),
-    markers: drawn.map((one, index) => ({
+    steeringMarkers: drawn.map((one, index) => ({
       steeringMarker: one.steeringMarker,
       sweepExpectation: { kind: 'exactly', occurrences: derived.occurrences[index] ?? 0 },
     })),

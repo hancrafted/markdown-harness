@@ -168,7 +168,7 @@ const SECOND_MARKER = 'RR33-4444';
 function observeMany(options: {
   events: SessionEvent[];
   finalFile: string | undefined;
-  markers?: string[];
+  steeringMarkers?: string[];
   surface?: {
     channel: 'push' | 'pull';
     shell: 'none' | 'query-only' | 'widened';
@@ -180,7 +180,7 @@ function observeMany(options: {
     arm: options.arm ?? 'steered',
     surface: options.surface ?? { channel: 'push', shell: 'none', encoding: 'hook-prose' },
     events: options.events,
-    steeringMarkers: options.markers ?? [STEERING_MARKER],
+    steeringMarkers: options.steeringMarkers ?? [STEERING_MARKER],
     targetPath: TARGET,
     root: ROOT,
     finalFile: options.finalFile,
@@ -380,11 +380,12 @@ describe('observeSession over two tested carriers (rung 9)', () => {
       ];
       const expected = { rung: { kind: 'rung', rung: 9 }, profile: [1, 2] };
       // ACT
-      const seen = observeMany({ events, finalFile: `note ${STEERING_MARKER}`, markers: both });
+      const seen = observeMany({ events, finalFile: `note ${STEERING_MARKER}`, steeringMarkers: both });
       // ASSERT
-      expect({ rung: localiseRung(seen.observations), profile: [seen.markersInFinal, seen.markerCount] }).toEqual(
-        expected,
-      );
+      expect({
+        rung: localiseRung(seen.observations),
+        profile: [seen.steeringMarkersInFinal, seen.steeringMarkerCount],
+      }).toEqual(expected);
     });
 
     it('localises rung 9 over raw JSON pull too, since one steering marker in the file proves the answer was parsed (rung 6 clean)', () => {
@@ -396,7 +397,7 @@ describe('observeSession over two tested carriers (rung 9)', () => {
       ];
       const expected = { kind: 'rung', rung: 9 };
       // ACT
-      const seen = observeMany({ events, finalFile: `note ${STEERING_MARKER}`, markers: both, surface: PULL });
+      const seen = observeMany({ events, finalFile: `note ${STEERING_MARKER}`, steeringMarkers: both, surface: PULL });
       // ASSERT
       expect(localiseRung(seen.observations)).toEqual(expected);
     });
@@ -407,7 +408,7 @@ describe('observeSession over two tested carriers (rung 9)', () => {
       const events = [delivery(1, TARGET, text), writeEvent(2, text)];
       const expected = { kind: 'clean' };
       // ACT
-      const seen = observeMany({ events, finalFile: text, markers: both });
+      const seen = observeMany({ events, finalFile: text, steeringMarkers: both });
       // ASSERT
       expect(localiseRung(seen.observations)).toEqual(expected);
     });
@@ -419,7 +420,7 @@ describe('observeSession over two tested carriers (rung 9)', () => {
       const events = [delivery(1, TARGET, `${STEERING_MARKER} ${SECOND_MARKER}`), writeEvent(2, 'plain')];
       const expected = { kind: 'rung', rung: 8 };
       // ACT
-      const seen = observeMany({ events, finalFile: 'plain', markers: both });
+      const seen = observeMany({ events, finalFile: 'plain', steeringMarkers: both });
       // ASSERT
       expect(localiseRung(seen.observations)).toEqual(expected);
     });
@@ -447,7 +448,7 @@ describe('observeSession over two tested carriers (rung 9)', () => {
       const rung10 = 10;
       const expected = 'failed';
       // ACT
-      const seen = observeMany({ events, finalFile: text, markers: both });
+      const seen = observeMany({ events, finalFile: text, steeringMarkers: both });
       // ASSERT
       expect(seen.observations.find((entry) => entry.rung === rung10)?.status).toBe(expected);
     });

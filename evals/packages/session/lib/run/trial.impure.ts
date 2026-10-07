@@ -42,40 +42,40 @@ function runNode(root: string, args: readonly string[], input: string): { stdout
   return { stdout: report.stdout, status: report.status };
 }
 
-function pushProblem(root: string, request: TrialRequest, markers: readonly string[]): Declared {
+function pushProblem(root: string, request: TrialRequest, steeringMarkers: readonly string[]): Declared {
   if (request.arm !== 'steered') return undefined;
   const payload = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: `${root}/${request.targetPath}` } });
-  const rung2 = checkRung2(runNode(root, [`${root}/${HOOK_SCRIPT}`], payload).stdout, markers);
+  const rung2 = checkRung2(runNode(root, [`${root}/${HOOK_SCRIPT}`], payload).stdout, steeringMarkers);
   return rung2 === undefined ? undefined : { kind: 'rung-2-failed', detail: rung2 };
 }
 
 /** The pull command is run as the agent will run it; a raw JSON answer failing is rung 1, a rendered one rung 2. */
-function pullProblem(root: string, request: TrialRequest, markers: readonly string[]): Declared {
+function pullProblem(root: string, request: TrialRequest, steeringMarkers: readonly string[]): Declared {
   const printed = runNode(root, [`${root}/${SHIM_PATH}`, 'query', request.targetPath], '').stdout;
-  const problem = checkPullAnswer(printed, markers, request.arm);
+  const problem = checkPullAnswer(printed, steeringMarkers, request.arm);
   if (problem === undefined) return undefined;
   return { kind: request.surface.encoding === 'json' ? 'rung-1-failed' : 'rung-2-failed', detail: problem };
 }
 
-function surfaceProblem(root: string, request: TrialRequest, markers: readonly string[]): Declared {
-  if (request.surface.channel === 'push') return pushProblem(root, request, markers);
-  return request.surface.channel === 'pull' ? pullProblem(root, request, markers) : undefined;
+function surfaceProblem(root: string, request: TrialRequest, steeringMarkers: readonly string[]): Declared {
+  if (request.surface.channel === 'push') return pushProblem(root, request, steeringMarkers);
+  return request.surface.channel === 'pull' ? pullProblem(root, request, steeringMarkers) : undefined;
 }
 
 function preflight(root: string, request: TrialRequest): Declared {
   const check = runNode(root, [`${root}/${MH_ENTRY}`, 'check'], '');
   if (check.status !== 0)
     return { kind: 'rung-1-failed', detail: 'the derived config does not pass `mh check` over the seeded state' };
-  const markers = request.markers.map((entry) => entry.steeringMarker);
+  const steeringMarkers = request.steeringMarkers.map((entry) => entry.steeringMarker);
   const query = runNode(root, [`${root}/${MH_ENTRY}`, 'query', request.targetPath], '');
-  const rung1 = checkRung1(query.stdout, markers, request.arm);
+  const rung1 = checkRung1(query.stdout, steeringMarkers, request.arm);
   if (rung1 !== undefined) return { kind: 'rung-1-failed', detail: rung1 };
-  return surfaceProblem(root, request, markers);
+  return surfaceProblem(root, request, steeringMarkers);
 }
 
 function sweepProblem(root: string, request: TrialRequest): { problem: Declared; opened: number } {
   const files = readTextFiles(root, ['.git']);
-  const verdicts = request.markers.map((entry) =>
+  const verdicts = request.steeringMarkers.map((entry) =>
     sweepForSteeringMarker(files, entry.steeringMarker, entry.sweepExpectation),
   );
   const bad = verdicts.find((verdict) => !verdict.ok);

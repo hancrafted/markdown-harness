@@ -66,8 +66,8 @@ const SOURCES: CohortSources = {
     firstWriteHasSteeringMarker: false,
     unionHasSteeringMarker: true,
     finalHasSteeringMarker: true,
-    markersInFinal: 1,
-    markerCount: 1,
+    steeringMarkersInFinal: 1,
+    steeringMarkerCount: 1,
     delivered: true,
     queryAsked: false,
     injectionFlagged: false,
@@ -191,7 +191,7 @@ describe('the hit over several tested carriers', () => {
         ...SOURCES,
         addresses: ['a', 'b'],
         grades: [HIT, MISS],
-        observation: { ...SOURCES.observation, markersInFinal: 1, markerCount: 2 },
+        observation: { ...SOURCES.observation, steeringMarkersInFinal: 1, steeringMarkerCount: 2 },
       };
       const expected = {
         carrierProfile: 'a=hit; b=miss',

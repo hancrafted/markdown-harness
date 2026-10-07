@@ -73,7 +73,7 @@ function trial(arm: 'steered' | 'neutralised' | 'control', mode = 'obey') {
     derivedConfig,
     host: host(mode),
     task,
-    markers: [{ steeringMarker: STEERING_MARKER, sweepExpectation }],
+    steeringMarkers: [{ steeringMarker: STEERING_MARKER, sweepExpectation }],
     targetPath: TARGET,
   });
 }
@@ -206,7 +206,7 @@ describe('runTrial', () => {
         derivedConfig: wrong.configText,
         host: host('obey'),
         task: 'x',
-        markers: [{ steeringMarker: STEERING_MARKER, sweepExpectation: { kind: 'none' } }],
+        steeringMarkers: [{ steeringMarker: STEERING_MARKER, sweepExpectation: { kind: 'none' } }],
         targetPath: TARGET,
       });
       // ASSERT
@@ -228,7 +228,7 @@ describe('runTrial', () => {
         derivedConfig: leaking,
         host: host('obey'),
         task: 'x',
-        markers: [{ steeringMarker: STEERING_MARKER, sweepExpectation: { kind: 'none' } }],
+        steeringMarkers: [{ steeringMarker: STEERING_MARKER, sweepExpectation: { kind: 'none' } }],
         targetPath: TARGET,
       });
       // ASSERT
