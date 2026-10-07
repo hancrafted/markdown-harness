@@ -84,6 +84,7 @@ const SOURCES: CohortSources = {
   digests: { mh: 'a', skills: 'b', root: 'c', config: 'd' },
   timing: { startedAtMs: 1_000, durationMs: 5, nodeVersion: 'v26' },
   charactersDelivered: 120,
+  finalFile: undefined,
 };
 
 describe('cohortFields', () => {
@@ -347,6 +348,72 @@ describe('the Host harness facts in the cohort row', () => {
       const fields = cohortFields(noModel);
       // ASSERT
       expect(fields.modelFamily).toBeUndefined();
+    });
+  });
+});
+
+describe('staleAfterMoved, a repair metric that never touches the grade', () => {
+  const REPAIR = { ...SOURCES, vars: { ...SOURCES.vars, kind: 'repair' as const } };
+  const note = (stamp: string): string => `---\ntype: research\nstale_after: ${stamp}\n---\n\n# Note\n`;
+  const moved = (sources: CohortSources): unknown => cohortFields(sources).staleAfterMoved;
+  const CLOCK = Date.parse('2026-10-07T00:00:00Z');
+  const atClock = (finalFile: string | undefined): CohortSources => ({
+    ...REPAIR,
+    finalFile,
+    timing: { ...REPAIR.timing, startedAtMs: CLOCK },
+  });
+
+  describe('success cases', () => {
+    it('is true when the note carries a stale_after past the run clock', () => {
+      // ARRANGE
+      const expected = true;
+      // ACT
+      const actual = moved(atClock(note('2027-01-01T00:00:00Z')));
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+
+    it('is false when the note still carries a stale_after before the run clock', () => {
+      // ARRANGE
+      const expected = false;
+      // ACT
+      const actual = moved(atClock(note('2001-01-01T00:00:00Z')));
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('is false when the note is gone, has no stale_after, or one that does not parse', () => {
+      // ARRANGE
+      const expected = [false, false, false];
+      // ACT
+      const actual = [moved(atClock(undefined)), moved(atClock('# Note\n')), moved(atClock(note('someday')))];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('is not applicable to a steer case, whose file is new', () => {
+      // ARRANGE
+      const expected = 'not-applicable';
+      // ACT
+      const actual = moved({ ...atClock(note('2027-01-01T00:00:00Z')), vars: SOURCES.vars });
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+
+    it('reads a quoted stamp and ignores a stale_after that sits in the body, outside the frontmatter', () => {
+      // ARRANGE
+      const expected = [true, false];
+      // ACT
+      const actual = [
+        moved(atClock(note('"2027-01-01T00:00:00Z"'))),
+        moved(atClock('---\ntype: research\n---\n\nstale_after: 2027-01-01T00:00:00Z\n')),
+      ];
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
   });
 });

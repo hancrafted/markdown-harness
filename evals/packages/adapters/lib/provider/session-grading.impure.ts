@@ -63,6 +63,7 @@ function fieldsOf(
     digests: digestsOf(outcome),
     timing,
     charactersDelivered: prepared.derived.charactersDelivered,
+    finalFile: outcome.finalFile,
   });
 }
 

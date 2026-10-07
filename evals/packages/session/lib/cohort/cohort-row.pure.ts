@@ -67,6 +67,7 @@ export const COHORT_FIELDS: readonly string[] = [
   'creatingTool',
   'shellCreated',
   'queryAsked',
+  'staleAfterMoved',
 ];
 
 /** The fields that define a cohort: rows differing in any of them are never paired. */

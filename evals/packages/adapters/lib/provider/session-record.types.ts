@@ -43,6 +43,8 @@ export interface CohortSources {
   readonly digests: { readonly mh: string; readonly skills: string; readonly root: string; readonly config: string };
   readonly timing: { readonly startedAtMs: number; readonly durationMs: number; readonly nodeVersion: string };
   readonly charactersDelivered: number;
+  /** The target file as the session left it, or undefined when it does not exist. */
+  readonly finalFile: string | undefined;
 }
 
 export interface SessionCall {

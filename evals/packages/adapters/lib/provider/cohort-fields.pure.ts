@@ -125,12 +125,31 @@ function steeringFields(sources: CohortSources): Record<string, unknown> {
   };
 }
 
+/** The frontmatter block's `stale_after` stamp, quotes removed, or undefined when the text has none. */
+function staleAfterOf(finalFile: string | undefined): string | undefined {
+  const frontmatter = /^---\n([\s\S]*?)\n---(?:\n|$)/.exec(finalFile ?? '')?.[1];
+  const stamp = /^stale_after:\s*(\S+)\s*$/m.exec(frontmatter ?? '')?.[1];
+  return stamp?.replace(/^(["'])(.*)\1$/, '$2');
+}
+
+/**
+ * A metric on a repair case only, and never an input to the grade: whether the note's `stale_after` moved past
+ * the run clock, which is the one visible sign the note was brought up to date. A steer case's file is new, so
+ * there is nothing to move and the field says so rather than reading false.
+ */
+function staleAfterMoved(sources: CohortSources): boolean | string {
+  if (sources.vars.kind !== 'repair') return 'not-applicable';
+  const stamp = Date.parse(staleAfterOf(sources.finalFile) ?? '');
+  return !Number.isNaN(stamp) && stamp > sources.timing.startedAtMs;
+}
+
 function surfaceFields(sources: CohortSources): Record<string, unknown> {
   const { observation } = sources;
   return {
     creatingTool: observation.creatingTool ?? 'none',
     shellCreated: observation.shellCreated,
     queryAsked: observation.queryAsked,
+    staleAfterMoved: staleAfterMoved(sources),
   };
 }
 
