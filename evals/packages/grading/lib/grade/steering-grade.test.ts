@@ -85,3 +85,44 @@ describe('gradeSteeringMarker', () => {
     });
   });
 });
+
+describe('gradeSteeringMarker with a frontmatter scope', () => {
+  const FRONT = { frontmatter: true } as const;
+  const gradeFront = (finalFile: string | undefined) =>
+    gradeSteeringMarker({ finalFile, steeringMarker: STEERING_MARKER, scope: FRONT });
+
+  describe('success cases', () => {
+    it('places a steering marker that sits inside the frontmatter block', () => {
+      // ARRANGE
+      const text = `---\ndescription: a note ${STEERING_MARKER}\n---\n# T\n`;
+      const expected = { present: true, placed: true };
+      // ACT
+      const { present, placed } = gradeFront(text);
+      // ASSERT
+      expect({ present, placed }).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('passes presence but does not place a steering marker that is in the body, not the frontmatter', () => {
+      // ARRANGE
+      const text = `---\ndescription: a note\n---\n# T\n${STEERING_MARKER}\n`;
+      const expected = { present: true, placed: false };
+      // ACT
+      const { present, placed } = gradeFront(text);
+      // ASSERT
+      expect({ present, placed }).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('reports no frontmatter block as a null placement, not a miss', () => {
+      // ARRANGE
+      const expected = null;
+      // ACT
+      const { placed } = gradeFront(`# T\n${STEERING_MARKER}\n`);
+      // ASSERT
+      expect(placed).toBe(expected);
+    });
+  });
+});

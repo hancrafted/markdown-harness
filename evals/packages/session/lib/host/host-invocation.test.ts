@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { ALLOWED_ENVIRONMENT, buildChildEnvironment, buildClaudeArgv } from './host-invocation.pure.ts';
 
-const INPUT = { task: 'write a note', model: 'sonnet', maxTurns: 6, tools: ['Read', 'Write'] };
+const INPUT = { task: 'write a note', model: 'sonnet', maxTurns: 6, tools: ['Read', 'Write'], allowedTools: [] };
 
 describe('buildClaudeArgv', () => {
   describe('success cases', () => {
@@ -46,6 +46,20 @@ describe('buildClaudeArgv', () => {
       expect(argv).toEqual(expect.arrayContaining(expected));
     });
 
+    it('passes each pre-approved shell pattern as its own value after the allow-list flag, and the shell in the tool set', () => {
+      // ARRANGE
+      const input = {
+        ...INPUT,
+        tools: ['Read', 'Bash'],
+        allowedTools: ['Bash(bin/mh query:*)', 'Bash(./bin/mh query:*)'],
+      };
+      const expected = ['--tools', 'Read,Bash', '--allowedTools', 'Bash(bin/mh query:*)', 'Bash(./bin/mh query:*)'];
+      // ACT
+      const argv = buildClaudeArgv(input);
+      // ASSERT
+      expect(argv.slice(-expected.length)).toEqual(expected);
+    });
+
     it('lists exactly the tools the session may use', () => {
       // ARRANGE
       const expected = ['--tools', 'Read,Write'];
@@ -57,6 +71,15 @@ describe('buildClaudeArgv', () => {
   });
 
   describe('failure cases', () => {
+    it('adds no allow-list flag when no shell command is pre-approved, so a session with no shell has none to widen', () => {
+      // ARRANGE
+      const forbidden = '--allowedTools';
+      // ACT
+      const argv = buildClaudeArgv(INPUT);
+      // ASSERT
+      expect(argv).not.toContain(forbidden);
+    });
+
     it('never offers a dangerous permission bypass', () => {
       // ARRANGE
       const forbidden = '--dangerously-skip-permissions';

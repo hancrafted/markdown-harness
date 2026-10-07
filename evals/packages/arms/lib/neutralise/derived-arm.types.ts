@@ -9,12 +9,20 @@ export interface DeliveredCarrier {
   readonly text: string;
 }
 
+/** One tested carrier's substitution: the placeholder it holds and the generated clause that replaces it. */
+export interface Substitute {
+  readonly placeholder: string;
+  readonly clause: string;
+}
+
 export interface DerivedArm {
   /** The derived config as YAML text; produced inside a minted root, never committed. */
   readonly configText: string;
   readonly carriers: readonly DeliveredCarrier[];
-  /** How many placeholders the substitution replaced. */
+  /** How many carrier strings the substitution changed, in total. */
   readonly substitutions: number;
+  /** For each substitute, in order, how many carrier strings held its placeholder. */
+  readonly occurrences: readonly number[];
   /** The characters every carrier delivers, recorded because the filler is not padded to length. */
   readonly charactersDelivered: number;
 }
@@ -22,8 +30,6 @@ export interface DerivedArm {
 export interface DeriveArmInput {
   readonly configText: string;
   readonly arm: ArmName;
-  /** The plain-string placeholder the committed config holds where the steering-marker clause goes. */
-  readonly placeholder: string;
-  /** The generated clause the steered arm substitutes; unused by the intent-neutralised arm. */
-  readonly clause: string;
+  /** One substitute per tested carrier: the placeholder the committed config holds, and the generated clause the steered arm puts there. The intent-neutralised arm ignores the clauses. */
+  readonly substitutes: readonly Substitute[];
 }

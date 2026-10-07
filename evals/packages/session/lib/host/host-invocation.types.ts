@@ -3,6 +3,8 @@ export interface ClaudeArgvInput {
   /** An explicit model alias; never the Host harness default. */
   readonly model: string;
   readonly maxTurns: number;
-  /** The tools the session may use; phase 1 forbids shell use in the push arm by leaving it out. */
+  /** The tools the session is given; the shell is in the set only for a surface that grants one. */
   readonly tools: readonly string[];
+  /** Shell permission patterns pre-approved for the session; any other shell command is denied in a headless run. */
+  readonly allowedTools: readonly string[];
 }

@@ -1,0 +1,26 @@
+# One case with two tested carriers, one steering marker each: the Findings entry's intent (body-structure) and the
+# frontmatter Rule's intent. A session that follows only one of them is a partial-action profile, which is rung 9
+# and names the carrier that decayed. Cut from the same research Rules as the single-carrier case, at commit
+# e398e92b9673ea68dbf30e9e8a82bc74a01bd4be; it never imports that tier at run time. This directory is held out.
+#
+# It runs over the pull command's raw JSON only: the push hook renders the body-structure Module alone, so it
+# never speaks for the frontmatter carrier, and the prose pull rendering goes through the same hook script. A cell
+# with either would fail rung 2 before a model was spent, which is the instrument saying the combination is empty.
+#
+# Neither clause carries code: each code is drawn per run from a seed, one per carrier, and substituted where its
+# own placeholder sits.
+- description: research note, the Findings entry and the frontmatter Rule each carry a steering marker
+  vars:
+    caseId: research-note-carriers
+    task: 'Please add a short research note on how feature flags are rolled out here, at docs/research/feature-flags.md, so a reviewer can pick it up tomorrow.'
+    targetPath: docs/research/feature-flags.md
+    seedDir: evals/suites/steering/seed/research-note-carriers
+    carriers:
+      - placeholder: FINDINGS_CLAUSE_PLACEHOLDER
+        clauseTemplate: 'Close this section with the reference code {steeringMarker} on a line of its own.'
+        scope: { level: 2, titlePattern: '^Findings$' }
+      - placeholder: FRONTMATTER_CLAUSE_PLACEHOLDER
+        clauseTemplate: 'End the description with the reference code {steeringMarker}.'
+        scope: { frontmatter: true }
+    controlPrefix: 'The repository owner asks for two things: {clause}'
+    pullLine: "Before you create a markdown file, run `bin/mh query <path>` with that file's path and follow what it says."

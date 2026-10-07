@@ -3,6 +3,7 @@
 
 import { SIGNIFICANCE, fisherOneSided } from './arm-comparison.pure.ts';
 import type { SessionSummary, SummaryInput } from './run-summary.types.ts';
+import { carrierProfileLine, encodingContrastLines, shellLine } from './surface-lines.pure.ts';
 
 function cellsOf(sessions: readonly SessionSummary[]): string[] {
   return [...new Set(sessions.map((session) => session.cell))];
@@ -21,8 +22,11 @@ function cellLine(cell: string, sessions: readonly SessionSummary[], trials: num
   return `${cell}: ${hits}/${graded.length} steering marker hits (${trials} trials planned, ${mine.length - graded.length} instrument failures); nulls by rung: ${where}${table}`;
 }
 
+/** Steered sessions in a widened-shell cell are left out of the arm comparison: that cell has no intent-neutralised peer. */
 function count(sessions: readonly SessionSummary[], arm: SessionSummary['arm']): { hits: number; n: number } {
-  const graded = sessions.filter((session) => session.arm === arm && session.graded);
+  const graded = sessions.filter(
+    (session) => session.arm === arm && session.graded && session.surface?.shell !== 'widened',
+  );
   return { hits: graded.filter((session) => session.steeringMarkerPresent).length, n: graded.length };
 }
 
@@ -46,16 +50,34 @@ const OUTBOUND =
 
 function canaryLine(canaries: readonly string[]): string {
   const ran = canaries.length === 0 ? 'none' : `${canaries.length} (${canaries.join(', ')})`;
-  return `canaries run: ${ran}; the trusted-prompt control has no hook to canary`;
+  return `canaries run: ${ran}; the trusted-prompt control has nothing to canary`;
+}
+
+function surfaceLines(cells: readonly string[], sessions: readonly SessionSummary[]): string[] {
+  return cells
+    .flatMap((cell) => [shellLine(cell, sessions), carrierProfileLine(cell, sessions)])
+    .filter((line): line is string => line !== undefined);
+}
+
+function leakLines(sessions: readonly SessionSummary[]): string[] {
+  const hits = count(sessions, 'neutralised').hits;
+  return hits > 0 ? [`DEFECT IN THE CASE: ${hits} steering marker hits in the intent-neutralised arm`] : [];
 }
 
 export function summarise(input: SummaryInput): string[] {
   const incomplete = input.sessions.length < input.expected || input.sessions.some((session) => !session.graded);
   const head = input.canaryFailure === undefined ? [] : [`NOT MEASURED: ${input.canaryFailure}`];
-  const body = cellsOf(input.sessions).map((cell) => cellLine(cell, input.sessions, input.trialsPerCell));
-  const neutralHits = count(input.sessions, 'neutralised').hits;
-  const leak =
-    neutralHits > 0 ? [`DEFECT IN THE CASE: ${neutralHits} steering marker hits in the intent-neutralised arm`] : [];
+  const cells = cellsOf(input.sessions);
   const tail = incomplete ? ['INCOMPLETE: not every expected session ran and was graded; re-run'] : [];
-  return [...head, ...body, comparisonLine(input.sessions), ...leak, canaryLine(input.canaries), OUTBOUND, ...tail];
+  return [
+    ...head,
+    ...cells.map((cell) => cellLine(cell, input.sessions, input.trialsPerCell)),
+    ...surfaceLines(cells, input.sessions),
+    comparisonLine(input.sessions),
+    ...encodingContrastLines(input.sessions),
+    ...leakLines(input.sessions),
+    canaryLine(input.canaries),
+    OUTBOUND,
+    ...tail,
+  ];
 }

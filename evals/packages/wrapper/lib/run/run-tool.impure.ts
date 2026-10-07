@@ -5,6 +5,7 @@
 import { environment } from '../../../platform/host-ambient.ts';
 import { makeDirectory, pathExists, readText, readTextFiles } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
+import { configFileFor } from '../args/run-args.pure.ts';
 import { duplicateSessionIds, parseSidecar, toolSessionCount } from '../results/results-reading.pure.ts';
 import { PROMPTFOO_VERSION, toolArgv, toolEnvironment } from '../tool/eval-tool.pure.ts';
 import type { RunPlan, RunResults, ToolRun } from './run-plan.types.ts';
@@ -29,7 +30,7 @@ function providerEnvironment(plan: RunPlan): Record<string, string> {
 export function runTool(plan: RunPlan): ToolRun {
   makeDirectory(`${plan.runDir}/promptfoo-state`);
   const argv = toolArgv({
-    configPath: 'promptfooconfig.yaml',
+    configPath: configFileFor(plan.args.matrix),
     trials: plan.args.trials,
     resultsPath: `${plan.runDir}/results.json`,
     concurrency: plan.args.break === 'concurrency' ? BROKEN_CONCURRENCY : 1,

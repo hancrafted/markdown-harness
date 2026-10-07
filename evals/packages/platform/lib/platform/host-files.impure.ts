@@ -3,6 +3,7 @@
 
 import { createHash } from 'node:crypto';
 import {
+  chmodSync,
   cpSync,
   existsSync,
   lstatSync,
@@ -27,6 +28,12 @@ export const makeDirectory = (path: string): void => void mkdirSync(path, { recu
 export function writeText(path: string, text: string): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, text);
+}
+
+/** Write a file the shell can run: `writeText` plus the executable bits. */
+export function writeExecutable(path: string, text: string): void {
+  writeText(path, text);
+  chmodSync(path, 0o755);
 }
 
 /** Copy, never link: a symlink in the source is copied as a symlink, never followed into the destination. */

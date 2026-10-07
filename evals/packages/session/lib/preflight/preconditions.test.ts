@@ -3,7 +3,7 @@
 // rung: the fixture is wrong, not the steering.
 
 import { describe, expect, it } from 'vitest';
-import { checkRung1, checkRung2 } from './preconditions.pure.ts';
+import { checkPullAnswer, checkRung1, checkRung2 } from './preconditions.pure.ts';
 
 const STEERING_MARKER = 'QQ11-2222';
 const TARGET = 'docs/research/a.md';
@@ -23,7 +23,7 @@ describe('checkRung1', () => {
       // ARRANGE
       const stdout = governed(`do it ${STEERING_MARKER}`);
       // ACT
-      const problem = checkRung1(stdout, STEERING_MARKER, 'steered');
+      const problem = checkRung1(stdout, [STEERING_MARKER], 'steered');
       // ASSERT
       expect(problem).toBeUndefined();
     });
@@ -32,7 +32,7 @@ describe('checkRung1', () => {
       // ARRANGE
       const stdout = governed('nothing');
       // ACT
-      const problem = checkRung1(stdout, STEERING_MARKER, 'neutralised');
+      const problem = checkRung1(stdout, [STEERING_MARKER], 'neutralised');
       // ASSERT
       expect(problem).toBeUndefined();
     });
@@ -45,11 +45,11 @@ describe('checkRung1', () => {
       const twice = governed(`${STEERING_MARKER} ${STEERING_MARKER}`);
       // ACT
       const problems = [
-        checkRung1(invisible, STEERING_MARKER, 'steered'),
-        checkRung1('nope', STEERING_MARKER, 'steered'),
-        checkRung1(twice, STEERING_MARKER, 'steered'),
-        checkRung1(governed('x'), STEERING_MARKER, 'steered'),
-        checkRung1(governed(STEERING_MARKER), STEERING_MARKER, 'neutralised'),
+        checkRung1(invisible, [STEERING_MARKER], 'steered'),
+        checkRung1('nope', [STEERING_MARKER], 'steered'),
+        checkRung1(twice, [STEERING_MARKER], 'steered'),
+        checkRung1(governed('x'), [STEERING_MARKER], 'steered'),
+        checkRung1(governed(STEERING_MARKER), [STEERING_MARKER], 'neutralised'),
       ];
       // ASSERT
       for (const problem of problems) expect(problem).toMatch(/rung 1/);
@@ -61,7 +61,7 @@ describe('checkRung1', () => {
       // ARRANGE
       const stdout = governed('nothing');
       // ACT
-      const problem = checkRung1(stdout, STEERING_MARKER, 'control');
+      const problem = checkRung1(stdout, [STEERING_MARKER], 'control');
       // ASSERT
       expect(problem).toBeUndefined();
     });
@@ -74,7 +74,7 @@ describe('checkRung2', () => {
       // ARRANGE
       const output = notice(`markdown-harness: ${TARGET} is a new file ... ${STEERING_MARKER}`);
       // ACT
-      const problem = checkRung2(output, STEERING_MARKER);
+      const problem = checkRung2(output, [STEERING_MARKER]);
       // ASSERT
       expect(problem).toBeUndefined();
     });
@@ -85,7 +85,7 @@ describe('checkRung2', () => {
       // ARRANGE
       const lost = notice('markdown-harness: x is a new file, no code here');
       // ACT
-      const problems = [checkRung2('', STEERING_MARKER), checkRung2(lost, STEERING_MARKER)];
+      const problems = [checkRung2('', [STEERING_MARKER]), checkRung2(lost, [STEERING_MARKER])];
       // ASSERT
       for (const problem of problems) expect(problem).toMatch(/rung 2/);
     });
@@ -96,9 +96,93 @@ describe('checkRung2', () => {
       // ARRANGE
       const output = `plain text ${STEERING_MARKER}`;
       // ACT
-      const problem = checkRung2(output, STEERING_MARKER);
+      const problem = checkRung2(output, [STEERING_MARKER]);
       // ASSERT
       expect(problem).toMatch(/rung 2/);
+    });
+  });
+});
+
+const SECOND_MARKER = 'RR33-4444';
+
+describe('checkRung1 with two tested carriers', () => {
+  describe('success cases', () => {
+    it('passes an answer holding each steering marker exactly once in the steered arm', () => {
+      // ARRANGE
+      const stdout = governed(`${STEERING_MARKER} and ${SECOND_MARKER}`);
+      // ACT
+      const problem = checkRung1(stdout, [STEERING_MARKER, SECOND_MARKER], 'steered');
+      // ASSERT
+      expect(problem).toBeUndefined();
+    });
+  });
+
+  describe('failure cases', () => {
+    it('fails an answer that lost one of the two steering markers', () => {
+      // ARRANGE
+      const stdout = governed(STEERING_MARKER);
+      // ACT
+      const problem = checkRung1(stdout, [STEERING_MARKER, SECOND_MARKER], 'steered');
+      // ASSERT
+      expect(problem).toMatch(/rung 1: the answer holds a steering marker 0 times, expected 1/);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('passes an intent-neutralised answer that holds neither steering marker, and fails one that holds the second', () => {
+      // ARRANGE
+      const expected = [undefined, /rung 1/];
+      // ACT
+      const actual = [
+        checkRung1(governed('x'), [STEERING_MARKER, SECOND_MARKER], 'neutralised'),
+        checkRung1(governed(SECOND_MARKER), [STEERING_MARKER, SECOND_MARKER], 'neutralised'),
+      ];
+      // ASSERT
+      expect(actual[0]).toBe(expected[0]);
+      expect(actual[1]).toMatch(expected[1] as RegExp);
+    });
+  });
+});
+
+describe('checkPullAnswer', () => {
+  describe('success cases', () => {
+    it('passes output holding the steering marker once in the steered arm and nowhere in the intent-neutralised arm', () => {
+      // ARRANGE
+      const expected = [undefined, undefined];
+      // ACT
+      const actual = [
+        checkPullAnswer(`do it ${STEERING_MARKER}`, [STEERING_MARKER], 'steered'),
+        checkPullAnswer('do nothing', [STEERING_MARKER], 'neutralised'),
+      ];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('fails empty output, a steered answer without the steering marker, and a neutralised answer with it', () => {
+      // ARRANGE
+      const expected = /pull command/;
+      // ACT
+      const problems = [
+        checkPullAnswer('  ', [STEERING_MARKER], 'steered'),
+        checkPullAnswer('plain', [STEERING_MARKER], 'steered'),
+        checkPullAnswer(STEERING_MARKER, [STEERING_MARKER], 'neutralised'),
+      ];
+      // ASSERT
+      for (const problem of problems) expect(problem).toMatch(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('fails a steered answer that holds the steering marker twice', () => {
+      // ARRANGE
+      const twice = `${STEERING_MARKER} ${STEERING_MARKER}`;
+      const expected = /times, expected 1/;
+      // ACT
+      const problem = checkPullAnswer(twice, [STEERING_MARKER], 'steered');
+      // ASSERT
+      expect(problem).toMatch(expected);
     });
   });
 });

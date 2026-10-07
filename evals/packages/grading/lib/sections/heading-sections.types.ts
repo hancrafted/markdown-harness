@@ -8,7 +8,15 @@ export interface Section {
 }
 
 /** Which heading a carrier governs: its level and a title pattern. */
-export interface SectionScope {
+export interface HeadingScope {
   readonly level: number;
   readonly titlePattern: string;
 }
+
+/** A carrier that governs the frontmatter block, which has no heading. */
+export interface FrontmatterScope {
+  readonly frontmatter: true;
+}
+
+/** Where a carrier's steering marker belongs: under one heading, or in the frontmatter. */
+export type SectionScope = HeadingScope | FrontmatterScope;

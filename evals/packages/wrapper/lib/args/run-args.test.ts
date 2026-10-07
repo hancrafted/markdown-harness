@@ -1,7 +1,7 @@
 // Colocated unit test for argument parsing and the session budget.
 
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TRIALS, SESSION_LIMIT, budgetRefusal, parseRunArgs } from './run-args.pure.ts';
+import { DEFAULT_TRIALS, SESSION_LIMIT, budgetRefusal, configFileFor, parseRunArgs } from './run-args.pure.ts';
 
 describe('parseRunArgs', () => {
   describe('success cases', () => {
@@ -22,6 +22,27 @@ describe('parseRunArgs', () => {
       const result = parseRunArgs(argv);
       // ASSERT
       expect(result).toMatchObject({ ok: true, args: expected });
+    });
+
+    it('reads a matrix name, defaulting to the push matrix', () => {
+      // ARRANGE
+      const expected = ['push', 'pull', 'carriers'];
+      // ACT
+      const actual = [[], ['--matrix', 'pull'], ['--matrix', 'carriers']].map((argv) => {
+        const result = parseRunArgs(argv);
+        return result.ok ? result.args.matrix : 'refused';
+      });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('maps each matrix to its committed configuration file', () => {
+      // ARRANGE
+      const expected = ['promptfooconfig.yaml', 'promptfooconfig.pull.yaml', 'promptfooconfig.carriers.yaml'];
+      // ACT
+      const actual = [configFileFor('push'), configFileFor('pull'), configFileFor('carriers')];
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
 
     it('reads a self-test break against the stub Host harness', () => {
@@ -49,6 +70,7 @@ describe('parseRunArgs', () => {
       [['--trials', 'x']],
       [['--trials', '0']],
       [['--host', 'codex']],
+      [['--matrix', 'everything']],
       [['--seed']],
       [['--host', 'stub', '--break', 'sleep']],
     ])('refuses %j as misuse', (argv) => {

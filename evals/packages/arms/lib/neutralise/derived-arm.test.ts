@@ -33,7 +33,7 @@ frontmatter:
 `;
 
 function derive(arm: 'steered' | 'neutralised') {
-  return deriveArm({ configText: CONFIG, arm, placeholder: PLACEHOLDER, clause: CLAUSE });
+  return deriveArm({ configText: CONFIG, arm, substitutes: [{ placeholder: PLACEHOLDER, clause: CLAUSE }] });
 }
 
 describe('deriveArm', () => {
@@ -90,8 +90,7 @@ describe('deriveArm', () => {
       const input = {
         configText: 'a:\n  intent: plain\n',
         arm: 'steered' as const,
-        placeholder: PLACEHOLDER,
-        clause: CLAUSE,
+        substitutes: [{ placeholder: PLACEHOLDER, clause: CLAUSE }],
       };
       // ACT
       const act = () => deriveArm(input);
@@ -143,6 +142,51 @@ describe('testedCarrierAddress', () => {
       const actual = testedCarrierAddress(text, PLACEHOLDER);
       // ASSERT
       expect(actual).toBeUndefined();
+    });
+  });
+});
+
+describe('deriveArm with two tested carriers', () => {
+  const SECOND_PLACEHOLDER = 'OTHER_SLOT_HERE';
+  const SECOND_CLAUSE = 'End the description with RR22-3333.';
+  const TWO = CONFIG.replace('Frontmatter words.', `Frontmatter words. ${SECOND_PLACEHOLDER}`);
+  const substitutes = [
+    { placeholder: PLACEHOLDER, clause: CLAUSE },
+    { placeholder: SECOND_PLACEHOLDER, clause: SECOND_CLAUSE },
+  ];
+
+  describe('success cases', () => {
+    it('substitutes each clause for its own placeholder and counts one carrier string per substitute', () => {
+      // ARRANGE
+      const expected = [1, 1];
+      // ACT
+      const result = deriveArm({ configText: TWO, arm: 'steered', substitutes });
+      // ASSERT
+      expect(result.occurrences).toEqual(expected);
+      expect(result.configText).toContain(SECOND_CLAUSE);
+      expect(result.configText).toContain(CLAUSE);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses a steered derivation when only one of two placeholders is in the config', () => {
+      // ARRANGE
+      const act = () => deriveArm({ configText: CONFIG, arm: 'steered', substitutes });
+      // ACT
+      const expected = /OTHER_SLOT_HERE appears in no carrier/;
+      // ASSERT
+      expect(act).toThrow(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('replaces every carrier in the intent-neutralised arm and reports no substitution, whatever the substitutes', () => {
+      // ARRANGE
+      const expected = { substitutions: 0, occurrences: [1, 1] };
+      // ACT
+      const result = deriveArm({ configText: TWO, arm: 'neutralised', substitutes });
+      // ASSERT
+      expect({ substitutions: result.substitutions, occurrences: result.occurrences }).toEqual(expected);
     });
   });
 });

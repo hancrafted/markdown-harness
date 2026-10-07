@@ -12,6 +12,13 @@ function occurrences(text: string, steeringMarker: string): number {
   return text.split(steeringMarker).length - 1;
 }
 
+/** One sentence per steering marker whose count in the text is not the wanted one, or an empty list. */
+function countProblems(text: string, markers: readonly string[], wanted: number): string[] {
+  return markers
+    .map((marker) => occurrences(text, marker))
+    .flatMap((found) => (found === wanted ? [] : [`${found} times, expected ${wanted}`]));
+}
+
 function governance(stdout: string): string | undefined {
   try {
     const parsed = JSON.parse(stdout) as { result?: { governance?: string } };
@@ -21,18 +28,26 @@ function governance(stdout: string): string | undefined {
   }
 }
 
-export function checkRung1(stdout: string, steeringMarker: string, arm: ArmKind): string | undefined {
+export function checkRung1(stdout: string, markers: readonly string[], arm: ArmKind): string | undefined {
   const state = governance(stdout);
   if (state !== 'governed') return `rung 1: the query answered ${state ?? 'nothing parseable'}, not governed`;
   if (arm === 'control') return undefined;
-  const wanted = arm === 'steered' ? 1 : 0;
-  const found = occurrences(stdout, steeringMarker);
-  return found === wanted
-    ? undefined
-    : `rung 1: the answer holds the steering marker ${found} times, expected ${wanted}`;
+  const problems = countProblems(stdout, markers, arm === 'steered' ? 1 : 0);
+  return problems.length === 0 ? undefined : `rung 1: the answer holds a steering marker ${problems[0]}`;
 }
 
-export function checkRung2(hookOutput: string, steeringMarker: string): string | undefined {
+/**
+ * What the pull command printed, in its encoding: the steering markers must be in it exactly as the arm needs
+ * them, and it must say something. A raw JSON answer failing is the answer itself failing (rung 1); a rendered
+ * encoding failing is lost in rendering (rung 2).
+ */
+export function checkPullAnswer(output: string, markers: readonly string[], arm: ArmKind): string | undefined {
+  if (output.trim() === '') return 'the pull command printed nothing';
+  const problems = countProblems(output, markers, arm === 'steered' ? 1 : 0);
+  return problems.length === 0 ? undefined : `the pull command's answer holds a steering marker ${problems[0]}`;
+}
+
+export function checkRung2(hookOutput: string, markers: readonly string[]): string | undefined {
   if (hookOutput.trim() === '') return 'rung 2: the hook script rendered nothing';
   let text: string | undefined;
   try {
@@ -42,5 +57,7 @@ export function checkRung2(hookOutput: string, steeringMarker: string): string |
     text = undefined;
   }
   if (text === undefined) return 'rung 2: the hook output is not the PreToolUse envelope';
-  return text.includes(steeringMarker) ? undefined : 'rung 2: the rendered notice lost the steering marker';
+  return markers.every((marker) => text.includes(marker))
+    ? undefined
+    : 'rung 2: the rendered notice lost a steering marker';
 }

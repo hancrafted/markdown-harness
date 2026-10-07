@@ -40,7 +40,7 @@ describe('summarise', () => {
       // ARRANGE
       const canaries = ['claude-code/push/research-note'];
       const expected =
-        'canaries run: 1 (claude-code/push/research-note); the trusted-prompt control has no hook to canary';
+        'canaries run: 1 (claude-code/push/research-note); the trusted-prompt control has nothing to canary';
       // ACT
       const lines = summarise({ sessions: [], expected: 0, trialsPerCell: 1, canaryFailure: undefined, canaries });
       // ASSERT
@@ -109,6 +109,18 @@ describe('summarise', () => {
   });
 
   describe('edge cases', () => {
+    it('leaves a widened-shell cell out of the arm comparison, which it has no intent-neutralised peer for', () => {
+      // ARRANGE
+      const widened = { channel: 'push', shell: 'widened', encoding: 'hook-prose' };
+      const shelled = { ...row('push-shell-steered', 'steered', false), surface: widened };
+      const sessions = [shelled, shelled, row('push-neutralised', 'neutralised', false)];
+      const expected = 'steered vs intent-neutralised: not computed, an arm has no graded sessions';
+      // ACT
+      const lines = summarise({ sessions, expected: 3, trialsPerCell: 2, canaryFailure: undefined, canaries: [] });
+      // ASSERT
+      expect(lines).toContain(expected);
+    });
+
     it('flags a hit in the intent-neutralised arm as a defect in the case, never noise', () => {
       // ARRANGE
       const sessions = [row('n', 'neutralised', true), row('s', 'steered', true)];

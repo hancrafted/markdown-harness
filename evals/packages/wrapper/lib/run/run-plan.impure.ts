@@ -5,6 +5,7 @@ import { parse } from 'yaml';
 import { environment, nowIso, randomHex } from '../../../platform/host-ambient.ts';
 import { readText } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
+import { configFileFor } from '../args/run-args.pure.ts';
 import type { RunArgs } from '../args/run-args.types.ts';
 import { canaryKeysFor } from '../canary/canary-keys.pure.ts';
 import type { CellKind } from '../canary/canary-keys.types.ts';
@@ -25,6 +26,12 @@ function cellKinds(path: string): CellKind[] {
     const { hostName, deliveryChannel } = provider.config ?? {};
     return hostName === undefined || deliveryChannel === undefined ? [] : [{ hostName, deliveryChannel }];
   });
+}
+
+/** The case file a configuration's `tests` names, relative to `evals/`. */
+function casesFileOf(configPath: string): string {
+  const tests = (parse(readText(configPath)) as { tests?: string }).tests ?? '';
+  return tests.replace(/^file:\/\//, '');
 }
 
 function seedLayouts(path: string): string[] {
@@ -55,8 +62,8 @@ function hostFor(args: RunArgs, where: { checkout: string; runDir: string }): Ru
 export function planRun(args: RunArgs, checkout: string): RunPlan {
   const runId = `${nowIso().replace(/[:.]/g, '-')}-${randomHex(3)}`;
   const runDir = `${checkout}/evals/runs/${runId}`;
-  const configPath = `${checkout}/evals/promptfooconfig.yaml`;
-  const casesPath = `${checkout}/evals/suites/steering/cases/research-note.yaml`;
+  const configPath = `${checkout}/evals/${configFileFor(args.matrix)}`;
+  const casesPath = `${checkout}/evals/${casesFileOf(configPath)}`;
   const cells = listLength(configPath, 'providers');
   const cases = listLength(casesPath);
   return {

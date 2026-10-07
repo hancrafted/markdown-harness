@@ -1,5 +1,5 @@
 import type { deriveArm } from '../../../arms/derive-arms.ts';
-import type { SteeringGrade } from '../../../grading/grade-steering-marker.ts';
+import type { SectionScope, SteeringGrade } from '../../../grading/grade-steering-marker.ts';
 import type { Localisation } from '../../../grading/localise-rung.ts';
 import type { ArmKind, SessionObservation } from '../../../session/observe-session.ts';
 import type { TrialOutcome } from '../../../session/run-trial.ts';
@@ -15,8 +15,14 @@ export interface SessionSidecar {
   readonly failureKind?: string;
   readonly detail?: string;
   readonly sessionId?: string;
+  /** The hit as the summary counts it: every steering marker present, or in the intent-neutralised arm any one. */
   readonly steeringMarkerPresent: boolean;
   readonly localised: string;
+  /** Which surface the cell measured, so the summary can group by encoding and count shell-created files. */
+  readonly surface?: { readonly channel: string; readonly shell: string; readonly encoding: string };
+  readonly shellCreated?: boolean;
+  /** Per tested carrier, whether its steering marker reached the final file: the partial-action profile. */
+  readonly carrierHits?: Readonly<Record<string, boolean>>;
   readonly cohortRow?: Readonly<Record<string, unknown>>;
 }
 
@@ -28,7 +34,10 @@ export interface CohortSources {
   readonly providerId: string;
   readonly parsed: ParsedSession;
   readonly observation: SessionObservation;
-  readonly grade: SteeringGrade;
+  /** One grade per tested carrier, in the order of the case's carriers. */
+  readonly grades: readonly SteeringGrade[];
+  /** The address of each tested carrier, in the same order. */
+  readonly addresses: readonly string[];
   readonly localised: Localisation;
   readonly digests: { readonly mh: string; readonly skills: string; readonly root: string; readonly config: string };
   readonly timing: { readonly startedAtMs: number; readonly durationMs: number; readonly nodeVersion: string };
@@ -58,8 +67,19 @@ export interface FailureReport {
   readonly detail: string;
 }
 
-export interface Prepared {
+/** One tested carrier of a trial: where it sits, the steering marker drawn for it, and where that belongs. */
+export interface PreparedCarrier {
+  readonly address: string;
   readonly steeringMarker: string;
+  readonly clause: string;
+  readonly scope: SectionScope;
+  /** How many carrier strings held its placeholder, so how many times the steered root holds its steering marker. */
+  readonly occurrences: number;
+}
+
+export interface Prepared {
+  readonly carriers: readonly PreparedCarrier[];
+  /** Every carrier's clause, joined: what the trusted-prompt control says in the user turn. */
   readonly clause: string;
   readonly derived: ReturnType<typeof deriveArm>;
 }

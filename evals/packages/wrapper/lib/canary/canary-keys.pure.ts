@@ -5,7 +5,7 @@
 
 import type { CanaryKey, CellKind } from './canary-keys.types.ts';
 
-const HOOK_CHANNELS = ['push'];
+const CANARIED_CHANNELS = ['push', 'pull'];
 
 export function describeKey(key: CanaryKey): string {
   return `${key.host}/${key.channel}/${key.layout}`;
@@ -13,7 +13,7 @@ export function describeKey(key: CanaryKey): string {
 
 export function canaryKeysFor(cells: readonly CellKind[], layouts: readonly string[]): CanaryKey[] {
   const keys = cells
-    .filter((cell) => HOOK_CHANNELS.includes(cell.deliveryChannel))
+    .filter((cell) => CANARIED_CHANNELS.includes(cell.deliveryChannel))
     .flatMap((cell) =>
       layouts.map((layout) => ({ host: cell.hostName, channel: cell.deliveryChannel, layout }) as CanaryKey),
     );

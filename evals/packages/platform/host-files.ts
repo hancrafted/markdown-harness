@@ -11,6 +11,7 @@ export {
   removeTree,
   systemTemporaryDirectory,
   walkTree,
+  writeExecutable,
   writeText,
 } from './lib/platform/host-files.impure.ts';
 export type { FileText, TreeEntryRecord } from './lib/platform/host-files.types.ts';

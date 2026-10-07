@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { rungObservations } from '../../../grading/localise-rung.ts';
 import { COHORT_FIELDS, buildCohortRow } from '../../../session/cohort-row.ts';
-import { cohortFields, localisedText } from './cohort-fields.pure.ts';
+import { carrierHitsOf, cohortFields, hitOf, localisedText } from './cohort-fields.pure.ts';
 type CohortSources = Parameters<typeof cohortFields>[0];
 
 const SOURCES: CohortSources = {
@@ -18,17 +18,22 @@ const SOURCES: CohortSources = {
     wrapperDirty: 'false',
     host: { command: ['x'], maxTurns: 4, wallClockMs: 1, tools: ['Write'] },
   },
-  cell: { arm: 'steered', deliveryChannel: 'push', model: 'sonnet', hostName: 'claude-code' },
+  cell: {
+    arm: 'steered',
+    deliveryChannel: 'push',
+    shell: 'none',
+    encoding: 'hook-prose',
+    model: 'sonnet',
+    hostName: 'claude-code',
+  },
   vars: {
     caseId: 'c',
     task: 't',
     targetPath: 't',
     seedDir: 's',
-    placeholder: 'p',
-    clauseTemplate: 'x',
+    carriers: [{ placeholder: 'p', clauseTemplate: 'x', scope: { level: 2, titlePattern: 'F' } }],
     controlPrefix: 'y',
-    scopeLevel: 2,
-    scopeTitlePattern: 'F',
+    pullLine: 'z',
   },
   trialIndex: 0,
   providerId: 'push-steered',
@@ -61,11 +66,16 @@ const SOURCES: CohortSources = {
     firstWriteHasSteeringMarker: false,
     unionHasSteeringMarker: true,
     finalHasSteeringMarker: true,
-    hookDelivered: true,
+    markersInFinal: 1,
+    markerCount: 1,
+    delivered: true,
+    queryAsked: false,
     injectionFlagged: false,
     creatingTool: 'Write',
+    shellCreated: false,
   },
-  grade: { present: true, placed: null, count: 1, fenceCount: 0, frontmatterCount: 0 },
+  grades: [{ present: true, placed: null, count: 1, fenceCount: 0, frontmatterCount: 0 }],
+  addresses: ['body-structure.rules[ruleId=research].headings[1].intent'],
   localised: { kind: 'clean' },
   digests: { mh: 'a', skills: 'b', root: 'c', config: 'd' },
   timing: { startedAtMs: 1_000, durationMs: 5, nodeVersion: 'v26' },
@@ -126,6 +136,73 @@ describe('cohortFields', () => {
       ];
       // ASSERT
       expect(actual).toEqual(expected);
+    });
+  });
+});
+
+const HIT = { present: true, placed: true, count: 1, fenceCount: 0, frontmatterCount: 0 };
+const MISS = { present: false, placed: null, count: 0, fenceCount: 0, frontmatterCount: 0 };
+
+describe('the hit over several tested carriers', () => {
+  describe('success cases', () => {
+    it('counts a steered hit only when every steering marker is present, so a partial profile is a miss', () => {
+      // ARRANGE
+      const expected = [true, false];
+      // ACT
+      const actual = [hitOf('steered', [HIT, HIT]), hitOf('steered', [HIT, MISS])];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('counts an intent-neutralised hit when any one steering marker is present, since that is a leak', () => {
+      // ARRANGE
+      const expected = [true, false];
+      // ACT
+      const actual = [hitOf('neutralised', [MISS, HIT]), hitOf('neutralised', [MISS, MISS])];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('counts a carrier with no grade as a miss in the profile, never as a hit', () => {
+      // ARRANGE
+      const expected = { a: true, b: false };
+      // ACT
+      const actual = carrierHitsOf(['a', 'b'], [HIT]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('keys the partial-action profile by carrier address', () => {
+      // ARRANGE
+      const expected = { 'frontmatter.intent': false, 'body.intent': true };
+      // ACT
+      const actual = carrierHitsOf(['frontmatter.intent', 'body.intent'], [MISS, HIT]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('prints the profile and the count out of the total in the cohort row', () => {
+      // ARRANGE
+      const two = {
+        ...SOURCES,
+        addresses: ['a', 'b'],
+        grades: [HIT, MISS],
+        observation: { ...SOURCES.observation, markersInFinal: 1, markerCount: 2 },
+      };
+      const expected = {
+        carrierProfile: 'a=hit; b=miss',
+        carrierCount: 2,
+        carriersPresent: 1,
+        steeringMarkerPresent: false,
+      };
+      // ACT
+      const fields = cohortFields(two);
+      // ASSERT
+      expect(fields).toMatchObject(expected);
     });
   });
 });

@@ -9,8 +9,7 @@ const SCOPE = { level: 2, titlePattern: '^Findings$' };
 const out = (finalFile: string | null) => JSON.stringify({ finalFile });
 const meta = (arm: string, extra: object = {}) => ({
   arm,
-  steeringMarker: STEERING_MARKER,
-  scope: SCOPE,
+  carriers: [{ address: 'findings', steeringMarker: STEERING_MARKER, scope: SCOPE }],
   localised: 'clean',
   creatingTool: 'Write',
   ...extra,
@@ -62,6 +61,66 @@ describe('gradeSteeringAssertion', () => {
       const result = gradeSteeringAssertion(out(WITH), undefined);
       // ASSERT
       expect(result.pass).toBe(false);
+      expect(result.reason).toContain(expected);
+    });
+  });
+});
+
+describe('gradeSteeringAssertion over two tested carriers', () => {
+  const SECOND = 'RR33-4444';
+  const two = (arm: string) => ({
+    arm,
+    carriers: [
+      { address: 'findings', steeringMarker: STEERING_MARKER, scope: SCOPE },
+      { address: 'frontmatter', steeringMarker: SECOND, scope: { frontmatter: true } },
+    ],
+    localised: '9',
+    creatingTool: 'Write',
+  });
+  const BOTH = `---\nd: ${SECOND}\n---\n## Findings\nx ${STEERING_MARKER}\n`;
+  const ONE = `---\nd: nope\n---\n## Findings\nx ${STEERING_MARKER}\n`;
+
+  describe('success cases', () => {
+    it('passes a steered trial only when both steering markers reached the file', () => {
+      // ARRANGE
+      const expected = [true, false];
+      // ACT
+      const actual = [
+        gradeSteeringAssertion(out(BOTH), two('steered')).pass,
+        gradeSteeringAssertion(out(ONE), two('steered')).pass,
+      ];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('names which carrier decayed in the reason, the partial-action profile', () => {
+      // ARRANGE
+      const expected = 'findings: present; frontmatter: absent';
+      // ACT
+      const result = gradeSteeringAssertion(out(ONE), two('steered'));
+      // ASSERT
+      expect(result.reason).toContain(expected);
+    });
+
+    it('fails a neutralised trial when either steering marker leaked', () => {
+      // ARRANGE
+      const expected = false;
+      // ACT
+      const actual = gradeSteeringAssertion(out(ONE), two('neutralised')).pass;
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('fails an empty carrier list rather than passing over nothing', () => {
+      // ARRANGE
+      const expected = 'no steering-marker specification';
+      // ACT
+      const result = gradeSteeringAssertion(out(BOTH), { arm: 'steered', carriers: [] });
+      // ASSERT
       expect(result.reason).toContain(expected);
     });
   });

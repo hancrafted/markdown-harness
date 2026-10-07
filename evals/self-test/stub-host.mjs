@@ -4,11 +4,13 @@
 // takes the real argv, runs the root's real hook script, writes a real file and
 // prints a stream shaped like Claude Code's. No model is behind it.
 //
-//   node stub-host.mjs [--mode obey|deaf|ignore|auth-fail|slow] [--log <file>] -p <task> ...
+//   node stub-host.mjs [--mode obey|deaf|ignore|partial|shell|auth-fail|slow] [--log <file>] -p <task> ...
 //
-// obey: acts like an agent that does what the hook (or the user turn) tells it.
-// deaf: the hook fires and delivers, and the agent does not revise (a rung 4 null).
-// ignore: writes a plain note, never reads the hook; with no hook it is a rung 3 null.
+// obey: acts like an agent that does what the hook, the pull command (bin/mh) or the user turn tells it.
+// deaf: the hook or the pull command delivers, and the agent does not act on it (a rung 4 null for the hook).
+// ignore: writes a plain note, never reads the hook or runs the pull command (a rung 3 null).
+// partial: acts on only the first steering code it was given (a rung 9 partial profile).
+// shell: creates the file through the Bash tool when the Host harness was given one, so the Write hook never fires.
 
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -19,6 +21,7 @@ const flag = (name) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : und
 const mode = flag('--mode') ?? 'obey';
 const logFile = flag('--log');
 const task = flag('-p') ?? '';
+const shellGranted = (flag('--tools') ?? '').split(',').includes('Bash');
 const nonce = `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const startedAt = Date.now();
 const root = process.cwd();
@@ -58,30 +61,52 @@ if (mode === 'auth-fail') {
 if (mode === 'slow') await new Promise((resolve) => setTimeout(resolve, 400));
 
 const target = /docs\/[\w./-]+\.md/.exec(task)?.[0] ?? 'docs/research/note.md';
+const via = mode === 'shell' && shellGranted ? 'Bash' : 'Write';
 const announce = (id, content) =>
   emit({
     type: 'assistant',
-    message: { content: [{ type: 'tool_use', id, name: 'Write', input: { file_path: join(root, target), content } }] },
+    message: {
+      content: [
+        via === 'Bash'
+          ? { type: 'tool_use', id, name: 'Bash', input: { command: `cat > ${target} <<'EOF'\n${content}\nEOF` } }
+          : { type: 'tool_use', id, name: 'Write', input: { file_path: join(root, target), content } },
+      ],
+    },
+  });
+const resultOf = (id, text) =>
+  emit({
+    type: 'user',
+    message: { content: [{ type: 'tool_result', tool_use_id: id, content: text, is_error: false }] },
   });
 const land = (id, content) => {
   mkdirSync(dirname(join(root, target)), { recursive: true });
   writeFileSync(join(root, target), content);
-  emit({
-    type: 'user',
-    message: { content: [{ type: 'tool_result', tool_use_id: id, content: 'File written', is_error: false }] },
-  });
+  resultOf(id, 'File written');
 };
 const writeNote = (id, content) => {
   announce(id, content);
   land(id, content);
 };
 
-const CODE = /\b[A-Z]{2}\d{2}-\d{4}\b/;
+const CODES = /\b[A-Z]{2}\d{2}-\d{4}\b/g;
+const codesIn = (text) => [...new Set(text.match(CODES) ?? [])].slice(0, mode === 'partial' ? 1 : undefined);
 const draft = '---\ntype: research\ndescription: A note.\n---\n\n# Note\n\n## Findings\n\nSomething was found.\n';
-const noteWith = (code) => `${draft}\n${code}\n`;
+const noteWith = (codes) => (codes.length === 0 ? draft : `${draft}\n${codes.join('\n')}\n`);
 
-let told = CODE.exec(task)?.[0];
-if (hooksOn && mode !== 'ignore') {
+const isPull = existsSync(join(root, 'bin', 'mh'));
+// the shell is given no hook: a Bash creation never reaches the Write matcher
+const runsHook = hooksOn && mode !== 'ignore' && via === 'Write';
+let told = codesIn(task);
+if (isPull && mode !== 'ignore') {
+  emit({ type: 'assistant', message: { content: [{ type: 'text', text: 'Checking the guidance first.' }] } });
+  emit({
+    type: 'assistant',
+    message: { content: [{ type: 'tool_use', id: 'q1', name: 'Bash', input: { command: `bin/mh query ${target}` } }] },
+  });
+  const query = spawnSync(process.execPath, [join(root, 'bin/mh'), 'query', target], { cwd: root, encoding: 'utf8' });
+  resultOf('q1', query.stdout);
+  writeNote('w1', mode === 'deaf' ? draft : noteWith(codesIn(query.stdout)));
+} else if (runsHook) {
   // 'deaf' runs the hook and then does not act on it
   emit({ type: 'assistant', message: { content: [{ type: 'text', text: 'Writing the note.' }] } });
   // PreToolUse: the call is announced, the hook runs BEFORE the file exists, then the write lands.
@@ -95,10 +120,10 @@ if (hooksOn && mode !== 'ignore') {
   });
   emit({ type: 'system', subtype: 'hook_response', hook_name: 'PreToolUse:Write', output: run.stdout });
   land('w1', draft);
-  told = CODE.exec(run.stdout)?.[0] ?? told;
-  if (told && mode !== 'deaf') writeNote('w2', noteWith(told));
+  told = codesIn(run.stdout);
+  if (told.length > 0 && mode !== 'deaf') writeNote('w2', noteWith(told));
 } else {
-  writeNote('w1', mode === 'ignore' || !told ? draft : noteWith(told));
+  writeNote('w1', mode === 'ignore' ? draft : noteWith(told));
 }
 
 emit({

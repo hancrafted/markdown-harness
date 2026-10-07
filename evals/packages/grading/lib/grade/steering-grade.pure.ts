@@ -27,6 +27,10 @@ function fencedOf(text: string): string {
 }
 
 function placement(file: string, input: GradeInput): boolean | null {
+  if ('frontmatter' in input.scope) {
+    const block = frontmatterOf(file);
+    return block === '' ? null : occurrences(block, input.steeringMarker) > 0;
+  }
   const section = findSection(splitSections(file), input.scope);
   return section === undefined ? null : occurrences(file.slice(section.start, section.end), input.steeringMarker) > 0;
 }

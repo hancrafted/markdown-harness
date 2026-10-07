@@ -1,11 +1,11 @@
 // Integration suite for the platform gate: entry points only, real files and real
 // child processes in a throwaway directory.
 
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { copyTree, digestTree, readTextFiles, walkTree } from '../host-files.ts';
+import { copyTree, digestTree, readTextFiles, walkTree, writeExecutable } from '../host-files.ts';
 import { runProcess } from '../host-process.ts';
 
 const scratch: string[] = [];
@@ -51,6 +51,17 @@ describe('host files', () => {
       copyTree(from, to);
       // ASSERT
       expect(walkTree(to, [])).toEqual(expected);
+    });
+
+    it('writes an executable file the shell can run, creating the directory above it', () => {
+      // ARRANGE
+      const path = join(sandbox(), 'bin', 'tool');
+      const expectedMode = 0o755;
+      const permissionBits = 0o777;
+      // ACT
+      writeExecutable(path, '#!/bin/sh\necho hi\n');
+      // ASSERT
+      expect(statSync(path).mode & permissionBits).toBe(expectedMode);
     });
 
     it('digests by content, so an edit changes it and a skipped directory does not', () => {

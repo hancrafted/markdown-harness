@@ -1,7 +1,12 @@
 // Colocated unit test for reading the provider's inputs: nothing defaults.
 
+import { readFileSync, readdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 import {
+  cellLabelOf,
   derivationArmFor,
   fillClause,
   readCaseVars,
@@ -10,16 +15,21 @@ import {
   taskFor,
 } from './provider-config.pure.ts';
 
-const CELL = { arm: 'steered', deliveryChannel: 'push', model: 'sonnet', hostName: 'claude-code' };
+const CELL = {
+  arm: 'steered',
+  deliveryChannel: 'push',
+  shell: 'none',
+  encoding: 'hook-prose',
+  model: 'sonnet',
+  hostName: 'claude-code',
+};
 const VARS = {
   caseId: 'c',
   targetPath: 'docs/a.md',
   seedDir: 's',
-  placeholder: 'P',
-  clauseTemplate: 'code {steeringMarker}',
+  carriers: [{ placeholder: 'P', clauseTemplate: 'code {steeringMarker}', scope: { level: 2, titlePattern: '^F$' } }],
   controlPrefix: 'Note: {clause}',
-  scopeLevel: '2',
-  scopeTitlePattern: '^F$',
+  pullLine: 'Run bin/mh query.',
 };
 const ENV = {
   EVALS_CHECKOUT: '/c',
@@ -34,9 +44,9 @@ const ENV = {
 
 describe('provider inputs', () => {
   describe('success cases', () => {
-    it('reads a complete cell, case and environment, coercing the scope level to a number', () => {
+    it('reads a complete cell, case and environment', () => {
       // ARRANGE
-      const expectedLevel = 2;
+      const expectedLevel = 'c';
       const expectedArm = 'steered';
       const expectedRun = 'r';
       // ACT
@@ -44,7 +54,7 @@ describe('provider inputs', () => {
       const cell = readCellConfig(CELL);
       const settings = readRunSettings(ENV);
       // ASSERT
-      expect(vars).toMatchObject({ scopeLevel: expectedLevel });
+      expect(vars).toMatchObject({ caseId: expectedLevel });
       expect(cell).toMatchObject({ arm: expectedArm });
       expect(settings).toMatchObject({ runId: expectedRun });
     });
@@ -75,11 +85,33 @@ describe('provider inputs', () => {
   describe('failure cases', () => {
     it('names every missing field rather than defaulting it', () => {
       // ARRANGE
-      const expected = ['config.model', 'config.arm'];
+      const expected = ['config.model', 'config.arm', 'config.shell', 'config.encoding'];
       // ACT
       const actual = readCellConfig({ deliveryChannel: 'push', hostName: 'claude-code' });
       // ASSERT
       expect([...(actual as string[])].sort()).toEqual([...expected].sort());
+    });
+
+    it('refuses a cell whose three surface fields disagree, naming what is wrong', () => {
+      // ARRANGE
+      const pullWithNoShell = { ...CELL, deliveryChannel: 'pull', shell: 'none', encoding: 'json' };
+      const expected = /shell none is not a pull surface/;
+      // ACT
+      const actual = (readCellConfig(pullWithNoShell) as string[]).join(' ');
+      // ASSERT
+      expect(actual).toMatch(expected);
+    });
+
+    it('refuses a case with no tested carrier, and one whose carrier lacks its clause', () => {
+      // ARRANGE
+      const expected = [['vars.carriers'], ['vars.carriers[0].clauseTemplate']];
+      // ACT
+      const actual = [
+        readCaseVars({ ...VARS, carriers: [] }),
+        readCaseVars({ ...VARS, carriers: [{ placeholder: 'P', scope: { frontmatter: true } }] }),
+      ];
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
 
     it('refuses an environment the wrapper did not fully set', () => {
@@ -93,6 +125,21 @@ describe('provider inputs', () => {
   });
 
   describe('edge cases', () => {
+    it('names each cell by what distinguishes it: channel, widened shell, pull encoding and arm', () => {
+      // ARRANGE
+      const named = (cell: object) => cellLabelOf({ ...CELL, ...cell } as never);
+      const expected = ['push-steered', 'push-shell-steered', 'pull-json-neutralised', 'user-turn-control'];
+      // ACT
+      const actual = [
+        named({}),
+        named({ shell: 'widened' }),
+        named({ deliveryChannel: 'pull', shell: 'query-only', encoding: 'json', arm: 'neutralised' }),
+        named({ deliveryChannel: 'user-turn', shell: 'none', encoding: 'none', arm: 'control' }),
+      ];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('treats an absent case var as missing even when others are present', () => {
       // ARRANGE
       const expected = ['vars.caseId'];
@@ -100,6 +147,95 @@ describe('provider inputs', () => {
       const actual = readCaseVars({ ...VARS, caseId: undefined });
       // ASSERT
       expect(actual).toEqual(expected);
+    });
+  });
+});
+
+const EVALS = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
+const DEFAULT_TRIALS = 8;
+const SESSION_LIMIT = 40;
+
+interface Matrix {
+  readonly file: string;
+  readonly providers: { readonly config: unknown }[];
+  readonly tests: string;
+}
+
+function matrices(): Matrix[] {
+  return readdirSync(EVALS)
+    .filter((name) => /^promptfooconfig(\.[a-z]+)?\.yaml$/.test(name))
+    .map((file) => ({ file, ...(parse(readFileSync(join(EVALS, file), 'utf8')) as Omit<Matrix, 'file'>) }));
+}
+
+function casesIn(matrix: Matrix): number {
+  const path = join(EVALS, matrix.tests.replace(/^file:\/\//, ''));
+  return (parse(readFileSync(path, 'utf8')) as unknown[]).length;
+}
+
+describe('the committed matrices', () => {
+  describe('success cases', () => {
+    it('hold only cells the provider accepts, each with its own label', () => {
+      // ARRANGE
+      const all = matrices();
+      const floor = 3;
+      // ACT
+      const refused = all.flatMap((matrix) =>
+        matrix.providers.flatMap((provider) => {
+          const cell = readCellConfig(provider.config);
+          return Array.isArray(cell) ? [`${matrix.file}: ${cell.join(' ')}`] : [];
+        }),
+      );
+      const duplicated = all.flatMap((matrix) => {
+        const labels = matrix.providers.map((provider) => cellLabelOf(readCellConfig(provider.config) as never));
+        return labels
+          .filter((label, index) => labels.indexOf(label) !== index)
+          .map((label) => `${matrix.file}: ${label}`);
+      });
+      // ASSERT
+      expect(all.length).toBeGreaterThanOrEqual(floor);
+      expect(refused).toEqual([]);
+      expect(duplicated).toEqual([]);
+    });
+
+    it('stay at or under the session budget at the default trial count', () => {
+      // ARRANGE
+      const sizes = matrices().map((matrix) => matrix.providers.length * casesIn(matrix) * DEFAULT_TRIALS);
+      // ACT
+      const over = sizes.filter((size) => size > SESSION_LIMIT);
+      // ASSERT
+      expect(over).toEqual([]);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('goes red on a cell whose shell and channel disagree', () => {
+      // ARRANGE
+      const broken = {
+        arm: 'steered',
+        deliveryChannel: 'pull',
+        shell: 'none',
+        encoding: 'json',
+        model: 'm',
+        hostName: 'claude-code',
+      };
+      // ACT
+      const cell = readCellConfig(broken);
+      // ASSERT
+      expect(Array.isArray(cell)).toBe(true);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('reaches a push cell with a widened shell, a pull cell for each encoding, and a two-carrier case', () => {
+      // ARRANGE
+      const cells = matrices().flatMap((matrix) =>
+        matrix.providers.map((provider) => cellLabelOf(readCellConfig(provider.config) as never)),
+      );
+      const expected = ['push-shell-steered', 'pull-json-steered', 'pull-prose-steered', 'pull-intent-only-steered'];
+      // ACT
+      const missing = expected.filter((label) => !cells.includes(label));
+      // ASSERT
+      expect(missing).toEqual([]);
     });
   });
 });

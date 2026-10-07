@@ -1,5 +1,5 @@
-// Grading a session that ran: rung observation, the steering-marker grade, the
-// localised rung, the cohort row and its sidecar.
+// Grading a session that ran: rung observation, one steering-marker grade per tested
+// carrier, the localised rung, the cohort row and its sidecar.
 
 import { gradeSteeringMarker } from '../../../grading/grade-steering-marker.ts';
 import { localiseRung } from '../../../grading/localise-rung.ts';
@@ -7,7 +7,8 @@ import { nodeVersion } from '../../../platform/host-ambient.ts';
 import { buildCohortRow } from '../../../session/cohort-row.ts';
 import { observeSession } from '../../../session/observe-session.ts';
 import type { TrialOutcome } from '../../../session/run-trial.ts';
-import { cohortFields, localisedText } from './cohort-fields.pure.ts';
+import { carrierHitsOf, cohortFields, hitOf, localisedText } from './cohort-fields.pure.ts';
+import { surfaceOf } from './provider-config.pure.ts';
 import { reportFailure, sessionKey, writeSidecar } from './session-failure.impure.ts';
 import type { GradeParts, SessionReturn, SessionSidecar } from './session-record.types.ts';
 
@@ -26,8 +27,9 @@ function observationOf(parts: GradeParts): ReturnType<typeof observeSession> {
   const { cell, vars, prepared, outcome, parsed } = parts;
   return observeSession({
     arm: cell.arm,
+    surface: surfaceOf(cell),
     events: parsed.events,
-    steeringMarker: prepared.steeringMarker,
+    steeringMarkers: prepared.carriers.map((carrier) => carrier.steeringMarker),
     targetPath: vars.targetPath,
     root: outcome.root ?? '',
     finalFile: outcome.finalFile,
@@ -35,26 +37,28 @@ function observationOf(parts: GradeParts): ReturnType<typeof observeSession> {
   });
 }
 
-function scopeOf(parts: GradeParts): { level: number; titlePattern: string } {
-  return { level: parts.vars.scopeLevel, titlePattern: parts.vars.scopeTitlePattern };
+function gradesOf(parts: GradeParts): ReturnType<typeof gradeSteeringMarker>[] {
+  const { outcome, prepared } = parts;
+  return prepared.carriers.map((carrier) =>
+    gradeSteeringMarker({ finalFile: outcome.finalFile, steeringMarker: carrier.steeringMarker, scope: carrier.scope }),
+  );
 }
 
-function fieldsOf(parts: GradeParts, observation: ReturnType<typeof observeSession>): Record<string, unknown> {
+function fieldsOf(
+  parts: GradeParts,
+  observation: ReturnType<typeof observeSession>,
+  grades: ReturnType<typeof gradesOf>,
+): Record<string, unknown> {
   const { outcome, prepared } = parts;
-  const grade = gradeSteeringMarker({
-    finalFile: outcome.finalFile,
-    steeringMarker: prepared.steeringMarker,
-    scope: scopeOf(parts),
-  });
-  const localised = localiseRung(observation.observations);
   const timing = { startedAtMs: outcome.startedAtMs, durationMs: outcome.durationMs, nodeVersion: nodeVersion() };
   return cohortFields({
     ...parts,
     trialIndex: parts.call.trialIndex,
     providerId: parts.call.cellLabel,
     observation,
-    grade,
-    localised,
+    grades,
+    addresses: prepared.carriers.map((carrier) => carrier.address),
+    localised: localiseRung(observation.observations),
     digests: digestsOf(outcome),
     timing,
     charactersDelivered: prepared.derived.charactersDelivered,
@@ -63,20 +67,24 @@ function fieldsOf(parts: GradeParts, observation: ReturnType<typeof observeSessi
 
 function recordOf(
   parts: GradeParts,
-  fields: Record<string, unknown>,
+  grades: ReturnType<typeof gradesOf>,
   row: Readonly<Record<string, unknown>>,
 ): SessionSidecar {
-  const { call, cell } = parts;
-  const present = fields.steeringMarkerPresent === true;
-  const localised = String(fields.localisedRung);
+  const { call, cell, prepared } = parts;
   return {
     sessionKey: sessionKey(call.cellLabel, call.trialIndex),
     cell: call.cellLabel,
     arm: cell.arm,
     graded: true,
-    sessionId: String(fields.sessionId),
-    steeringMarkerPresent: present,
-    localised,
+    sessionId: String(row.sessionId),
+    steeringMarkerPresent: hitOf(cell.arm, grades),
+    localised: String(row.localisedRung),
+    surface: { channel: cell.deliveryChannel, shell: cell.shell, encoding: cell.encoding },
+    shellCreated: row.shellCreated === true,
+    carrierHits: carrierHitsOf(
+      prepared.carriers.map((carrier) => carrier.address),
+      grades,
+    ),
     cohortRow: row,
   };
 }
@@ -92,14 +100,16 @@ function returnOf(
     changedFiles: outcome.changedFiles,
     events: parsed.events,
   });
-  const localised = localisedText(localiseRung(observation.observations));
   return {
     output,
     metadata: {
       arm: cell.arm,
-      steeringMarker: prepared.steeringMarker,
-      scope: scopeOf(parts),
-      localised,
+      carriers: prepared.carriers.map((carrier) => ({
+        address: carrier.address,
+        steeringMarker: carrier.steeringMarker,
+        scope: carrier.scope,
+      })),
+      localised: localisedText(localiseRung(observation.observations)),
       creatingTool: observation.creatingTool ?? null,
       cohortRow: row,
     },
@@ -109,8 +119,8 @@ function returnOf(
 export function gradeSession(parts: GradeParts): SessionReturn {
   const { settings, cell, call } = parts;
   const observation = observationOf(parts);
-  const fields = fieldsOf(parts, observation);
-  const row = buildCohortRow(fields, []);
+  const grades = gradesOf(parts);
+  const row = buildCohortRow(fieldsOf(parts, observation, grades), []);
   if (!row.ok)
     return reportFailure({
       settings,
@@ -119,6 +129,6 @@ export function gradeSession(parts: GradeParts): SessionReturn {
       kind: 'cohort-field-missing',
       detail: row.missing.join(', '),
     });
-  writeSidecar(settings.runDir, recordOf(parts, fields, row.row));
+  writeSidecar(settings.runDir, recordOf(parts, grades, row.row));
   return returnOf(parts, observation, row.row);
 }

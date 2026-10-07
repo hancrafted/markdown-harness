@@ -2,6 +2,8 @@
 // and fails the call as an instrument failure rather than becoming a guess.
 
 import type { ArmName } from '../../../arms/derive-arms.ts';
+import type { DeliverySurface } from '../../../session/delivery-surface.ts';
+import { incoherentSurface } from '../../../session/delivery-surface.ts';
 import type { ArmKind } from '../../../session/observe-session.ts';
 import type { CaseVars, CellConfig, RunSettings, TaskParts } from './provider-config.types.ts';
 
@@ -11,29 +13,49 @@ function need(bag: Bag, names: readonly string[], where: string): string[] {
   return names.filter((name) => bag[name] === undefined || bag[name] === '').map((name) => `${where}.${name}`);
 }
 
+const CHANNELS = ['push', 'pull', 'user-turn'];
+
+function surfaceProblem(bag: Bag): string[] {
+  if (!CHANNELS.includes(bag.deliveryChannel as string))
+    return [`config.deliveryChannel (${String(bag.deliveryChannel)} is not push, pull or user-turn)`];
+  const problem = incoherentSurface(surfaceOf(bag as unknown as CellConfig));
+  return problem === undefined ? [] : [`config.shell or config.encoding (${problem})`];
+}
+
+/** The three fields that say which surface a cell measures. */
+export function surfaceOf(cell: CellConfig): DeliverySurface {
+  return { channel: cell.deliveryChannel, shell: cell.shell, encoding: cell.encoding };
+}
+
 export function readCellConfig(config: unknown): CellConfig | string[] {
   const bag = (config ?? {}) as Bag;
-  const missing = need(bag, ['arm', 'deliveryChannel', 'model', 'hostName'], 'config');
-  return missing.length > 0 ? missing : (bag as unknown as CellConfig);
+  const missing = need(bag, ['arm', 'deliveryChannel', 'shell', 'encoding', 'model', 'hostName'], 'config');
+  if (missing.length > 0) return missing;
+  const problems = surfaceProblem(bag);
+  return problems.length > 0 ? problems : (bag as unknown as CellConfig);
+}
+
+/** A cell is named by what distinguishes it: its channel, the shell when widened, the pull encoding, and its arm. */
+export function cellLabelOf(cell: CellConfig): string {
+  const shell = cell.shell === 'widened' ? 'shell' : undefined;
+  const encoding = cell.deliveryChannel === 'pull' ? cell.encoding : undefined;
+  return [cell.deliveryChannel, shell, encoding, cell.arm].filter((part) => part !== undefined).join('-');
+}
+
+function carrierProblems(carriers: unknown): string[] {
+  if (!Array.isArray(carriers) || carriers.length === 0) return ['vars.carriers'];
+  return carriers.flatMap((carrier: Bag, index) =>
+    need(carrier ?? {}, ['placeholder', 'clauseTemplate', 'scope'], `vars.carriers[${index}]`),
+  );
 }
 
 export function readCaseVars(vars: unknown): CaseVars | string[] {
   const bag = (vars ?? {}) as Bag;
-  const missing = need(
-    bag,
-    [
-      'caseId',
-      'targetPath',
-      'seedDir',
-      'placeholder',
-      'clauseTemplate',
-      'controlPrefix',
-      'scopeLevel',
-      'scopeTitlePattern',
-    ],
-    'vars',
-  );
-  return missing.length > 0 ? missing : ({ ...bag, scopeLevel: Number(bag.scopeLevel) } as unknown as CaseVars);
+  const missing = [
+    ...need(bag, ['caseId', 'targetPath', 'seedDir', 'controlPrefix', 'pullLine'], 'vars'),
+    ...carrierProblems(bag.carriers),
+  ];
+  return missing.length > 0 ? missing : (bag as unknown as CaseVars);
 }
 
 export function readRunSettings(env: Readonly<Record<string, string | undefined>>): RunSettings | string[] {

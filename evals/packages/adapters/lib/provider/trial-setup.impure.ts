@@ -7,8 +7,9 @@ import { readText, readTextFiles } from '../../../platform/host-files.ts';
 import { sourcesFor } from '../../../session/mint-guards.ts';
 import type { TrialOutcome } from '../../../session/run-trial.ts';
 import { runTrial } from '../../../session/run-trial.ts';
-import { derivationArmFor, fillClause, taskFor } from './provider-config.pure.ts';
-import type { Prepared, TrialParts } from './session-record.types.ts';
+import { derivationArmFor, fillClause, surfaceOf, taskFor } from './provider-config.pure.ts';
+import type { CaseCarrier } from './provider-config.types.ts';
+import type { Prepared, PreparedCarrier, TrialParts } from './session-record.types.ts';
 
 const CORPUS_SKIP = ['node_modules', 'dist', '.git', '.worktrees', '.claude', '.scratch'];
 
@@ -18,19 +19,37 @@ function corpusOf(checkout: string): string {
     .join('\n');
 }
 
+interface Draw {
+  readonly settings: TrialParts['settings'];
+  readonly caseId: string;
+  readonly configText: string;
+  readonly corpus: string;
+}
+
+function carrierFor(draw: Draw, carrier: CaseCarrier): Omit<PreparedCarrier, 'occurrences'> {
+  const address = testedCarrierAddress(draw.configText, carrier.placeholder) ?? 'untested';
+  const steeringMarker = drawSteeringMarker({
+    seed: draw.settings.seed,
+    caseId: draw.caseId,
+    address,
+    corpus: draw.corpus,
+  });
+  const clause = fillClause(carrier.clauseTemplate, steeringMarker);
+  return { address, steeringMarker, clause, scope: carrier.scope };
+}
+
 function prepare(parts: TrialParts): Prepared {
   const { settings, cell, vars } = parts;
   const configText = readText(`${settings.checkout}/${vars.seedDir}/markdown-harness.config.yaml`);
-  const address = testedCarrierAddress(configText, vars.placeholder) ?? 'untested';
-  const steeringMarker = drawSteeringMarker({
-    seed: settings.seed,
-    caseId: vars.caseId,
-    address,
-    corpus: corpusOf(settings.checkout),
-  });
-  const clause = fillClause(vars.clauseTemplate, steeringMarker);
-  const arm = derivationArmFor(cell.arm);
-  return { steeringMarker, clause, derived: deriveArm({ configText, arm, placeholder: vars.placeholder, clause }) };
+  const draw = { settings, caseId: vars.caseId, configText, corpus: corpusOf(settings.checkout) };
+  const drawn = vars.carriers.map((carrier) => carrierFor(draw, carrier));
+  const substitutes = drawn.map((entry, index) => ({
+    placeholder: vars.carriers[index]?.placeholder ?? '',
+    clause: entry.clause,
+  }));
+  const derived = deriveArm({ configText, arm: derivationArmFor(cell.arm), substitutes });
+  const carriers = drawn.map((entry, index) => ({ ...entry, occurrences: derived.occurrences[index] ?? 0 }));
+  return { carriers, clause: drawn.map((entry) => entry.clause).join(' '), derived };
 }
 
 function hostFor(parts: TrialParts): Parameters<typeof runTrial>[0]['host'] {
@@ -44,9 +63,18 @@ function hostFor(parts: TrialParts): Parameters<typeof runTrial>[0]['host'] {
   };
 }
 
+function markersFor(parts: TrialParts, prepared: Prepared): Parameters<typeof runTrial>[0]['markers'] {
+  const steered = parts.cell.arm === 'steered';
+  return prepared.carriers.map((carrier) => ({
+    steeringMarker: carrier.steeringMarker,
+    sweepExpectation: steered
+      ? ({ kind: 'exactly', occurrences: carrier.occurrences } as const)
+      : ({ kind: 'none' } as const),
+  }));
+}
+
 function requestFor(parts: TrialParts, prepared: Prepared): Parameters<typeof runTrial>[0] {
   const { settings, cell, vars } = parts;
-  const steered = cell.arm === 'steered';
   const task = taskFor({
     arm: cell.arm,
     task: vars.task,
@@ -55,14 +83,15 @@ function requestFor(parts: TrialParts, prepared: Prepared): Parameters<typeof ru
   });
   return {
     arm: cell.arm,
+    surface: surfaceOf(cell),
+    pullLine: vars.pullLine,
     sources: sourcesFor({ checkout: settings.checkout, seedRelative: vars.seedDir }),
     heldOut: [`${settings.checkout}/evals/suites/steering/cases`],
     derivedConfig: prepared.derived.configText,
     host: hostFor(parts),
     task,
-    steeringMarker: prepared.steeringMarker,
+    markers: markersFor(parts, prepared),
     targetPath: vars.targetPath,
-    sweepExpectation: steered ? { kind: 'exactly', occurrences: prepared.derived.substitutions } : { kind: 'none' },
   };
 }
 

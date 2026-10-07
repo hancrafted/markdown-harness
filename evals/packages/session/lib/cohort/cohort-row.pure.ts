@@ -15,6 +15,8 @@ export const COHORT_FIELDS: readonly string[] = [
   'caseId',
   'arm',
   'deliveryChannel',
+  'shell',
+  'encoding',
   'providerId',
   'seed',
   'hostName',
@@ -52,6 +54,12 @@ export const COHORT_FIELDS: readonly string[] = [
   'firstWriteHasSteeringMarker',
   'unionHasSteeringMarker',
   'finalHasSteeringMarker',
+  'carrierCount',
+  'carriersPresent',
+  'carrierProfile',
+  'creatingTool',
+  'shellCreated',
+  'queryAsked',
 ];
 
 /** The fields that define a cohort: rows differing in any of them are never paired. */
@@ -60,6 +68,8 @@ const PAIRING_FIELDS: readonly string[] = [
   'hostVersion',
   'resolvedModel',
   'deliveryChannel',
+  'shell',
+  'encoding',
   'mhDigest',
   'skillScriptsDigest',
   'evalToolVersion',

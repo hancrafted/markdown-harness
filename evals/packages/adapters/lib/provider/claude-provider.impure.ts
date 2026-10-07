@@ -3,7 +3,7 @@
 // nothing of its own but the cell's label and options.
 
 import { environment } from '../../../platform/host-ambient.ts';
-import { readCellConfig } from './provider-config.pure.ts';
+import { cellLabelOf, readCellConfig } from './provider-config.pure.ts';
 import type { SessionReturn } from './session-record.types.ts';
 import { runSteeringSession } from './steering-session.impure.ts';
 
@@ -24,10 +24,9 @@ interface CallContext {
 // random suffix for that.
 let nextTrialIndex = 0;
 
-/** A cell is named by what distinguishes it: its delivery channel and arm. */
 function cellLabel(config: unknown): string | undefined {
   const cell = readCellConfig(config);
-  return Array.isArray(cell) ? undefined : `${cell.deliveryChannel}-${cell.arm}`;
+  return Array.isArray(cell) ? undefined : cellLabelOf(cell);
 }
 
 export default class ClaudeCodeProvider {

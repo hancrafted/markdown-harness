@@ -24,7 +24,12 @@ const TARGET = 'docs/research/feature-flags.md';
 
 const configText = readFileSync(join(CHECKOUT, SEED, 'markdown-harness.config.yaml'), 'utf8');
 const derived = (arm: 'steered' | 'neutralised') =>
-  deriveArm({ configText, arm, placeholder: PLACEHOLDER, clause: CLAUSE });
+  deriveArm({ configText, arm, substitutes: [{ placeholder: PLACEHOLDER, clause: CLAUSE }] });
+
+const PUSH = { channel: 'push', shell: 'none', encoding: 'hook-prose' } as const;
+const USER_TURN = { channel: 'user-turn', shell: 'none', encoding: 'none' } as const;
+const PULL_LINE = 'Before you create a markdown file, run `bin/mh query <path>` and follow what it says.';
+const surfaceOf = (arm: string) => (arm === 'control' ? USER_TURN : PUSH);
 
 const scratch: string[] = [];
 function sandbox(): string {
@@ -41,6 +46,8 @@ function mint(arm: 'steered' | 'neutralised' | 'control', under?: string) {
   return mintRoot({
     sources: sourcesFor({ checkout: CHECKOUT, seedRelative: SEED }),
     arm,
+    surface: surfaceOf(arm),
+    pullLine: PULL_LINE,
     derivedConfig: config,
     heldOut: HELD_OUT,
     under,
@@ -59,14 +66,15 @@ function trial(arm: 'steered' | 'neutralised' | 'control', mode = 'obey') {
     arm === 'steered' ? ({ kind: 'exactly', occurrences: substitutions } as const) : ({ kind: 'none' } as const);
   return runTrial({
     arm,
+    surface: surfaceOf(arm),
+    pullLine: PULL_LINE,
     sources: sourcesFor({ checkout: CHECKOUT, seedRelative: SEED }),
     heldOut: HELD_OUT,
     derivedConfig,
     host: host(mode),
     task,
-    steeringMarker: STEERING_MARKER,
+    markers: [{ steeringMarker: STEERING_MARKER, sweepExpectation }],
     targetPath: TARGET,
-    sweepExpectation,
   });
 }
 
@@ -191,14 +199,15 @@ describe('runTrial', () => {
       // ACT
       const outcome = runTrial({
         arm: 'steered',
+        surface: PUSH,
+        pullLine: PULL_LINE,
         sources: sourcesFor({ checkout: CHECKOUT, seedRelative: SEED }),
         heldOut: HELD_OUT,
         derivedConfig: wrong.configText,
         host: host('obey'),
         task: 'x',
-        steeringMarker: STEERING_MARKER,
+        markers: [{ steeringMarker: STEERING_MARKER, sweepExpectation: { kind: 'none' } }],
         targetPath: TARGET,
-        sweepExpectation: { kind: 'none' },
       });
       // ASSERT
       expect(outcome.declared?.kind).toBe(expected);
@@ -212,14 +221,15 @@ describe('runTrial', () => {
       // ACT
       const outcome = runTrial({
         arm: 'neutralised',
+        surface: PUSH,
+        pullLine: PULL_LINE,
         sources: sourcesFor({ checkout: CHECKOUT, seedRelative: SEED }),
         heldOut: HELD_OUT,
         derivedConfig: leaking,
         host: host('obey'),
         task: 'x',
-        steeringMarker: STEERING_MARKER,
+        markers: [{ steeringMarker: STEERING_MARKER, sweepExpectation: { kind: 'none' } }],
         targetPath: TARGET,
-        sweepExpectation: { kind: 'none' },
       });
       // ASSERT
       expect(outcome.declared?.kind).toBe(expected);

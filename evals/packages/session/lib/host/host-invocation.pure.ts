@@ -31,6 +31,7 @@ export function buildClaudeArgv(input: ClaudeArgvInput): string[] {
     'acceptEdits',
     '--tools',
     input.tools.join(','),
+    ...(input.allowedTools.length === 0 ? [] : ['--allowedTools', ...input.allowedTools]),
   ];
 }
 

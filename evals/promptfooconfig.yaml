@@ -5,19 +5,43 @@
 #
 # Run it through the wrapper, never directly: the wrapper owns the exit code, turns
 # the tool's cache, telemetry and sharing off, and counts the results it wrote.
-description: steering eval, phase 1, Claude Code, push delivery
+description: steering eval, Claude Code, push delivery (the hook), with a widened-shell cell
 prompts:
   - '{{task}}'
 providers:
   - id: file://packages/adapters/claude-provider.ts
     label: push-steered
-    config: { arm: steered, deliveryChannel: push, model: sonnet, hostName: claude-code }
+    config:
+      { arm: steered, deliveryChannel: push, shell: none, encoding: hook-prose, model: sonnet, hostName: claude-code }
   - id: file://packages/adapters/claude-provider.ts
     label: push-neutralised
-    config: { arm: neutralised, deliveryChannel: push, model: sonnet, hostName: claude-code }
+    config:
+      {
+        arm: neutralised,
+        deliveryChannel: push,
+        shell: none,
+        encoding: hook-prose,
+        model: sonnet,
+        hostName: claude-code,
+      }
   - id: file://packages/adapters/claude-provider.ts
     label: trusted-prompt-control
-    config: { arm: control, deliveryChannel: user-turn, model: sonnet, hostName: claude-code }
+    config:
+      { arm: control, deliveryChannel: user-turn, shell: none, encoding: none, model: sonnet, hostName: claude-code }
+  # The widened-shell cell: the hook still matches the Write tool only, and the agent may now create the file
+  # through the shell. It measures the Write matcher's coverage hole (R0 D6): a file created by the shell counts
+  # if it is the file at the target path, and a null with the shell as the creating tool is a rung 3 finding.
+  - id: file://packages/adapters/claude-provider.ts
+    label: push-shell-steered
+    config:
+      {
+        arm: steered,
+        deliveryChannel: push,
+        shell: widened,
+        encoding: hook-prose,
+        model: sonnet,
+        hostName: claude-code,
+      }
 tests: file://suites/steering/cases/research-note.yaml
 defaultTest:
   assert:

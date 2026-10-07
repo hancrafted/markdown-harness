@@ -15,8 +15,9 @@ import type { FailureKind } from '../failure/failure-classifier.types.ts';
 import { buildChildEnvironment, buildClaudeArgv } from '../host/host-invocation.pure.ts';
 import { sweepForSteeringMarker } from '../leak/leak-sweep.pure.ts';
 import { mintRoot } from '../mint/mint-root.impure.ts';
-import { checkRung1, checkRung2 } from '../preflight/preconditions.pure.ts';
+import { checkPullAnswer, checkRung1, checkRung2 } from '../preflight/preconditions.pure.ts';
 import { parseSessionStream } from '../stream/session-stream.pure.ts';
+import { SHIM_PATH, allowedToolsFor, toolsFor } from '../surface/delivery-surface.pure.ts';
 import type { TrialOutcome, TrialRequest } from './trial.types.ts';
 
 const MH_ENTRY = 'node_modules/@hancrafted/markdown-harness/dist/packages/cli/cli.js';
@@ -41,28 +42,46 @@ function runNode(root: string, args: readonly string[], input: string): { stdout
   return { stdout: report.stdout, status: report.status };
 }
 
+function pushProblem(root: string, request: TrialRequest, markers: readonly string[]): Declared {
+  if (request.arm !== 'steered') return undefined;
+  const payload = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: `${root}/${request.targetPath}` } });
+  const rung2 = checkRung2(runNode(root, [`${root}/${HOOK_SCRIPT}`], payload).stdout, markers);
+  return rung2 === undefined ? undefined : { kind: 'rung-2-failed', detail: rung2 };
+}
+
+/** The pull command is run as the agent will run it; a raw JSON answer failing is rung 1, a rendered one rung 2. */
+function pullProblem(root: string, request: TrialRequest, markers: readonly string[]): Declared {
+  const printed = runNode(root, [`${root}/${SHIM_PATH}`, 'query', request.targetPath], '').stdout;
+  const problem = checkPullAnswer(printed, markers, request.arm);
+  if (problem === undefined) return undefined;
+  return { kind: request.surface.encoding === 'json' ? 'rung-1-failed' : 'rung-2-failed', detail: problem };
+}
+
+function surfaceProblem(root: string, request: TrialRequest, markers: readonly string[]): Declared {
+  if (request.surface.channel === 'push') return pushProblem(root, request, markers);
+  return request.surface.channel === 'pull' ? pullProblem(root, request, markers) : undefined;
+}
+
 function preflight(root: string, request: TrialRequest): Declared {
   const check = runNode(root, [`${root}/${MH_ENTRY}`, 'check'], '');
   if (check.status !== 0)
     return { kind: 'rung-1-failed', detail: 'the derived config does not pass `mh check` over the seeded state' };
+  const markers = request.markers.map((entry) => entry.steeringMarker);
   const query = runNode(root, [`${root}/${MH_ENTRY}`, 'query', request.targetPath], '');
-  const rung1 = checkRung1(query.stdout, request.steeringMarker, request.arm);
+  const rung1 = checkRung1(query.stdout, markers, request.arm);
   if (rung1 !== undefined) return { kind: 'rung-1-failed', detail: rung1 };
-  if (request.arm !== 'steered') return undefined;
-  const payload = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: `${root}/${request.targetPath}` } });
-  const rung2 = checkRung2(runNode(root, [`${root}/${HOOK_SCRIPT}`], payload).stdout, request.steeringMarker);
-  return rung2 === undefined ? undefined : { kind: 'rung-2-failed', detail: rung2 };
+  return surfaceProblem(root, request, markers);
 }
 
 function sweepProblem(root: string, request: TrialRequest): { problem: Declared; opened: number } {
-  const verdict = sweepForSteeringMarker(
-    readTextFiles(root, ['.git']),
-    request.steeringMarker,
-    request.sweepExpectation,
+  const files = readTextFiles(root, ['.git']);
+  const verdicts = request.markers.map((entry) =>
+    sweepForSteeringMarker(files, entry.steeringMarker, entry.sweepExpectation),
   );
+  const bad = verdicts.find((verdict) => !verdict.ok);
   return {
-    problem: verdict.ok ? undefined : { kind: 'mint-refused', detail: `leak sweep: ${verdict.reason}` },
-    opened: verdict.filesOpened,
+    problem: bad === undefined ? undefined : { kind: 'mint-refused', detail: `leak sweep: ${bad.reason}` },
+    opened: files.length,
   };
 }
 
@@ -107,7 +126,8 @@ function runSession(root: string, request: TrialRequest): SessionRun {
     task: request.task,
     model: request.host.model,
     maxTurns: request.host.maxTurns,
-    tools: request.host.tools,
+    tools: toolsFor(request.surface.shell, request.host.tools),
+    allowedTools: allowedToolsFor(request.surface.shell),
   });
   const report = runProcess({
     command: command ?? '',
@@ -129,6 +149,8 @@ export function runTrial(request: TrialRequest): TrialOutcome {
   const minted = mintRoot({
     sources: request.sources,
     arm: request.arm,
+    surface: request.surface,
+    pullLine: request.pullLine,
     derivedConfig: request.derivedConfig,
     heldOut: request.heldOut,
     under: request.under,

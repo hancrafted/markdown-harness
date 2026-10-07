@@ -1,5 +1,9 @@
+/** Which matrix of cells and cases a run measures: each is one committed configuration file. */
+export type MatrixName = 'push' | 'pull' | 'carriers';
+
 export interface RunArgs {
   readonly host: 'claude' | 'stub';
+  readonly matrix: MatrixName;
   readonly trials: number;
   readonly seed: string | undefined;
   readonly allowOverBudget: boolean;

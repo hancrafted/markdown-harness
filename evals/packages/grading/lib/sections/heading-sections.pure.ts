@@ -4,7 +4,7 @@
 // higher level (a smaller or equal level number). Hash lines inside a code fence
 // or the leading frontmatter are not headings.
 
-import type { Section, SectionScope } from './heading-sections.types.ts';
+import type { HeadingScope, Section } from './heading-sections.types.ts';
 
 const HEADING = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
 const FENCE = /^\s*(```|~~~)/;
@@ -56,7 +56,7 @@ export function splitSections(text: string): Section[] {
   });
 }
 
-export function findSection(sections: readonly Section[], scope: SectionScope): Section | undefined {
+export function findSection(sections: readonly Section[], scope: HeadingScope): Section | undefined {
   const pattern = new RegExp(scope.titlePattern);
   return sections.find((section) => section.level === scope.level && pattern.test(section.title));
 }

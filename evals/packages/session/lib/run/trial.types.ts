@@ -2,6 +2,7 @@ import type { FailureKind, RawSession } from '../failure/failure-classifier.type
 import type { SweepExpectation } from '../leak/leak-sweep.types.ts';
 import type { MintSources } from '../mint/mint-plan.types.ts';
 import type { ArmKind } from '../observe/session-observation.types.ts';
+import type { DeliverySurface } from '../surface/delivery-surface.types.ts';
 
 /** How a Host harness is invoked: a command prefix, so a self-test can point it at a stub. */
 export interface HostSpec {
@@ -12,18 +13,27 @@ export interface HostSpec {
   readonly tools: readonly string[];
 }
 
+/** One tested carrier's steering marker, and what the root must hold of it before the session starts. */
+export interface TrialMarker {
+  readonly steeringMarker: string;
+  readonly sweepExpectation: SweepExpectation;
+}
+
 export interface TrialRequest {
   readonly arm: ArmKind;
+  /** The delivery surface the trial measures: hook, pull command or user turn, and the shell the agent is given. */
+  readonly surface: DeliverySurface;
+  /** The instruction-file line a pull surface adds. */
+  readonly pullLine: string;
   readonly sources: MintSources;
   readonly heldOut: readonly string[];
   /** The derived config for this arm, written over the seed's config in the minted root. */
   readonly derivedConfig: string;
   readonly host: HostSpec;
   readonly task: string;
-  readonly steeringMarker: string;
+  /** One entry per tested carrier. */
+  readonly markers: readonly TrialMarker[];
   readonly targetPath: string;
-  /** What the root must hold of the steering marker before the session starts. */
-  readonly sweepExpectation: SweepExpectation;
   /** A parent for the mint; defaults to the system temporary directory. */
   readonly under?: string;
   readonly keepRoot?: boolean;

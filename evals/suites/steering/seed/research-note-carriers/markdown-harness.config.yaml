@@ -1,0 +1,34 @@
+# The seed config for the steering eval's two-carrier research case: the research case's config with a second
+# tested carrier, in the frontmatter Rule, so one session carries two steering markers (rung 9's partial-action
+# profile). Cut once from the research
+# Rules of fixtures/conformance/integrated/valid-test-config.yaml at commit
+# e398e92b9673ea68dbf30e9e8a82bc74a01bd4be; the eval never imports that tier at run time.
+#
+# Each carrier holds a plausible first half. The Findings entry's intent and the frontmatter Rule's intent each end
+# in their own plain-string placeholder where the steered arm substitutes a generated clause, so this file loads
+# and passes `mh check` exactly as it stands. The two placeholders are declared by the case, and the closure test
+# proves every one resolves to exactly one carrier.
+body-structure:
+  rules:
+    - ruleId: research
+      folders: [docs/research/]
+      types: [research]
+      intent: 'Research opens with a title and gives its findings, so a reviewer reads it the same way every time.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - purpose: heading
+          level: 2
+          pattern: '^Findings$'
+          intent: 'Findings state what was found and where each claim comes from. FINDINGS_CLAUSE_PLACEHOLDER'
+frontmatter:
+  rules:
+    - ruleId: research
+      folders: [docs/research/]
+      intent: 'Research says what it is and what it is about, so a reader can choose it without opening it. FRONTMATTER_CLAUSE_PLACEHOLDER'
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: research, intent: 'Findings gathered to settle a question.' }
+        description: { presence: required }

@@ -18,6 +18,16 @@ describe('canaryKeysFor', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('owes a pull cell its own canary beside a push cell over the same root layout', () => {
+      // ARRANGE
+      const pull = { hostName: 'claude-code', deliveryChannel: 'pull' };
+      const expected = ['claude-code/pull/a', 'claude-code/push/a'];
+      // ACT
+      const actual = canaryKeysFor([PUSH, pull], ['a']).map(describeKey);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('owes a canary to each new Host harness and each new root layout, so phase 2 adds rows', () => {
       // ARRANGE
       const other = { hostName: 'codex', deliveryChannel: 'push' };
@@ -30,7 +40,7 @@ describe('canaryKeysFor', () => {
   });
 
   describe('failure cases', () => {
-    it('owes none to a channel with no hook to canary, the trusted-prompt control', () => {
+    it('owes none to a channel with nothing to canary, the trusted-prompt control', () => {
       // ARRANGE
       const expected: string[] = [];
       // ACT

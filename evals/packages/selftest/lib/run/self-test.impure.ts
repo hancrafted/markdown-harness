@@ -12,7 +12,8 @@ import type { Finding, MatrixRun } from '../checks/self-checks.types.ts';
 const WRAPPER = 'evals/packages/wrapper/run-evals.ts';
 const SHARING = ['promptfoo.app', 'api.promptfoo', 'share.promptfoo'];
 const TRIALS = 2;
-const CELLS = 3;
+/** The push matrix's cells: the hook with and without the intent, the trusted-prompt control, and the widened shell. */
+const CELLS = 4;
 
 interface Execution {
   readonly exitCode: number;
@@ -82,6 +83,78 @@ function breakFindings(): Finding[] {
   );
 }
 
+function expectOutput(check: string, execution: Execution, pattern: RegExp): Finding {
+  return { check, ok: pattern.test(execution.stdout), detail: String(pattern) };
+}
+
+function matrixArgs(matrix: string, seed: string, extra: readonly string[] = []): string[] {
+  return ['--host', 'stub', '--matrix', matrix, '--trials', String(TRIALS), '--seed', seed, ...extra];
+}
+
+function pullFindings(): Finding[] {
+  const pull = wrapper(matrixArgs('pull', 'self-p'));
+  return [
+    expectExit('the pull matrix runs end to end and exits zero', pull, 0),
+    expectOutput(
+      'pull: the steered encodings follow the pull command',
+      pull,
+      /pull-json-steered: 2\/2 steering marker hits/,
+    ),
+    expectOutput('pull: the encoding contrast (rung 6) is printed', pull, /encoding contrast, pull \(rung 6/),
+  ];
+}
+
+function carrierFindings(): Finding[] {
+  const carriers = wrapper(matrixArgs('carriers', 'self-q', ['--stub-mode', 'partial']));
+  return [
+    expectExit('a partial profile over two carriers is graded, exit zero', carriers, 0),
+    expectOutput(
+      'carriers: a steered null that followed one carrier of two localises to rung 9',
+      carriers,
+      /pull-json-steered: 0\/2 .*nulls by rung: 9:2/,
+    ),
+    expectOutput(
+      'carriers: the carrier that decays is named',
+      carriers,
+      /carrier profile \(rung 9\): .*\d\/2; .*\d\/2/,
+    ),
+  ];
+}
+
+function shellFindings(): Finding[] {
+  const shell = wrapper(matrixArgs('push', 'self-r', ['--stub-mode', 'shell']));
+  return [
+    expectExit('shell-created files are graded, exit zero', shell, 0),
+    expectOutput(
+      'shell: the coverage hole is counted in the widened-shell cell',
+      shell,
+      /push-shell-steered: created through the shell in 2\/2 sessions/,
+    ),
+    expectOutput(
+      'shell: a Bash-created file with no hook delivery localises to rung 3',
+      shell,
+      /push-shell-steered: 0\/2 .*nulls by rung: 3:2/,
+    ),
+  ];
+}
+
+function pullCanaryFindings(): Finding[] {
+  const deadPull = wrapper(matrixArgs('pull', 'self-s', ['--stub-mode', 'ignore']));
+  return [
+    expectExit('a pull command that never runs fails the pull canary, an instrument failure, exit one', deadPull, 1),
+    expectOutput(
+      'the pull canary failure is named as not measured',
+      deadPull,
+      /NOT MEASURED: canary failed: the pull command never ran/,
+    ),
+  ];
+}
+
+/** Phase 2: the pull cells, the encoding contrast, the two-carrier profile, the shell hole, and the pull canary. */
+function surfaceFindings(): Finding[] {
+  return [...pullFindings(), ...carrierFindings(), ...shellFindings(), ...pullCanaryFindings()];
+}
+
 function scenarios(): Finding[] {
   const deaf = wrapper(trialsArgs('self-c', ['--stub-mode', 'deaf']));
   const auth = wrapper(['--host', 'stub', '--trials', '1', '--stub-mode', 'auth-fail']);
@@ -89,6 +162,7 @@ function scenarios(): Finding[] {
   return [
     ...matrixFindings(),
     ...breakFindings(),
+    ...surfaceFindings(),
     expectExit('a graded failure exits zero, whatever the eval tool status (rung 4 nulls)', deaf, 0),
     {
       check: 'a graded null is localised to a rung in the summary',

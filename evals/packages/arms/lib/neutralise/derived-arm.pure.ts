@@ -1,5 +1,5 @@
-// Arm derivation. The steered arm substitutes the generated steering-marker
-// clause for the committed placeholder; the intent-neutralised arm replaces every
+// Arm derivation. The steered arm substitutes each generated steering-marker
+// clause for its committed placeholder; the intent-neutralised arm replaces every
 // carrier in the document — tested or not, mandatory ones included, because they
 // must stay present — with one constant, content-free filler.
 //
@@ -8,7 +8,7 @@
 
 import { parse, stringify } from 'yaml';
 import { intentCarriers } from '../carriers/intent-carriers.pure.ts';
-import type { DeliveredCarrier, DeriveArmInput, DerivedArm } from './derived-arm.types.ts';
+import type { DeliveredCarrier, DeriveArmInput, DerivedArm, Substitute } from './derived-arm.types.ts';
 
 export const NEUTRAL_FILLER = 'No further guidance applies here.';
 
@@ -23,30 +23,38 @@ function readAtPath(document: unknown, path: readonly (string | number)[]): stri
   return path.reduce((node, key) => (node as Cursor)[key], document) as string;
 }
 
+function substitute(text: string, one: Substitute): string {
+  return text.split(one.placeholder).join(one.clause);
+}
+
 function substituted(text: string, input: DeriveArmInput): string {
   if (input.arm === 'neutralised') return NEUTRAL_FILLER;
-  return text.includes(input.placeholder) ? text.split(input.placeholder).join(input.clause) : text;
+  return input.substitutes.reduce(substitute, text);
 }
 
 function delivered(document: unknown): DeliveredCarrier[] {
   return intentCarriers(document).map(({ address, path }) => ({ address, text: readAtPath(document, path) }));
 }
 
+function occurrencesIn(texts: readonly string[], input: DeriveArmInput): number[] {
+  return input.substitutes.map((one) => texts.filter((text) => text.includes(one.placeholder)).length);
+}
+
 export function deriveArm(input: DeriveArmInput): DerivedArm {
   const document: unknown = parse(input.configText);
-  let substitutions = 0;
-  for (const { path } of intentCarriers(document)) {
-    const before = readAtPath(document, path);
-    const after = substituted(before, input);
-    if (input.arm === 'steered' && after !== before) substitutions += 1;
-    if (after !== before) writeAtPath(document, path, after);
+  const carrierPaths = intentCarriers(document).map(({ path }) => path);
+  const before = carrierPaths.map((path) => readAtPath(document, path));
+  const occurrences = occurrencesIn(before, input);
+  const missing = input.substitutes.filter((_, index) => occurrences[index] === 0);
+  if (input.arm === 'steered' && missing.length > 0) {
+    throw new Error(`steered arm: placeholder ${missing[0]?.placeholder} appears in no carrier`);
   }
-  if (input.arm === 'steered' && substitutions === 0) {
-    throw new Error(`steered arm: placeholder ${input.placeholder} appears in no carrier`);
-  }
+  carrierPaths.forEach((path, index) => writeAtPath(document, path, substituted(before[index] ?? '', input)));
   const carriers = delivered(document);
+  const changed = carriers.filter((carrier, index) => carrier.text !== before[index]).length;
+  const substitutions = input.arm === 'steered' ? changed : 0;
   const charactersDelivered = carriers.reduce((sum, carrier) => sum + carrier.text.length, 0);
-  return { configText: stringify(document), carriers, substitutions, charactersDelivered };
+  return { configText: stringify(document), carriers, substitutions, occurrences, charactersDelivered };
 }
 
 /** The address of the carrier whose text holds the placeholder, or undefined when none does. */

@@ -10,7 +10,12 @@ import { closureOf, isPackageRoot, namedRoots } from './path-closure.pure.ts';
 
 const EVALS = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const TOOL_INVOKED = ['adapters', 'wrapper', 'selftest'];
-const realConfig = () => readFileSync(join(EVALS, 'promptfooconfig.yaml'), 'utf8');
+/** Every committed matrix configuration, as one text: a path any of them names is named. */
+const realConfig = () =>
+  readdirSync(EVALS)
+    .filter((name) => /^promptfooconfig(\.[a-z]+)?\.yaml$/.test(name))
+    .map((name) => readFileSync(join(EVALS, name), 'utf8'))
+    .join('\n');
 
 function realRoots(): string[] {
   return TOOL_INVOKED.flatMap((name) =>
