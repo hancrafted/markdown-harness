@@ -1,4 +1,4 @@
-// `npm run conformance -- <path>`, asked at the process boundary a human uses:
+// `npm run conformance --path <path>`, asked at the process boundary a human uses:
 // one passing spec folder, one passing rejected-config case directory, one
 // deliberately mismatched scratch copy, and refused paths below a tier's
 // runnable unit (#231).
@@ -17,8 +17,31 @@ const REPOSITORY = join(conformanceRoot(), '..', '..');
 const SCRIPT = join(REPOSITORY, 'src', 'packages', 'conformance', 'run-spec-folder.ts');
 const FOLDER = 'fixtures/conformance/body-structure/docs/maxCount__exactly-two';
 
-function conformance(argument: string): { stdout: string; stderr: string; code: number | null } {
-  const run = spawnSync(process.execPath, [SCRIPT, argument], { cwd: REPOSITORY, encoding: 'utf8' });
+/**
+ * The environment the script runs in, minus any `npm_config_path` the run that
+ * started this suite carried, plus the one a test states: npm sets it when a
+ * human types `--path` without `--`.
+ */
+function envWith(npmPath: string | undefined): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  delete env.npm_config_path;
+  return npmPath === undefined ? env : { ...env, npm_config_path: npmPath };
+}
+
+function conformance(...args: string[]): { stdout: string; stderr: string; code: number | null } {
+  return conformanceUnderNpm(undefined, ...args);
+}
+
+/** Run the script as npm runs it for `npm run conformance --path <args>`, typed without `--`. */
+function conformanceUnderNpm(
+  npmPath: string | undefined,
+  ...args: string[]
+): { stdout: string; stderr: string; code: number | null } {
+  const run = spawnSync(process.execPath, [SCRIPT, ...args], {
+    cwd: REPOSITORY,
+    encoding: 'utf8',
+    env: envWith(npmPath),
+  });
   return { stdout: run.stdout, stderr: run.stderr, code: run.status };
 }
 
@@ -68,6 +91,20 @@ describe('npm run conformance', () => {
   });
 
   describe('failure cases', () => {
+    it('refuses an option it does not know with exit 2, rather than running every tier', () => {
+      // ARRANGE
+      const expected = {
+        code: 2,
+        stdout: '',
+        stderr: 'conformance: unknown option --paths — usage: npm run conformance [--path <path> [<path> ...]]\n',
+      };
+      // ACT
+      const run = conformance('--paths', FOLDER);
+      const actual = { code: run.code, stdout: run.stdout, stderr: run.stderr };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('names the case and the frozen line that disagree in a mismatched scratch copy, and exits 1', () => {
       // two.md now claims to fail, and the config asks for three repeats, so
       // three.md passes where its marker says it fails and the frozen check moves.
@@ -96,6 +133,41 @@ describe('npm run conformance', () => {
   });
 
   describe('edge cases', () => {
+    it('runs the folder npm passes on when --path is typed without --', () => {
+      // ARRANGE
+      const expected = { code: 0, headers: ['spec body-structure/docs/maxCount__exactly-two'] };
+      // ACT
+      const run = conformanceUnderNpm('true', FOLDER);
+      const headers = run.stdout
+        .split('\n')
+        .filter((line) => /^(spec|case)\s/u.test(line))
+        .map((line) => line.replace(/\s+/gu, ' '));
+      const actual = { code: run.code, headers };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('runs every path listed after --path, in order, and exits 0 when all agree', () => {
+      // ARRANGE
+      const rejectedCase = 'fixtures/conformance/rejected-config/frontmatter__duplicate-rule-id';
+      const expected = {
+        code: 0,
+        headers: [
+          'spec body-structure/docs/maxCount__exactly-two',
+          'case rejected-config/frontmatter__duplicate-rule-id',
+        ],
+      };
+      // ACT
+      const run = conformance('--path', FOLDER, rejectedCase);
+      const headers = run.stdout
+        .split('\n')
+        .filter((line) => /^(spec|case)\s/u.test(line))
+        .map((line) => line.replace(/\s+/gu, ' '));
+      const actual = { code: run.code, headers };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses a file inside a rejected-config case with the reason, and exits 2', () => {
       // ARRANGE
       const expected = { code: 2, stdout: '', stderr: expect.stringContaining('is not a case directory') };

@@ -6,7 +6,13 @@ export type FolderRequest =
   | { readonly kind: 'case-tier'; readonly tier: string }
   | { readonly kind: 'tier-runner'; readonly tier: string }
   | { readonly kind: 'directory'; readonly path: string }
-  | { readonly kind: 'refused'; readonly reason: string };
+  | ConformanceRefusal;
+
+/** A command line the script will not run, with the reason. */
+export interface ConformanceRefusal {
+  readonly kind: 'refused';
+  readonly reason: string;
+}
 
 /**
  * What a tier's directory holds that the script can run alone: spec folders
@@ -20,3 +26,10 @@ export interface TierShape {
   readonly name: string;
   readonly unit: RunnableUnit;
 }
+
+/**
+ * What one `npm run conformance` command line asks for: every tier when it names
+ * no path, the listed paths when it does, or a refusal with the reason.
+ */
+export type ConformanceArguments =
+  { readonly kind: 'every-tier' } | { readonly kind: 'paths'; readonly paths: readonly string[] } | ConformanceRefusal;

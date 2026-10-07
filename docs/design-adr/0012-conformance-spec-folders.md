@@ -18,7 +18,8 @@ name, so `mh` finds it with no flag. It holds `expected-check.json`, exactly wha
 run inside the folder. It holds `expected-audit.json` where Rules compete for a file, and
 `expected-query.json` where paths were asked. And it holds its cases. Line 1 of the config is
 `# Spec: <sentence>`. A human verifies a folder with
-`cd <folder> && npx mh | diff - expected-check.json`, or with `npm run conformance -- <folder>`.
+`cd <folder> && npx mh | diff - expected-check.json`, or with `npm run conformance --path <folder>`. With no path the script runs every
+tier, and `npm run verify` and CI run it that way.
 The tier runner and the script both go through one comparison function, so the two cannot drift.
 
 **Naming.** A folder is named `<key>__<behaviour>`. The key is spelled as the config writes it, or
@@ -83,7 +84,7 @@ whose faults span the top level and one section is named for the section, so `fa
 `frontmatter__fault-order`. Every config and `expected-rejection.json` moved byte for byte. The one
 `expected-check-response.json` could not: it froze the old case path, and it now freezes what `mh`
 prints inside the case — root `.` and the bare config name — with the payload unchanged. The tier
-runner and `npm run conformance -- rejected-config/<case>` run the same comparison, `mh` inside the
+runner and `npm run conformance --path rejected-config/<case>` run the same comparison, `mh` inside the
 case directory, against every frozen file. ARCH-002's `rejected-case-name` rule holds the names.
 
 The `frontmatter` tier stays as it is, because its

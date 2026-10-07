@@ -42,7 +42,7 @@
     "test:watch": "vitest watch",
     "knip": "knip",
     "prepare": "husky",
-    "verify": "archgate check && mh --check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && npm run build && vitest run && knip",
+    "verify": "archgate check && mh --check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && npm run build && npm run conformance && vitest run && knip",
     "verify:commit": "lint-staged && archgate check && tsc --noEmit && npm run build && vitest run"
   },
   "dependencies": {

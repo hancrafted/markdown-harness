@@ -14,7 +14,7 @@
 // paths were asked, `expected-query.json` — composition seen from the Steering
 // side. A human verifies one folder with
 // `cd <folder> && npx mh | diff - expected-check.json`, or with
-// `npm run conformance -- <folder>`, and this runner asks the same question of
+// `npm run conformance --path <folder>`, and this runner asks the same question of
 // every folder through the same shared module, `../spec-folder.ts`.
 //
 // Unlike the `body-structure` tier, every folder here keeps its cases at their
