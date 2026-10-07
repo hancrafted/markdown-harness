@@ -6,6 +6,8 @@ import { environment, nowIso, randomHex } from '../../../platform/host-ambient.t
 import { readText } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
 import type { RunArgs } from '../args/run-args.types.ts';
+import { canaryKeysFor } from '../canary/canary-keys.pure.ts';
+import type { CellKind } from '../canary/canary-keys.types.ts';
 import { expectedSessions } from '../exit/exit-contract.pure.ts';
 import type { RunPlan } from './run-plan.types.ts';
 
@@ -15,6 +17,19 @@ function listLength(path: string, key?: string): number {
   const document = parse(readText(path)) as unknown;
   const list = key === undefined ? document : (document as Record<string, unknown>)[key];
   return Array.isArray(list) ? list.length : 0;
+}
+
+function cellKinds(path: string): CellKind[] {
+  const document = parse(readText(path)) as { providers?: { config?: Partial<CellKind> }[] };
+  return (document.providers ?? []).flatMap((provider) => {
+    const { hostName, deliveryChannel } = provider.config ?? {};
+    return hostName === undefined || deliveryChannel === undefined ? [] : [{ hostName, deliveryChannel }];
+  });
+}
+
+function seedLayouts(path: string): string[] {
+  const cases = parse(readText(path)) as { vars?: { seedDir?: string } }[];
+  return [...new Set(cases.flatMap((entry) => (entry.vars?.seedDir === undefined ? [] : [entry.vars.seedDir])))];
 }
 
 function git(checkout: string, args: readonly string[]): string {
@@ -40,8 +55,10 @@ function hostFor(args: RunArgs, where: { checkout: string; runDir: string }): Ru
 export function planRun(args: RunArgs, checkout: string): RunPlan {
   const runId = `${nowIso().replace(/[:.]/g, '-')}-${randomHex(3)}`;
   const runDir = `${checkout}/evals/runs/${runId}`;
-  const cells = listLength(`${checkout}/evals/promptfooconfig.yaml`, 'providers');
-  const cases = listLength(`${checkout}/evals/suites/steering/cases/research-note.yaml`);
+  const configPath = `${checkout}/evals/promptfooconfig.yaml`;
+  const casesPath = `${checkout}/evals/suites/steering/cases/research-note.yaml`;
+  const cells = listLength(configPath, 'providers');
+  const cases = listLength(casesPath);
   return {
     args,
     checkout,
@@ -51,6 +68,7 @@ export function planRun(args: RunArgs, checkout: string): RunPlan {
     cases,
     seed: args.seed ?? randomHex(8),
     expected: expectedSessions({ cells, trials: args.trials, cases }),
+    canaryKeys: canaryKeysFor(cellKinds(configPath), seedLayouts(casesPath)),
     host: hostFor(args, { checkout, runDir }),
     revision: git(checkout, ['rev-parse', 'HEAD']) || 'unknown',
     dirty: String(git(checkout, ['status', '--porcelain']) !== ''),

@@ -5,11 +5,12 @@
 import { commandLineArguments, exitWith, writeErr, writeOut } from '../../../platform/host-ambient.ts';
 import { pathExists, writeText } from '../../../platform/host-files.ts';
 import { budgetRefusal, parseRunArgs } from '../args/run-args.pure.ts';
+import { describeKey } from '../canary/canary-keys.pure.ts';
 import { MISUSE, deriveExit } from '../exit/exit-contract.pure.ts';
 import { unpairedFields } from '../results/results-reading.pure.ts';
 import { summarise } from '../summary/run-summary.pure.ts';
 import { buildCurrentMh } from './run-build.impure.ts';
-import { runCanary } from './run-canary.impure.ts';
+import { runCanaries } from './run-canary.impure.ts';
 import { planRun } from './run-plan.impure.ts';
 import type { RunPlan } from './run-plan.types.ts';
 import { readResults, runTool } from './run-tool.impure.ts';
@@ -39,6 +40,7 @@ function finishWith(plan: RunPlan, canaryFailure: string | undefined, toolFailur
     expected: plan.expected,
     trialsPerCell: plan.args.trials,
     canaryFailure,
+    canaries: plan.canaryKeys.map(describeKey),
   });
   writeOut(
     `${[...lines, ...verdict.reasons.map((reason) => `exit ${verdict.code}: ${reason}`), `run ${plan.runId}, seed recorded in ${plan.runDir}`].join('\n')}\n`,
@@ -57,7 +59,7 @@ function main(): number {
   const built = buildCurrentMh(checkout);
   if (built !== undefined) return finishWith(plan, built, undefined);
   writeText(`${plan.runDir}/plan.json`, `${JSON.stringify(plan, null, 2)}\n`);
-  const canary = runCanary(plan);
+  const canary = runCanaries(plan);
   if (canary !== undefined) return finishWith(plan, canary, undefined);
   const tool = runTool(plan);
   writeText(`${plan.runDir}/promptfoo.log`, tool.output);

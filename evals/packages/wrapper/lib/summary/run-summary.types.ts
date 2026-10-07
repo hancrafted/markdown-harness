@@ -17,4 +17,6 @@ export interface SummaryInput {
   readonly expected: number;
   readonly trialsPerCell: number;
   readonly canaryFailure: string | undefined;
+  /** The canaries that were owed and run, each as host/channel/layout. */
+  readonly canaries: readonly string[];
 }

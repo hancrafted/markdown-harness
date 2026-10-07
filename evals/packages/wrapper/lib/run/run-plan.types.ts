@@ -1,4 +1,5 @@
 import type { RunArgs } from '../args/run-args.types.ts';
+import type { CanaryKey } from '../canary/canary-keys.types.ts';
 import type { SidecarRow } from '../results/results-reading.types.ts';
 
 export interface RunPlan {
@@ -10,6 +11,8 @@ export interface RunPlan {
   readonly cells: number;
   readonly cases: number;
   readonly expected: number;
+  /** The canaries the matrix owes, one for each Host harness, delivery channel and root layout it reaches. */
+  readonly canaryKeys: readonly CanaryKey[];
   readonly host: {
     readonly command: readonly string[];
     readonly maxTurns: number;
