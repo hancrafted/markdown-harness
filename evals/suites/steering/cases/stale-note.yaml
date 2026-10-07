@@ -5,6 +5,13 @@
 # The case kind is repair: the target file is seeded, and the graded artefact is
 # that file after the agent has refreshed it.
 #
+# Two deviations from the spec text, recorded here where the kind is used. First, repair seeds are wrong on
+# purpose: stale, or failing `mh check`, and sit behind a directory-scoped ignore. This seed is the stale kind
+# and passes `mh check`: the assess hook speaks only on REVIEW, so a seed that failed `mh check` would not
+# reach it. Second, a level-one repair case grades steering-marker delivery, not the repair itself: the grade
+# is whether the marker reached the final file, and nothing here asks whether the note was brought up to
+# date. The cohort row records `staleAfterMoved` as a metric on that, and it never touches the grade.
+#
 # This directory is held out: the mint's positive copy list never reaches it. The
 # task is phrased as a Contributor would ask, and the clause carries no code: the
 # code is drawn per run from a seed and substituted where the steering marker goes,

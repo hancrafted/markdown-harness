@@ -58,12 +58,16 @@ function carrierProblems(carriers: unknown): string[] {
   );
 }
 
-const CASE_KINDS: readonly CaseKind[] = ['steer', 'repair'];
+// Repair seeds are wrong on purpose (stale, or failing `mh check`) and sit behind a directory-scoped ignore; the
+// spec said they deliberately fail `mh check`, and the stale kind does not, because the assess hook speaks only
+// on REVIEW. A record keyed by CaseKind, so the compiler holds this list to the union and not a second copy.
+const KINDS: Readonly<Record<CaseKind, true>> = { steer: true, repair: true };
+const CASE_KINDS = Object.keys(KINDS);
 
 /** A case kind is named, never defaulted: it decides whether the target file is new or seeded. */
 function kindProblem(bag: Bag): string[] {
   if (bag.kind === undefined || bag.kind === '') return ['vars.kind'];
-  return CASE_KINDS.some((kind) => kind === bag.kind)
+  return CASE_KINDS.includes(String(bag.kind))
     ? []
     : [`vars.kind (${String(bag.kind)} is not ${CASE_KINDS.join(' or ')})`];
 }
