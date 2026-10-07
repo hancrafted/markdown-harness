@@ -4,6 +4,8 @@
 // tree, the built `mh` with its manifest and two runtime dependencies, and the
 // hook scripts. The held-out cases directory is excluded by never being in it.
 
+import { allHookScripts, hookScriptsFor } from '../surface/delivery-surface.pure.ts';
+import type { DeliverySurface } from '../surface/delivery-surface.types.ts';
 import type { AncestorListing, CopyStep, MintSources, SeedLocation, TreeEntry } from './mint-plan.types.ts';
 
 /** Names a Host harness reads from a parent directory, so any of them above a minted root leaks into it. */
@@ -19,6 +21,12 @@ export function checkParentChain(chain: readonly AncestorListing[]): string[] {
   return chain.flatMap(({ dir, entries }) =>
     entries.filter((entry) => PARENT_LEAKS.includes(entry)).map((entry) => `${dir === '/' ? '' : dir}/${entry}`),
   );
+}
+
+/** The sources a surface ships: the ones `hookScriptsFor` names, picked from the superset a case offers. */
+export function hookSourcesFor(sources: MintSources, surface: DeliverySurface): string[] {
+  const own = hookScriptsFor(surface);
+  return sources.hookScripts.filter((script) => own.includes(script.slice(script.lastIndexOf('/') + 1)));
 }
 
 function hookStep(script: string): CopyStep {
@@ -72,7 +80,8 @@ export function isOpaquePath(path: string, parent: string): boolean {
   return path.startsWith(prefix) && !GIVEAWAY_WORDS.test(path.slice(prefix.length));
 }
 
-const SKILL_SCRIPTS = '.agents/skills/markdown-harness/scripts';
+/** Where the skill's scripts sit in a checkout and in a minted root. */
+export const SKILL_SCRIPTS = '.agents/skills/markdown-harness/scripts';
 
 /** The copy sources for one case, rooted at its checkout and seed directory. */
 export function sourcesFor(location: SeedLocation): MintSources {
@@ -83,8 +92,6 @@ export function sourcesFor(location: SeedLocation): MintSources {
     mhManifest: `${checkout}/package.json`,
     markedDir: `${checkout}/node_modules/marked`,
     yamlDir: `${checkout}/node_modules/yaml`,
-    hookScripts: ['query-hook.mjs', 'assess-hook.mjs', 'activity-log.mjs'].map(
-      (script) => `${checkout}/${SKILL_SCRIPTS}/${script}`,
-    ),
+    hookScripts: allHookScripts().map((script) => `${checkout}/${SKILL_SCRIPTS}/${script}`),
   };
 }

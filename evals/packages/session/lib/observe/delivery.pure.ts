@@ -1,10 +1,9 @@
-// Finding the moment steering content arrived, by channel. Push and assess: a hook response
+// Finding the moment steering content arrived; the channel table picks the finder. Push and assess: a hook response
 // holding every steering marker. Pull: the result of a shell call that ran the query
 // command and returned every steering marker without error. The user turn is not a
 // delivery in the stream. Each delivery names the path it was about.
 
 import type { SessionEvent } from '../stream/session-stream.types.ts';
-import type { DeliveryChannel } from '../surface/delivery-surface.types.ts';
 import { commandOf } from './creation.pure.ts';
 import type { Delivery, ToolCall } from './session-observation.types.ts';
 
@@ -18,7 +17,11 @@ function holdsAll(text: string, steeringMarkers: readonly string[]): boolean {
   return steeringMarkers.every((steeringMarker) => text.includes(steeringMarker));
 }
 
-function pushDelivery(events: readonly SessionEvent[], steeringMarkers: readonly string[]): Delivery | undefined {
+/** A hook response holding every steering marker: the push and assess channels' delivery. */
+export function pushDelivery(
+  events: readonly SessionEvent[],
+  steeringMarkers: readonly string[],
+): Delivery | undefined {
   const found = events.find((event) => event.kind === 'hook-response' && holdsAll(event.output, steeringMarkers));
   return found?.kind === 'hook-response' ? { seq: found.seq, path: NOTICE_PATH.exec(found.output)?.[1] } : undefined;
 }
@@ -35,20 +38,15 @@ export function resultOf(events: readonly SessionEvent[], call: ToolCall): Sessi
   return events.find((event) => event.kind === 'tool-result' && event.id === call.id);
 }
 
-function pullDelivery(events: readonly SessionEvent[], steeringMarkers: readonly string[]): Delivery | undefined {
+/** The result of a shell call that ran the query command and returned every steering marker without error. */
+export function pullDelivery(
+  events: readonly SessionEvent[],
+  steeringMarkers: readonly string[],
+): Delivery | undefined {
   for (const call of queryCalls(events)) {
     const result = resultOf(events, call);
     if (result?.kind === 'tool-result' && !result.isError && holdsAll(result.text, steeringMarkers))
       return { seq: result.seq, path: QUERY_PATH.exec(commandOf(call))?.[1] };
   }
   return undefined;
-}
-
-export function findDelivery(
-  events: readonly SessionEvent[],
-  channel: DeliveryChannel,
-  steeringMarkers: readonly string[],
-): Delivery | undefined {
-  if (channel === 'push' || channel === 'assess') return pushDelivery(events, steeringMarkers);
-  return channel === 'pull' ? pullDelivery(events, steeringMarkers) : undefined;
 }

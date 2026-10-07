@@ -20,20 +20,20 @@ import {
   writeText,
 } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
-import { SHIM_PATH, hookScriptsFor, withPullLine } from '../surface/delivery-surface.pure.ts';
+import { CHANNELS, SHIM_PATH, withPullLine } from '../surface/delivery-surface.pure.ts';
 import { pullShimSource } from '../surface/pull-shim.pure.ts';
-import { checkMintedTree, checkParentChain, heldOutViolations, isOpaquePath, planCopies } from './mint-plan.pure.ts';
+import {
+  checkMintedTree,
+  checkParentChain,
+  heldOutViolations,
+  hookSourcesFor,
+  isOpaquePath,
+  planCopies,
+} from './mint-plan.pure.ts';
 import type { MintRequest, MintResult } from './mint-root.types.ts';
 
 const CONFIG_NAME = 'markdown-harness.config.yaml';
 const INSTRUCTIONS = 'AGENTS.md';
-const HOOK_COMMAND = 'node "$CLAUDE_PROJECT_DIR/.agents/skills/markdown-harness/scripts/query-hook.mjs"';
-const SETTINGS = { hooks: { PreToolUse: [{ matcher: 'Write', hooks: [{ type: 'command', command: HOOK_COMMAND }] }] } };
-// The assess hook as `init.mjs` wires it, word for word: a closure test reads that file and holds the two equal.
-const ASSESS_COMMAND = 'node "${CLAUDE_PROJECT_DIR}/.agents/skills/markdown-harness/scripts/assess-hook.mjs"';
-const ASSESS_SETTINGS = {
-  hooks: { PostToolUse: [{ matcher: 'Read', hooks: [{ type: 'command', command: ASSESS_COMMAND }] }] },
-};
 
 function refusalsBefore(root: string, request: MintRequest, plan: ReturnType<typeof planCopies>): string[] {
   const parent = request.under ?? systemTemporaryDirectory();
@@ -63,11 +63,10 @@ function writeSettings(root: string, settings: object): void {
 
 /** The surface's own files: a hook's wiring, or the pull command and the line that tells the agent to use it. */
 function writeSurface(root: string, request: MintRequest): void {
-  const { channel, encoding } = request.surface;
-  if (channel === 'push') writeSettings(root, SETTINGS);
-  if (channel === 'assess') writeSettings(root, ASSESS_SETTINGS);
-  if (channel !== 'pull') return;
-  writeExecutable(`${root}/${SHIM_PATH}`, pullShimSource(encoding));
+  const row = CHANNELS[request.surface.channel];
+  if (row.settings !== undefined) writeSettings(root, row.settings);
+  if (row.probe?.kind !== 'command') return;
+  writeExecutable(`${root}/${SHIM_PATH}`, pullShimSource(request.surface.encoding));
   writeText(`${root}/${INSTRUCTIONS}`, withPullLine(readText(`${root}/${INSTRUCTIONS}`), request.pullLine));
 }
 
@@ -85,11 +84,7 @@ function refused(refusals: readonly string[]): MintResult {
 export function mintRoot(request: MintRequest): MintResult {
   const parent = request.under ?? systemTemporaryDirectory();
   const root = `${parent}/${randomHex(8)}`;
-  const wanted = hookScriptsFor(request.surface);
-  const hooks = request.sources.hookScripts.filter((script) =>
-    wanted.includes(script.slice(script.lastIndexOf('/') + 1)),
-  );
-  const plan = planCopies({ ...request.sources, hookScripts: hooks });
+  const plan = planCopies({ ...request.sources, hookScripts: hookSourcesFor(request.sources, request.surface) });
   const refusals = [...refusalsBefore(root, request, plan), ...(pathExists(root) ? [`${root} already exists`] : [])];
   if (refusals.length > 0) return refused(refusals);
   populate(root, request, plan);

@@ -4,9 +4,13 @@
 // command and nothing else, until a cell widens it on purpose.
 //
 // Everything that differs by delivery channel is one row of CHANNELS, keyed by DeliveryChannel: the shells and
-// encodings it may pair with, whether it ships the hook script, its canary, and the instruction-file line.
+// encodings it may pair with, the scripts it ships, its rung 1 check and rung 2 probe, the settings that wire its
+// hook, the finder of its delivery, its canary, and the instruction-file line. Adding a channel is a row here and
+// the functions that row names; no other file switches on the channel.
 
 import { evaluateAssessCanary, evaluateCanary, evaluatePullCanary } from '../canary/canary.pure.ts';
+import { pullDelivery, pushDelivery } from '../observe/delivery.pure.ts';
+import { checkAssessRung1, checkRung1 } from '../preflight/preconditions.pure.ts';
 import type { ChannelRow, DeliveryChannel, DeliverySurface, ShellScope } from './delivery-surface.types.ts';
 
 export const SHIM_PATH = 'bin/mh';
@@ -24,7 +28,18 @@ const QUERY_ALLOWED = [`Bash(${QUERY_COMMAND_TEXT}:*)`, `Bash(./${QUERY_COMMAND_
 // them is not measured, and creation detection (observe/creation.pure.ts) follows this list.
 const QUERY_HOOK = 'query-hook.mjs';
 // The assess hook imports the activity log, so a root holding one holds the other.
-const ASSESS_SCRIPTS = ['assess-hook.mjs', 'activity-log.mjs'];
+const ASSESS_HOOK = 'assess-hook.mjs';
+const ASSESS_SCRIPTS = [ASSESS_HOOK, 'activity-log.mjs'];
+// The push hook as `init.mjs` wires it, and the assess hook as it wires it, word for word: a closure test reads
+// that file and holds the assess command equal.
+const HOOK_COMMAND = 'node "$CLAUDE_PROJECT_DIR/.agents/skills/markdown-harness/scripts/query-hook.mjs"';
+const PUSH_SETTINGS = {
+  hooks: { PreToolUse: [{ matcher: 'Write', hooks: [{ type: 'command', command: HOOK_COMMAND }] }] },
+};
+const ASSESS_COMMAND = 'node "${CLAUDE_PROJECT_DIR}/.agents/skills/markdown-harness/scripts/assess-hook.mjs"';
+const ASSESS_SETTINGS = {
+  hooks: { PostToolUse: [{ matcher: 'Read', hooks: [{ type: 'command', command: ASSESS_COMMAND }] }] },
+};
 const WRITING_ALLOWED = ['Bash(cat:*)', 'Bash(tee:*)', 'Bash(printf:*)', 'Bash(echo:*)', 'Bash(mkdir:*)'];
 
 export const CHANNELS: Readonly<Record<DeliveryChannel, ChannelRow>> = {
@@ -33,6 +48,11 @@ export const CHANNELS: Readonly<Record<DeliveryChannel, ChannelRow>> = {
     shells: ['none', 'widened'],
     encodings: ['hook-prose'],
     hookScripts: () => [QUERY_HOOK],
+    scripts: [QUERY_HOOK],
+    rung1: { command: 'query', check: checkRung1 },
+    probe: { kind: 'hook', script: QUERY_HOOK, tool: 'Write' },
+    settings: PUSH_SETTINGS,
+    delivery: pushDelivery,
     canary: {
       surface: { channel: 'push', shell: 'none', encoding: 'hook-prose' },
       task: (target) => `Use the Write tool to create ${target} with a short note.`,
@@ -45,6 +65,11 @@ export const CHANNELS: Readonly<Record<DeliveryChannel, ChannelRow>> = {
     encodings: ['json', 'prose', 'intent-only'],
     // The prose encoding renders through the hook script, so it ships it; the others never touch it.
     hookScripts: (surface) => (surface.encoding === 'prose' ? [QUERY_HOOK] : []),
+    scripts: [QUERY_HOOK],
+    rung1: { command: 'query', check: checkRung1 },
+    probe: { kind: 'command' },
+    settings: undefined,
+    delivery: pullDelivery,
     canary: {
       surface: { channel: 'pull', shell: 'query-only', encoding: 'json' },
       task: (target) =>
@@ -58,6 +83,11 @@ export const CHANNELS: Readonly<Record<DeliveryChannel, ChannelRow>> = {
     shells: ['none'],
     encodings: ['hook-prose'],
     hookScripts: () => ASSESS_SCRIPTS,
+    scripts: ASSESS_SCRIPTS,
+    rung1: { command: 'assess', check: checkAssessRung1 },
+    probe: { kind: 'hook', script: ASSESS_HOOK, tool: 'Read' },
+    settings: ASSESS_SETTINGS,
+    delivery: pushDelivery,
     canary: {
       surface: { channel: 'assess', shell: 'none', encoding: 'hook-prose' },
       task: (target) => `Read ${target}, then use the Edit tool to add one short line to it.`,
@@ -70,6 +100,11 @@ export const CHANNELS: Readonly<Record<DeliveryChannel, ChannelRow>> = {
     shells: ['none'],
     encodings: ['none'],
     hookScripts: () => [],
+    scripts: [],
+    rung1: { command: 'query', check: checkRung1 },
+    probe: undefined,
+    settings: undefined,
+    delivery: () => undefined,
     canary: undefined,
     line: undefined,
   },
@@ -108,9 +143,9 @@ export function hookScriptsFor(surface: DeliverySurface): readonly string[] {
   return CHANNELS[surface.channel].hookScripts(surface);
 }
 
-/** Whether a surface ships a hook script into the root. */
-export function needsHookScript(surface: DeliverySurface): boolean {
-  return hookScriptsFor(surface).length > 0;
+/** Every skill script any channel may ship, each once, in the order the table lists its channels. */
+export function allHookScripts(): readonly string[] {
+  return [...new Set(Object.values(CHANNELS).flatMap((row) => row.scripts))];
 }
 
 /** The constructed instruction-file line a pull surface adds; the committed case supplies its words. */

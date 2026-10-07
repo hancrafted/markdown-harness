@@ -31,11 +31,44 @@ export interface Canary {
   readonly target?: string;
 }
 
+/**
+ * Written structurally, not imported: `session-observation.types.ts` already imports this file, so naming its
+ * `ArmKind` and `Delivery` here would close a cycle the boundary check forbids.
+ */
+type RowArm = 'steered' | 'neutralised' | 'control';
+interface RowDelivery {
+  readonly seq: number;
+  readonly path: string | undefined;
+}
+
+/** The rung 1 check of a channel: which built command answers for the target, and whether that answer is the right one. */
+export interface Rung1 {
+  readonly command: 'query' | 'assess';
+  readonly check: (stdout: string, steeringMarkers: readonly string[], arm: RowArm) => string | undefined;
+}
+
+/**
+ * The rung 2 probe of a channel, or undefined when it has none: a hook script fed the payload the Host harness would
+ * send for `tool`, or the pull command run as the agent will run it.
+ */
+export type Probe =
+  { readonly kind: 'hook'; readonly script: string; readonly tool: 'Write' | 'Read' } | { readonly kind: 'command' };
+
 export interface ChannelRow {
   readonly shells: readonly ShellScope[];
   readonly encodings: readonly Encoding[];
   /** The basenames of the skill scripts a surface of this channel ships into the root, the hook first; none ships none. */
   readonly hookScripts: (surface: DeliverySurface) => readonly string[];
+  /** Every skill script the channel may ship, for the encodings that need them; `hookScripts` picks a surface's own. */
+  readonly scripts: readonly string[];
+  /** The rung 1 check. */
+  readonly rung1: Rung1;
+  /** The rung 2 probe. */
+  readonly probe: Probe | undefined;
+  /** The Host harness settings that wire the channel's hook, or undefined when the channel wires none. */
+  readonly settings: object | undefined;
+  /** The moment steering content arrived in a stream, or undefined when the stream holds none (the user turn). */
+  readonly delivery: (events: readonly SessionEvent[], steeringMarkers: readonly string[]) => RowDelivery | undefined;
   /** The canary a cell of this channel owes, or undefined when nothing can be canaried (the user turn has no hook). */
   readonly canary: Canary | undefined;
   /** The instruction-file line the channel adds to the root, or undefined when it adds none. */

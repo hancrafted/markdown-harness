@@ -12,7 +12,6 @@ import {
   hookScriptsFor,
   incoherentSurface,
   isDeliveryChannel,
-  needsHookScript,
   toolsFor,
   withPullLine,
 } from './delivery-surface.pure.ts';
@@ -130,15 +129,6 @@ describe('shell scope', () => {
       const actual = [toolsFor('none', base), toolsFor('query-only', base), toolsFor('widened', base)];
       // ASSERT
       expect(actual).toEqual([base, withShell, withShell]);
-    });
-
-    it('ships a hook script for the push hook, the assess hook and the prose pull command, and for nothing else', () => {
-      // ARRANGE
-      const expected = [true, true, true, false, false, false];
-      // ACT
-      const actual = [PUSH, ASSESS, PULL_PROSE, PULL_JSON, PULL_INTENTS, USER_TURN].map(needsHookScript);
-      // ASSERT
-      expect(actual).toEqual(expected);
     });
   });
 });

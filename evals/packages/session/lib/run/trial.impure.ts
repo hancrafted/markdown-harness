@@ -5,6 +5,7 @@ import { environment, nodeExecutable, nowMs, randomHex } from '../../../platform
 import {
   copyFile,
   digestFile,
+  digestText,
   digestTree,
   makeDirectory,
   pathExists,
@@ -19,21 +20,13 @@ import { driverOf } from '../host/host-driver.pure.ts';
 import { profileOf } from '../host/host-profile.pure.ts';
 import { credentialCopies } from '../host/scratch-home.pure.ts';
 import { sweepForSteeringMarker } from '../leak/leak-sweep.pure.ts';
+import { SKILL_SCRIPTS } from '../mint/mint-plan.pure.ts';
 import { mintRoot } from '../mint/mint-root.impure.ts';
-import {
-  checkAssessRung1,
-  checkPullAnswer,
-  checkRung1,
-  checkRung2,
-  pullFailureKind,
-} from '../preflight/preconditions.pure.ts';
-import { SHIM_PATH, allowedToolsFor, hookScriptsFor, toolsFor } from '../surface/delivery-surface.pure.ts';
+import { checkPullAnswer, checkRung2, pullFailureKind } from '../preflight/preconditions.pure.ts';
+import { CHANNELS, SHIM_PATH, allowedToolsFor, hookScriptsFor, toolsFor } from '../surface/delivery-surface.pure.ts';
 import type { TrialOutcome, TrialRequest } from './trial.types.ts';
 
 const MH_ENTRY = 'node_modules/@hancrafted/markdown-harness/dist/packages/cli/cli.js';
-const SKILL_SCRIPTS = '.agents/skills/markdown-harness/scripts';
-const HOOK_SCRIPT = `${SKILL_SCRIPTS}/query-hook.mjs`;
-const ASSESS_SCRIPT = `${SKILL_SCRIPTS}/assess-hook.mjs`;
 const PREFLIGHT_MS = 30_000;
 
 type Declared = { kind: FailureKind; detail: string } | undefined;
@@ -54,18 +47,12 @@ function runNode(root: string, args: readonly string[], input: string): { stdout
   return { stdout: report.stdout, status: report.status };
 }
 
-function pushProblem(root: string, request: TrialRequest, steeringMarkers: readonly string[]): Declared {
-  if (request.arm !== 'steered') return undefined;
-  const payload = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: `${root}/${request.targetPath}` } });
-  const rung2 = checkRung2(runNode(root, [`${root}/${HOOK_SCRIPT}`], payload).stdout, steeringMarkers);
-  return rung2 === undefined ? undefined : { kind: 'rung-2-failed', detail: rung2 };
-}
-
-/** Rung 2 on the assess surface: the assess hook, fed the Read payload the Host harness would send, must render the steering marker. */
-function assessProblem(root: string, request: TrialRequest, steeringMarkers: readonly string[]): Declared {
-  if (request.arm !== 'steered') return undefined;
-  const payload = JSON.stringify({ tool_name: 'Read', tool_input: { file_path: `${root}/${request.targetPath}` } });
-  const rung2 = checkRung2(runNode(root, [`${root}/${ASSESS_SCRIPT}`], payload).stdout, steeringMarkers);
+/** Rung 2 on a hook channel: the hook script, fed the payload the Host harness would send, must render the steering marker. */
+function hookProblem(root: string, request: TrialRequest, steeringMarkers: readonly string[]): Declared {
+  const hook = CHANNELS[request.surface.channel].probe;
+  if (request.arm !== 'steered' || hook?.kind !== 'hook') return undefined;
+  const payload = JSON.stringify({ tool_name: hook.tool, tool_input: { file_path: `${root}/${request.targetPath}` } });
+  const rung2 = checkRung2(runNode(root, [`${root}/${SKILL_SCRIPTS}/${hook.script}`], payload).stdout, steeringMarkers);
   return rung2 === undefined ? undefined : { kind: 'rung-2-failed', detail: rung2 };
 }
 
@@ -78,20 +65,18 @@ function pullProblem(root: string, request: TrialRequest, steeringMarkers: reado
 }
 
 function surfaceProblem(root: string, request: TrialRequest, steeringMarkers: readonly string[]): Declared {
-  const { channel } = request.surface;
-  if (channel === 'push') return pushProblem(root, request, steeringMarkers);
-  if (channel === 'assess') return assessProblem(root, request, steeringMarkers);
-  return channel === 'pull' ? pullProblem(root, request, steeringMarkers) : undefined;
+  const probe = CHANNELS[request.surface.channel].probe;
+  if (probe === undefined) return undefined;
+  return probe.kind === 'hook'
+    ? hookProblem(root, request, steeringMarkers)
+    : pullProblem(root, request, steeringMarkers);
 }
 
-/** Rung 1: the answer the surface's own command gives for the target, which for the assess surface is `mh assess`. */
+/** Rung 1: the answer the channel's own built command gives for the target, checked by the channel's own rule. */
 function rung1Problem(root: string, request: TrialRequest, steeringMarkers: readonly string[]): string | undefined {
-  if (request.surface.channel === 'assess') {
-    const assessed = runNode(root, [`${root}/${MH_ENTRY}`, 'assess', request.targetPath], '');
-    return checkAssessRung1(assessed.stdout, steeringMarkers, request.arm);
-  }
-  const query = runNode(root, [`${root}/${MH_ENTRY}`, 'query', request.targetPath], '');
-  return checkRung1(query.stdout, steeringMarkers, request.arm);
+  const { command, check } = CHANNELS[request.surface.channel].rung1;
+  const answered = runNode(root, [`${root}/${MH_ENTRY}`, command, request.targetPath], '');
+  return check(answered.stdout, steeringMarkers, request.arm);
 }
 
 function preflight(root: string, request: TrialRequest): Declared {
@@ -228,10 +213,11 @@ export function runTrial(request: TrialRequest): TrialOutcome {
   return outcome;
 }
 
-/** The digest of the hook script a surface runs: the first script it ships, or `none` for a surface with no hook. */
+/** The digest of every script a surface ships, so a drift in any one changes it; `none` for a surface with no hook. */
 function hookDigest(root: string, request: TrialRequest): string {
-  const path = `${root}/${SKILL_SCRIPTS}/${hookScriptsFor(request.surface)[0] ?? ''}`;
-  return hookScriptsFor(request.surface).length > 0 && pathExists(path) ? digestFile(path) : 'none';
+  const paths = hookScriptsFor(request.surface).map((script) => `${root}/${SKILL_SCRIPTS}/${script}`);
+  const present = paths.filter((path) => pathExists(path));
+  return present.length === 0 ? 'none' : digestText(present.map((path) => digestFile(path)).join('\n'));
 }
 
 function withSession(root: string, request: TrialRequest, base: TrialOutcome): TrialOutcome {

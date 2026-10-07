@@ -17,8 +17,9 @@
 
 import type { RungNumber, RungStatus } from '../../../grading/localise-rung.ts';
 import { rungObservations } from '../../../grading/localise-rung.ts';
+import { CHANNELS } from '../surface/delivery-surface.pure.ts';
 import { creatingCalls, firstCreating, writtenText } from './creation.pure.ts';
-import { findDelivery, queryCalls } from './delivery.pure.ts';
+import { queryCalls } from './delivery.pure.ts';
 import type { Delivery, ObserveInput, SessionObservation, ToolCall } from './session-observation.types.ts';
 
 type Statuses = Partial<Record<RungNumber, RungStatus>>;
@@ -61,7 +62,7 @@ function flaggedInjection(input: ObserveInput): boolean {
 
 function gather(input: ObserveInput): Facts {
   const calls = creatingCalls(input.events, input.targetPath, input.root);
-  const delivery = findDelivery(input.events, input.surface.channel, input.steeringMarkers);
+  const delivery = CHANNELS[input.surface.channel].delivery(input.events, input.steeringMarkers);
   return {
     lives: input.steeringMarkers.map((steeringMarker) => lifeOf(steeringMarker, calls, input.finalFile)),
     delivery,

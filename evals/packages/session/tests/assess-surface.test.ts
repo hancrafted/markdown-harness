@@ -46,9 +46,15 @@ function freshSeed(): string {
   return dir;
 }
 
-function trial(arm: 'steered' | 'neutralised', mode: string, seedDir?: string) {
+function trial(
+  arm: 'steered' | 'neutralised',
+  mode: string,
+  options: { seedDir?: string; hookScripts?: readonly string[] } = {},
+) {
+  const { seedDir, hookScripts } = options;
   const { configText: derivedConfig, occurrences } = derived(arm);
-  const sources = sourcesFor({ checkout: CHECKOUT, seedRelative: SEED });
+  const offered = sourcesFor({ checkout: CHECKOUT, seedRelative: SEED });
+  const sources = hookScripts === undefined ? offered : { ...offered, hookScripts };
   const outcome = runTrial({
     arm,
     surface: ASSESS,
@@ -224,11 +230,31 @@ describe('runTrial over an assess surface', () => {
       expect(localiseRung(observed(outcome).observations)).toEqual(expected);
     });
 
+    it('changes the recorded skill-scripts digest when any shipped script drifts, not only the first', () => {
+      // ARRANGE
+      const offered = sourcesFor({ checkout: CHECKOUT, seedRelative: SEED }).hookScripts;
+      const drifted = mkdtempSync(join(tmpdir(), 'drifted-scripts-'));
+      scratch.push(drifted);
+      const edited = offered.map((script) => {
+        const copy = join(drifted, script.slice(script.lastIndexOf('/') + 1));
+        const text = readFileSync(script, 'utf8');
+        writeFileSync(copy, script.endsWith('activity-log.mjs') ? `${text}\n// drifted\n` : text);
+        return copy;
+      });
+      // ACT
+      const plain = trial('steered', 'obey');
+      scratch.push(plain.root ?? '');
+      const moved = trial('steered', 'obey', { hookScripts: edited });
+      scratch.push(moved.root ?? '');
+      // ASSERT
+      expect(moved.skillScriptsDigest).not.toBe(plain.skillScriptsDigest);
+    });
+
     it('fails rung 1 before any session when the seed is not stale: a fresh stale_after makes the hook silent', () => {
       // ARRANGE
       const expected = { kind: 'rung-1-failed', ran: false };
       // ACT
-      const outcome = trial('steered', 'obey', freshSeed());
+      const outcome = trial('steered', 'obey', { seedDir: freshSeed() });
       scratch.push(outcome.root ?? '');
       // ASSERT
       expect({ kind: outcome.declared?.kind, ran: outcome.raw !== undefined }).toEqual(expected);

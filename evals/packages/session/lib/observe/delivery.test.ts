@@ -3,8 +3,14 @@
 // the user turn, whose content is not an event in the stream.
 
 import { describe, expect, it } from 'vitest';
+import type { DeliveryChannel } from '../../delivery-surface.ts';
+import { CHANNELS } from '../../delivery-surface.ts';
 import type { SessionEvent } from '../../session-stream.ts';
-import { QUERY_COMMAND, findDelivery, queryCalls, resultOf } from './delivery.pure.ts';
+import { QUERY_COMMAND, queryCalls, resultOf } from './delivery.pure.ts';
+
+// The finder is a row of the channel table, so the table is what is under test.
+const findDelivery = (events: readonly SessionEvent[], channel: DeliveryChannel, steeringMarkers: readonly string[]) =>
+  CHANNELS[channel].delivery(events, steeringMarkers);
 
 const FIRST = 'QQ11-2222';
 const SECOND = 'RR33-4444';
