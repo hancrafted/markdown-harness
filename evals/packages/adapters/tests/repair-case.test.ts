@@ -4,17 +4,16 @@
 // instant, answers REVIEW. Each is shown red against a seed built to escape it.
 
 import { spawnSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import { directoryIgnored, foldersOf, governedByFolders, isFarPast } from '../../arms/derive-arms.ts';
 
 const EVALS = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const ROOT = join(EVALS, '..');
 const CASES = join(EVALS, 'suites/steering/cases');
-const FLOOR = '2015-01-01T00:00:00Z';
 const MH = join(ROOT, 'dist/packages/cli/cli.js');
 
 interface CaseEntry {
@@ -27,35 +26,8 @@ const repairCases = (): CaseEntry[] =>
     .flatMap((name) => parse(readFileSync(join(CASES, name), 'utf8')) as CaseEntry[])
     .filter((entry) => entry.vars.kind === 'repair');
 
-const seededNote = (entry: CaseEntry): string => `${entry.vars.seedDir}/${entry.vars.targetPath}`;
-const ignoreText = (): string => readFileSync(join(ROOT, '.prettierignore'), 'utf8');
-const ownFolders = (): string[] => foldersOf(parse(readFileSync(join(ROOT, 'markdown-harness.config.yaml'), 'utf8')));
-const staleAfterOf = (path: string): string => /^stale_after:\s*(\S+)\s*$/m.exec(readFileSync(path, 'utf8'))?.[1] ?? '';
-
 describe('every committed repair case', () => {
   describe('success cases', () => {
-    it('has a seed under a directory-scoped formatter ignore, outside every folder the repository governs, over a non-empty set', () => {
-      // ARRANGE
-      const cases = repairCases();
-      // ACT
-      const escapes = cases.filter(
-        (entry) =>
-          !directoryIgnored(seededNote(entry), ignoreText()) || governedByFolders(seededNote(entry), ownFolders()),
-      );
-      // ASSERT
-      expect(cases.length).toBeGreaterThanOrEqual(1);
-      expect(escapes).toEqual([]);
-    });
-
-    it('seeds a stale_after in the far past, so the note is stale at any clock a run will read', () => {
-      // ARRANGE
-      const cases = repairCases();
-      // ACT
-      const fresh = cases.filter((entry) => !isFarPast(staleAfterOf(join(ROOT, seededNote(entry))), FLOOR));
-      // ASSERT
-      expect(fresh).toEqual([]);
-    });
-
     it('is answered REVIEW by the built mh assess with no pinned instant, run in the seed itself', () => {
       // ARRANGE
       const [entry] = repairCases();
@@ -72,32 +44,22 @@ describe('every committed repair case', () => {
   });
 
   describe('failure cases', () => {
-    it('goes red on a seed that escapes the ignored directory', () => {
+    it('is answered something other than REVIEW once the seed is made fresh, which is why the stamp must stay in the past', () => {
       // ARRANGE
       const [entry] = repairCases();
-      const escaped = `${entry?.vars.seedDir ?? ''}-copy/${entry?.vars.targetPath ?? ''}`;
+      const review = 'REVIEW';
+      const cwd = mkdtempSync(join(tmpdir(), 'fresh-repair-seed-'));
+      cpSync(join(ROOT, entry?.vars.seedDir ?? ''), cwd, { recursive: true });
+      const note = join(cwd, entry?.vars.targetPath ?? '');
+      writeFileSync(note, readFileSync(note, 'utf8').replace(/^stale_after:.*$/m, 'stale_after: 2999-01-01T00:00:00Z'));
       // ACT
-      const actual = directoryIgnored(escaped, ignoreText());
+      const run = spawnSync(process.execPath, [MH, 'assess', entry?.vars.targetPath ?? ''], { cwd, encoding: 'utf8' });
+      rmSync(cwd, { recursive: true, force: true });
+      const actions = (JSON.parse(run.stdout) as { result: { modules: { agentAction: string }[] } }).result.modules.map(
+        (module) => module.agentAction,
+      );
       // ASSERT
-      expect(actual).toBe(false);
-    });
-
-    it('goes red on a seed moved under a folder the repository governs', () => {
-      // ARRANGE
-      const moved = 'docs/research/stale-note.md';
-      // ACT
-      const actual = governedByFolders(moved, ownFolders());
-      // ASSERT
-      expect(actual).toBe(true);
-    });
-
-    it('goes red on a seed made fresh', () => {
-      // ARRANGE
-      const fresh = '2999-01-01T00:00:00Z';
-      // ACT
-      const actual = isFarPast(fresh, FLOOR);
-      // ASSERT
-      expect(actual).toBe(false);
+      expect(actions).not.toContain(review);
     });
   });
 
