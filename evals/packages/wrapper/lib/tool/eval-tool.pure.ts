@@ -2,18 +2,20 @@
 // version is recorded in every cohort row. The tool's own exit code is neutralised
 // here and ignored by the exit derivation regardless.
 
+import type { ToolSettings } from './eval-tool.types.ts';
+
 export const PROMPTFOO_VERSION = '0.124.0';
 
-export function toolArgv(settings: { configPath: string; trials: number; resultsPath: string }): string[] {
+export function toolArgv(settings: ToolSettings): string[] {
   return [
     '-y',
     `promptfoo@${PROMPTFOO_VERSION}`,
     'eval',
     '-c',
     settings.configPath,
-    '--no-cache',
+    ...(settings.cache ? [] : ['--no-cache']),
     '--max-concurrency',
-    '1',
+    String(settings.concurrency),
     '--repeat',
     String(settings.trials),
     '--no-progress-bar',
@@ -26,6 +28,7 @@ export function toolArgv(settings: { configPath: string; trials: number; results
 export function toolEnvironment(
   parent: Readonly<Record<string, string | undefined>>,
   stateDir: string,
+  cache = false,
 ): Record<string, string> {
   const inherited = ['PATH', 'HOME', 'LANG', 'LC_ALL', 'TERM', 'TMPDIR'].flatMap((name) => {
     const value = parent[name];
@@ -37,7 +40,7 @@ export function toolEnvironment(
     PROMPTFOO_DISABLE_TELEMETRY: '1',
     PROMPTFOO_DISABLE_UPDATE: '1',
     PROMPTFOO_DISABLE_SHARING: '1',
-    PROMPTFOO_CACHE_ENABLED: 'false',
+    PROMPTFOO_CACHE_ENABLED: String(cache),
     PROMPTFOO_FAILED_TEST_EXIT_CODE: '0',
   };
 }

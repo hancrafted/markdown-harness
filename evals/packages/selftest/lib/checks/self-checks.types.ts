@@ -13,6 +13,12 @@ export interface MatrixRun {
   readonly toolText: string;
 }
 
+/** The runs of the break pass: concurrency raised on one, the cache turned on across several. */
+export interface BreakRuns {
+  readonly concurrency: MatrixRun;
+  readonly cacheOn: readonly MatrixRun[];
+}
+
 export interface Finding {
   readonly check: string;
   readonly ok: boolean;

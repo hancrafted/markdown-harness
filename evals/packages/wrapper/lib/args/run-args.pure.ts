@@ -7,7 +7,7 @@ import type { ArgsResult, RunArgs } from './run-args.types.ts';
 
 export const DEFAULT_TRIALS = 8;
 export const SESSION_LIMIT = 40;
-const FLAGS = ['--host', '--trials', '--seed', '--stub-mode', '--host-binary', '--allow-over-budget'];
+const FLAGS = ['--host', '--trials', '--seed', '--stub-mode', '--host-binary', '--allow-over-budget', '--break'];
 
 const DEFAULTS: RunArgs = {
   host: 'claude',
@@ -16,6 +16,7 @@ const DEFAULTS: RunArgs = {
   allowOverBudget: false,
   stubMode: 'obey',
   hostBinary: undefined,
+  break: 'none',
 };
 
 function integer(value: string): number | undefined {
@@ -31,10 +32,16 @@ function trialsValue(args: RunArgs, value: string): RunArgs | string {
   return trials === undefined ? `--trials needs a positive integer, not ${value}` : { ...args, trials };
 }
 
+function breakValue(args: RunArgs, value: string): RunArgs | string {
+  if (value !== 'concurrency' && value !== 'cache') return `--break is concurrency or cache, not ${value}`;
+  return args.host === 'stub' ? { ...args, break: value } : '--break needs --host stub before it';
+}
+
 function applyValue(args: RunArgs, flag: string, value: string): RunArgs | string {
   if (flag === '--host') return hostValue(args, value);
   if (flag === '--trials') return trialsValue(args, value);
   if (flag === '--seed') return { ...args, seed: value };
+  if (flag === '--break') return breakValue(args, value);
   return flag === '--host-binary' ? { ...args, hostBinary: value } : { ...args, stubMode: value };
 }
 

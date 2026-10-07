@@ -9,6 +9,8 @@ import { duplicateSessionIds, parseSidecar, toolSessionCount } from '../results/
 import { PROMPTFOO_VERSION, toolArgv, toolEnvironment } from '../tool/eval-tool.pure.ts';
 import type { RunPlan, RunResults, ToolRun } from './run-plan.types.ts';
 
+/** What a self-test concurrency break asks the tool for, in place of one. */
+const BROKEN_CONCURRENCY = 4;
 const TOOL_WALL_CLOCK_MS = 4 * 60 * 60 * 1000;
 
 function providerEnvironment(plan: RunPlan): Record<string, string> {
@@ -30,8 +32,13 @@ export function runTool(plan: RunPlan): ToolRun {
     configPath: 'promptfooconfig.yaml',
     trials: plan.args.trials,
     resultsPath: `${plan.runDir}/results.json`,
+    concurrency: plan.args.break === 'concurrency' ? BROKEN_CONCURRENCY : 1,
+    cache: plan.args.break === 'cache',
   });
-  const env = { ...toolEnvironment(environment(), `${plan.runDir}/promptfoo-state`), ...providerEnvironment(plan) };
+  const env = {
+    ...toolEnvironment(environment(), `${plan.runDir}/promptfoo-state`, plan.args.break === 'cache'),
+    ...providerEnvironment(plan),
+  };
   const report = runProcess({
     command: 'npx',
     args: argv,

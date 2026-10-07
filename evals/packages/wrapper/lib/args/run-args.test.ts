@@ -23,20 +23,42 @@ describe('parseRunArgs', () => {
       // ASSERT
       expect(result).toMatchObject({ ok: true, args: expected });
     });
+
+    it('reads a self-test break against the stub Host harness', () => {
+      // ARRANGE
+      const expected = { host: 'stub', break: 'concurrency' };
+      // ACT
+      const result = parseRunArgs(['--host', 'stub', '--break', 'concurrency']);
+      // ASSERT
+      expect(result).toMatchObject({ ok: true, args: expected });
+    });
   });
 
   describe('failure cases', () => {
-    it.each([[['--nope']], [['--trials', 'x']], [['--trials', '0']], [['--host', 'codex']], [['--seed']]])(
-      'refuses %j as misuse',
-      (argv) => {
-        // ARRANGE
-        const expected = { ok: false };
-        // ACT
-        const result = parseRunArgs(argv);
-        // ASSERT
-        expect(result).toMatchObject(expected);
-      },
-    );
+    it('refuses a break against the real Host harness, so a live run can never be broken', () => {
+      // ARRANGE
+      const expected = { ok: false, problem: expect.stringMatching(/--break/) };
+      // ACT
+      const result = parseRunArgs(['--break', 'cache']);
+      // ASSERT
+      expect(result).toMatchObject(expected);
+    });
+
+    it.each([
+      [['--nope']],
+      [['--trials', 'x']],
+      [['--trials', '0']],
+      [['--host', 'codex']],
+      [['--seed']],
+      [['--host', 'stub', '--break', 'sleep']],
+    ])('refuses %j as misuse', (argv) => {
+      // ARRANGE
+      const expected = { ok: false };
+      // ACT
+      const result = parseRunArgs(argv);
+      // ASSERT
+      expect(result).toMatchObject(expected);
+    });
   });
 
   describe('edge cases', () => {

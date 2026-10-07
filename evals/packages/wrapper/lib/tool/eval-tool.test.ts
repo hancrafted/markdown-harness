@@ -3,7 +3,13 @@
 import { describe, expect, it } from 'vitest';
 import { PROMPTFOO_VERSION, toolArgv, toolEnvironment } from './eval-tool.pure.ts';
 
-const SETTINGS = { configPath: 'evals/promptfooconfig.yaml', trials: 8, resultsPath: 'out/results.json' };
+const SETTINGS = {
+  configPath: 'evals/promptfooconfig.yaml',
+  trials: 8,
+  resultsPath: 'out/results.json',
+  concurrency: 1,
+  cache: false,
+};
 
 describe('toolArgv', () => {
   describe('success cases', () => {
@@ -23,6 +29,17 @@ describe('toolArgv', () => {
       const argv = toolArgv(SETTINGS);
       // ASSERT
       expect(argv).toEqual(expect.arrayContaining(expected));
+    });
+
+    it('lets a self-test break turn the cache on and raise the concurrency, and nothing else', () => {
+      // ARRANGE
+      const expected = ['--max-concurrency', '4'];
+      const cacheOffFlag = '--no-cache';
+      // ACT
+      const broken = toolArgv({ ...SETTINGS, concurrency: 4, cache: true });
+      // ASSERT
+      expect(broken).toEqual(expect.arrayContaining(expected));
+      expect(broken).not.toContain(cacheOffFlag);
     });
   });
 
@@ -64,6 +81,15 @@ describe('toolEnvironment', () => {
       const env = toolEnvironment({ PATH: '/bin' }, '/s');
       // ASSERT
       expect(env).toMatchObject(expected);
+    });
+
+    it('turns the cache variable on only when a self-test break asks for it', () => {
+      // ARRANGE
+      const expected = 'true';
+      // ACT
+      const env = toolEnvironment({}, '/s', true);
+      // ASSERT
+      expect(env.PROMPTFOO_CACHE_ENABLED).toBe(expected);
     });
   });
 

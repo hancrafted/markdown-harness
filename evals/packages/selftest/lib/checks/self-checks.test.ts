@@ -2,7 +2,15 @@
 // deliberately broken input before it is trusted.
 
 import { describe, expect, it } from 'vitest';
-import { CHECKS, distinctNonces, judgeMatrix, overlaps, parseInvocationLog, sharingHits } from './self-checks.pure.ts';
+import {
+  CHECKS,
+  distinctNonces,
+  judgeBreaks,
+  judgeMatrix,
+  overlaps,
+  parseInvocationLog,
+  sharingHits,
+} from './self-checks.pure.ts';
 
 const at = (nonce: string, startedAt: number, endedAt: number) => ({ nonce, startedAt, endedAt });
 const GOOD = {
@@ -12,6 +20,14 @@ const GOOD = {
   toolText: 'fine',
 };
 const EXPECT = { invocationsPerRun: 2, runs: 1, sharing: ['promptfoo.app'] };
+const BREAKS = {
+  concurrency: { ...GOOD, toolText: 'Duration: 1s (concurrency: 4)' },
+  cacheOn: [GOOD, { ...GOOD, invocations: [at('c', 40, 50), at('d', 60, 70)], sessionIds: ['s3', 's4'] }],
+};
+const breakFailures = (breaks: object) =>
+  judgeBreaks({ ...BREAKS, ...breaks }, EXPECT)
+    .filter((finding) => !finding.ok)
+    .map((finding) => finding.check);
 const failing = (run: object) =>
   judgeMatrix([{ ...GOOD, ...run }], EXPECT)
     .filter((finding) => !finding.ok)
@@ -37,9 +53,47 @@ describe('self-test judgements', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('passes the break pass when the tool ran four wide, stayed serial, and a cache that is on still did not replay', () => {
+      // ARRANGE
+      const expected: string[] = [];
+      // ACT
+      const actual = breakFailures({});
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
+    it('goes red when the break pass shows the tool did not run four wide, or the sessions began to overlap', () => {
+      // ARRANGE
+      const narrow = { concurrency: { ...GOOD, toolText: 'Duration: 1s (concurrency: 1)' } };
+      const racing = { concurrency: { ...BREAKS.concurrency, invocations: [at('a', 0, 25), at('b', 20, 30)] } };
+      // ACT
+      const actual = [breakFailures(narrow), breakFailures(racing)];
+      // ASSERT
+      expect(actual[0]).toContain(CHECKS.broken.ran);
+      expect(actual[1]).toContain(CHECKS.broken.serial);
+    });
+
+    it('goes red when a cache that is on replays, which proves the nonce check can see a replay', () => {
+      // ARRANGE
+      const replay = { cacheOn: [GOOD, { ...GOOD, sessionIds: ['s3', 's4'] }] };
+      // ACT
+      const actual = breakFailures(replay);
+      // ASSERT
+      expect(actual).toContain(CHECKS.broken.nonces);
+    });
+
+    it('goes red when the cache break runs fewer invocations than the matrix', () => {
+      // ARRANGE
+      const short = { cacheOn: [GOOD, { ...GOOD, invocations: [at('c', 40, 50)], sessionIds: ['s3'] }] };
+      // ACT
+      const actual = breakFailures(short);
+      // ASSERT
+      expect(actual).toContain(CHECKS.broken.count);
+    });
+
     it('goes red when the cache replays: a repeated nonce, and fewer invocations than the matrix', () => {
       // ARRANGE
       const replayed = { invocations: [at('a', 0, 10), at('a', 20, 30)] };

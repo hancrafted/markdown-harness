@@ -6,7 +6,7 @@
 import { environment, exitWith, nodeExecutable, writeOut } from '../../../platform/host-ambient.ts';
 import { pathExists, readText, readTextFiles } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
-import { judgeMatrix, parseInvocationLog } from '../checks/self-checks.pure.ts';
+import { judgeBreaks, judgeMatrix, parseInvocationLog } from '../checks/self-checks.pure.ts';
 import type { Finding, MatrixRun } from '../checks/self-checks.types.ts';
 
 const WRAPPER = 'evals/packages/wrapper/run-evals.ts';
@@ -70,12 +70,25 @@ function matrixFindings(): Finding[] {
   });
 }
 
+function breakFindings(): Finding[] {
+  const concurrency = wrapper(trialsArgs('self-d', ['--break', 'concurrency']));
+  const cacheOn = [
+    wrapper(trialsArgs('self-e', ['--break', 'cache'])),
+    wrapper(trialsArgs('self-e', ['--break', 'cache'])),
+  ];
+  return judgeBreaks(
+    { concurrency: matrixRun(concurrency), cacheOn: cacheOn.map(matrixRun) },
+    { invocationsPerRun: CELLS * TRIALS + 1, runs: cacheOn.length, sharing: SHARING },
+  );
+}
+
 function scenarios(): Finding[] {
   const deaf = wrapper(trialsArgs('self-c', ['--stub-mode', 'deaf']));
   const auth = wrapper(['--host', 'stub', '--trials', '1', '--stub-mode', 'auth-fail']);
   const missing = wrapper(['--host', 'claude', '--host-binary', '/nonexistent/claude', '--trials', '1']);
   return [
     ...matrixFindings(),
+    ...breakFindings(),
     expectExit('a graded failure exits zero, whatever the eval tool status (rung 4 nulls)', deaf, 0),
     {
       check: 'a graded null is localised to a rung in the summary',
