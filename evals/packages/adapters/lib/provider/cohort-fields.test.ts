@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { rungObservations } from '../../../grading/localise-rung.ts';
 import { COHORT_FIELDS, buildCohortRow } from '../../../session/cohort-row.ts';
-import { profileOf } from '../../../session/host-profile.ts';
+import { NO_PROBES, profileOf } from '../../../session/host-profile.ts';
 import { carrierHitsOf, cohortFields, localisedText } from './cohort-fields.pure.ts';
 type CohortSources = Parameters<typeof cohortFields>[0];
 
@@ -17,7 +17,7 @@ const SOURCES: CohortSources = {
     toolVersion: '0.124.0',
     wrapperRevision: 'abc',
     wrapperDirty: 'false',
-    host: { command: ['x'], maxTurns: 4, wallClockMs: 1, tools: ['Write'] },
+    host: { command: ['x'], maxTurns: 4, wallClockMs: 1, tools: ['Write'], probes: {}, home: '/h' },
   },
   cell: {
     arm: 'steered',
@@ -228,7 +228,7 @@ describe('the Host harness facts in the cohort row', () => {
       // ARRANGE
       const expected = {
         isolation: 'none',
-        leakedSurface: profileOf('antigravity').leakedSurface,
+        leakedSurface: profileOf('antigravity', NO_PROBES).leakedSurface,
         turnCap: 'none',
         wallClockMs: 600_000,
         toolCount: 60,
@@ -237,6 +237,46 @@ describe('the Host harness facts in the cohort row', () => {
       const fields = cohortFields(AGY_SOURCES);
       // ASSERT
       expect(fields).toMatchObject(expected);
+    });
+
+    it('derives scratch-home isolation and no leaked surface from the probe record, not from a constant', () => {
+      // ARRANGE
+      const probes = { 'scratch-home-credentials': { status: 'works', detail: 'd', recordedAt: 't' } } as const;
+      const scratch = {
+        ...AGY_SOURCES,
+        settings: { ...AGY_SOURCES.settings, host: { ...AGY_SOURCES.settings.host, probes } },
+      };
+      const expected = { isolation: 'scratch-home', leakedSurface: 'none' };
+      // ACT
+      const fields = cohortFields(scratch);
+      // ASSERT
+      expect(fields).toMatchObject(expected);
+    });
+
+    it('records skip-all as the permission scope while no scoped mode is probed, and the scoped mode once it works', () => {
+      // ARRANGE
+      const probes = {
+        'scoped-permission-mode': {
+          status: 'works',
+          detail: 'd',
+          recordedAt: 't',
+          mode: 'accept-edits',
+          permissionMode: 'accept-edits',
+        },
+      } as const;
+      const scoped = {
+        ...AGY_SOURCES,
+        settings: { ...AGY_SOURCES.settings, host: { ...AGY_SOURCES.settings.host, probes } },
+      };
+      const expected = ['skip-all', 'scoped:accept-edits', 'scoped:acceptEdits'];
+      // ACT
+      const scopes = [
+        cohortFields(AGY_SOURCES).permissionScope,
+        cohortFields(scoped).permissionScope,
+        cohortFields(SOURCES).permissionScope,
+      ];
+      // ASSERT
+      expect(scopes).toEqual(expected);
     });
 
     it('records the model id and its family, so a Claude model run through agy is not read as Gemini', () => {
@@ -269,7 +309,7 @@ describe('the Host harness facts in the cohort row', () => {
       const expected = { hostVersion: 'unknown', authSource: 'unknown', skillCount: 'unknown' };
       // ACT
       const fields = cohortFields(AGY_SOURCES);
-      const built = buildCohortRow(fields, profileOf('antigravity').unobservable);
+      const built = buildCohortRow(fields, profileOf('antigravity', NO_PROBES).unobservable);
       // ASSERT
       expect(fields).toMatchObject(expected);
       expect(built.ok ? [] : built.missing).toEqual([]);
@@ -282,7 +322,7 @@ describe('the Host harness facts in the cohort row', () => {
       const fields = { ...cohortFields(AGY_SOURCES), wallClockMs: undefined };
       const expected = { ok: false, missing: ['wallClockMs'] };
       // ACT
-      const built = buildCohortRow(fields, profileOf('antigravity').unobservable);
+      const built = buildCohortRow(fields, profileOf('antigravity', NO_PROBES).unobservable);
       // ASSERT
       expect(built).toEqual(expected);
     });
@@ -292,7 +332,7 @@ describe('the Host harness facts in the cohort row', () => {
       const fields = { ...cohortFields(SOURCES), authSource: 'unknown' };
       const expected = { ok: false, missing: ['authSource'] };
       // ACT
-      const built = buildCohortRow(fields, profileOf('claude-code').unobservable);
+      const built = buildCohortRow(fields, profileOf('claude-code', NO_PROBES).unobservable);
       // ASSERT
       expect(built).toEqual(expected);
     });

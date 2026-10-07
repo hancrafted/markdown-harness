@@ -14,6 +14,15 @@ describe('parseRunArgs', () => {
       expect(result).toMatchObject({ ok: true, args: expected });
     });
 
+    it('reads a probe record path and a wall-clock bound in seconds', () => {
+      // ARRANGE
+      const expected = { probeRecord: '/r.json', wallClockSeconds: 30 };
+      // ACT
+      const result = parseRunArgs(['--probe-record', '/r.json', '--wall-clock-seconds', '30']);
+      // ASSERT
+      expect(result).toMatchObject({ ok: true, args: expected });
+    });
+
     it('reads a host, a trial count, a seed and the budget override', () => {
       // ARRANGE
       const expected = { host: 'stub', trials: 3, seed: 's1', allowOverBudget: true };
@@ -84,6 +93,9 @@ describe('parseRunArgs', () => {
       [['--host', 'codex']],
       [['--matrix', 'everything']],
       [['--seed']],
+      [['--wall-clock-seconds', '0']],
+      [['--wall-clock-seconds', 'ten']],
+      [['--probe-record']],
       [['--host', 'stub', '--break', 'sleep']],
     ])('refuses %j as misuse', (argv) => {
       // ARRANGE

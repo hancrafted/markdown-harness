@@ -38,7 +38,7 @@ function streamOf(outcome: TrialOutcome): RawSession {
 
 function runInputs(call: SessionCall, parts: TrialParts): SessionReturn {
   const { prepared, outcome } = setUpAndRun(parts);
-  const verdict = classifySession(streamOf(outcome), expectationFor(parts.cell));
+  const verdict = classifySession(streamOf(outcome), expectationFor(parts.cell, parts.settings.host.probes));
   if (verdict.outcome === 'graded' && outcome.raw !== undefined)
     return gradeSession({ ...parts, call, prepared, outcome, parsed: outcome.raw.parsed });
   const kind = verdict.outcome === 'instrument-failure' ? verdict.kind : 'no-parseable-stream';

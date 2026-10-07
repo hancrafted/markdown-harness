@@ -63,6 +63,8 @@ function hostFor(parts: TrialParts): Parameters<typeof runTrial>[0]['host'] {
     maxTurns: host.maxTurns,
     wallClockMs: host.wallClockMs,
     tools: host.tools,
+    probes: host.probes,
+    home: host.home,
   };
 }
 

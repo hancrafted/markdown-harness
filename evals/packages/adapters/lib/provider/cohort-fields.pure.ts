@@ -29,14 +29,16 @@ export function localisedText(localised: Localisation): string {
 }
 
 /**
- * What the stream cannot say about the Host harness, from its profile and the run's settings: how far flags
- * isolate the run, what leaked in when none do, whether a turn cap exists, and the wall-clock bound, which is the
- * only limit on a session of a Host harness with no turn cap.
+ * What the stream cannot say about the Host harness, from its profile and the run's settings: how far the run is
+ * isolated and by what, what leaked in when nothing isolates it, what the permission flags allowed, whether a turn
+ * cap exists, and the wall-clock bound, which is the only limit on a session of a Host harness with no turn cap.
+ * Isolation, the leaked surface and the permission scope follow the probe record the run was started with.
  */
 function hostFacts(profile: HostProfile, settings: CohortSources['settings']): Record<string, unknown> {
   return {
     isolation: profile.isolation,
     leakedSurface: profile.leakedSurface,
+    permissionScope: profile.permissionScope,
     turnCap: profile.turnCap === 'enforced' ? String(settings.host.maxTurns) : 'none',
     wallClockMs: settings.host.wallClockMs,
   };
@@ -55,7 +57,7 @@ function run(sources: CohortSources): Record<string, unknown> {
     providerId: sources.providerId,
     seed: settings.seed,
     hostName: cell.hostName,
-    ...hostFacts(profileOf(cell.hostName), settings),
+    ...hostFacts(profileOf(cell.hostName, settings.host.probes), settings),
     requestedModel: cell.model,
     evalToolVersion: settings.toolVersion,
     wrapperRevision: settings.wrapperRevision,
@@ -99,7 +101,7 @@ function unobservedFields(profile: HostProfile): Record<string, unknown> {
 function session(sources: CohortSources): Record<string, unknown> {
   const { init, result } = sources.parsed;
   const when = { startedAt: new Date(sources.timing.startedAtMs).toISOString(), durationMs: sources.timing.durationMs };
-  const unobserved = unobservedFields(profileOf(sources.cell.hostName));
+  const unobserved = unobservedFields(profileOf(sources.cell.hostName, sources.settings.host.probes));
   return { ...initFields(init), ...resultFields(result, init), ...when, ...unobserved };
 }
 

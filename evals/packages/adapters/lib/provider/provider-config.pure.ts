@@ -5,7 +5,9 @@ import type { ArmName } from '../../../arms/derive-arms.ts';
 import type { InitExpectation } from '../../../session/classify-session.ts';
 import type { DeliverySurface } from '../../../session/delivery-surface.ts';
 import { grantsShellWrites, incoherentSurface, isDeliveryChannel } from '../../../session/delivery-surface.ts';
-import { isHostName } from '../../../session/host-profile.ts';
+import { driverOf } from '../../../session/host-driver.ts';
+import type { ProbeRecord } from '../../../session/host-profile.ts';
+import { HOST_NAMES, isHostName, profileOf } from '../../../session/host-profile.ts';
 import type { ArmKind } from '../../../session/observe-session.ts';
 import type { CaseVars, CellConfig, RunSettings, TaskParts } from './provider-config.types.ts';
 
@@ -18,7 +20,7 @@ function need(bag: Bag, names: readonly string[], where: string): string[] {
 function cellHostProblem(bag: Bag): string[] {
   return isHostName(bag.hostName)
     ? []
-    : [`config.hostName (${String(bag.hostName)} is not claude-code or antigravity)`];
+    : [`config.hostName (${String(bag.hostName)} is not one of ${HOST_NAMES.join(', ')})`];
 }
 
 function cellSurfaceProblem(bag: Bag): string[] {
@@ -45,7 +47,7 @@ export function readCellConfig(config: unknown): CellConfig | string[] {
 export function cellLabelOf(cell: CellConfig): string {
   const shell = grantsShellWrites(cell.shell) ? 'shell' : undefined;
   const encoding = cell.deliveryChannel === 'pull' ? cell.encoding : undefined;
-  const host = cell.hostName === 'claude-code' ? undefined : cell.hostName;
+  const host = profileOf(cell.hostName, {}).labelPrefix || undefined;
   return [host, cell.deliveryChannel, shell, encoding, cell.arm].filter((part) => part !== undefined).join('-');
 }
 
@@ -115,17 +117,10 @@ export function derivationArmFor(arm: ArmKind): ArmName {
   }
 }
 
-const CLAUDE_EXPECTATION: InitExpectation = {
-  apiKeySource: 'none',
-  expectedPlugins: ['cc-plugin-agents-md', 'cc-plugin-telemetry'],
-};
-
 /**
- * What the init event must show for a cell to count. Claude Code is asked for by alias, so only authentication
- * and plugins are checked. Antigravity is asked for by model id and a permission mode, and its init event
- * reports both, so a run on another model, or in another mode, is an instrument failure and never a score.
+ * What the init event must show for a cell to count, asked of the Host harness's driver: the profile, derived from
+ * the probe record the run started with, says which permission mode an Antigravity init must report.
  */
-export function expectationFor(cell: CellConfig): InitExpectation {
-  if (cell.hostName === 'claude-code') return CLAUDE_EXPECTATION;
-  return { apiKeySource: 'unknown', expectedPlugins: [], permissionMode: 'always-proceed', model: cell.model };
+export function expectationFor(cell: CellConfig, probes: ProbeRecord): InitExpectation {
+  return driverOf(cell.hostName).initExpectation(cell.model, profileOf(cell.hostName, probes));
 }

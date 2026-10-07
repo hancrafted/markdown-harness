@@ -3,9 +3,10 @@
 // holds a canary can be canaried, so the trusted-prompt control's user-turn channel owes
 // none. Phase 1 reaches one of each, so it owes one canary; phase 2 adds rows.
 
-import { CHANNELS } from '../../../session/delivery-surface.ts';
+import { CHANNELS, isDeliveryChannel } from '../../../session/delivery-surface.ts';
+import type { ProbeRecord } from '../../../session/host-profile.ts';
 import { channelRefusal, isHostName, profileOf } from '../../../session/host-profile.ts';
-import type { CanaryKey, CellKind } from './canary-keys.types.ts';
+import type { CanaryKey, CellKind, CellKinds } from './canary-keys.types.ts';
 
 export function describeKey(key: CanaryKey): string {
   return `${key.host}/${key.channel}/${key.layout}`;
@@ -26,10 +27,24 @@ export function canaryKeysFor(cells: readonly CellKind[], layouts: readonly stri
  * each is a refusal sentence. The matrix is refused rather than the key dropped, because a canary quietly not
  * owed would let every cell under it run unproven.
  */
-export function unprovableKeys(keys: readonly CanaryKey[]): string[] {
+export function unprovableKeys(keys: readonly CanaryKey[], record: ProbeRecord): string[] {
   return keys.flatMap((key) => {
-    if (!isHostName(key.host)) return [`${key.host} ${key.channel}: no such Host harness`];
-    const refusal = channelRefusal(profileOf(key.host), key.channel);
+    const refusal = channelRefusal(profileOf(key.host, record), key.channel);
     return refusal === undefined ? [] : [refusal];
   });
+}
+
+/**
+ * The cell kinds a configuration's providers name. A host no profile names is refused here, at the boundary where
+ * the text becomes typed, so every key after it carries a Host harness the table knows.
+ */
+export function readCellKinds(configs: readonly Partial<Record<'hostName' | 'deliveryChannel', unknown>>[]): CellKinds {
+  const kinds: CellKind[] = [];
+  const refusals: string[] = [];
+  for (const { hostName, deliveryChannel } of configs) {
+    if (hostName === undefined || !isDeliveryChannel(deliveryChannel)) continue;
+    if (isHostName(hostName)) kinds.push({ hostName, deliveryChannel });
+    else refusals.push(`${String(hostName)}: no such Host harness`);
+  }
+  return { kinds, refusals };
 }

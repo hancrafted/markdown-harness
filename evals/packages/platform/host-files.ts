@@ -1,5 +1,6 @@
 export {
   ancestorListings,
+  copyFile,
   copyTree,
   digestFile,
   digestText,

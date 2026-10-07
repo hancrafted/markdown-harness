@@ -7,7 +7,7 @@
 // process, the stream parses, the file is read back, failures are classified from fields) and not that `agy`
 // still prints this shape.
 
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,8 +15,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { deriveArm } from '../../arms/derive-arms.ts';
 import { classifySession } from '../classify-session.ts';
 import type { DeliverySurface } from '../delivery-surface.ts';
+import type { ProbeRecord } from '../host-profile.ts';
 import { sourcesFor } from '../mint-guards.ts';
 import { runTrial } from '../run-trial.ts';
+import { CREDENTIAL_FILES } from '../scratch-home.ts';
 
 const CHECKOUT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const SEED = 'evals/suites/steering/seed/research-note';
@@ -30,11 +32,31 @@ const PULL: DeliverySurface = { channel: 'pull', shell: 'query-only', encoding: 
 const configText = readFileSync(join(CHECKOUT, SEED, 'markdown-harness.config.yaml'), 'utf8');
 
 const scratch: string[] = [];
+const realHome = process.env.HOME;
 afterEach(() => {
   for (const dir of scratch.splice(0)) rmSync(dir, { recursive: true, force: true });
+  process.env.HOME = realHome;
 });
 
-function trial(mode: string, wallClockMs = 20_000) {
+interface Options {
+  readonly probes?: ProbeRecord;
+  readonly home?: string;
+}
+
+/** A home that holds the stand-in credential files, which the stand-in reads from HOME as the real agy would. */
+function homeWithCredentials(): string {
+  const home = mkdtempSync(join(tmpdir(), 'agy-home-'));
+  scratch.push(home);
+  for (const file of CREDENTIAL_FILES) {
+    mkdirSync(dirname(join(home, file)), { recursive: true });
+    writeFileSync(join(home, file), 'stand-in token\n');
+  }
+  return home;
+}
+
+const scratchHomes = (): string[] => readdirSync(tmpdir()).filter((name) => name.startsWith('mh-scratch-home-'));
+
+function trial(mode: string, wallClockMs = 20_000, options: Options = {}) {
   const clause = `Put the reference code ${STEERING_MARKER} on its own line.`;
   const derived = deriveArm({ configText, arm: 'steered', substitutes: [{ placeholder: PLACEHOLDER, clause }] });
   const under = mkdtempSync(join(tmpdir(), 'agy-trial-'));
@@ -48,11 +70,13 @@ function trial(mode: string, wallClockMs = 20_000) {
     derivedConfig: derived.configText,
     host: {
       name: 'antigravity',
-      command: ['node', STUB, '--mode', mode],
+      command: ['node', STUB, '--mode', mode, '--stub-host', 'agy'],
       model: MODEL,
       maxTurns: 4,
       wallClockMs,
       tools: [],
+      probes: options.probes ?? {},
+      home: options.home ?? '',
     },
     task: `Write a note in ${TARGET}.`,
     steeringMarkers: [
@@ -141,6 +165,82 @@ describe('an Antigravity trial through the stand-in', () => {
       const kinds = (trial('obey').raw?.parsed.events ?? []).map((event) => event.kind);
       // ASSERT
       for (const kind of forbidden) expect(kinds).not.toContain(kind);
+    });
+  });
+});
+
+const SCOPED: ProbeRecord = {
+  'scoped-permission-mode': {
+    status: 'works',
+    detail: 'd',
+    recordedAt: 't',
+    mode: 'accept-edits',
+    permissionMode: 'accept-edits',
+  },
+};
+const SCRATCH: ProbeRecord = { 'scratch-home-credentials': { status: 'works', detail: 'd', recordedAt: 't' } };
+const FAILED_SCOPED: ProbeRecord = { 'scoped-permission-mode': { status: 'fails', detail: 'd', recordedAt: 't' } };
+const FAILED_SCRATCH: ProbeRecord = { 'scratch-home-credentials': { status: 'fails', detail: 'd', recordedAt: 't' } };
+
+describe('an Antigravity trial under recorded probes', () => {
+  describe('success cases', () => {
+    it('starts the session under the scoped mode the probe found, so the init event reports it and nothing is skipped', () => {
+      // ARRANGE
+      const expected = 'accept-edits';
+      // ACT
+      const outcome = trial('obey', 20_000, { probes: SCOPED });
+      // ASSERT
+      expect(outcome.raw?.parsed.init?.permissionMode).toBe(expected);
+      expect(outcome.finalFile).toContain(STEERING_MARKER);
+    });
+
+    it('runs under a scratch home holding the copied credentials when the scratch home probe works, and deletes it', () => {
+      // ARRANGE
+      process.env.HOME = mkdtempSync(join(tmpdir(), 'agy-empty-'));
+      scratch.push(process.env.HOME);
+      const before = scratchHomes().length;
+      // ACT
+      const outcome = trial('needs-credentials', 20_000, { probes: SCRATCH, home: homeWithCredentials() });
+      // ASSERT
+      expect(outcome.raw?.parsed.result?.isError).toBe(false);
+      expect(scratchHomes().length).toBe(before);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('keeps skip-all when the scoped mode probe did not work', () => {
+      // ARRANGE
+      const expected = 'always-proceed';
+      // ACT
+      const outcome = trial('obey', 20_000, { probes: FAILED_SCOPED });
+      // ASSERT
+      expect(outcome.raw?.parsed.init?.permissionMode).toBe(expected);
+    });
+
+    it('is not authenticated under a scratch home when the credential files are not there to copy', () => {
+      // ARRANGE
+      process.env.HOME = homeWithCredentials();
+      const empty = mkdtempSync(join(tmpdir(), 'agy-nohome-'));
+      scratch.push(empty);
+      const expected = { kind: 'authentication-failure' };
+      // ACT
+      const outcome = trial('needs-credentials', 20_000, { probes: SCRATCH, home: empty });
+      const verdict = outcome.raw === undefined ? undefined : classifySession(outcome.raw, EXPECTATION);
+      // ASSERT
+      expect(verdict).toMatchObject(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('runs under the real home when the scratch home probe did not work, so no credential is copied', () => {
+      // ARRANGE
+      process.env.HOME = homeWithCredentials();
+      const before = scratchHomes().length;
+      // ACT
+      const outcome = trial('needs-credentials', 20_000, { probes: FAILED_SCRATCH, home: '/nowhere' });
+      // ASSERT
+      expect(outcome.raw?.parsed.result?.isError).toBe(false);
+      expect(scratchHomes().length).toBe(before);
     });
   });
 });

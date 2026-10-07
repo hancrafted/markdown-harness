@@ -5,12 +5,13 @@ import { parse } from 'yaml';
 import { environment, nowIso, randomHex } from '../../../platform/host-ambient.ts';
 import { readText } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
-import { isDeliveryChannel } from '../../../session/delivery-surface.ts';
-import { profileOf } from '../../../session/host-profile.ts';
+import type { ProbeRecord } from '../../../session/host-profile.ts';
+import { hostNameOfMatrix, profileOf, resolveBinary } from '../../../session/host-profile.ts';
 import { configFileFor } from '../args/run-args.pure.ts';
 import type { RunArgs } from '../args/run-args.types.ts';
-import { canaryKeysFor } from '../canary/canary-keys.pure.ts';
-import type { CellKind } from '../canary/canary-keys.types.ts';
+import { stubCommand } from '../args/stub-command.pure.ts';
+import { canaryKeysFor, readCellKinds } from '../canary/canary-keys.pure.ts';
+import type { CellKinds } from '../canary/canary-keys.types.ts';
 import { expectedSessions } from '../exit/exit-contract.pure.ts';
 import type { RunPlan } from './run-plan.types.ts';
 
@@ -22,12 +23,9 @@ function listLength(path: string, key?: string): number {
   return Array.isArray(list) ? list.length : 0;
 }
 
-function cellKinds(path: string): CellKind[] {
-  const document = parse(readText(path)) as { providers?: { config?: Partial<CellKind> }[] };
-  return (document.providers ?? []).flatMap((provider) => {
-    const { hostName, deliveryChannel } = provider.config ?? {};
-    return hostName === undefined || !isDeliveryChannel(deliveryChannel) ? [] : [{ hostName, deliveryChannel }];
-  });
+function cellKinds(path: string): CellKinds {
+  const document = parse(readText(path)) as { providers?: { config?: Record<string, unknown> }[] };
+  return readCellKinds((document.providers ?? []).map((provider) => provider.config ?? {}));
 }
 
 /** The case file a configuration's `tests` names, relative to `evals/`. */
@@ -46,29 +44,36 @@ function git(checkout: string, args: readonly string[]): string {
   return runProcess({ command: 'git', args, cwd: checkout, env, timeoutMs: 30_000 }).stdout.trim();
 }
 
-function hostFor(args: RunArgs, where: { checkout: string; runDir: string }): RunPlan['host'] {
-  const { checkout, runDir } = where;
-  const binary = args.hostBinary;
-  const stub = [
-    'node',
-    `${checkout}/evals/self-test/stub-host.mjs`,
-    '--mode',
-    args.stubMode,
-    '--log',
-    `${runDir}/stub-sessions.log`,
-  ];
-  const live = args.host === 'agy' ? profileOf('antigravity').binary : profileOf('claude-code').binary;
-  const command = args.host === 'stub' ? stub : [binary ?? live];
-  return { command, maxTurns: 6, wallClockMs: args.host === 'stub' ? 60_000 : 600_000, tools: TOOLS };
+// A stand-in run is given no home, so a scratch home built for it never copies the account's credential files.
+const DEFAULT_WALL_CLOCK_MS = 600_000;
+const STUB_WALL_CLOCK_MS = 60_000;
+
+function hostFor(args: RunArgs, record: ProbeRecord, where: { checkout: string; runDir: string }): RunPlan['host'] {
+  const profile = profileOf(hostNameOfMatrix(args.matrix), record);
+  const command =
+    args.host === 'stub'
+      ? stubCommand({ ...where, matrix: args.matrix, stubMode: args.stubMode })
+      : [resolveBinary(profile, args.hostBinary, environment())];
+  const defaultMs = args.host === 'stub' ? STUB_WALL_CLOCK_MS : DEFAULT_WALL_CLOCK_MS;
+  const wallClockMs = args.wallClockSeconds === undefined ? defaultMs : args.wallClockSeconds * 1000;
+  return {
+    command,
+    maxTurns: 6,
+    wallClockMs,
+    tools: TOOLS,
+    probes: record,
+    home: args.host === 'stub' ? '' : (environment().HOME ?? ''),
+  };
 }
 
-export function planRun(args: RunArgs, checkout: string): RunPlan {
+export function planRun(args: RunArgs, checkout: string, record: ProbeRecord): RunPlan {
   const runId = `${nowIso().replace(/[:.]/g, '-')}-${randomHex(3)}`;
   const runDir = `${checkout}/evals/runs/${runId}`;
   const configPath = `${checkout}/evals/${configFileFor(args.matrix)}`;
   const casesPath = `${checkout}/evals/${casesFileOf(configPath)}`;
   const cells = listLength(configPath, 'providers');
   const cases = listLength(casesPath);
+  const kinds = cellKinds(configPath);
   return {
     args,
     checkout,
@@ -78,8 +83,9 @@ export function planRun(args: RunArgs, checkout: string): RunPlan {
     cases,
     seed: args.seed ?? randomHex(8),
     expected: expectedSessions({ cells, trials: args.trials, cases }),
-    canaryKeys: canaryKeysFor(cellKinds(configPath), seedLayouts(casesPath)),
-    host: hostFor(args, { checkout, runDir }),
+    canaryKeys: canaryKeysFor(kinds.kinds, seedLayouts(casesPath)),
+    cellRefusals: kinds.refusals,
+    host: hostFor(args, record, { checkout, runDir }),
     revision: git(checkout, ['rev-parse', 'HEAD']) || 'unknown',
     dirty: String(git(checkout, ['status', '--porcelain']) !== ''),
   };

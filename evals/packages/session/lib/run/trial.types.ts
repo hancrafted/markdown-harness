@@ -1,5 +1,5 @@
 import type { FailureKind, RawSession } from '../failure/failure-classifier.types.ts';
-import type { HostName } from '../host/host-profile.types.ts';
+import type { HostName, ProbeRecord } from '../host/host-profile.types.ts';
 import type { SweepExpectation } from '../leak/leak-sweep.types.ts';
 import type { MintSources } from '../mint/mint-plan.types.ts';
 import type { ArmKind } from '../observe/session-observation.types.ts';
@@ -13,6 +13,10 @@ export interface HostSpec {
   readonly maxTurns: number;
   readonly wallClockMs: number;
   readonly tools: readonly string[];
+  /** The recorded probe outcomes the profile derives isolation and the permission mode from. */
+  readonly probes: ProbeRecord;
+  /** The account's real home: where a scratch home's credential files are copied from, when the profile derives one. */
+  readonly home: string;
 }
 
 /** One tested carrier's steering marker, and what the root must hold of it before the session starts. */

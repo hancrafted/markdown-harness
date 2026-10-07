@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
+import { NO_PROBES } from '../../../session/host-profile.ts';
 import {
   cellLabelOf,
   derivationArmFor,
@@ -40,7 +41,7 @@ const ENV = {
   EVALS_TOOL_VERSION: '0.124.0',
   EVALS_WRAPPER_REVISION: 'abc',
   EVALS_WRAPPER_DIRTY: 'false',
-  EVALS_HOST: '{"command":["x"],"maxTurns":4,"wallClockMs":1000,"tools":["Write"]}',
+  EVALS_HOST: '{"command":["x"],"maxTurns":4,"wallClockMs":1000,"tools":["Write"],"probes":{},"home":"/h"}',
 };
 
 describe('expectationFor', () => {
@@ -49,7 +50,9 @@ describe('expectationFor', () => {
       // ARRANGE
       const forbidden = 'model';
       // ACT
-      const actual = Object.keys(expectationFor({ ...CELL, hostName: 'claude-code', model: 'sonnet' } as never));
+      const actual = Object.keys(
+        expectationFor({ ...CELL, hostName: 'claude-code', model: 'sonnet' } as never, NO_PROBES),
+      );
       // ASSERT
       expect(actual).not.toContain(forbidden);
     });
@@ -60,7 +63,7 @@ describe('expectationFor', () => {
       // ARRANGE
       const expected = 'claude-sonnet-5-5-medium';
       // ACT
-      const actual = expectationFor({ ...CELL, hostName: 'antigravity', model: expected } as never).model;
+      const actual = expectationFor({ ...CELL, hostName: 'antigravity', model: expected } as never, NO_PROBES).model;
       // ASSERT
       expect(actual).toBe(expected);
     });
@@ -71,9 +74,27 @@ describe('expectationFor', () => {
       // ARRANGE
       const expected = { apiKeySource: 'none', expectedPlugins: ['cc-plugin-agents-md', 'cc-plugin-telemetry'] };
       // ACT
-      const actual = expectationFor({ ...CELL, hostName: 'claude-code' } as never);
+      const actual = expectationFor({ ...CELL, hostName: 'claude-code' } as never, NO_PROBES);
       // ASSERT
       expect(actual).toEqual(expected);
+    });
+
+    it('expects an Antigravity session to show the scoped permission mode the probe recorded, not the skip-all one', () => {
+      // ARRANGE
+      const probes = {
+        'scoped-permission-mode': {
+          status: 'works',
+          detail: 'd',
+          recordedAt: 't',
+          mode: 'accept-edits',
+          permissionMode: 'accept-edits',
+        },
+      } as const;
+      const expected = 'accept-edits';
+      // ACT
+      const actual = expectationFor({ ...CELL, hostName: 'antigravity', model: 'g' } as never, probes).permissionMode;
+      // ASSERT
+      expect(actual).toBe(expected);
     });
 
     it('expects an Antigravity session to run the requested model id under the skip-permissions mode', () => {
@@ -85,7 +106,10 @@ describe('expectationFor', () => {
         model: 'gemini-3.8-flash-low',
       };
       // ACT
-      const actual = expectationFor({ ...CELL, hostName: 'antigravity', model: 'gemini-3.8-flash-low' } as never);
+      const actual = expectationFor(
+        { ...CELL, hostName: 'antigravity', model: 'gemini-3.8-flash-low' } as never,
+        NO_PROBES,
+      );
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -154,7 +178,7 @@ describe('provider inputs', () => {
 
     it('refuses a cell naming a Host harness this instrument has no profile for', () => {
       // ARRANGE
-      const expected = ['config.hostName (codex is not claude-code or antigravity)'];
+      const expected = ['config.hostName (codex is not one of claude-code, antigravity)'];
       // ACT
       const actual = readCellConfig({ ...CELL, hostName: 'codex' });
       // ASSERT

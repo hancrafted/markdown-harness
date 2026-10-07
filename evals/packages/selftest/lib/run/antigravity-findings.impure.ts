@@ -6,8 +6,12 @@
 import { pathExists, readTextFiles } from '../../../platform/host-files.ts';
 import type { Finding } from '../checks/self-checks.types.ts';
 import { expectExit, expectOutput, matrixArgs, runWrapper } from './execution.impure.ts';
+import type { Execution } from './execution.types.ts';
 
-function cohortRowsOf(dir: string | undefined): Record<string, unknown>[] {
+/** The stand-in's Antigravity matrix under the real tool, under a seed and any extra arguments. */
+const runAgy = (seed: string, extra: readonly string[] = []): Execution => runWrapper(matrixArgs('agy', seed, extra));
+
+export function cohortRowsOf(dir: string | undefined): Record<string, unknown>[] {
   const sessions = dir !== undefined && pathExists(`${dir}/sessions`) ? readTextFiles(`${dir}/sessions`, []) : [];
   return sessions.flatMap((file) => {
     const row = (JSON.parse(file.text) as { cohortRow?: Record<string, unknown> }).cohortRow;
@@ -49,9 +53,9 @@ function rowFinding(rowsDir: string | undefined): Finding {
 }
 
 function failureFindings(): Finding[] {
-  const auth = runWrapper(matrixArgs('agy', 'self-v', ['--stub-mode', 'auth-fail']));
-  const denied = runWrapper(matrixArgs('agy', 'self-w', ['--stub-mode', 'denied']));
-  const dead = runWrapper(matrixArgs('agy', 'self-x', ['--stub-mode', 'ignore']));
+  const auth = runAgy('self-v', ['--stub-mode', 'auth-fail']);
+  const denied = runAgy('self-w', ['--stub-mode', 'denied']);
+  const dead = runAgy('self-x', ['--stub-mode', 'ignore']);
   return [
     expectExit('an Antigravity sign-in wall at exit 0 is an instrument failure, exit one', auth, 1),
     expectOutput('antigravity: the sign-in wall is named an authentication failure', auth, /authentication-failure/),
@@ -64,15 +68,18 @@ function failureFindings(): Finding[] {
 function refusalFindings(): Finding[] {
   const live = runWrapper(['--host', 'agy', '--matrix', 'agy', '--trials', '1']);
   const wrongHost = runWrapper(['--matrix', 'agy']);
+  const short = runAgy('self-s5', ['--wall-clock-seconds', '5']);
   return [
     expectExit('a live Antigravity run is refused while its probes are unprobed, exit two', live, 2),
     expectOutput('antigravity: the refusal names the probes still to run', live, /unprobed capabilities: hook-fires/),
     expectExit('the Antigravity matrix under the real Claude Code is misuse, exit two', wrongHost, 2),
+    expectExit('an Antigravity wall clock under the minimum is misuse, exit two', short, 2),
+    expectOutput('antigravity: the refusal names the minimum wall clock', short, /minimum is 10s/),
   ];
 }
 
 export function antigravityFindings(): Finding[] {
-  const agy = runWrapper(matrixArgs('agy', 'self-u'));
+  const agy = runAgy('self-u');
   return [
     expectExit('the Antigravity matrix runs end to end through the real tool and exits zero', agy, 0),
     expectOutput(

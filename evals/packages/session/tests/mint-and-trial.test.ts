@@ -63,6 +63,8 @@ function host(mode: string, log?: string) {
     maxTurns: 4,
     wallClockMs: 20_000,
     tools: ['Read', 'Write', 'Edit'],
+    probes: {},
+    home: '',
   };
 }
 

@@ -4,12 +4,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   AGY_ALLOWED_ENVIRONMENT,
+  MIN_WALL_CLOCK_MS,
   buildAgyArgv,
   buildAgyEnvironment,
   printTimeoutSeconds,
+  wallClockRefusal,
 } from './agy-invocation.pure.ts';
 
-const INPUT = { task: 'write a note', model: 'gemini-3.8-flash-low', wallClockMs: 600_000 };
+const INPUT = { task: 'write a note', model: 'gemini-3.8-flash-low', wallClockMs: 600_000, scopedMode: undefined };
 
 describe('buildAgyArgv', () => {
   describe('success cases', () => {
@@ -22,7 +24,7 @@ describe('buildAgyArgv', () => {
       expect(argv.slice(0, expected.length)).toEqual(expected);
     });
 
-    it('skips every permission, the one working headless write mode R3 measured', () => {
+    it('skips every permission when no scoped mode was probed, the one working headless write mode R3 measured', () => {
       // ARRANGE
       const expected = '--dangerously-skip-permissions';
       // ACT
@@ -42,6 +44,26 @@ describe('buildAgyArgv', () => {
   });
 
   describe('failure cases', () => {
+    it('passes the probed scoped mode in place of skipping every permission', () => {
+      // ARRANGE
+      const expected = ['--mode', 'accept-edits'];
+      const skipped = '--dangerously-skip-permissions';
+      // ACT
+      const argv = buildAgyArgv({ ...INPUT, scopedMode: 'accept-edits' });
+      // ASSERT
+      expect(argv).toEqual(expect.arrayContaining(expected));
+      expect(argv).not.toContain(skipped);
+    });
+
+    it('passes no scoped mode while none was probed', () => {
+      // ARRANGE
+      const forbidden = '--mode';
+      // ACT
+      const argv = buildAgyArgv(INPUT);
+      // ASSERT
+      expect(argv).not.toContain(forbidden);
+    });
+
     it('passes no turn cap flag, because agy has none', () => {
       // ARRANGE
       const forbidden = ['--max-turns', '--max-budget-usd'];
@@ -108,14 +130,71 @@ describe('printTimeoutSeconds', () => {
   });
 });
 
+describe('wallClockRefusal', () => {
+  describe('success cases', () => {
+    it('lets a bound at the minimum through, and a print timeout stays below it by the margin', () => {
+      // ARRANGE
+      const expected = { refusal: undefined, margin: 5 };
+      // ACT
+      const actual = {
+        refusal: wallClockRefusal(MIN_WALL_CLOCK_MS),
+        margin: MIN_WALL_CLOCK_MS / 1000 - printTimeoutSeconds(MIN_WALL_CLOCK_MS),
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses a bound under six seconds, where the print timeout floor of one second leaves no margin', () => {
+      // ARRANGE
+      const bounds = [1_000, 5_000, 5_999];
+      // ACT
+      const actual = bounds.map((ms) => wallClockRefusal(ms) !== undefined);
+      // ASSERT
+      expect(actual).toEqual([true, true, true]);
+    });
+
+    it('names the minimum in the refusal', () => {
+      // ARRANGE
+      const expected = expect.stringContaining(String(MIN_WALL_CLOCK_MS / 1000));
+      // ACT
+      const actual = wallClockRefusal(3_000);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('keeps the print timeout under the bound for every bound it lets through', () => {
+      // ARRANGE
+      const bounds = [10_000, 10_001, 12_999, 60_000, 600_000];
+      // ACT
+      const actual = bounds.map((ms) => printTimeoutSeconds(ms) * 1000 < ms);
+      // ASSERT
+      expect(actual).toEqual([true, true, true, true, true]);
+    });
+  });
+});
+
 describe('buildAgyEnvironment', () => {
   describe('success cases', () => {
-    it('passes the real HOME, because a scratch HOME is an unprobed capability and the OAuth token lives under HOME', () => {
+    it('passes a scratch HOME in place of the real one when one is given, and no other variable changes', () => {
+      // ARRANGE
+      const parent = { PATH: '/bin', HOME: '/Users/h', LANG: 'C' };
+      const expected = { PATH: '/bin', HOME: '/tmp/scratch', LANG: 'C' };
+      // ACT
+      const child = buildAgyEnvironment(parent, '/tmp/scratch');
+      // ASSERT
+      expect(child).toEqual(expected);
+    });
+
+    it('passes the real HOME when no scratch home is given, because the OAuth token lives under HOME', () => {
       // ARRANGE
       const parent = { PATH: '/bin', HOME: '/Users/h', LANG: 'C', NOT_LISTED: 'x' };
       const expected = { PATH: '/bin', HOME: '/Users/h', LANG: 'C' };
       // ACT
-      const child = buildAgyEnvironment(parent);
+      const child = buildAgyEnvironment(parent, undefined);
       // ASSERT
       expect(child).toEqual(expected);
     });
@@ -135,7 +214,7 @@ describe('buildAgyEnvironment', () => {
       };
       const forbidden = Object.keys(parent).filter((name) => name !== 'PATH');
       // ACT
-      const keys = Object.keys(buildAgyEnvironment(parent));
+      const keys = Object.keys(buildAgyEnvironment(parent, undefined));
       // ASSERT
       for (const name of forbidden) expect(keys).not.toContain(name);
     });
@@ -155,7 +234,7 @@ describe('buildAgyEnvironment', () => {
       // ARRANGE
       const expected = ['PATH'];
       // ACT
-      const keys = Object.keys(buildAgyEnvironment({ PATH: '/bin' }));
+      const keys = Object.keys(buildAgyEnvironment({ PATH: '/bin' }, undefined));
       // ASSERT
       expect(keys).toEqual(expected);
     });

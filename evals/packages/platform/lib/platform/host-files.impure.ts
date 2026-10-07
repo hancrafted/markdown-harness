@@ -4,6 +4,7 @@
 import { createHash } from 'node:crypto';
 import {
   chmodSync,
+  copyFileSync,
   cpSync,
   existsSync,
   lstatSync,
@@ -28,6 +29,12 @@ export const makeDirectory = (path: string): void => void mkdirSync(path, { recu
 export function writeText(path: string, text: string): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, text);
+}
+
+/** Copy one file, creating its directory; the content is copied as bytes, never read as text. */
+export function copyFile(from: string, to: string): void {
+  mkdirSync(dirname(to), { recursive: true });
+  copyFileSync(from, to);
 }
 
 /** Write a file the shell can run: `writeText` plus the executable bits. */

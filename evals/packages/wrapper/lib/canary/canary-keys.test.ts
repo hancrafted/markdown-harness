@@ -1,7 +1,8 @@
 // Colocated unit test for which canaries a matrix owes.
 
 import { describe, expect, it } from 'vitest';
-import { canaryKeysFor, describeKey, unprovableKeys } from './canary-keys.pure.ts';
+import { NO_PROBES } from '../../../session/host-profile.ts';
+import { canaryKeysFor, describeKey, readCellKinds, unprovableKeys } from './canary-keys.pure.ts';
 
 const PUSH = { hostName: 'claude-code', deliveryChannel: 'push' } as const;
 const USER_TURN = { hostName: 'claude-code', deliveryChannel: 'user-turn' } as const;
@@ -30,8 +31,8 @@ describe('canaryKeysFor', () => {
 
     it('owes a canary to each new Host harness and each new root layout, so phase 2 adds rows', () => {
       // ARRANGE
-      const other = { hostName: 'codex', deliveryChannel: 'push' } as const;
-      const expected = ['claude-code/push/a', 'claude-code/push/b', 'codex/push/a', 'codex/push/b'];
+      const other = { hostName: 'antigravity', deliveryChannel: 'push' } as const;
+      const expected = ['antigravity/push/a', 'antigravity/push/b', 'claude-code/push/a', 'claude-code/push/b'];
       // ACT
       const actual = canaryKeysFor([PUSH, other], ['a', 'b']).map(describeKey);
       // ASSERT
@@ -72,7 +73,7 @@ describe('unprovableKeys', () => {
       // ARRANGE
       const expected: string[] = [];
       // ACT
-      const actual = unprovableKeys([agyPull, claudePush]);
+      const actual = unprovableKeys([agyPull, claudePush], NO_PROBES);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -93,18 +94,54 @@ describe('unprovableKeys', () => {
       // ARRANGE
       const expected = ['antigravity push: hook-fires-headless is unprobed, so no canary can be owed for it'];
       // ACT
-      const actual = unprovableKeys([agyPush]);
+      const actual = unprovableKeys([agyPush], NO_PROBES);
       // ASSERT
       expect(actual).toEqual(expected);
     });
   });
 
   describe('edge cases', () => {
-    it('refuses a key whose host is not a known Host harness rather than guessing a profile', () => {
+    it('reads the recorded hook probe, so a probe that works opens the first gate and the table still refuses the push channel', () => {
       // ARRANGE
-      const expected = ['codex push: no such Host harness'];
+      const record = { 'hook-fires-headless': { status: 'works', detail: 'd', recordedAt: 't' } } as const;
+      const expected = ['antigravity push: no hook root is built for this Host harness yet'];
       // ACT
-      const actual = unprovableKeys([{ host: 'codex', channel: 'push', layout: LAYOUT }]);
+      const actual = unprovableKeys([agyPush], record);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});
+
+describe('readCellKinds', () => {
+  describe('success cases', () => {
+    it('reads a cell that names a known Host harness and a delivery channel', () => {
+      // ARRANGE
+      const expected = { kinds: [{ hostName: 'antigravity', deliveryChannel: 'pull' }], refusals: [] };
+      // ACT
+      const actual = readCellKinds([{ hostName: 'antigravity', deliveryChannel: 'pull' }]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses a cell whose host is not a known Host harness rather than guessing a profile or dropping it', () => {
+      // ARRANGE
+      const expected = { kinds: [], refusals: ['codex: no such Host harness'] };
+      // ACT
+      const actual = readCellKinds([{ hostName: 'codex', deliveryChannel: 'push' }]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('skips a cell with no host or no valid channel, which the provider refuses cell by cell', () => {
+      // ARRANGE
+      const expected = { kinds: [], refusals: [] };
+      // ACT
+      const actual = readCellKinds([{ deliveryChannel: 'push' }, { hostName: 'claude-code', deliveryChannel: 'x' }]);
       // ASSERT
       expect(actual).toEqual(expected);
     });

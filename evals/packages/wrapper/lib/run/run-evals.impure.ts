@@ -4,6 +4,7 @@
 
 import { commandLineArguments, exitWith, writeErr, writeOut } from '../../../platform/host-ambient.ts';
 import { pathExists, writeText } from '../../../platform/host-files.ts';
+import type { ProbeRecord } from '../../../session/host-profile.ts';
 import { hostRefusal } from '../args/host-gate.pure.ts';
 import { budgetRefusal, parseRunArgs } from '../args/run-args.pure.ts';
 import type { RunArgs } from '../args/run-args.types.ts';
@@ -11,6 +12,7 @@ import { describeKey, unprovableKeys } from '../canary/canary-keys.pure.ts';
 import { MISUSE, deriveExit } from '../exit/exit-contract.pure.ts';
 import { unpairedFields } from '../results/results-reading.pure.ts';
 import { summarise } from '../summary/run-summary.pure.ts';
+import { readProbeRecord } from './probe-record-read.impure.ts';
 import { buildCurrentMh } from './run-build.impure.ts';
 import { runCanaries } from './run-canary.impure.ts';
 import { planRun } from './run-plan.impure.ts';
@@ -51,36 +53,46 @@ function finishWith(plan: RunPlan, canaryFailure: string | undefined, toolFailur
 }
 
 /** A sentence refusing the run before anything is built or spawned, or undefined when it may start. */
-function refusalOf(args: RunArgs, checkout: string): string | undefined {
+function refusalOf(args: RunArgs, checkout: string, record: ProbeRecord): string | undefined {
   if (!pathExists(`${checkout}/evals/promptfooconfig.yaml`)) return 'run this from the repository root';
-  return hostRefusal(args);
+  return hostRefusal(args, record);
 }
 
 function planRefusal(plan: RunPlan): string | undefined {
-  return unprovableKeys(plan.canaryKeys)[0] ?? budgetRefusal(plan.expected, plan.args.allowOverBudget);
+  return (
+    plan.cellRefusals[0] ??
+    unprovableKeys(plan.canaryKeys, plan.host.probes)[0] ??
+    budgetRefusal(plan.expected, plan.args.allowOverBudget)
+  );
 }
 
-function main(): number {
+/** Parse, read the probe record, plan, and refuse: the plan, or the misuse sentence that stops the run. */
+function prepare(checkout: string): RunPlan | string {
   const parsed = parseRunArgs(commandLineArguments());
-  if (!parsed.ok) return fail(parsed.problem);
-  const checkout = process.cwd();
-  const early = refusalOf(parsed.args, checkout);
-  if (early !== undefined) return fail(early);
-  const plan = planRun(parsed.args, checkout);
-  const refusal = planRefusal(plan);
-  if (refusal !== undefined) return fail(refusal);
-  const built = buildCurrentMh(checkout);
+  if (!parsed.ok) return parsed.problem;
+  const record = readProbeRecord(parsed.args, checkout);
+  if (typeof record === 'string') return record;
+  const early = refusalOf(parsed.args, checkout, record);
+  if (early !== undefined) return early;
+  const plan = planRun(parsed.args, checkout, record);
+  return planRefusal(plan) ?? plan;
+}
+
+function execute(plan: RunPlan): number {
+  const built = buildCurrentMh(plan.checkout);
   if (built !== undefined) return finishWith(plan, built, undefined);
   writeText(`${plan.runDir}/plan.json`, `${JSON.stringify(plan, null, 2)}\n`);
   const canary = runCanaries(plan);
   if (canary !== undefined) return finishWith(plan, canary, undefined);
   const tool = runTool(plan);
   writeText(`${plan.runDir}/promptfoo.log`, tool.output);
-  return finishWith(
-    plan,
-    undefined,
-    tool.spawnError === undefined ? undefined : `eval tool could not start (${tool.spawnError})`,
-  );
+  const spawnFailure = tool.spawnError === undefined ? undefined : `eval tool could not start (${tool.spawnError})`;
+  return finishWith(plan, undefined, spawnFailure);
+}
+
+function main(): number {
+  const prepared = prepare(process.cwd());
+  return typeof prepared === 'string' ? fail(prepared) : execute(prepared);
 }
 
 function fail(problem: string): number {

@@ -1,3 +1,4 @@
+import type { ProbeRecord } from '../../../session/host-profile.ts';
 import type { RunArgs } from '../args/run-args.types.ts';
 import type { CanaryKey } from '../canary/canary-keys.types.ts';
 import type { SidecarRow } from '../results/results-reading.types.ts';
@@ -18,7 +19,13 @@ export interface RunPlan {
     readonly maxTurns: number;
     readonly wallClockMs: number;
     readonly tools: readonly string[];
+    /** The recorded probe outcomes the run started with; the provider derives isolation and permissions from them. */
+    readonly probes: ProbeRecord;
+    /** The account's real home, which a scratch home's credential files would be copied from. */
+    readonly home: string;
   };
+  /** A refusal for each cell naming a host no profile knows, read from the configuration. */
+  readonly cellRefusals: readonly string[];
   readonly revision: string;
   readonly dirty: string;
 }

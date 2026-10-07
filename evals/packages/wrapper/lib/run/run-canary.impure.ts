@@ -11,7 +11,7 @@ import { readText } from '../../../platform/host-files.ts';
 import { sessionCause } from '../../../session/classify-session.ts';
 import type { Canary } from '../../../session/delivery-surface.ts';
 import { CHANNELS } from '../../../session/delivery-surface.ts';
-import { isHostName, profileOf } from '../../../session/host-profile.ts';
+import { profileOf } from '../../../session/host-profile.ts';
 import { sourcesFor } from '../../../session/mint-guards.ts';
 import { runTrial } from '../../../session/run-trial.ts';
 import { describeKey } from '../canary/canary-keys.pure.ts';
@@ -20,11 +20,11 @@ import type { RunPlan } from './run-plan.types.ts';
 
 const TARGET = 'docs/research/canary-note.md';
 
-/** The Host harness a key names, with the model its profile canaries with; the key's host was checked before any canary ran. */
+/** The Host harness a key names, with the model its profile canaries with; a key's host is typed, so no fallback exists. */
 function hostOf(plan: RunPlan, key: CanaryKey): Parameters<typeof runTrial>[0]['host'] {
-  const { command, maxTurns, wallClockMs, tools } = plan.host;
-  const name = isHostName(key.host) ? key.host : 'claude-code';
-  return { name, command, model: profileOf(name).canaryModel, maxTurns, wallClockMs, tools };
+  const { command, maxTurns, wallClockMs, tools, probes, home } = plan.host;
+  const model = profileOf(key.host, probes).canaryModel;
+  return { name: key.host, command, model, maxTurns, wallClockMs, tools, probes, home };
 }
 
 /** One steering marker per placeholder the layout's config holds, each drawn for its own carrier. */

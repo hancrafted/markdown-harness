@@ -126,6 +126,8 @@ function trialOn(surface: DeliverySurface, arm: 'steered' | 'neutralised', mode:
       maxTurns: 4,
       wallClockMs: 20_000,
       tools: ['Read', 'Write', 'Edit'],
+      probes: {},
+      home: '',
     },
     task: `Write a note in ${TARGET}.`,
     steeringMarkers: [
@@ -310,6 +312,8 @@ describe('runTrial over a pull surface', () => {
           maxTurns: 4,
           wallClockMs: 20_000,
           tools: ['Read'],
+          probes: {},
+          home: '',
         },
         task: 'x',
         steeringMarkers: [{ steeringMarker: STEERING_MARKER, sweepExpectation: { kind: 'exactly', occurrences: 1 } }],

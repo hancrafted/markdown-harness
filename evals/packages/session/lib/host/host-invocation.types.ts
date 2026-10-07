@@ -15,4 +15,6 @@ export interface AgyArgvInput {
   readonly model: string;
   /** The wall-clock bound; `agy` has no turn cap, so this is the only limit on a session. */
   readonly wallClockMs: number;
+  /** The `--mode` value the scoped permission probe found, passed in place of skipping every permission; undefined skips all. */
+  readonly scopedMode: string | undefined;
 }

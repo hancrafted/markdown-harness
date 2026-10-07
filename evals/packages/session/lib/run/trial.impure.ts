@@ -1,24 +1,26 @@
 // One trial, end to end, with no model unless the Host harness is a real one:
 // mint, sweep, rungs 1 and 2 before the session, then the session itself.
 
-import { environment, nodeExecutable, nowMs } from '../../../platform/host-ambient.ts';
+import { environment, nodeExecutable, nowMs, randomHex } from '../../../platform/host-ambient.ts';
 import {
+  copyFile,
   digestFile,
   digestTree,
+  makeDirectory,
   pathExists,
   readText,
   readTextFiles,
   removeTree,
+  systemTemporaryDirectory,
 } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
 import type { FailureKind } from '../failure/failure-classifier.types.ts';
-import { buildAgyArgv, buildAgyEnvironment } from '../host/agy-invocation.pure.ts';
-import { buildChildEnvironment, buildClaudeArgv } from '../host/host-invocation.pure.ts';
+import { driverOf } from '../host/host-driver.pure.ts';
+import { profileOf } from '../host/host-profile.pure.ts';
+import { credentialCopies } from '../host/scratch-home.pure.ts';
 import { sweepForSteeringMarker } from '../leak/leak-sweep.pure.ts';
 import { mintRoot } from '../mint/mint-root.impure.ts';
 import { checkPullAnswer, checkRung1, checkRung2, pullFailureKind } from '../preflight/preconditions.pure.ts';
-import { parseAgyStream } from '../stream/agy-stream.pure.ts';
-import { parseSessionStream } from '../stream/session-stream.pure.ts';
 import { SHIM_PATH, allowedToolsFor, toolsFor } from '../surface/delivery-surface.pure.ts';
 import type { TrialOutcome, TrialRequest } from './trial.types.ts';
 
@@ -122,36 +124,33 @@ interface SessionRun {
   readonly durationMs: number;
 }
 
-/** The argv, environment and stream parser of the Host harness a request names. */
-function invocationOf(request: TrialRequest): {
-  argv: string[];
-  env: Record<string, string>;
-  parse: typeof parseSessionStream;
-} {
-  if (request.host.name === 'antigravity')
-    return {
-      argv: buildAgyArgv({ task: request.task, model: request.host.model, wallClockMs: request.host.wallClockMs }),
-      env: buildAgyEnvironment(environment()),
-      parse: parseAgyStream,
-    };
-  const argv = buildClaudeArgv({
+/** A scratch home holding only the credential files, for a Host harness whose profile derived scratch-home isolation. */
+function makeScratchHome(realHome: string): string {
+  const scratch = `${systemTemporaryDirectory()}/mh-scratch-home-${randomHex(6)}`;
+  makeDirectory(scratch);
+  for (const copy of credentialCopies(realHome, scratch)) if (pathExists(copy.from)) copyFile(copy.from, copy.to);
+  return scratch;
+}
+
+/** The session's report, run under a scratch home that is deleted afterwards whatever the session did. */
+function runIn(root: string, request: TrialRequest, scratchHome: string | undefined): SessionRun {
+  const profile = profileOf(request.host.name, request.host.probes);
+  const driver = driverOf(request.host.name);
+  const [command, ...prefix] = request.host.command;
+  const argv = driver.argv({
     task: request.task,
     model: request.host.model,
     maxTurns: request.host.maxTurns,
+    wallClockMs: request.host.wallClockMs,
     tools: toolsFor(request.surface.shell, request.host.tools),
     allowedTools: allowedToolsFor(request.surface.shell),
+    scopedMode: profile.scopedMode,
   });
-  return { argv, env: buildChildEnvironment(environment()), parse: parseSessionStream };
-}
-
-function runSession(root: string, request: TrialRequest): SessionRun {
-  const [command, ...prefix] = request.host.command;
-  const invocation = invocationOf(request);
   const report = runProcess({
     command: command ?? '',
-    args: [...prefix, ...invocation.argv],
+    args: [...prefix, ...argv],
     cwd: root,
-    env: invocation.env,
+    env: driver.environment(environment(), scratchHome),
     timeoutMs: request.host.wallClockMs,
   });
   const raw = {
@@ -159,9 +158,20 @@ function runSession(root: string, request: TrialRequest): SessionRun {
     timedOut: report.timedOut,
     stderr: report.stderr,
     exitStatus: report.status,
-    parsed: invocation.parse(report.stdout),
+    parsed: driver.parse(report.stdout),
   };
   return { raw, startedAtMs: report.startedAtMs, durationMs: report.durationMs };
+}
+
+function runSession(root: string, request: TrialRequest): SessionRun {
+  if (profileOf(request.host.name, request.host.probes).isolation !== 'scratch-home')
+    return runIn(root, request, undefined);
+  const scratch = makeScratchHome(request.host.home);
+  try {
+    return runIn(root, request, scratch);
+  } finally {
+    removeTree(scratch);
+  }
 }
 
 export function runTrial(request: TrialRequest): TrialOutcome {

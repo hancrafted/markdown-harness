@@ -53,6 +53,17 @@ describe('buildCohortRow', () => {
   });
 
   describe('edge cases', () => {
+    it('refuses to pair rows that ran under different permission scopes, skip-all and scoped being different cohorts', () => {
+      // ARRANGE
+      const left = { ...complete(), permissionScope: 'skip-all' };
+      const right = { ...complete(), permissionScope: 'scoped:accept-edits' };
+      const expected = { ok: false, differing: ['permissionScope'] };
+      // ACT
+      const actual = pairCohorts(left, right);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('pairs rows that agree on every cohort field and refuses ones that differ', () => {
       // ARRANGE
       const left = { ...complete() };

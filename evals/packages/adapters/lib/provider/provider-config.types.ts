@@ -1,6 +1,6 @@
 import type { SectionScope } from '../../../grading/grade-steering-marker.ts';
 import type { DeliveryChannel, Encoding, ShellScope } from '../../../session/delivery-surface.ts';
-import type { HostName } from '../../../session/host-profile.ts';
+import type { HostName, ProbeRecord } from '../../../session/host-profile.ts';
 import type { ArmKind } from '../../../session/observe-session.ts';
 
 /**
@@ -51,6 +51,8 @@ export interface RunSettings {
     readonly maxTurns: number;
     readonly wallClockMs: number;
     readonly tools: readonly string[];
+    readonly probes: ProbeRecord;
+    readonly home: string;
   };
 }
 

@@ -121,7 +121,10 @@ export function gradeSession(parts: GradeParts): SessionReturn {
   const { settings, cell, call } = parts;
   const observation = observationOf(parts);
   const grades = gradesOf(parts);
-  const row = buildCohortRow(fieldsOf(parts, observation, grades), profileOf(cell.hostName).unobservable);
+  const row = buildCohortRow(
+    fieldsOf(parts, observation, grades),
+    profileOf(cell.hostName, settings.host.probes).unobservable,
+  );
   if (!row.ok)
     return reportFailure({
       settings,
