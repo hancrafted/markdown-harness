@@ -52,10 +52,38 @@ carrier. Twenty samples per model per prompt kind are scanned against every cand
 once, since a candidate's prior does not depend on the others, and a candidate is admitted only
 with zero hits in every cell and the full count. Twenty clean samples bound the unprompted rate
 near fifteen percent: enough to refuse a leaky word, not to certify one. The intent-neutralised
-arm bounds the rest in the full pipeline. A word marker also needs the regex tolerance R5 lists
-(case, plural, quotes), which the screen's hit rule applies. A sample count below twenty is refused
-at the command line and again in the admission rule.
+arm bounds the rest in the full pipeline. A coined word is fragile without edit tolerance (R5), since a model may
+"correct" it toward a real neighbour, so the screen's hit rule counts an answer as saying a candidate
+when any word token in it is within one edit (Levenshtein distance one: a substitution, insertion or
+deletion) of the candidate, or of the candidate plus a plural `s`, case ignored. Quotes and backticks
+fall away because tokens are runs of letters, and a longer word that merely contains the candidate is
+a different token and does not hit. A sample count below twenty is refused at the command line and
+again in the admission rule. The stub flags (`--stub-say`, `--stub-mode`) are refused unless
+`--host stub` is given, and `--candidates` stays on the live entry point so a word drawn earlier or
+proposed by hand can be re-screened against the same sessions.
 
 The pre-screen is built and driven against the stub in the self-test tier. It has not been run on a
 model. Running it is Han's: `npm run evals:prescreen -- --models sonnet` is forty sessions, inside
 the budget; the default three models are one hundred and twenty and need `--allow-over-budget`.
+
+**The session interfaces were revisited for the pre-screen, and nothing was narrowed.** The arms,
+session and grading interfaces keep every export they had, because the pre-screen is a second
+caller that needs a subset of them and the wrapper still needs all of them. Two widenings were
+needed. `session` gained a `host-invocation` root export (`buildClaudeArgv`, `buildChildEnvironment`),
+because the pre-screen builds a Host harness argv and a child environment and the only other route
+was a deep import into `session/lib`, which the entry-point boundary forbids. `arms` gained
+`drawCoinedWord` beside `drawSteeringMarker`, because a coined word is a second marker family drawn
+from the same seed and corpus rule, and its home is the generator that already redraws on a corpus
+collision.
+
+**Deferred and duplicated on purpose.** The decision 22 sentence (whether a key held by repository
+tooling, and an endpoint provider, are within the boundary row about holding a key) is deliberately
+not written here: it gates phase 5 (ARCH-007 3.1), and the pre-screen holds no key, reads no `.env`
+and spawns its child from the environment allow-list. Three small pieces are duplicated between the
+pre-screen and the wrapper rather than shared. The pre-screen's exit derivation (a count short of the
+expectation, session failures, a refused candidate exiting zero) is not the wrapper's `deriveExit`,
+which is private to the wrapper and reads tool result rows the pre-screen does not have; sharing it
+would need a wrapper root export and an edge from one tool-invoked Package to the other's contract.
+The tracked-corpus read in the pre-screen and in `adapters` is two copies of one skip list, differing
+by `runs`; a shared home would need a root export on `adapters` or `session`, neither of which owns
+corpus policy. Each copy carries a comment naming the other, so a change to one is seen from the other.

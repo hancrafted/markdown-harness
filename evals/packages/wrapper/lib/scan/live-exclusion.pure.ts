@@ -37,3 +37,18 @@ export function scanForLiveScripts(input: ScanInput): ScanReport {
   const empty = chain.length === 0 ? ['the scan read nothing: no gate script expanded'] : [];
   return { chain, violations: [...empty, ...fromScripts, ...fromChain, ...fromWorkflows] };
 }
+
+const TOOL_AND_HOST = ['promptfoo', 'claude -p'];
+
+/**
+ * The names a gate chain or workflow must never reach, derived from the manifest so a new live script cannot
+ * be forgotten: every `evals:*` script name, the `run-*` entry file each one invokes, the eval tool, and a
+ * Host harness invocation.
+ */
+export function forbiddenNames(scripts: Readonly<Record<string, string>>): string[] {
+  const live = Object.entries(scripts).filter(([name]) => name.startsWith('evals:'));
+  const entries = live.flatMap(([, command]) =>
+    [...command.matchAll(/\b(run-[\w-]+)\.ts\b/g)].map((match) => match[1] ?? ''),
+  );
+  return [...new Set([...live.map(([name]) => name), ...entries, ...TOOL_AND_HOST])];
+}

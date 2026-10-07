@@ -66,9 +66,42 @@ describe('mentions', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('finds a variant one edit away: a substitution, a deletion, an insertion, or a plural of one', () => {
+      // ARRANGE
+      const word = 'brindlewick';
+      const texts = ['the brindlewock word', 'the brindlewik word', 'the brindlewickk word', 'two brindlewocks'];
+      const expected = [true, true, true, true];
+      // ACT
+      const actual = texts.map((text) => mentions(text, word));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('refuses a candidate in the tally when an answer says a one-edit variant of it', () => {
+      // ARRANGE
+      const samples = [{ model: 'sonnet', prompt: 'task', text: 'Consider a brindlewik here.' }];
+      const expected = [{ model: 'sonnet', prompt: 'task', samples: 1, hits: 1 }];
+      const candidate = 'brindlewick';
+      // ACT
+      const actual = tallyHits(samples, [candidate]).get(candidate);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
+    it('does not find a variant two edits away', () => {
+      // ARRANGE
+      const word = 'brindlewick';
+      const texts = ['the brindlewook word', 'the brindlwik word'];
+      const expected = [false, false];
+      // ACT
+      const actual = texts.map((text) => mentions(text, word));
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('does not find the word in an answer that never says it', () => {
       // ARRANGE
       const word = 'brindlewick';
@@ -192,6 +225,16 @@ describe('admissionVerdicts', () => {
 
 describe('parseScreenArgs', () => {
   describe('success cases', () => {
+    it('accepts the stub flags beside --host stub, in either order', () => {
+      // ARRANGE
+      const forward = ['--host', 'stub', '--stub-say', 'x', '--stub-mode', 'obey'];
+      const reversed = ['--stub-say', 'x', '--stub-mode', 'auth-fail', '--host', 'stub'];
+      // ACT
+      const actual = [parseScreenArgs(forward).ok, parseScreenArgs(reversed).ok];
+      // ASSERT
+      expect(actual).toEqual([true, true]);
+    });
+
     it('defaults to twenty samples and three models', () => {
       // ARRANGE
       const argv: string[] = [];
@@ -205,6 +248,29 @@ describe('parseScreenArgs', () => {
   });
 
   describe('failure cases', () => {
+    it('refuses a stub flag on a live run, whichever flag and wherever it stands', () => {
+      // ARRANGE
+      const argvs = [
+        ['--stub-say', 'x'],
+        ['--stub-mode', 'obey'],
+        ['--host', 'claude', '--stub-say', 'x'],
+        ['--stub-say', 'x', '--host', 'claude'],
+      ];
+      // ACT
+      const actual = argvs.map((argv) => parseScreenArgs(argv).ok);
+      // ASSERT
+      expect(actual).toEqual([false, false, false, false]);
+    });
+
+    it('refuses a stub mode the stub does not have', () => {
+      // ARRANGE
+      const argv = ['--host', 'stub', '--stub-mode', 'obay'];
+      // ACT
+      const actual = parseScreenArgs(argv);
+      // ASSERT
+      expect(actual.ok).toBe(false);
+    });
+
     it('refuses a sample count below twenty as misuse', () => {
       // ARRANGE
       const argv = ['--samples', '19'];

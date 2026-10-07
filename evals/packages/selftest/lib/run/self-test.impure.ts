@@ -33,7 +33,8 @@ interface Execution {
   readonly runDir: string | undefined;
 }
 
-function wrapper(extra: readonly string[], script = WRAPPER): Execution {
+/** Runs one eval script under node with a bare PATH and HOME environment, and reads its exit code and run directory. */
+function runEvalScript(script: string, extra: readonly string[]): Execution {
   const env = { PATH: environment().PATH ?? '', HOME: environment().HOME ?? '' };
   const report = runProcess({
     command: nodeExecutable(),
@@ -44,6 +45,10 @@ function wrapper(extra: readonly string[], script = WRAPPER): Execution {
   });
   const runLine = /^run \S+, seed recorded in (.+)$/m.exec(report.stdout);
   return { exitCode: report.status ?? -1, stdout: `${report.stdout}${report.stderr}`, runDir: runLine?.[1] };
+}
+
+function runWrapper(extra: readonly string[]): Execution {
+  return runEvalScript(WRAPPER, extra);
 }
 
 function textOf(dir: string | undefined, name: string): string {
@@ -75,7 +80,7 @@ function trialsArgs(seed: string, extra: readonly string[] = []): string[] {
 }
 
 function matrixFindings(): Finding[] {
-  const twice = [wrapper(trialsArgs('self-a')), wrapper(trialsArgs('self-b'))];
+  const twice = [runWrapper(trialsArgs('self-a')), runWrapper(trialsArgs('self-b'))];
   return judgeMatrix(twice.map(matrixRun), {
     invocationsPerRun: invocationsPerRun(),
     runs: twice.length,
@@ -84,10 +89,10 @@ function matrixFindings(): Finding[] {
 }
 
 function breakFindings(): Finding[] {
-  const concurrency = wrapper(trialsArgs('self-d', ['--break', 'concurrency']));
+  const concurrency = runWrapper(trialsArgs('self-d', ['--break', 'concurrency']));
   const cacheOn = [
-    wrapper(trialsArgs('self-e', ['--break', 'cache'])),
-    wrapper(trialsArgs('self-e', ['--break', 'cache'])),
+    runWrapper(trialsArgs('self-e', ['--break', 'cache'])),
+    runWrapper(trialsArgs('self-e', ['--break', 'cache'])),
   ];
   return judgeBreaks(
     { concurrency: matrixRun(concurrency), cacheOn: cacheOn.map(matrixRun) },
@@ -104,7 +109,7 @@ function matrixArgs(matrix: string, seed: string, extra: readonly string[] = [])
 }
 
 function pullFindings(): Finding[] {
-  const pull = wrapper(matrixArgs('pull', 'self-p'));
+  const pull = runWrapper(matrixArgs('pull', 'self-p'));
   return [
     expectExit('the pull matrix runs end to end and exits zero', pull, 0),
     expectOutput(
@@ -117,7 +122,7 @@ function pullFindings(): Finding[] {
 }
 
 function carrierFindings(): Finding[] {
-  const carriers = wrapper(matrixArgs('carriers', 'self-q', ['--stub-mode', 'partial']));
+  const carriers = runWrapper(matrixArgs('carriers', 'self-q', ['--stub-mode', 'partial']));
   return [
     expectExit('a partial profile over two carriers is graded, exit zero', carriers, 0),
     expectOutput(
@@ -134,7 +139,7 @@ function carrierFindings(): Finding[] {
 }
 
 function shellFindings(): Finding[] {
-  const shell = wrapper(matrixArgs('push', 'self-r', ['--stub-mode', 'shell']));
+  const shell = runWrapper(matrixArgs('push', 'self-r', ['--stub-mode', 'shell']));
   return [
     expectExit('shell-created files are graded, exit zero', shell, 0),
     expectOutput(
@@ -151,7 +156,7 @@ function shellFindings(): Finding[] {
 }
 
 function pullCanaryFindings(): Finding[] {
-  const deadPull = wrapper(matrixArgs('pull', 'self-s', ['--stub-mode', 'ignore']));
+  const deadPull = runWrapper(matrixArgs('pull', 'self-s', ['--stub-mode', 'ignore']));
   return [
     expectExit('a pull command that never runs fails the pull canary, an instrument failure, exit one', deadPull, 1),
     expectOutput(
@@ -169,30 +174,36 @@ function surfaceFindings(): Finding[] {
 
 function screen(extra: readonly string[]): Execution {
   const base = ['--host', 'stub', '--models', 'sonnet', '--candidates', 'quelmarvin,tolrafeso', '--seed', 'self-t'];
-  return wrapper([...base, ...extra], PRESCREEN);
+  return runEvalScript(PRESCREEN, [...base, ...extra]);
 }
 
 /** Phase 3: the pooled word-family pre-screen, driven against the stub with no model. */
 function prescreenFindings(): Finding[] {
   const clean = screen([]);
   const leaky = screen(['--stub-say', 'quelmarvin']);
-  const broken = screen(['--stub-mode', 'auth-fail']);
+  const failing = screen(['--stub-mode', 'auth-fail']);
   return [
     expectExit('a clean pre-screen exits zero', clean, 0),
     expectOutput('pre-screen: zero hits admits every candidate', clean, /2 of 2 candidates admitted/),
+    expectOutput(
+      'pre-screen: a one-edit variant of a candidate refuses it',
+      screen(['--stub-say', 'quelmarvim']),
+      /quelmarvin: REFUSED/,
+    ),
+    expectExit('a stub flag without --host stub is misuse, exit two', runEvalScript(PRESCREEN, ['--stub-say', 'x']), 2),
     expectExit('a leaked word is a result, not an instrument failure, exit zero', leaky, 0),
     expectOutput('pre-screen: the planted word is refused', leaky, /quelmarvin: REFUSED/),
     expectOutput('pre-screen: the unplanted word is still admitted', leaky, /tolrafeso: admitted/),
-    expectExit('a pre-screen whose sessions fail is an instrument failure, exit one', broken, 1),
+    expectExit('a pre-screen whose sessions fail is an instrument failure, exit one', failing, 1),
     expectExit('a sample count below twenty is misuse, exit two', screen(['--samples', '19']), 2),
     expectExit('a pre-screen over the session budget is misuse, exit two', screen(['--models', 'a,b,c']), 2),
   ];
 }
 
 function scenarios(): Finding[] {
-  const deaf = wrapper(trialsArgs('self-c', ['--stub-mode', 'deaf']));
-  const auth = wrapper(['--host', 'stub', '--trials', '1', '--stub-mode', 'auth-fail']);
-  const missing = wrapper(['--host', 'claude', '--host-binary', '/nonexistent/claude', '--trials', '1']);
+  const deaf = runWrapper(trialsArgs('self-c', ['--stub-mode', 'deaf']));
+  const auth = runWrapper(['--host', 'stub', '--trials', '1', '--stub-mode', 'auth-fail']);
+  const missing = runWrapper(['--host', 'claude', '--host-binary', '/nonexistent/claude', '--trials', '1']);
   return [
     ...matrixFindings(),
     ...breakFindings(),
@@ -206,7 +217,7 @@ function scenarios(): Finding[] {
     },
     expectExit('an authentication failure is an instrument failure, exit one', auth, 1),
     expectExit('a missing Host harness binary is an instrument failure, exit one', missing, 1),
-    expectExit('a mistyped argument is misuse, exit two', wrapper(['--trails', '1']), 2),
+    expectExit('a mistyped argument is misuse, exit two', runWrapper(['--trails', '1']), 2),
   ];
 }
 

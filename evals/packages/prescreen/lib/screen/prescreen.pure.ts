@@ -9,7 +9,15 @@
 // a leaky word, never to certify one. The neutralised arm bounds the rest.
 
 import { drawCoinedWord } from '../../../arms/steering-markers.ts';
-import type { CellTally, ScreenArgs, ScreenArgsResult, ScreenSample, Verdict } from './prescreen.types.ts';
+import type {
+  CellTally,
+  ScreenArgs,
+  ScreenArgsResult,
+  ScreenCell,
+  ScreenSample,
+  StubMode,
+  Verdict,
+} from './prescreen.types.ts';
 
 export const MIN_SAMPLES = 20;
 const SESSION_LIMIT = 40;
@@ -17,6 +25,7 @@ const SESSION_LIMIT = 40;
 export const PROMPTS = ['task', 'task-plus-first-half'] as const;
 const DEFAULT_MODELS = ['sonnet', 'haiku', 'opus'];
 const DEFAULT_POOL = 6;
+const STUB_MODES: readonly StubMode[] = ['obey', 'deaf', 'ignore', 'partial', 'shell', 'auth-fail', 'slow'];
 const FLAGS = [
   '--host',
   '--models',
@@ -43,28 +52,56 @@ export function poolCandidates(request: { seed: string; count: number; corpus: s
   return pool;
 }
 
-/** Whether a sampled answer says the word: any case, quoted or backticked, plain plural, never inside a longer word. */
-export function mentions(text: string, word: string): boolean {
-  return new RegExp(`(?<![a-z])${word}s?(?![a-z])`, 'i').test(text);
+/** Edits between two words, counting a substitution, an insertion and a deletion as one each. */
+function editDistance(left: string, right: string): number {
+  let previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= left.length; row += 1) previous = nextRow(previous, [row, left[row - 1] ?? ''], right);
+  return previous[right.length] ?? 0;
 }
 
-function cellOf(tallies: CellTally[], sample: ScreenSample): CellTally | undefined {
-  return tallies.find((cell) => cell.model === sample.model && cell.prompt === sample.prompt);
+function nextRow(previous: readonly number[], [row, letter]: readonly [number, string], right: string): number[] {
+  const current = [row];
+  for (let column = 1; column <= right.length; column += 1) {
+    const substitution = (previous[column - 1] ?? 0) + (letter === right[column - 1] ? 0 : 1);
+    current.push(Math.min(substitution, (previous[column] ?? 0) + 1, (current[column - 1] ?? 0) + 1));
+  }
+  return current;
+}
+
+/**
+ * Whether a sampled answer says the word or a near copy of it: any case, quoted or backticked, a plain
+ * plural, and any word token one edit away (R5: a coined word is fragile unless the regex tolerates one
+ * edit, because a model may "correct" it toward a real neighbour). Tokens are runs of letters, so a
+ * longer word that merely contains the candidate is a different token and does not match.
+ */
+export function mentions(text: string, word: string): boolean {
+  const target = word.toLowerCase();
+  const tokens = text.toLowerCase().match(/[a-z]+/g) ?? [];
+  return tokens.some(
+    (token) =>
+      editDistance(token, target) <= 1 || (token.endsWith('s') && editDistance(token.slice(0, -1), target) <= 1),
+  );
+}
+
+function cellKey(cell: ScreenCell): string {
+  return `${cell.model}/${cell.prompt}`;
+}
+
+function tallyOne(samples: readonly ScreenSample[], candidate: string): CellTally[] {
+  const cells = new Map<string, CellTally>();
+  for (const sample of samples) {
+    const cell = cells.get(cellKey(sample)) ?? { model: sample.model, prompt: sample.prompt, samples: 0, hits: 0 };
+    cells.set(cellKey(sample), {
+      ...cell,
+      samples: cell.samples + 1,
+      hits: cell.hits + (mentions(sample.text, candidate) ? 1 : 0),
+    });
+  }
+  return [...cells.values()];
 }
 
 export function tallyHits(samples: readonly ScreenSample[], candidates: readonly string[]): Map<string, CellTally[]> {
-  const result = new Map<string, CellTally[]>(candidates.map((candidate) => [candidate, []]));
-  for (const candidate of candidates) {
-    const cells: CellTally[] = [];
-    for (const sample of samples) {
-      const hit = mentions(sample.text, candidate) ? 1 : 0;
-      const cell = cellOf(cells, sample);
-      if (cell === undefined) cells.push({ model: sample.model, prompt: sample.prompt, samples: 1, hits: hit });
-      else cells.splice(cells.indexOf(cell), 1, { ...cell, samples: cell.samples + 1, hits: cell.hits + hit });
-    }
-    result.set(candidate, cells);
-  }
-  return result;
+  return new Map(candidates.map((candidate) => [candidate, tallyOne(samples, candidate)]));
 }
 
 function reasonsFor(cells: readonly CellTally[], required: number): string[] {
@@ -113,6 +150,10 @@ function listOf(value: string): string[] {
   return value.split(',').filter((part) => part !== '');
 }
 
+function isStubMode(value: string): value is StubMode {
+  return (STUB_MODES as readonly string[]).includes(value);
+}
+
 type Setter = (args: ScreenArgs, value: string) => ScreenArgs | string;
 
 function atLeast(name: string, floor: number, set: (args: ScreenArgs, count: number) => ScreenArgs): Setter {
@@ -130,7 +171,8 @@ const SETTERS: Readonly<Record<string, Setter>> = {
   '--models': (args, value) => ({ ...args, models: listOf(value) }),
   '--candidates': (args, value) => ({ ...args, candidates: listOf(value) }),
   '--seed': (args, value) => ({ ...args, seed: value }),
-  '--stub-mode': (args, value) => ({ ...args, stubMode: value }),
+  '--stub-mode': (args, value) =>
+    isStubMode(value) ? { ...args, stubMode: value } : `--stub-mode is one of ${STUB_MODES.join(', ')}, not ${value}`,
   '--stub-say': (args, value) => ({ ...args, stubSay: value }),
 };
 
@@ -154,7 +196,19 @@ export function parseScreenArgs(argv: readonly string[]): ScreenArgsResult {
     args = next;
     index += 1;
   }
-  return { ok: true, args };
+  return finished(argv, args);
+}
+
+function finished(argv: readonly string[], args: ScreenArgs): ScreenArgsResult {
+  const stray = strayStubFlag(argv, args);
+  return stray === undefined ? { ok: true, args } : { ok: false, problem: stray };
+}
+
+/** The seams the self-test drives are not for a live run: a stub flag is refused unless `--host stub` is given, wherever it stands. */
+function strayStubFlag(argv: readonly string[], args: ScreenArgs): string | undefined {
+  if (args.host === 'stub') return undefined;
+  const flag = argv.find((part) => part === '--stub-say' || part === '--stub-mode');
+  return flag === undefined ? undefined : `${flag} is a self-test seam and needs --host stub`;
 }
 
 /** The report lines: per candidate, admitted or refused with the cells that refused it. */

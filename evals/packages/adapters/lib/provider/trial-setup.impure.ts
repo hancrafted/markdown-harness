@@ -11,6 +11,8 @@ import { derivationArmFor, fillClause, surfaceOf, taskFor } from './provider-con
 import type { CaseCarrier } from './provider-config.types.ts';
 import type { Prepared, PreparedCarrier, TrialParts } from './session-record.types.ts';
 
+// Deliberately a second copy of the list in `prescreen/lib/run/prescreen-inputs.impure.ts`, which adds `runs`;
+// see the comment there for why no shared home exists.
 const CORPUS_SKIP = ['node_modules', 'dist', '.git', '.worktrees', '.claude', '.scratch'];
 
 function corpusOf(checkout: string): string {

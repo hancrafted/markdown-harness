@@ -6,31 +6,21 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { scanForLiveScripts } from './live-exclusion.pure.ts';
+import { forbiddenNames, scanForLiveScripts } from './live-exclusion.pure.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../..');
-const REAL_FORBIDDEN = [
-  'evals:live',
-  'evals:self-test',
-  'promptfoo',
-  'claude -p',
-  'run-evals',
-  'run-self-test',
-  'evals:prescreen',
-  'run-prescreen',
-];
-
-function realInput() {
+function realInput(addedScripts: Record<string, string> = {}) {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts: Record<string, string> };
+  const scripts = { ...manifest.scripts, ...addedScripts };
   const readDirectory = (directory: string) =>
     readdirSync(join(ROOT, directory))
       .filter((name) => /\.ya?ml$|^pre-|^commit-msg$/.test(name))
       .map((name) => [`${directory}/${name}`, readFileSync(join(ROOT, directory, name), 'utf8')] as const);
   return {
-    scripts: manifest.scripts,
+    scripts,
     gateScripts: ['verify', 'verify:commit'],
     workflows: Object.fromEntries([...readDirectory('.github/workflows'), ...readDirectory('.husky')]),
-    forbidden: REAL_FORBIDDEN,
+    forbidden: forbiddenNames(scripts),
   };
 }
 
@@ -56,6 +46,59 @@ function scan(overrides: object = {}) {
     ...overrides,
   });
 }
+
+describe('forbiddenNames', () => {
+  describe('success cases', () => {
+    it('names every evals script, the entry file each runs, the eval tool and a Host harness invocation', () => {
+      // ARRANGE
+      const scripts = {
+        verify: 'vitest run',
+        'evals:x': 'node evals/packages/x/run-x.ts --flag',
+        'evals:y': 'npx tool',
+      };
+      const expected = ['evals:x', 'evals:y', 'run-x', 'promptfoo', 'claude -p'];
+      // ACT
+      const actual = forbiddenNames(scripts);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('goes red on the real repository once a new evals script is planted in the verify chain', () => {
+      // ARRANGE
+      const added = { 'evals:x': 'node evals/packages/x/run-x.ts' };
+      const input = realInput(added);
+      const planted = { ...input, scripts: { ...input.scripts, verify: `${input.scripts.verify} && npm run evals:x` } };
+      const expected = 'the gate chain reaches evals:x';
+      // ACT
+      const report = scanForLiveScripts(planted);
+      // ASSERT
+      expect(report.violations).toContain(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('does not name a script that only mentions evals in its command', () => {
+      // ARRANGE
+      const scripts = { 'lint:boundaries': 'depcruise src evals' };
+      const notExpected = 'lint:boundaries';
+      // ACT
+      const actual = forbiddenNames(scripts);
+      // ASSERT
+      expect(actual).not.toContain(notExpected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('names only the eval tool and the Host harness invocation when no script is an evals script', () => {
+      // ARRANGE
+      const expected = ['promptfoo', 'claude -p'];
+      // ACT
+      const actual = forbiddenNames({ verify: 'vitest run' });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});
 
 describe('scanForLiveScripts', () => {
   describe('success cases', () => {
