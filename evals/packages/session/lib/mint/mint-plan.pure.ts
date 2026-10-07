@@ -20,7 +20,7 @@ export function checkParentChain(chain: readonly AncestorListing[]): string[] {
 }
 
 function hookStep(script: string): CopyStep {
-  return { from: script, to: `hooks/${script.slice(script.lastIndexOf('/') + 1)}` };
+  return { from: script, to: `.agents/skills/markdown-harness/scripts/${script.slice(script.lastIndexOf('/') + 1)}` };
 }
 
 export function planCopies(sources: MintSources): CopyStep[] {
@@ -63,4 +63,18 @@ export function checkMintedTree(tree: readonly TreeEntry[]): string[] {
 /** An opaque path names no arm and no eval; the whole path is read, case-insensitively. */
 export function isOpaquePath(path: string): boolean {
   return !GIVEAWAY_WORDS.test(path);
+}
+
+const SKILL_SCRIPTS = '.agents/skills/markdown-harness/scripts';
+
+/** The copy sources for one case, from the checkout root and the case's seed directory (relative to it). */
+export function sourcesFor(checkout: string, seedRelative: string): MintSources {
+  return {
+    seedDir: `${checkout}/${seedRelative}`,
+    mhDist: `${checkout}/dist`,
+    mhManifest: `${checkout}/package.json`,
+    markedDir: `${checkout}/node_modules/marked`,
+    yamlDir: `${checkout}/node_modules/yaml`,
+    hookScripts: [`${checkout}/${SKILL_SCRIPTS}/query-hook.mjs`],
+  };
 }

@@ -3,7 +3,14 @@
 // green forever.
 
 import { describe, expect, it } from 'vitest';
-import { checkMintedTree, checkParentChain, heldOutViolations, isOpaquePath, planCopies } from './mint-plan.pure.ts';
+import {
+  checkMintedTree,
+  checkParentChain,
+  heldOutViolations,
+  isOpaquePath,
+  planCopies,
+  sourcesFor,
+} from './mint-plan.pure.ts';
 
 const SOURCES = {
   seedDir: '/repo/evals/suites/steering/seed/research',
@@ -70,7 +77,7 @@ describe('planCopies', () => {
         'node_modules/@hancrafted/markdown-harness/package.json',
         'node_modules/marked',
         'node_modules/yaml',
-        'hooks/query-hook.mjs',
+        '.agents/skills/markdown-harness/scripts/query-hook.mjs',
       ];
       // ACT
       const plan = planCopies(SOURCES);
@@ -189,6 +196,43 @@ describe('isOpaquePath', () => {
       const actual = isOpaquePath(path);
       // ASSERT
       expect(actual).toBe(false);
+    });
+  });
+});
+
+describe('sourcesFor', () => {
+  describe('success cases', () => {
+    it('roots every source at the checkout and the seed at the case seed directory', () => {
+      // ARRANGE
+      const expected = { seedDir: '/co/seed/x', mhDist: '/co/dist' };
+      // ACT
+      const sources = sourcesFor('/co', 'seed/x');
+      // ASSERT
+      expect(sources).toMatchObject(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('never lists the held-out cases directory among its sources', () => {
+      // ARRANGE
+      const held = '/co/evals/suites/steering/cases';
+      // ACT
+      const violations = heldOutViolations(planCopies(sourcesFor('/co', 'evals/suites/steering/seed/research-note')), [
+        held,
+      ]);
+      // ASSERT
+      expect(violations).toEqual([]);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('names exactly one hook script, the unmodified query hook', () => {
+      // ARRANGE
+      const expected = ['/co/.agents/skills/markdown-harness/scripts/query-hook.mjs'];
+      // ACT
+      const actual = sourcesFor('/co', 's').hookScripts;
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
   });
 });
