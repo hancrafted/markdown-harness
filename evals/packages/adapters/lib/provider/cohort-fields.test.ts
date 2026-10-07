@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { rungObservations } from '../../../grading/localise-rung.ts';
 import { COHORT_FIELDS, buildCohortRow } from '../../../session/cohort-row.ts';
-import { carrierHitsOf, cohortFields, hitOf, localisedText } from './cohort-fields.pure.ts';
+import { carrierHitsOf, cohortFields, localisedText } from './cohort-fields.pure.ts';
 type CohortSources = Parameters<typeof cohortFields>[0];
 
 const SOURCES: CohortSources = {
@@ -143,22 +143,13 @@ describe('cohortFields', () => {
 const HIT = { present: true, placed: true, count: 1, fenceCount: 0, frontmatterCount: 0 };
 const MISS = { present: false, placed: null, count: 0, fenceCount: 0, frontmatterCount: 0 };
 
-describe('the hit over several tested carriers', () => {
+describe('the carrier profile over several tested carriers', () => {
   describe('success cases', () => {
-    it('counts a steered hit only when every steering marker is present, so a partial profile is a miss', () => {
+    it('keys each carrier address to whether its steering marker is in the final file', () => {
       // ARRANGE
-      const expected = [true, false];
+      const expected = { a: true, b: false };
       // ACT
-      const actual = [hitOf('steered', [HIT, HIT]), hitOf('steered', [HIT, MISS])];
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('counts an intent-neutralised hit when any one steering marker is present, since that is a leak', () => {
-      // ARRANGE
-      const expected = [true, false];
-      // ACT
-      const actual = [hitOf('neutralised', [MISS, HIT]), hitOf('neutralised', [MISS, MISS])];
+      const actual = carrierHitsOf(['a', 'b'], [HIT, MISS]);
       // ASSERT
       expect(actual).toEqual(expected);
     });

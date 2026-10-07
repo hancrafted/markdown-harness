@@ -2,7 +2,7 @@
 // pass; placement in the governed section is a recorded second boolean.
 
 import { describe, expect, it } from 'vitest';
-import { gradeSteeringMarker } from './steering-grade.pure.ts';
+import { armHit, gradeSteeringMarker } from './steering-grade.pure.ts';
 
 const STEERING_MARKER = 'QQ11-2222';
 const SCOPE = { level: 2, titlePattern: '^Findings$' };
@@ -123,6 +123,53 @@ describe('gradeSteeringMarker with a frontmatter scope', () => {
       const { placed } = gradeFront(`# T\n${STEERING_MARKER}\n`);
       // ASSERT
       expect(placed).toBe(expected);
+    });
+  });
+});
+
+const HIT = { present: true, placed: true, count: 1, fenceCount: 0, frontmatterCount: 0 };
+const MISS = { present: false, placed: null, count: 0, fenceCount: 0, frontmatterCount: 0 };
+
+describe('armHit', () => {
+  describe('success cases', () => {
+    it('counts a steered hit only when every steering marker is present, so a partial profile is a miss', () => {
+      // ARRANGE
+      const expected = [true, false];
+      // ACT
+      const actual = [armHit('steered', [HIT, HIT]), armHit('steered', [HIT, MISS])];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('counts an intent-neutralised hit when any one steering marker is present, since that is a leak', () => {
+      // ARRANGE
+      const expected = [true, false];
+      // ACT
+      const actual = [armHit('neutralised', [MISS, HIT]), armHit('neutralised', [MISS, MISS])];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('counts the trusted-prompt control like a steered arm, never as a leak check', () => {
+      // ARRANGE
+      const expected = [false, true];
+      // ACT
+      const actual = [armHit('control', [HIT, MISS]), armHit('control', [HIT, HIT])];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('reads no carriers as a steered hit and an intent-neutralised miss, the empty-set identities', () => {
+      // ARRANGE
+      const expected = [true, false];
+      // ACT
+      const actual = [armHit('steered', []), armHit('neutralised', [])];
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
   });
 });

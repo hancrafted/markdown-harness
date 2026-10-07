@@ -4,7 +4,7 @@
 // output. A failed canary is an instrument failure for every cell sharing the
 // configuration; after a passing canary, a hook that did not fire is graded rung 3.
 
-import { queryCalls } from '../observe/delivery.pure.ts';
+import { queryCalls, resultOf } from '../observe/delivery.pure.ts';
 import type { SessionEvent } from '../stream/session-stream.types.ts';
 
 export function evaluateCanary(events: readonly SessionEvent[]): string | undefined {
@@ -23,11 +23,8 @@ export function evaluateCanary(events: readonly SessionEvent[]): string | undefi
 export function evaluatePullCanary(events: readonly SessionEvent[]): string | undefined {
   const calls = queryCalls(events);
   if (calls.length === 0) return 'canary failed: the pull command never ran';
-  const results = calls.flatMap((call) =>
-    events.filter((event) => event.kind === 'tool-result' && event.id === call.id),
-  );
-  const answered = results.some(
-    (result) => result.kind === 'tool-result' && !result.isError && result.text.trim() !== '',
-  );
+  const answered = calls
+    .map((call) => resultOf(events, call))
+    .some((result) => result?.kind === 'tool-result' && !result.isError && result.text.trim() !== '');
   return answered ? undefined : 'canary failed: the pull command ran and answered with an error or nothing';
 }

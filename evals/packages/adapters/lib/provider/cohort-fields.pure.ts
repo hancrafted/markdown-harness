@@ -2,15 +2,11 @@
 // comes from the session, the case or the run's settings; none is defaulted.
 
 import type { SteeringGrade } from '../../../grading/grade-steering-marker.ts';
+import { armHit } from '../../../grading/grade-steering-marker.ts';
 import type { Localisation, RungObservation } from '../../../grading/localise-rung.ts';
 import { observableTable } from '../../../grading/localise-rung.ts';
 import type { InitFacts, ResultFacts } from '../../../session/session-stream.ts';
 import type { CohortSources } from './session-record.types.ts';
-
-/** The hit as the summary counts it: every steering marker present, or in the intent-neutralised arm any one (a leak). */
-export function hitOf(arm: string, grades: readonly SteeringGrade[]): boolean {
-  return arm === 'neutralised' ? grades.some((grade) => grade.present) : grades.every((grade) => grade.present);
-}
 
 /** Per tested carrier, whether its steering marker is in the final file, keyed by the carrier's address. */
 export function carrierHitsOf(addresses: readonly string[], grades: readonly SteeringGrade[]): Record<string, boolean> {
@@ -85,7 +81,7 @@ function steeringFields(sources: CohortSources): Record<string, unknown> {
   const { grades, addresses, observation, cell } = sources;
   const hits = carrierHitsOf(addresses, grades);
   return {
-    steeringMarkerPresent: hitOf(cell.arm, grades),
+    steeringMarkerPresent: armHit(cell.arm, grades),
     steeringMarkerPlaced: placedOf(grades),
     steeringMarkerCount: sum(grades, (grade) => grade.count),
     steeringMarkerFenceCount: sum(grades, (grade) => grade.fenceCount),

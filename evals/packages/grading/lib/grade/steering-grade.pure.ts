@@ -47,3 +47,11 @@ export function gradeSteeringMarker(input: GradeInput): SteeringGrade {
     frontmatterCount: occurrences(frontmatterOf(file), input.steeringMarker),
   };
 }
+
+/**
+ * The hit as the summary counts it, and the one rule for the arm: every steering marker present, or in the
+ * intent-neutralised arm any one present (a leak). The assertion passes a neutralised trial when this is false.
+ */
+export function armHit(arm: string, grades: readonly SteeringGrade[]): boolean {
+  return arm === 'neutralised' ? grades.some((grade) => grade.present) : grades.every((grade) => grade.present);
+}

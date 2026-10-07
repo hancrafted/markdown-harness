@@ -9,7 +9,9 @@ import { commandOf } from './creation.pure.ts';
 import type { Delivery, ToolCall } from './session-observation.types.ts';
 
 const NOTICE_PATH = /markdown-harness: (\S+) is a new file/;
-const QUERY_PATH = /\bmh query\s+(?:--\S+\s+)*["']?([^\s"']+)/;
+/** The one pattern for a shell command that ran the query command. */
+export const QUERY_COMMAND = /\bmh query\b/;
+const QUERY_PATH = new RegExp(`${QUERY_COMMAND.source}\\s+(?:--\\S+\\s+)*["']?([^\\s"']+)`);
 
 function holdsAll(text: string, steeringMarkers: readonly string[]): boolean {
   return steeringMarkers.every((steeringMarker) => text.includes(steeringMarker));
@@ -23,11 +25,12 @@ function pushDelivery(events: readonly SessionEvent[], steeringMarkers: readonly
 /** The shell calls that ran the query command. */
 export function queryCalls(events: readonly SessionEvent[]): ToolCall[] {
   return events.filter(
-    (event): event is ToolCall => event.kind === 'tool-call' && /\bmh query\b/.test(commandOf(event)),
+    (event): event is ToolCall => event.kind === 'tool-call' && QUERY_COMMAND.test(commandOf(event)),
   );
 }
 
-function resultOf(events: readonly SessionEvent[], call: ToolCall): SessionEvent | undefined {
+/** The tool result that answered a call, or undefined when the stream holds none. */
+export function resultOf(events: readonly SessionEvent[], call: ToolCall): SessionEvent | undefined {
   return events.find((event) => event.kind === 'tool-result' && event.id === call.id);
 }
 

@@ -3,7 +3,7 @@
 // reached the final file; an intent-neutralised trial passes when none did.
 
 import type { SectionScope } from '../../../grading/grade-steering-marker.ts';
-import { gradeSteeringMarker } from '../../../grading/grade-steering-marker.ts';
+import { armHit, gradeSteeringMarker } from '../../../grading/grade-steering-marker.ts';
 import type { AssertionResult } from './steering-assertion.types.ts';
 
 type Metadata = Readonly<Record<string, unknown>> | undefined;
@@ -59,6 +59,7 @@ export function gradeSteeringAssertion(output: string, metadata: Metadata): Asse
   const seen = spec.carriers.map((carrier) =>
     gradeSteeringMarker({ finalFile, steeringMarker: carrier.steeringMarker, scope: carrier.scope }),
   );
-  const pass = spec.arm === 'neutralised' ? seen.every((one) => !one.present) : seen.every((one) => one.present);
+  const hit = armHit(spec.arm, seen);
+  const pass = spec.arm === 'neutralised' ? !hit : hit;
   return { pass, score: pass ? 1 : 0, reason: reasonFor(spec, seen, metadata) };
 }
