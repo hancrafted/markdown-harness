@@ -24,11 +24,13 @@ after the config key it exercises. Run one by hand, or through the runner's own 
 
 ```sh
 cd fixtures/conformance/body-structure/docs/minCount__zero && npx mh | diff - expected-check.json
-npm run conformance -- --path body-structure/docs/minCount__zero
+npm run conformance --path body-structure/docs/minCount__zero
 ```
 
 `npm run conformance` with no path runs every tier, which is what `npm run verify` and CI run.
-`--path` takes one or more paths and may repeat; a bare path works as one `--path`. The script
+`--path` takes one or more paths and may repeat; a bare path works as one `--path`. npm reads
+`--path` as its own config and warns that it does not know it; the script reads the paths anyway, and
+`npm run -s` hides the warning. The script
 exits 0 when everything agrees, 1 when anything disagrees, and 2 when a path is refused.
 
 Build first: both run the compiled `mh` under `dist/`.
@@ -66,7 +68,7 @@ shape over every case, and holds a Module prefix to a top-level key the case's o
 **Run one case the way a human does.** `cd` into a case directory and run `npx mh`: inside it the
 config is the adopter's default file name, so `mh` finds it with no flag, and every location it
 prints is the bare file name or the config's own key path — exactly as `expected-rejection.json`
-spells it. `npm run conformance -- rejected-config/<case>` does the same and prints the config's
+spells it. `npm run conformance --path rejected-config/<case>` does the same and prints the config's
 opening comment, then each frozen file against what `mh` printed, with a diff where one disagrees.
 The tier runner calls the same comparison for every case. A case that freezes the whole envelope,
 `expected-check-response.json`, freezes it as `mh` prints it there: root `.` and the bare config

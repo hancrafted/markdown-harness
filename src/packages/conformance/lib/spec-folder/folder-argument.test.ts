@@ -120,14 +120,47 @@ describe('conformanceArgumentsOf', () => {
       // ASSERT
       expect(actual).toEqual(expected);
     });
+
+    it('reads the paths npm passes on bare when it swallows --path typed without --', () => {
+      // ARRANGE
+      const argv = ['body-structure/docs/a', 'integrated/docs/b'];
+      const npmPath = 'true\n\ntrue';
+      const expected = { kind: 'paths', paths: ['body-structure/docs/a', 'integrated/docs/b'] };
+      // ACT
+      const actual = conformanceArgumentsOf(argv, npmPath);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reads --path=<path> typed without --, which npm hands over only as its config value', () => {
+      // ARRANGE
+      const npmPath = 'body-structure/docs/a';
+      const expected = { kind: 'paths', paths: ['body-structure/docs/a'] };
+      // ACT
+      const actual = conformanceArgumentsOf([], npmPath);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
+    it('refuses --path typed without -- and with no path, rather than running every tier', () => {
+      // ARRANGE
+      const expected = {
+        kind: 'refused',
+        reason: '--path names no path — usage: npm run conformance [--path <path> [<path> ...]]',
+      };
+      // ACT
+      const actual = conformanceArgumentsOf([], 'true');
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses --path that names no path, with the usage', () => {
       // ARRANGE
       const expected = {
         kind: 'refused',
-        reason: '--path names no path — usage: npm run conformance [-- --path <path> [<path> ...]]',
+        reason: '--path names no path — usage: npm run conformance [--path <path> [<path> ...]]',
       };
       // ACT
       const actual = conformanceArgumentsOf(['--path']);
@@ -139,7 +172,7 @@ describe('conformanceArgumentsOf', () => {
       // ARRANGE
       const expected = {
         kind: 'refused',
-        reason: 'unknown option --paths — usage: npm run conformance [-- --path <path> [<path> ...]]',
+        reason: 'unknown option --paths — usage: npm run conformance [--path <path> [<path> ...]]',
       };
       // ACT
       const actual = conformanceArgumentsOf(['--paths', 'body-structure']);

@@ -1,6 +1,8 @@
 // `npm run conformance`: run every Conformance tier, which is what the gate runs,
-// or `npm run conformance -- --path <path> [<path> ...]`: run only the listed
-// paths, the way a human reads one. A bare path still works as one `--path`.
+// or `npm run conformance --path <path> [<path> ...]`: run only the listed
+// paths, the way a human reads one. npm itself swallows `--path` (it warns it
+// does not know it) and passes the paths on bare, which is why a bare path also
+// works; `--` before `--path` reaches the script unchanged.
 //
 // Exits with the worst code across everything run: 0 all agree, 1 one
 // disagrees, 2 a path refused.
@@ -142,7 +144,7 @@ function runEveryTier(): number {
   }, AGREES);
 }
 
-const parsed = conformanceArgumentsOf(process.argv.slice(2));
+const parsed = conformanceArgumentsOf(process.argv.slice(2), process.env.npm_config_path);
 switch (parsed.kind) {
   case 'refused':
     process.exitCode = refuse(parsed.reason);

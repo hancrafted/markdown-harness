@@ -14,7 +14,7 @@
 //
 // Each case is ALSO asked at the process boundary (#231): the compiled `mh` run
 // inside the case directory with no flag, as a human runs it, through the same
-// comparison `npm run conformance -- rejected-config/<case>` prints. Inside the
+// comparison `npm run conformance --path rejected-config/<case>` prints. Inside the
 // case the config is named by its bare file name, so the case-relative payload
 // compares with no prefix at all, and a case that freezes the whole envelope
 // freezes it byte for byte. That comparison spawns `dist/`, so build first

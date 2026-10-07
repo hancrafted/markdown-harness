@@ -93,7 +93,7 @@ jobs:
       - name: build
         run: npm run build
       # Every Conformance tier, each spec folder and rejected-config case run the
-      # way `npm run conformance -- --path <path>` runs one, against the build above.
+      # way `npm run conformance --path <path>` runs one, against the build above.
       - name: conformance
         run: npm run conformance
       # Includes the process-boundary suite, which spawns the `bin.mh` entry under
