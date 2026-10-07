@@ -132,6 +132,33 @@ function pullCanaryFindings(): Finding[] {
   ];
 }
 
+function assessFindings(): Finding[] {
+  const obey = runWrapper(matrixArgs('assess', 'self-u'));
+  const deaf = runWrapper(matrixArgs('assess', 'self-v', ['--stub-mode', 'deaf']));
+  const silent = runWrapper(matrixArgs('assess', 'self-w', ['--stub-mode', 'ignore']));
+  return [
+    expectExit('the assess matrix runs end to end and exits zero', obey, 0),
+    expectOutput('assess: the steered cell follows the assess hook', obey, /assess-steered: 2\/2 steering marker hits/),
+    expectOutput(
+      'assess: the intent-neutralised cell is a clean leak detector',
+      obey,
+      /assess-neutralised: 0\/2 steering marker hits/,
+    ),
+    expectExit('an assess hook delivered and not acted on is graded, exit zero', deaf, 0),
+    expectOutput(
+      'assess: a repaired note with no steering marker localises to rung 8',
+      deaf,
+      /assess-steered: 0\/2 .*nulls by rung: 8:2/,
+    ),
+    expectExit('an assess hook that never fires fails the assess canary, an instrument failure, exit one', silent, 1),
+    expectOutput(
+      'the assess canary failure is named as not measured',
+      silent,
+      /NOT MEASURED: canary failed: the assess hook never started/,
+    ),
+  ];
+}
+
 /** Phase 2: the pull cells, the encoding contrast, the two-carrier profile, the shell hole, and the pull canary. */
 function surfaceFindings(): Finding[] {
   return [...pullFindings(), ...carrierFindings(), ...shellFindings(), ...pullCanaryFindings()];
@@ -173,6 +200,7 @@ function scenarios(): Finding[] {
     ...matrixFindings(),
     ...breakFindings(),
     ...surfaceFindings(),
+    ...assessFindings(),
     ...antigravityFindings(),
     ...probeFindings(),
     ...prescreenFindings(),

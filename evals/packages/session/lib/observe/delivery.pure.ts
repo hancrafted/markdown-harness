@@ -1,4 +1,4 @@
-// Finding the moment steering content arrived, by channel. Push: a hook response
+// Finding the moment steering content arrived, by channel. Push and assess: a hook response
 // holding every steering marker. Pull: the result of a shell call that ran the query
 // command and returned every steering marker without error. The user turn is not a
 // delivery in the stream. Each delivery names the path it was about.
@@ -8,7 +8,8 @@ import type { DeliveryChannel } from '../surface/delivery-surface.types.ts';
 import { commandOf } from './creation.pure.ts';
 import type { Delivery, ToolCall } from './session-observation.types.ts';
 
-const NOTICE_PATH = /markdown-harness: (\S+) is a new file/;
+// The two hooks' first lines: the push hook's new-file notice and the assess hook's past-its-stale_after notice.
+const NOTICE_PATH = /markdown-harness: (\S+) is (?:a new file|past its stale_after)/;
 /** The one pattern for a shell command that ran the query command. */
 export const QUERY_COMMAND = /\bmh query\b/;
 const QUERY_PATH = new RegExp(`${QUERY_COMMAND.source}\\s+(?:--\\S+\\s+)*["']?([^\\s"']+)`);
@@ -48,6 +49,6 @@ export function findDelivery(
   channel: DeliveryChannel,
   steeringMarkers: readonly string[],
 ): Delivery | undefined {
-  if (channel === 'push') return pushDelivery(events, steeringMarkers);
+  if (channel === 'push' || channel === 'assess') return pushDelivery(events, steeringMarkers);
   return channel === 'pull' ? pullDelivery(events, steeringMarkers) : undefined;
 }

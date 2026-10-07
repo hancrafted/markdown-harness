@@ -3,7 +3,7 @@
 // rung: the fixture is wrong, not the steering.
 
 import { describe, expect, it } from 'vitest';
-import { checkPullAnswer, checkRung1, checkRung2, pullFailureKind } from './preconditions.pure.ts';
+import { checkAssessRung1, checkPullAnswer, checkRung1, checkRung2, pullFailureKind } from './preconditions.pure.ts';
 
 const STEERING_MARKER = 'QQ11-2222';
 const TARGET = 'docs/research/a.md';
@@ -227,6 +227,77 @@ describe('pullFailureKind', () => {
       const kind = pullFailureKind('intent-only');
       // ASSERT
       expect(kind).toBe(expected);
+    });
+  });
+});
+
+const assessed = (action: string, instruction: string) =>
+  JSON.stringify({
+    result: { modules: [{ module: 'frontmatter', agentAction: action, state: 'stale', instruction }] },
+  });
+
+describe('checkAssessRung1', () => {
+  describe('success cases', () => {
+    it('passes a review answer holding the steering marker exactly once in the steered arm', () => {
+      // ARRANGE
+      const stdout = assessed('REVIEW', `re-read it ${STEERING_MARKER}`);
+      // ACT
+      const problem = checkAssessRung1(stdout, [STEERING_MARKER], 'steered');
+      // ASSERT
+      expect(problem).toBeUndefined();
+    });
+
+    it('passes a review answer holding no steering marker in the intent-neutralised arm', () => {
+      // ARRANGE
+      const stdout = assessed('REVIEW', 'No further guidance applies here.');
+      // ACT
+      const problem = checkAssessRung1(stdout, [STEERING_MARKER], 'neutralised');
+      // ASSERT
+      expect(problem).toBeUndefined();
+    });
+  });
+
+  describe('failure cases', () => {
+    it('fails a fresh seed: the answer is PROCEED, so the hook would be silent and the cell would measure nothing', () => {
+      // ARRANGE
+      const stdout = assessed('PROCEED', `re-read it ${STEERING_MARKER}`);
+      // ACT
+      const problem = checkAssessRung1(stdout, [STEERING_MARKER], 'steered');
+      // ASSERT
+      expect(problem).toMatch(/rung 1: the assess answered PROCEED, not REVIEW/);
+    });
+
+    it('fails an unparseable answer, an answer with no module, and a wrong steering marker count for the arm', () => {
+      // ARRANGE
+      const twice = assessed('REVIEW', `${STEERING_MARKER} ${STEERING_MARKER}`);
+      const leaked = assessed('REVIEW', STEERING_MARKER);
+      const expected = [
+        'rung 1: the assess answered nothing parseable, not REVIEW',
+        'rung 1: the assess answered nothing, not REVIEW',
+        'rung 1: the answer holds a steering marker 2 times, expected 1',
+        'rung 1: the answer holds a steering marker 1 times, expected 0',
+      ];
+      // ACT
+      const problems = [
+        checkAssessRung1('nope', [STEERING_MARKER], 'steered'),
+        checkAssessRung1('{"result":{"modules":[]}}', [STEERING_MARKER], 'steered'),
+        checkAssessRung1(twice, [STEERING_MARKER], 'steered'),
+        checkAssessRung1(leaked, [STEERING_MARKER], 'neutralised'),
+      ];
+      // ASSERT
+      expect(problems).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('does not ask the control arm to hold a steering marker, only that the assess advises a review', () => {
+      // ARRANGE
+      const stdout = assessed('REVIEW', 'nothing');
+      const expected = undefined;
+      // ACT
+      const problem = checkAssessRung1(stdout, [STEERING_MARKER], 'control');
+      // ASSERT
+      expect(problem).toBe(expected);
     });
   });
 });

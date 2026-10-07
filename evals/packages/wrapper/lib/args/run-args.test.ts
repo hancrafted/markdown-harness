@@ -35,9 +35,9 @@ describe('parseRunArgs', () => {
 
     it('reads a matrix name, defaulting to the push matrix', () => {
       // ARRANGE
-      const expected = ['push', 'pull', 'carriers'];
+      const expected = ['push', 'pull', 'carriers', 'assess'];
       // ACT
-      const actual = [[], ['--matrix', 'pull'], ['--matrix', 'carriers']].map((argv) => {
+      const actual = [[], ['--matrix', 'pull'], ['--matrix', 'carriers'], ['--matrix', 'assess']].map((argv) => {
         const result = parseRunArgs(argv);
         return result.ok ? result.args.matrix : 'refused';
       });
@@ -47,9 +47,14 @@ describe('parseRunArgs', () => {
 
     it('maps each matrix to its committed configuration file', () => {
       // ARRANGE
-      const expected = ['promptfooconfig.yaml', 'promptfooconfig.pull.yaml', 'promptfooconfig.carriers.yaml'];
+      const expected = [
+        'promptfooconfig.yaml',
+        'promptfooconfig.pull.yaml',
+        'promptfooconfig.carriers.yaml',
+        'promptfooconfig.assess.yaml',
+      ];
       // ACT
-      const actual = [configFileFor('push'), configFileFor('pull'), configFileFor('carriers')];
+      const actual = [configFileFor('push'), configFileFor('pull'), configFileFor('carriers'), configFileFor('assess')];
       // ASSERT
       expect(actual).toEqual(expected);
     });

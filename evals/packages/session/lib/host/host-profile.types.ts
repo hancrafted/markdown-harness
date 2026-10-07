@@ -5,7 +5,7 @@ export type HostName = 'claude-code' | 'antigravity';
 export type WrapperHost = 'claude' | 'agy';
 
 /** Which matrix of cells and cases a run measures: each is one committed configuration file. */
-export type MatrixName = 'push' | 'pull' | 'carriers' | 'agy';
+export type MatrixName = 'push' | 'pull' | 'carriers' | 'assess' | 'agy';
 
 /** The capabilities an Antigravity run waits on, in the order they must be probed. */
 export type ProbeId = 'hook-fires-headless' | 'scoped-permission-mode' | 'scratch-home-credentials';

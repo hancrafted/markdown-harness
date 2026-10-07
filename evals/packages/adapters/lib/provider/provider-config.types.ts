@@ -23,9 +23,14 @@ export interface CaseCarrier {
   readonly scope: SectionScope;
 }
 
+/** What a case asks of the agent: write a new file (steer), or repair a seeded file that has gone stale (repair). */
+export type CaseKind = 'steer' | 'repair';
+
 /** The test-case variables a case file supplies. */
 export interface CaseVars {
   readonly caseId: string;
+  /** Whether the target file is created (steer) or is seeded and repaired in place (repair). */
+  readonly kind: CaseKind;
   /** The Contributor-voiced task, phrased as a person would ask. */
   readonly task: string;
   readonly targetPath: string;

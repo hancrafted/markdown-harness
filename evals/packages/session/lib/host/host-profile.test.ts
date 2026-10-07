@@ -175,16 +175,16 @@ describe('the two Host harness vocabularies', () => {
 
     it('names the Host harness a matrix belongs to', () => {
       // ARRANGE
-      const expected = ['claude-code', 'claude-code', 'claude-code', 'antigravity'];
+      const expected = ['claude-code', 'claude-code', 'claude-code', 'claude-code', 'antigravity'];
       // ACT
-      const actual = (['push', 'pull', 'carriers', 'agy'] as const).map(hostNameOfMatrix);
+      const actual = (['push', 'pull', 'carriers', 'assess', 'agy'] as const).map(hostNameOfMatrix);
       // ASSERT
       expect(actual).toEqual(expected);
     });
 
     it('lists every matrix once, derived from the profiles', () => {
       // ARRANGE
-      const expected = ['push', 'pull', 'carriers', 'agy'];
+      const expected = ['push', 'pull', 'carriers', 'assess', 'agy'];
       // ACT
       const actual = MATRIX_NAMES;
       // ASSERT
@@ -344,13 +344,24 @@ describe('channelRefusal', () => {
       // ARRANGE
       const claude = profileOf('claude-code', NO_PROBES);
       // ACT
-      const refusals = (['push', 'pull', 'user-turn'] as const).map((channel) => channelRefusal(claude, channel));
+      const refusals = (['push', 'pull', 'assess', 'user-turn'] as const).map((channel) =>
+        channelRefusal(claude, channel),
+      );
       // ASSERT
-      expect(refusals).toEqual([undefined, undefined, undefined]);
+      expect(refusals).toEqual([undefined, undefined, undefined, undefined]);
     });
   });
 
   describe('failure cases', () => {
+    it('refuses the assess channel for Antigravity whatever its probes say, because no post-read hook root is built', () => {
+      // ARRANGE
+      const expected = 'antigravity assess: no hook root is built for this Host harness yet';
+      // ACT
+      const actual = channelRefusal(profileOf('antigravity', NO_PROBES), 'assess');
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+
     it('refuses the push channel for Antigravity while hook firing is unprobed', () => {
       // ARRANGE
       const expected = 'antigravity push: hook-fires-headless is unprobed, so no canary can be owed for it';

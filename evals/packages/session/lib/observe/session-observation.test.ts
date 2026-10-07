@@ -465,3 +465,87 @@ describe('observeSession over two tested carriers (rung 9)', () => {
     });
   });
 });
+
+describe('observeSession on the assess surface', () => {
+  const readCall = (seq: number): SessionEvent => ({
+    seq,
+    kind: 'tool-call',
+    id: `r${seq}`,
+    tool: 'Read',
+    input: { file_path: `${ROOT}/${TARGET}` },
+  });
+  const noticed = (seq: number, steeringMarker = STEERING_MARKER): SessionEvent => ({
+    seq,
+    kind: 'hook-response',
+    hookName: 'PostToolUse:Read',
+    output: `{"additionalContext":"markdown-harness: ${TARGET} is past its stale_after under Module \\"frontmatter\\". ${steeringMarker}"}`,
+  });
+  const editCall = (seq: number, newString: string): SessionEvent => ({
+    seq,
+    kind: 'tool-call',
+    id: `e${seq}`,
+    tool: 'Edit',
+    input: { file_path: `${ROOT}/${TARGET}`, old_string: 'old', new_string: newString },
+  });
+  const assess = (events: SessionEvent[], finalFile: string | undefined) =>
+    observeSession({
+      arm: 'steered',
+      surface: { channel: 'assess', shell: 'none', encoding: 'hook-prose' },
+      events,
+      steeringMarkers: [STEERING_MARKER],
+      targetPath: TARGET,
+      root: ROOT,
+      finalFile,
+      injectionPattern: INJECTION,
+    });
+
+  describe('success cases', () => {
+    it('reads a read, a notice and an edit carrying the steering marker as clean, with the first write holding it', () => {
+      // ARRANGE
+      const events = [readCall(1), noticed(2), editCall(3, `new ${STEERING_MARKER}`)];
+      const expected = { rung: { kind: 'clean' }, delivered: true, first: true };
+      // ACT
+      const seen = assess(events, `new ${STEERING_MARKER}`);
+      // ASSERT
+      expect({
+        rung: localiseRung(seen.observations),
+        delivered: seen.delivered,
+        first: seen.firstWriteHasSteeringMarker,
+      }).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('localises rung 3 when the agent edited without reading, so the post-read hook never fired', () => {
+      // ARRANGE
+      const events = [editCall(1, 'plain')];
+      const expected = { rung: { kind: 'rung', rung: 3 }, tool: 'Edit' };
+      // ACT
+      const seen = assess(events, 'plain');
+      // ASSERT
+      expect({ rung: localiseRung(seen.observations), tool: seen.creatingTool }).toEqual(expected);
+    });
+
+    it('localises rung 8 when the notice arrived and the agent edited without the steering marker', () => {
+      // ARRANGE
+      const events = [readCall(1), noticed(2), editCall(3, 'plain')];
+      const expected = { kind: 'rung', rung: 8 };
+      // ACT
+      const actual = localiseRung(assess(events, 'plain').observations);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('records rung 6 as not applicable, because nothing on this surface is parsed from an encoding', () => {
+      // ARRANGE
+      const events = [readCall(1), noticed(2), editCall(3, `new ${STEERING_MARKER}`)];
+      const expected = 'not-applicable';
+      // ACT
+      const rung6 = assess(events, 'x').observations.find((entry) => entry.rung === 6)?.status;
+      // ASSERT
+      expect(rung6).toBe(expected);
+    });
+  });
+});

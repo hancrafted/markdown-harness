@@ -51,6 +51,16 @@ describe('intentCarrierAddresses', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('counts the assess.stale sentence as a carrier, addressed by its path under the Rule that holds it', () => {
+      // ARRANGE
+      const document = { frontmatter: { rules: [{ ruleId: 'r', intent: 'x', assess: { stale: 'Re-read this.' } }] } };
+      const expected = ['frontmatter.rules[ruleId=r].intent', 'frontmatter.rules[ruleId=r].assess.stale'];
+      // ACT
+      const actual = intentCarrierAddresses(document);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('hands a writer the keys that reach each carrier', () => {
       // ARRANGE
       const document = { rules: [{ ruleId: 'r', intent: 'x' }] };
@@ -75,6 +85,26 @@ describe('intentCarrierAddresses', () => {
   });
 
   describe('edge cases', () => {
+    it('does not count a stale key that is not directly under assess', () => {
+      // ARRANGE
+      const document = { stale: 'a', other: { stale: 'b' }, assess: { instruction: 'c', nested: { stale: 'd' } } };
+      const expected: string[] = [];
+      // ACT
+      const actual = intentCarrierAddresses(document);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('does not count an assess.stale whose value is not a string', () => {
+      // ARRANGE
+      const document = { assess: { stale: { words: 'x' } } };
+      const expected: string[] = [];
+      // ACT
+      const actual = intentCarrierAddresses(document);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('returns nothing for a scalar or an empty document', () => {
       // ARRANGE
       const documents = ['intent', 7, null, {}, []];

@@ -1,10 +1,49 @@
 // Colocated unit test for the canary verdict.
 
 import { describe, expect, it } from 'vitest';
-import { evaluateCanary, evaluatePullCanary } from './canary.pure.ts';
+import { evaluateAssessCanary, evaluateCanary, evaluatePullCanary } from './canary.pure.ts';
 
 const START = { seq: 0, kind: 'hook-start', hookName: 'PreToolUse:Write' } as const;
 const ANSWER = (output: string) => ({ seq: 1, kind: 'hook-response', hookName: 'PreToolUse:Write', output }) as const;
+
+const READ_START = { seq: 0, kind: 'hook-start', hookName: 'PostToolUse:Read' } as const;
+const READ_ANSWER = (output: string) =>
+  ({ seq: 1, kind: 'hook-response', hookName: 'PostToolUse:Read', output }) as const;
+
+describe('evaluateAssessCanary', () => {
+  describe('success cases', () => {
+    it('passes when the Read hook started and answered with a notice', () => {
+      // ARRANGE
+      const events = [READ_START, READ_ANSWER('{"hookSpecificOutput":{}}')];
+      // ACT
+      const actual = evaluateAssessCanary(events);
+      // ASSERT
+      expect(actual).toBeUndefined();
+    });
+  });
+
+  describe('failure cases', () => {
+    it('fails when no hook started, and says a silent hook may mean the seed is not stale', () => {
+      // ARRANGE
+      const expected = [/never started/, /answered with nothing.*may not be stale/];
+      // ACT
+      const actual = [evaluateAssessCanary([]), evaluateAssessCanary([READ_START, READ_ANSWER(' ')])];
+      // ASSERT
+      expected.forEach((pattern, index) => expect(actual[index]).toMatch(pattern));
+    });
+  });
+
+  describe('edge cases', () => {
+    it('does not count a hook of another event: a pre-write hook is not the assess hook', () => {
+      // ARRANGE
+      const events = [START, ANSWER('{"x":1}')];
+      // ACT
+      const actual = evaluateAssessCanary(events);
+      // ASSERT
+      expect(actual).toMatch(/never started/);
+    });
+  });
+});
 
 describe('evaluateCanary', () => {
   describe('success cases', () => {

@@ -46,6 +46,7 @@
     "evals:self-test": "node evals/packages/selftest/run-self-test.ts",
     "evals:prescreen": "node evals/packages/prescreen/run-prescreen.ts",
     "evals:live": "node evals/packages/wrapper/run-evals.ts --host claude",
+    "evals:assess": "node evals/packages/wrapper/run-evals.ts --host claude --matrix assess",
     "evals:agy": "node evals/packages/wrapper/run-evals.ts --host agy --matrix agy",
     "evals:agy-probe": "node evals/packages/probe/run-agy-probe.ts"
   },

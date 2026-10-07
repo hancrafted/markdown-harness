@@ -29,6 +29,16 @@ describe('canaryKeysFor', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('owes an assess cell its own canary, keyed by the assess channel and the stale layout', () => {
+      // ARRANGE
+      const assess = { hostName: 'claude-code', deliveryChannel: 'assess' } as const;
+      const expected = [{ host: 'claude-code', channel: 'assess', layout: 'stale' }];
+      // ACT
+      const actual = canaryKeysFor([assess, USER_TURN], ['stale']);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('owes a canary to each new Host harness and each new root layout, so phase 2 adds rows', () => {
       // ARRANGE
       const other = { hostName: 'antigravity', deliveryChannel: 'push' } as const;

@@ -1,7 +1,8 @@
 // The canaries: one for each Host harness, delivery channel and root layout the
 // matrix reaches, through the session module directly, with a task that forces the
 // surface to be used. A push canary forces the Write tool, so the hook can fire; a
-// pull canary names the query command, so the allow-list is exercised. Each proves
+// pull canary names the query command, so the allow-list is exercised; an assess canary
+// reads the layout's stale note, so the post-read hook can fire and its seed is proved stale. Each proves
 // the surface works headless in that Host harness, delivery channel and root layout.
 // A failed canary is an instrument failure for every cell sharing the configuration.
 
@@ -18,7 +19,8 @@ import { describeKey } from '../canary/canary-keys.pure.ts';
 import type { CanaryKey } from '../canary/canary-keys.types.ts';
 import type { RunPlan } from './run-plan.types.ts';
 
-const TARGET = 'docs/research/canary-note.md';
+/** The note a canary creates when its channel needs no seeded file; an assess canary reads the seed's own note instead. */
+const NEW_FILE_TARGET = 'docs/research/canary-note.md';
 
 /** The Host harness a key names, with the model its profile canaries with; a key's host is typed, so no fallback exists. */
 function hostOf(plan: RunPlan, key: CanaryKey): Parameters<typeof runTrial>[0]['host'] {
@@ -29,6 +31,7 @@ function hostOf(plan: RunPlan, key: CanaryKey): Parameters<typeof runTrial>[0]['
 
 /** One steering marker per placeholder the layout's config holds, each drawn for its own carrier. */
 function request(plan: RunPlan, key: CanaryKey, canary: Canary): Parameters<typeof runTrial>[0] {
+  const target = canary.target ?? NEW_FILE_TARGET;
   const configText = readText(`${plan.checkout}/${key.layout}/markdown-harness.config.yaml`);
   const placeholders = placeholdersIn(configText);
   const drawn = placeholders.map((placeholder) => ({
@@ -48,12 +51,12 @@ function request(plan: RunPlan, key: CanaryKey, canary: Canary): Parameters<type
     heldOut: [],
     derivedConfig: derived.configText,
     host: hostOf(plan, key),
-    task: canary.task(TARGET),
+    task: canary.task(target),
     steeringMarkers: drawn.map((one, index) => ({
       steeringMarker: one.steeringMarker,
       sweepExpectation: { kind: 'exactly', occurrences: derived.occurrences[index] ?? 0 },
     })),
-    targetPath: TARGET,
+    targetPath: target,
   };
 }
 

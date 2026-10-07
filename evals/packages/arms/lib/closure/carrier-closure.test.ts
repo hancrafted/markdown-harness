@@ -43,6 +43,20 @@ describe('carrierClosure', () => {
   });
 
   describe('failure cases', () => {
+    it('resolves a placeholder in an assess.stale sentence, and goes red on one beside it that is no carrier', () => {
+      // ARRANGE
+      const closed = `frontmatter:\n  rules:\n    - ruleId: r\n      intent: 'x'\n      assess:\n        stale: 'Re-read. ${FIRST}'\n`;
+      const beside = closed.replace('stale:', 'other:');
+      const expected = [[], [`placeholder ${FIRST} sits in a string that is not an intent carrier`]];
+      // ACT
+      const actual = [
+        carrierClosure(closed, [FIRST]),
+        carrierClosure(beside, []).filter((one) => /not an intent/.test(one)),
+      ];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('goes red when a declaration is deleted: the config placeholder is left undeclared', () => {
       // ARRANGE
       const expected =

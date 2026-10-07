@@ -27,6 +27,7 @@ const CELL = {
 };
 const VARS = {
   caseId: 'c',
+  kind: 'steer',
   targetPath: 'docs/a.md',
   seedDir: 's',
   carriers: [{ placeholder: 'P', clauseTemplate: 'code {steeringMarker}', scope: { level: 2, titlePattern: '^F$' } }],
@@ -197,6 +198,15 @@ describe('provider inputs', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('refuses a case with no kind or an unknown one, naming what a kind is', () => {
+      // ARRANGE
+      const expected = [['vars.kind'], ['vars.kind (audit is not steer or repair)']];
+      // ACT
+      const actual = [readCaseVars({ ...VARS, kind: undefined }), readCaseVars({ ...VARS, kind: 'audit' })];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses an environment the wrapper did not fully set', () => {
       // ARRANGE
       const expected = ['env.EVALS_SEED'];
@@ -208,6 +218,15 @@ describe('provider inputs', () => {
   });
 
   describe('edge cases', () => {
+    it('accepts both case kinds', () => {
+      // ARRANGE
+      const expected = ['steer', 'repair'];
+      // ACT
+      const actual = ['steer', 'repair'].map((kind) => (readCaseVars({ ...VARS, kind }) as { kind: string }).kind);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('names each cell by what distinguishes it: channel, widened shell, pull encoding and arm', () => {
       // ARRANGE
       const named = (cell: object) => cellLabelOf({ ...CELL, ...cell } as never);

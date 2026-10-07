@@ -1,0 +1,42 @@
+# The assess matrix: one repair case, delivered through the hook `init.mjs` wires, which is the PostToolUse hook
+# on the Read tool and runs `assess-hook.mjs`. The seed's note is past its stale_after at any clock, so the hook is
+# given no pinned instant and the real clock decides; a note that stopped being stale would make the hook silent,
+# which the canary and rung 1 both refuse as an instrument failure. The tested carrier is the Operator's
+# `assess.stale` sentence, the line the hook puts in front of the agent verbatim.
+#
+# Three cells: the steered arm, the intent-neutralised arm that is the leak detector, and the trusted-prompt control
+# that separates a surface that failed from a model that never follows the steering marker. No cell is given a
+# shell: the agent reads and repairs with the edit tools.
+#
+# Run it through the wrapper (`--matrix assess`), never directly.
+description: steering eval, Claude Code, assess delivery (the post-read hook), one repair case
+prompts:
+  - '{{task}}'
+providers:
+  - id: file://packages/adapters/claude-provider.ts
+    label: assess-steered
+    config:
+      { arm: steered, deliveryChannel: assess, shell: none, encoding: hook-prose, model: sonnet, hostName: claude-code }
+  - id: file://packages/adapters/claude-provider.ts
+    label: assess-neutralised
+    config:
+      {
+        arm: neutralised,
+        deliveryChannel: assess,
+        shell: none,
+        encoding: hook-prose,
+        model: sonnet,
+        hostName: claude-code,
+      }
+  - id: file://packages/adapters/claude-provider.ts
+    label: trusted-prompt-control
+    config:
+      { arm: control, deliveryChannel: user-turn, shell: none, encoding: none, model: sonnet, hostName: claude-code }
+tests: file://suites/steering/cases/stale-note.yaml
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://packages/adapters/steering-assertion.ts:gradeSteering
+evaluateOptions:
+  maxConcurrency: 1
+  cache: false

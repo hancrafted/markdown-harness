@@ -13,6 +13,10 @@
 // partial: acts on only the first steering code it was given (a rung 9 partial profile).
 // shell: creates the file through the Bash tool when the Host harness was given one, so the Write hook never fires.
 //
+// On the assess surface (a root that holds the assess hook and its wiring) the stand-in reads the seeded note, runs
+// the root's real assess hook as a PostToolUse hook on that read, and edits the note. obey adds what the hook said;
+// deaf runs the hook and adds nothing from it; ignore never reads the note, so the hook never fires.
+//
 // --stub-host says which Host harness's stream to print: `claude` (the default, which the pre-screen relies on) or
 // `agy`, Antigravity's, answered in its own shape. The argv the Host harness would be given is never read to guess
 // which: a flag the real Host harness takes would otherwise change what the stand-in is. In `agy` mode, the
@@ -127,10 +131,39 @@ const draft = '---\ntype: research\ndescription: A note.\n---\n\n# Note\n\n## Fi
 const noteWith = (codes) => (codes.length === 0 ? draft : `${draft}\n${codes.join('\n')}\n`);
 
 const isPull = existsSync(join(root, 'bin', 'mh'));
+const assessHook = join(root, '.agents/skills/markdown-harness/scripts/assess-hook.mjs');
+const isAssess = hooksOn && existsSync(assessHook);
 // the shell is given no hook: a Bash creation never reaches the Write matcher
 const runsHook = hooksOn && mode !== 'ignore' && via === 'Write';
 let told = codesIn(task);
-if (isPull && mode !== 'ignore') {
+if (isAssess && mode !== 'ignore') {
+  // PostToolUse: the agent reads the seeded note, the hook runs AFTER the read, then the agent edits the note.
+  const file = join(root, target);
+  const seeded = readFileSync(file, 'utf8');
+  emit({ type: 'assistant', message: { content: [{ type: 'text', text: 'Reading the note first.' }] } });
+  emit({
+    type: 'assistant',
+    message: { content: [{ type: 'tool_use', id: 'r1', name: 'Read', input: { file_path: file } }] },
+  });
+  resultOf('r1', seeded);
+  emit({ type: 'system', subtype: 'hook_started', hook_name: 'PostToolUse:Read' });
+  const payload = JSON.stringify({ tool_name: 'Read', tool_input: { file_path: file } });
+  const run = spawnSync(process.execPath, [assessHook], { cwd: root, input: payload, encoding: 'utf8' });
+  emit({ type: 'system', subtype: 'hook_response', hook_name: 'PostToolUse:Read', output: run.stdout });
+  told = mode === 'deaf' ? [] : codesIn(run.stdout);
+  const last = seeded.trimEnd().split('\n').pop() ?? '';
+  const revised = [last, 'Reviewed this week.', ...told].join('\n');
+  emit({
+    type: 'assistant',
+    message: {
+      content: [
+        { type: 'tool_use', id: 'e1', name: 'Edit', input: { file_path: file, old_string: last, new_string: revised } },
+      ],
+    },
+  });
+  writeFileSync(file, seeded.replace(last, revised));
+  resultOf('e1', 'File edited');
+} else if (isPull && mode !== 'ignore') {
   emit({ type: 'assistant', message: { content: [{ type: 'text', text: 'Checking the guidance first.' }] } });
   emit({
     type: 'assistant',

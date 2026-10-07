@@ -1,6 +1,12 @@
 // The assertion body, pure: output text and provider metadata in, a verdict out.
 // A steered or control trial passes when every tested carrier's steering marker
 // reached the final file; an intent-neutralised trial passes when none did.
+//
+// A repair case seeds the target file, so a final file that holds the steering
+// marker is not enough: the file must also have changed from its seed. A steered
+// or control trial of a repair case that left the seeded file alone is a null
+// however it got the marker; the intent-neutralised arm is not asked, because
+// leaving the file as seeded is the outcome it expects.
 
 import type { SectionScope } from '../../../grading/grade-steering-marker.ts';
 import { armHit, gradeSteeringMarker } from '../../../grading/grade-steering-marker.ts';
@@ -15,6 +21,21 @@ function finalFileOf(output: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function changedFilesOf(output: string): readonly string[] {
+  try {
+    const parsed = JSON.parse(output) as { changedFiles?: unknown };
+    return Array.isArray(parsed.changedFiles) ? parsed.changedFiles.filter((file) => typeof file === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Whether the case seeds its target file and so asks that it was repaired, and the path it must have changed. */
+function repairTarget(metadata: Metadata): string | undefined {
+  const target = metadata?.targetPath;
+  return metadata?.kind === 'repair' && typeof target === 'string' ? target : undefined;
 }
 
 interface Carrier {
@@ -43,12 +64,14 @@ function profileOf(spec: Spec, seen: readonly { present: boolean; placed: boolea
 function reasonFor(
   spec: Spec,
   seen: readonly { present: boolean; placed: boolean | null }[],
-  metadata: Metadata,
+  context: { readonly metadata: Metadata; readonly repaired: boolean | undefined },
 ): string {
+  const { metadata, repaired } = context;
   const expected = spec.arm !== 'neutralised' ? 'present' : 'absent';
   const placed = seen.map((one) => String(one.placed)).join(',');
   const rung = String(metadata?.localised ?? 'unknown');
-  return `${spec.arm}: steering markers (expected ${expected}) ${profileOf(spec, seen)}; placed=${placed}; localised: ${rung}; creating tool: ${String(metadata?.creatingTool ?? 'none')}`;
+  const repair = repaired === undefined ? '' : `; repaired=${String(repaired)}`;
+  return `${spec.arm}: steering markers (expected ${expected}) ${profileOf(spec, seen)}; placed=${placed}${repair}; localised: ${rung}; creating tool: ${String(metadata?.creatingTool ?? 'none')}`;
 }
 
 export function gradeSteeringAssertion(output: string, metadata: Metadata): AssertionResult {
@@ -60,6 +83,8 @@ export function gradeSteeringAssertion(output: string, metadata: Metadata): Asse
     gradeSteeringMarker({ finalFile, steeringMarker: carrier.steeringMarker, scope: carrier.scope }),
   );
   const hit = armHit(spec.arm, seen);
-  const pass = spec.arm === 'neutralised' ? !hit : hit;
-  return { pass, score: pass ? 1 : 0, reason: reasonFor(spec, seen, metadata) };
+  const target = repairTarget(metadata);
+  const repaired = target === undefined ? undefined : changedFilesOf(output).includes(target);
+  const pass = spec.arm === 'neutralised' ? !hit : hit && repaired !== false;
+  return { pass, score: pass ? 1 : 0, reason: reasonFor(spec, seen, { metadata, repaired }) };
 }

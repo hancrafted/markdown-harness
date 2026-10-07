@@ -9,7 +9,7 @@ import { driverOf } from '../../../session/host-driver.ts';
 import type { ProbeRecord } from '../../../session/host-profile.ts';
 import { HOST_NAMES, isHostName, profileOf } from '../../../session/host-profile.ts';
 import type { ArmKind } from '../../../session/observe-session.ts';
-import type { CaseVars, CellConfig, RunSettings, TaskParts } from './provider-config.types.ts';
+import type { CaseKind, CaseVars, CellConfig, RunSettings, TaskParts } from './provider-config.types.ts';
 
 type Bag = Readonly<Record<string, unknown>>;
 
@@ -58,10 +58,21 @@ function carrierProblems(carriers: unknown): string[] {
   );
 }
 
+const CASE_KINDS: readonly CaseKind[] = ['steer', 'repair'];
+
+/** A case kind is named, never defaulted: it decides whether the target file is new or seeded. */
+function kindProblem(bag: Bag): string[] {
+  if (bag.kind === undefined || bag.kind === '') return ['vars.kind'];
+  return CASE_KINDS.some((kind) => kind === bag.kind)
+    ? []
+    : [`vars.kind (${String(bag.kind)} is not ${CASE_KINDS.join(' or ')})`];
+}
+
 export function readCaseVars(vars: unknown): CaseVars | string[] {
   const bag = (vars ?? {}) as Bag;
   const missing = [
     ...need(bag, ['caseId', 'targetPath', 'seedDir', 'controlPrefix', 'pullLine'], 'vars'),
+    ...kindProblem(bag),
     ...carrierProblems(bag.carriers),
   ];
   return missing.length > 0 ? missing : (bag as unknown as CaseVars);

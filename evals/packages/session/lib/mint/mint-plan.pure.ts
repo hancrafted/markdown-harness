@@ -83,6 +83,8 @@ export function sourcesFor(location: SeedLocation): MintSources {
     mhManifest: `${checkout}/package.json`,
     markedDir: `${checkout}/node_modules/marked`,
     yamlDir: `${checkout}/node_modules/yaml`,
-    hookScripts: [`${checkout}/${SKILL_SCRIPTS}/query-hook.mjs`],
+    hookScripts: ['query-hook.mjs', 'assess-hook.mjs', 'activity-log.mjs'].map(
+      (script) => `${checkout}/${SKILL_SCRIPTS}/${script}`,
+    ),
   };
 }

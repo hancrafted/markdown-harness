@@ -28,3 +28,20 @@ export function evaluatePullCanary(events: readonly SessionEvent[]): string | un
     .some((result) => result?.kind === 'tool-result' && !result.isError && result.text.trim() !== '');
   return answered ? undefined : 'canary failed: the pull command ran and answered with an error or nothing';
 }
+
+/**
+ * The assess canary: a Read hook started and answered with a notice. Only a `PostToolUse` hook counts, because
+ * the assess hook is wired there and a hook of another event proves nothing about it. A hook that started and
+ * said nothing is the shape of a seed that is not stale: the assess hook is silent on anything but a review.
+ */
+export function evaluateAssessCanary(events: readonly SessionEvent[]): string | undefined {
+  const isRead = (hookName: string): boolean => hookName.startsWith('PostToolUse');
+  const started = events.some((event) => event.kind === 'hook-start' && isRead(event.hookName));
+  if (!started) return 'canary failed: the assess hook never started';
+  const answered = events.some(
+    (event) => event.kind === 'hook-response' && isRead(event.hookName) && event.output.trim() !== '',
+  );
+  return answered
+    ? undefined
+    : 'canary failed: the assess hook started and answered with nothing, so the seed may not be stale';
+}

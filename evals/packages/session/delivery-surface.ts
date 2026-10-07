@@ -1,4 +1,5 @@
 export {
+  ASSESS_CANARY_TARGET,
   CHANNELS,
   grantsShellWrites,
   incoherentSurface,

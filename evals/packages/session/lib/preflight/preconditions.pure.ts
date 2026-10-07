@@ -38,6 +38,29 @@ export function checkRung1(stdout: string, steeringMarkers: readonly string[], a
   return problems.length === 0 ? undefined : `rung 1: the answer holds a steering marker ${problems[0]}`;
 }
 
+function assessActions(stdout: string): string[] | undefined {
+  try {
+    const parsed = JSON.parse(stdout) as { result?: { modules?: { agentAction?: string }[] } };
+    return (parsed.result?.modules ?? []).map((entry) => entry.agentAction ?? 'nothing');
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Rung 1 for the assess surface (never emitted): the built `mh assess` for the target must advise REVIEW, which is
+ * the one answer the hook speaks on, so a seed that is not stale at the real clock is an instrument failure here
+ * and not a silent hook; and its answer holds each steering marker as many times as the arm needs.
+ */
+export function checkAssessRung1(stdout: string, steeringMarkers: readonly string[], arm: ArmKind): string | undefined {
+  const actions = assessActions(stdout);
+  if (actions === undefined) return 'rung 1: the assess answered nothing parseable, not REVIEW';
+  if (!actions.includes('REVIEW')) return `rung 1: the assess answered ${actions[0] ?? 'nothing'}, not REVIEW`;
+  if (arm === 'control') return undefined;
+  const problems = countProblems(stdout, steeringMarkers, arm === 'steered' ? 1 : 0);
+  return problems.length === 0 ? undefined : `rung 1: the answer holds a steering marker ${problems[0]}`;
+}
+
 /**
  * What the pull command printed, in its encoding: the steering markers must be in it exactly as the arm needs
  * them, and it must say something. A raw JSON answer failing is the answer itself failing (rung 1); a rendered

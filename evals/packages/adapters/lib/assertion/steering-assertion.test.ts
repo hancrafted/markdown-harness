@@ -125,3 +125,61 @@ describe('gradeSteeringAssertion over two tested carriers', () => {
     });
   });
 });
+
+describe('gradeSteeringAssertion on a repair case', () => {
+  const TARGET = 'docs/research/feature-flags.md';
+  const repairOut = (finalFile: string | null, changedFiles: string[]) => JSON.stringify({ finalFile, changedFiles });
+  const repairMeta = (arm: string, extra: object = {}) => meta(arm, { kind: 'repair', targetPath: TARGET, ...extra });
+
+  describe('success cases', () => {
+    it('passes a steered trial whose repaired file carries the steering marker', () => {
+      // ARRANGE
+      const expected = { pass: true, score: 1 };
+      // ACT
+      const result = gradeSteeringAssertion(repairOut(WITH, [TARGET]), repairMeta('steered'));
+      // ASSERT
+      expect(result).toMatchObject(expected);
+    });
+
+    it('passes an intent-neutralised trial that left the file as seeded, which is the expected outcome there', () => {
+      // ARRANGE
+      const expected = true;
+      // ACT
+      const actual = gradeSteeringAssertion(repairOut('## Findings\nx\n', []), repairMeta('neutralised')).pass;
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('fails a steered trial whose file is unrepaired even when it holds the steering marker, naming that', () => {
+      // ARRANGE
+      const expected = 'repaired=false';
+      // ACT
+      const result = gradeSteeringAssertion(repairOut(WITH, []), repairMeta('steered'));
+      // ASSERT
+      expect(result.pass).toBe(false);
+      expect(result.reason).toContain(expected);
+    });
+
+    it('fails a steered trial that repaired the file without the steering marker', () => {
+      // ARRANGE
+      const expected = { pass: false, score: 0 };
+      // ACT
+      const result = gradeSteeringAssertion(repairOut('## Findings\nrewritten\n', [TARGET]), repairMeta('steered'));
+      // ASSERT
+      expect(result).toMatchObject(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('does not ask a steer case, whose file is new, whether it was repaired', () => {
+      // ARRANGE
+      const expected = true;
+      // ACT
+      const actual = gradeSteeringAssertion(repairOut(WITH, []), meta('steered', { kind: 'steer' })).pass;
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+  });
+});

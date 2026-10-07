@@ -1,5 +1,9 @@
 // The intent-carrier walk: every mapping key named `intent` whose value is a
-// string, at any depth, addressed by its path from the document root.
+// string, at any depth, addressed by its path from the document root, and the
+// `stale` sentence directly under an `assess` mapping, which is the fifth place
+// the Operator's words reach an agent (the assess hook puts it in front of the
+// agent verbatim). It is walked by position, not by Module: the walk still names
+// no section type.
 //
 // Generic by design — it names no Module's section type, so ARCH-008 §1.1 holds
 // without a carrier list from each Module. A list item that is a mapping with a
@@ -25,10 +29,15 @@ function child(at: Position, key: PathKey, label: string): Position {
   return { address: `${at.address}${label}`, path: [...at.path, key] };
 }
 
+/** Whether a string at this key is a carrier: an `intent`, or the `stale` sentence directly under `assess`. */
+function carries(key: string, at: Position): boolean {
+  return key === 'intent' || (key === 'stale' && at.path[at.path.length - 1] === 'assess');
+}
+
 function walkMapping(mapping: object, at: Position, found: IntentCarrier[]): void {
   for (const [key, value] of Object.entries(mapping)) {
     const next = child(at, key, at.address === '' ? key : `.${key}`);
-    if (key === 'intent' && typeof value === 'string') found.push(next);
+    if (carries(key, at) && typeof value === 'string') found.push(next);
     else walk(value, next, found);
   }
 }

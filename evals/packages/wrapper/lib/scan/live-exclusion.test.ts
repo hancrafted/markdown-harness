@@ -122,6 +122,40 @@ describe('scanForLiveScripts', () => {
       expect(report.chain).toEqual(expect.arrayContaining(expectedChain));
     });
 
+    it('goes red on the real repository once the live assess script is planted in the verify chain, in the workflow and in the commit chain', () => {
+      // ARRANGE
+      const input = realInput();
+      const inVerify = {
+        ...input,
+        scripts: { ...input.scripts, verify: `${input.scripts.verify} && npm run evals:assess` },
+      };
+      const inCommit = {
+        ...input,
+        scripts: { ...input.scripts, 'verify:commit': `${input.scripts['verify:commit']} && npm run evals:assess` },
+      };
+      const inWorkflow = { ...input, workflows: { '.github/workflows/ci.yml': 'run: npm run evals:assess' } };
+      const expected = [true, true, true];
+      const name = 'evals:assess';
+      // ACT
+      const actual = [inVerify, inCommit, inWorkflow].map((planted) =>
+        scanForLiveScripts(planted).violations.some((line) => line.includes(name)),
+      );
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('forbids every evals script the manifest holds, the assess script included, and no script is left to chance', () => {
+      // ARRANGE
+      const { scripts } = realInput();
+      const live = Object.keys(scripts).filter((name) => name.startsWith('evals:'));
+      const assess = 'evals:assess';
+      // ACT
+      const forbidden = forbiddenNames(scripts);
+      // ASSERT
+      expect(live).toContain(assess);
+      expect(live.filter((name) => !forbidden.includes(name))).toEqual([]);
+    });
+
     it('goes red on the real repository once the live Antigravity script is planted in the verify chain', () => {
       // ARRANGE
       const input = realInput();

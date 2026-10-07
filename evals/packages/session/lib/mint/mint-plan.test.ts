@@ -247,9 +247,13 @@ describe('sourcesFor', () => {
   });
 
   describe('edge cases', () => {
-    it('names exactly one hook script, the unmodified query hook', () => {
+    it('offers the unmodified hook scripts and the activity log the assess hook imports, and nothing else', () => {
       // ARRANGE
-      const expected = ['/co/.agents/skills/markdown-harness/scripts/query-hook.mjs'];
+      const expected = [
+        '/co/.agents/skills/markdown-harness/scripts/query-hook.mjs',
+        '/co/.agents/skills/markdown-harness/scripts/assess-hook.mjs',
+        '/co/.agents/skills/markdown-harness/scripts/activity-log.mjs',
+      ];
       // ACT
       const actual = sourcesFor({ checkout: '/co', seedRelative: 's' }).hookScripts;
       // ASSERT

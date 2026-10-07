@@ -6,10 +6,12 @@
 // Everything that differs by delivery channel is one row of CHANNELS, keyed by DeliveryChannel: the shells and
 // encodings it may pair with, whether it ships the hook script, its canary, and the instruction-file line.
 
-import { evaluateCanary, evaluatePullCanary } from '../canary/canary.pure.ts';
+import { evaluateAssessCanary, evaluateCanary, evaluatePullCanary } from '../canary/canary.pure.ts';
 import type { ChannelRow, DeliveryChannel, DeliverySurface, ShellScope } from './delivery-surface.types.ts';
 
 export const SHIM_PATH = 'bin/mh';
+/** The note the assess canary reads and every assess layout holds: a far-past `stale_after` keeps it stale at any real clock. */
+export const ASSESS_CANARY_TARGET = 'docs/research/feature-flags.md';
 /** The one command a pull surface hands the agent; the allow-list, the instruction line and the canary task all say it. */
 export const QUERY_COMMAND_TEXT = `${SHIM_PATH} query`;
 
@@ -20,6 +22,9 @@ const QUERY_ALLOWED = [`Bash(${QUERY_COMMAND_TEXT}:*)`, `Bash(./${QUERY_COMMAND_
 // File-writing commands a widened cell adds, so an agent can create the target file without the Write tool. The
 // widening is partial on purpose: `cp`, `mv`, `python` and `sed -i` stay denied, so a file written through
 // them is not measured, and creation detection (observe/creation.pure.ts) follows this list.
+const QUERY_HOOK = 'query-hook.mjs';
+// The assess hook imports the activity log, so a root holding one holds the other.
+const ASSESS_SCRIPTS = ['assess-hook.mjs', 'activity-log.mjs'];
 const WRITING_ALLOWED = ['Bash(cat:*)', 'Bash(tee:*)', 'Bash(printf:*)', 'Bash(echo:*)', 'Bash(mkdir:*)'];
 
 export const CHANNELS: Readonly<Record<DeliveryChannel, ChannelRow>> = {
@@ -27,7 +32,7 @@ export const CHANNELS: Readonly<Record<DeliveryChannel, ChannelRow>> = {
     // The widened shell sits here because the coverage hole is push's Write matcher; pull stays query-only.
     shells: ['none', 'widened'],
     encodings: ['hook-prose'],
-    needsHook: () => true,
+    hookScripts: () => [QUERY_HOOK],
     canary: {
       surface: { channel: 'push', shell: 'none', encoding: 'hook-prose' },
       task: (target) => `Use the Write tool to create ${target} with a short note.`,
@@ -39,7 +44,7 @@ export const CHANNELS: Readonly<Record<DeliveryChannel, ChannelRow>> = {
     shells: ['query-only'],
     encodings: ['json', 'prose', 'intent-only'],
     // The prose encoding renders through the hook script, so it ships it; the others never touch it.
-    needsHook: (surface) => surface.encoding === 'prose',
+    hookScripts: (surface) => (surface.encoding === 'prose' ? [QUERY_HOOK] : []),
     canary: {
       surface: { channel: 'pull', shell: 'query-only', encoding: 'json' },
       task: (target) =>
@@ -48,10 +53,23 @@ export const CHANNELS: Readonly<Record<DeliveryChannel, ChannelRow>> = {
     },
     line: PULL_LINE,
   },
+  assess: {
+    // The agent reads, the hook answers, the agent repairs with the edit tools: no shell is given.
+    shells: ['none'],
+    encodings: ['hook-prose'],
+    hookScripts: () => ASSESS_SCRIPTS,
+    canary: {
+      surface: { channel: 'assess', shell: 'none', encoding: 'hook-prose' },
+      task: (target) => `Read ${target}, then use the Edit tool to add one short line to it.`,
+      verdict: evaluateAssessCanary,
+      target: ASSESS_CANARY_TARGET,
+    },
+    line: undefined,
+  },
   'user-turn': {
     shells: ['none'],
     encodings: ['none'],
-    needsHook: () => false,
+    hookScripts: () => [],
     canary: undefined,
     line: undefined,
   },
@@ -85,9 +103,14 @@ export function allowedToolsFor(shell: ShellScope): string[] {
   return grantsShellWrites(shell) ? [...QUERY_ALLOWED, ...WRITING_ALLOWED] : [...QUERY_ALLOWED];
 }
 
-/** Whether a surface ships the hook script into the root: the push hook, or the prose pull command that renders through it. */
+/** The skill scripts a surface ships into the root: the push hook, the assess hook with its log, or the prose pull command's hook. */
+export function hookScriptsFor(surface: DeliverySurface): readonly string[] {
+  return CHANNELS[surface.channel].hookScripts(surface);
+}
+
+/** Whether a surface ships a hook script into the root. */
 export function needsHookScript(surface: DeliverySurface): boolean {
-  return CHANNELS[surface.channel].needsHook(surface);
+  return hookScriptsFor(surface).length > 0;
 }
 
 /** The constructed instruction-file line a pull surface adds; the committed case supplies its words. */

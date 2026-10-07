@@ -36,6 +36,81 @@ function derive(arm: 'steered' | 'neutralised') {
   return deriveArm({ configText: CONFIG, arm, substitutes: [{ placeholder: PLACEHOLDER, clause: CLAUSE }] });
 }
 
+const ASSESS_CONFIG = `
+frontmatter:
+  rules:
+    - ruleId: research
+      folders: [docs/research/]
+      intent: 'Frontmatter words.'
+      assess:
+        stale: 'Re-read this first. ${PLACEHOLDER}'
+      fields:
+        stale_after: { presence: required, format: datetime }
+`;
+
+function deriveAssess(arm: 'steered' | 'neutralised') {
+  return deriveArm({ configText: ASSESS_CONFIG, arm, substitutes: [{ placeholder: PLACEHOLDER, clause: CLAUSE }] });
+}
+
+describe('deriveArm over an assess.stale carrier', () => {
+  describe('edge cases', () => {
+    it('leaves every other key of the assess block alone, because only the stale sentence is a carrier', () => {
+      // ARRANGE
+      const configText = ASSESS_CONFIG.replace(
+        "stale: 'Re-read this first.",
+        "other: 'kept'\n        stale: 'Re-read this first.",
+      );
+      const expected = 'kept';
+      // ACT
+      const derived = deriveArm({ configText, arm: 'neutralised', substitutes: [] });
+      const actual = (parse(derived.configText) as Parsed).frontmatter.rules[0]?.assess;
+      // ASSERT
+      expect((actual as { other?: string }).other).toBe(expected);
+    });
+  });
+
+  describe('success cases', () => {
+    it('substitutes the clause into the stale sentence in the steered arm', () => {
+      // ARRANGE
+      const expected = `Re-read this first. ${CLAUSE}`;
+      // ACT
+      const actual = (parse(deriveAssess('steered').configText) as Parsed).frontmatter.rules[0]?.assess?.stale;
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+
+    it('replaces the stale sentence with the filler in the intent-neutralised arm, never removing it', () => {
+      // ARRANGE
+      const expected = [NEUTRAL_FILLER, NEUTRAL_FILLER];
+      // ACT
+      const derived = deriveAssess('neutralised');
+      const actual = derived.carriers.map((carrier) => carrier.text);
+      // ASSERT
+      expect(actual).toEqual(expected);
+      expect(derived.configText).not.toContain(PLACEHOLDER);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses a steered arm whose placeholder sits in no carrier', () => {
+      // ARRANGE
+      const configText = ASSESS_CONFIG.replace(PLACEHOLDER, '').replace(
+        'assess:\n        stale:',
+        'note:\n        text:',
+      );
+      // ACT
+      const act = () =>
+        deriveArm({ configText, arm: 'steered', substitutes: [{ placeholder: PLACEHOLDER, clause: CLAUSE }] });
+      // ASSERT
+      expect(act).toThrow(/appears in no carrier/);
+    });
+  });
+});
+
+interface Parsed {
+  readonly frontmatter: { readonly rules: readonly { readonly assess?: { readonly stale?: string } }[] };
+}
+
 describe('deriveArm', () => {
   describe('success cases', () => {
     it('replaces every carrier in the document, tested or not, with one constant filler', () => {

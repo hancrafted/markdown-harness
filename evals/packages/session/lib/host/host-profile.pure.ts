@@ -51,7 +51,7 @@ const FIXED: Readonly<Record<HostName, Fixed>> = {
   'claude-code': {
     name: 'claude-code',
     wrapperName: 'claude',
-    matrices: ['push', 'pull', 'carriers'],
+    matrices: ['push', 'pull', 'carriers', 'assess'],
     turnCap: 'enforced',
     unobservable: [],
     canaryModel: 'sonnet',
@@ -88,7 +88,7 @@ const PROBES: Readonly<Record<HostName, readonly ProbeId[]>> = { 'claude-code': 
 /** The channels a Host harness has no builder for, whatever its probes say. */
 const UNBUILT: Readonly<Record<HostName, readonly DeliveryChannel[]>> = {
   'claude-code': [],
-  antigravity: ['push'],
+  antigravity: ['push', 'assess'],
 };
 
 /** The probe a channel's canary depends on, for a Host harness whose channel is not proven by the canary alone. */

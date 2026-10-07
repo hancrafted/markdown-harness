@@ -51,6 +51,17 @@ describe('findDelivery', () => {
       // ASSERT
       expect(found).toEqual(expected);
     });
+
+    it('finds an assess delivery in a hook response holding every steering marker, naming the path it was about', () => {
+      // ARRANGE
+      const notice = `markdown-harness: ${TARGET} is past its stale_after under Module "frontmatter". ${FIRST}`;
+      const events = [hook(1, JSON.stringify({ hookSpecificOutput: { additionalContext: notice } }))];
+      const expected = { seq: 1, path: TARGET };
+      // ACT
+      const found = findDelivery(events, 'assess', [FIRST]);
+      // ASSERT
+      expect(found).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
@@ -68,6 +79,15 @@ describe('findDelivery', () => {
       const events = [hook(1, FIRST), ask(2, `bin/mh query ${TARGET}`), answer(3, FIRST, true)];
       // ACT
       const found = findDelivery(events, 'pull', [FIRST]);
+      // ASSERT
+      expect(found).toBeUndefined();
+    });
+
+    it('finds no assess delivery in a response that lacks the steering marker', () => {
+      // ARRANGE
+      const events = [hook(1, `markdown-harness: ${TARGET} is past its stale_after`)];
+      // ACT
+      const found = findDelivery(events, 'assess', [FIRST]);
       // ASSERT
       expect(found).toBeUndefined();
     });

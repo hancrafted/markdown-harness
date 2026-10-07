@@ -29,6 +29,7 @@ const SOURCES: CohortSources = {
   },
   vars: {
     caseId: 'c',
+    kind: 'steer',
     task: 't',
     targetPath: 't',
     seedDir: 's',

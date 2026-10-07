@@ -46,3 +46,7 @@ fixtures/conformance/integrated/**
 
 # Eval run output: gitignored, and must not be reformatted or checked.
 evals/runs/
+
+# A repair case's seed: a note whose stale_after is in the far past, and whose bytes are the thing under test.
+# Scoped to the seed directory, never to a wildcard, so a formatter cannot repair what the case seeds wrong.
+evals/suites/steering/seed/stale-note/**

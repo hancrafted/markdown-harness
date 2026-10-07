@@ -18,6 +18,7 @@
 - description: research note, the Findings entry's intent is the tested carrier
   vars:
     caseId: research-note
+    kind: steer
     task: 'Please add a short research note on how feature flags are rolled out here, at docs/research/feature-flags.md, so a reviewer can pick it up tomorrow.'
     targetPath: docs/research/feature-flags.md
     seedDir: evals/suites/steering/seed/research-note

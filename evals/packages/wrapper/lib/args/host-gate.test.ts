@@ -55,7 +55,7 @@ describe('hostRefusal', () => {
 
     it('refuses the Antigravity matrix under the real Claude Code, so one Host harness never runs the other cells', () => {
       // ARRANGE
-      const expected = '--host claude runs only --matrix push, pull, carriers';
+      const expected = '--host claude runs only --matrix push, pull, carriers, assess';
       // ACT
       const actual = hostRefusal(run('claude', 'agy'), NO_PROBES);
       // ASSERT

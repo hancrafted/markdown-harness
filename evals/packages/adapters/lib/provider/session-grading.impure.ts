@@ -95,7 +95,7 @@ function returnOf(
   observation: ReturnType<typeof observeSession>,
   row: Readonly<Record<string, unknown>>,
 ): SessionReturn {
-  const { cell, prepared, outcome, parsed } = parts;
+  const { cell, vars, prepared, outcome, parsed } = parts;
   const output = JSON.stringify({
     finalFile: outcome.finalFile ?? null,
     changedFiles: outcome.changedFiles,
@@ -105,6 +105,8 @@ function returnOf(
     output,
     metadata: {
       arm: cell.arm,
+      kind: vars.kind,
+      targetPath: vars.targetPath,
       carriers: prepared.carriers.map((carrier) => ({
         address: carrier.address,
         steeringMarker: carrier.steeringMarker,
