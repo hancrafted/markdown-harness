@@ -9,7 +9,7 @@ import { commandOf } from './creation.pure.ts';
 import type { Delivery, ToolCall } from './session-observation.types.ts';
 
 // The two hooks' first lines: the push hook's new-file notice and the assess hook's past-its-stale_after notice.
-const NOTICE_PATH = /markdown-harness: (\S+) is (?:a new file|past its stale_after)/;
+export const NOTICE_PATH = /markdown-harness: (\S+) is (?:a new file|past its stale_after)/;
 /** The one pattern for a shell command that ran the query command. */
 export const QUERY_COMMAND = /\bmh query\b/;
 const QUERY_PATH = new RegExp(`${QUERY_COMMAND.source}\\s+(?:--\\S+\\s+)*["']?([^\\s"']+)`);

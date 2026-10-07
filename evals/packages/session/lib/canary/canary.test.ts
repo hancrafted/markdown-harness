@@ -10,11 +10,14 @@ const READ_START = { seq: 0, kind: 'hook-start', hookName: 'PostToolUse:Read' } 
 const READ_ANSWER = (output: string) =>
   ({ seq: 1, kind: 'hook-response', hookName: 'PostToolUse:Read', output }) as const;
 
+const NOTICE = 'markdown-harness: docs/research/feature-flags.md is past its stale_after under Module "x".';
+
 describe('evaluateAssessCanary', () => {
   describe('success cases', () => {
     it('passes when the Read hook started and answered with a notice', () => {
       // ARRANGE
-      const events = [READ_START, READ_ANSWER('{"hookSpecificOutput":{}}')];
+      const notice = JSON.stringify({ additionalContext: NOTICE });
+      const events = [READ_START, READ_ANSWER(notice)];
       // ACT
       const actual = evaluateAssessCanary(events);
       // ASSERT
@@ -34,6 +37,15 @@ describe('evaluateAssessCanary', () => {
   });
 
   describe('edge cases', () => {
+    it('does not count a hook that answered with text that is not the assess notice', () => {
+      // ARRANGE
+      const events = [READ_START, READ_ANSWER('{"systemMessage":"hello from some other hook"}')];
+      // ACT
+      const actual = evaluateAssessCanary(events);
+      // ASSERT
+      expect(actual).toMatch(/not the assess notice/);
+    });
+
     it('does not count a hook of another event: a pre-write hook is not the assess hook', () => {
       // ARRANGE
       const events = [START, ANSWER('{"x":1}')];

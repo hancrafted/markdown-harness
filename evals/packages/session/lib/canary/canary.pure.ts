@@ -4,14 +4,36 @@
 // output. A failed canary is an instrument failure for every cell sharing the
 // configuration; after a passing canary, a hook that did not fire is graded rung 3.
 
-import { queryCalls, resultOf } from '../observe/delivery.pure.ts';
+import { NOTICE_PATH, queryCalls, resultOf } from '../observe/delivery.pure.ts';
 import type { SessionEvent } from '../stream/session-stream.types.ts';
 
+interface HookCanary {
+  /** What to call the hook in a failure sentence. */
+  readonly name: string;
+  /** Which hook events count: the surface's own, never a hook of another event. */
+  readonly counts?: (hookName: string) => boolean;
+  /** The words the hook's answer must hold, when it has words of its own; any non-empty answer passes without. */
+  readonly notice?: RegExp;
+  /** Appended to the failure sentence for a hook that said nothing. */
+  readonly silentHint?: string;
+}
+
+/** The shared shape of a hook canary: the hook started, then answered, then answered with its own words. */
+function hookCanary(events: readonly SessionEvent[], shape: HookCanary): string | undefined {
+  const { name, counts = () => true, notice } = shape;
+  if (!events.some((event) => event.kind === 'hook-start' && counts(event.hookName)))
+    return `canary failed: the ${name} never started`;
+  const answers = events.flatMap((event) =>
+    event.kind === 'hook-response' && counts(event.hookName) && event.output.trim() !== '' ? [event.output] : [],
+  );
+  if (answers.length === 0)
+    return `canary failed: the ${name} started and answered with nothing${shape.silentHint ?? ''}`;
+  if (notice === undefined || answers.some((output) => notice.test(output))) return undefined;
+  return `canary failed: the ${name} answered with text that is not the assess notice`;
+}
+
 export function evaluateCanary(events: readonly SessionEvent[]): string | undefined {
-  const started = events.some((event) => event.kind === 'hook-start');
-  if (!started) return 'canary failed: the hook never started';
-  const answered = events.some((event) => event.kind === 'hook-response' && event.output.trim() !== '');
-  return answered ? undefined : 'canary failed: the hook started and answered with nothing';
+  return hookCanary(events, { name: 'hook' });
 }
 
 /**
@@ -30,18 +52,18 @@ export function evaluatePullCanary(events: readonly SessionEvent[]): string | un
 }
 
 /**
- * The assess canary: a Read hook started and answered with a notice. Only a `PostToolUse` hook counts, because
- * the assess hook is wired there and a hook of another event proves nothing about it. A hook that started and
- * said nothing is the shape of a seed that is not stale: the assess hook is silent on anything but a review.
+ * The assess canary: a `PostToolUse` hook started and answered with the assess notice, the sentence that names a
+ * path past its `stale_after`. Only a `PostToolUse` hook counts, because the assess hook is wired there and a
+ * hook of another event proves nothing about it; and only the notice counts, because any other non-empty answer
+ * is a hook that is not this one. A hook that started and said nothing is the shape of a seed that is not stale:
+ * the assess hook is silent on anything but a review.
  */
 export function evaluateAssessCanary(events: readonly SessionEvent[]): string | undefined {
-  const isRead = (hookName: string): boolean => hookName.startsWith('PostToolUse');
-  const started = events.some((event) => event.kind === 'hook-start' && isRead(event.hookName));
-  if (!started) return 'canary failed: the assess hook never started';
-  const answered = events.some(
-    (event) => event.kind === 'hook-response' && isRead(event.hookName) && event.output.trim() !== '',
-  );
-  return answered
-    ? undefined
-    : 'canary failed: the assess hook started and answered with nothing, so the seed may not be stale';
+  const isPostToolUse = (hookName: string): boolean => hookName.startsWith('PostToolUse');
+  return hookCanary(events, {
+    name: 'assess hook',
+    counts: isPostToolUse,
+    notice: NOTICE_PATH,
+    silentHint: ', so the seed may not be stale',
+  });
 }
