@@ -20,3 +20,12 @@ export interface TierShape {
   readonly name: string;
   readonly unit: RunnableUnit;
 }
+
+/**
+ * What one `npm run conformance` command line asks for: every tier when it names
+ * no path, the listed paths when it does, or a refusal with the reason.
+ */
+export type ConformanceArguments =
+  | { readonly kind: 'every-tier' }
+  | { readonly kind: 'paths'; readonly paths: readonly string[] }
+  | { readonly kind: 'refused'; readonly reason: string };

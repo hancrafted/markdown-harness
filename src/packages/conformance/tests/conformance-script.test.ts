@@ -17,8 +17,8 @@ const REPOSITORY = join(conformanceRoot(), '..', '..');
 const SCRIPT = join(REPOSITORY, 'src', 'packages', 'conformance', 'run-spec-folder.ts');
 const FOLDER = 'fixtures/conformance/body-structure/docs/maxCount__exactly-two';
 
-function conformance(argument: string): { stdout: string; stderr: string; code: number | null } {
-  const run = spawnSync(process.execPath, [SCRIPT, argument], { cwd: REPOSITORY, encoding: 'utf8' });
+function conformance(...args: string[]): { stdout: string; stderr: string; code: number | null } {
+  const run = spawnSync(process.execPath, [SCRIPT, ...args], { cwd: REPOSITORY, encoding: 'utf8' });
   return { stdout: run.stdout, stderr: run.stderr, code: run.status };
 }
 
@@ -68,6 +68,20 @@ describe('npm run conformance', () => {
   });
 
   describe('failure cases', () => {
+    it('refuses an option it does not know with exit 2, rather than running every tier', () => {
+      // ARRANGE
+      const expected = {
+        code: 2,
+        stdout: '',
+        stderr: 'conformance: unknown option --paths — usage: npm run conformance [-- --path <path> [<path> ...]]\n',
+      };
+      // ACT
+      const run = conformance('--paths', FOLDER);
+      const actual = { code: run.code, stdout: run.stdout, stderr: run.stderr };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('names the case and the frozen line that disagree in a mismatched scratch copy, and exits 1', () => {
       // two.md now claims to fail, and the config asks for three repeats, so
       // three.md passes where its marker says it fails and the frozen check moves.
@@ -96,6 +110,27 @@ describe('npm run conformance', () => {
   });
 
   describe('edge cases', () => {
+    it('runs every path listed after --path, in order, and exits 0 when all agree', () => {
+      // ARRANGE
+      const rejectedCase = 'fixtures/conformance/rejected-config/frontmatter__duplicate-rule-id';
+      const expected = {
+        code: 0,
+        headers: [
+          'spec body-structure/docs/maxCount__exactly-two',
+          'case rejected-config/frontmatter__duplicate-rule-id',
+        ],
+      };
+      // ACT
+      const run = conformance('--path', FOLDER, rejectedCase);
+      const headers = run.stdout
+        .split('\n')
+        .filter((line) => /^(spec|case)\s/u.test(line))
+        .map((line) => line.replace(/\s+/gu, ' '));
+      const actual = { code: run.code, headers };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses a file inside a rejected-config case with the reason, and exits 2', () => {
       // ARRANGE
       const expected = { code: 2, stdout: '', stderr: expect.stringContaining('is not a case directory') };

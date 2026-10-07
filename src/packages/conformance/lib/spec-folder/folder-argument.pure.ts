@@ -13,7 +13,7 @@
  * config.
  */
 
-import type { FolderRequest, TierShape } from './folder-argument.types.ts';
+import type { ConformanceArguments, FolderRequest, TierShape } from './folder-argument.types.ts';
 
 const PREFIX = 'fixtures/conformance/';
 const USAGE = 'name a spec folder, e.g. npm run conformance -- body-structure/docs/minCount__zero';
@@ -63,4 +63,39 @@ function inSpecTier(argument: string, tier: string, rest: readonly string[]): Fo
     kind: 'refused',
     reason: `${argument} is not a spec folder — a spec folder sits directly under ${PREFIX}${tier}/docs/`,
   };
+}
+
+const PATH_FLAG = '--path';
+const ARGUMENTS_USAGE = 'usage: npm run conformance [-- --path <path> [<path> ...]]';
+
+/**
+ * Decide what one command line asks for. No argument runs every tier, which is
+ * what the gate runs. `--path` takes every argument up to the next flag, and may
+ * repeat; a bare path is read as if `--path` preceded it, so the one-folder form
+ * a human types keeps working.
+ *
+ * @param argv the arguments after the script's own path, as typed.
+ */
+export function conformanceArgumentsOf(argv: readonly string[]): ConformanceArguments {
+  const paths: string[] = [];
+  for (let index = 0; index < argv.length; index++) {
+    const argument = argv[index];
+    if (argument === PATH_FLAG) {
+      const listed = takeUntilFlag(argv, index + 1);
+      if (listed.length === 0) return { kind: 'refused', reason: `${PATH_FLAG} names no path — ${ARGUMENTS_USAGE}` };
+      paths.push(...listed);
+      index += listed.length;
+    } else if (argument.startsWith('-')) {
+      return { kind: 'refused', reason: `unknown option ${argument} — ${ARGUMENTS_USAGE}` };
+    } else if (argument.trim() !== '') {
+      paths.push(argument);
+    }
+  }
+  return paths.length === 0 ? { kind: 'every-tier' } : { kind: 'paths', paths };
+}
+
+/** The arguments from `start` up to, not including, the next one that is a flag. */
+function takeUntilFlag(argv: readonly string[], start: number): readonly string[] {
+  const end = argv.findIndex((argument, index) => index >= start && argument.startsWith('-'));
+  return argv.slice(start, end === -1 ? argv.length : end).filter((argument) => argument.trim() !== '');
 }

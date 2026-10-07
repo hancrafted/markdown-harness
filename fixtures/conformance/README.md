@@ -24,8 +24,12 @@ after the config key it exercises. Run one by hand, or through the runner's own 
 
 ```sh
 cd fixtures/conformance/body-structure/docs/minCount__zero && npx mh | diff - expected-check.json
-npm run conformance -- body-structure/docs/minCount__zero
+npm run conformance -- --path body-structure/docs/minCount__zero
 ```
+
+`npm run conformance` with no path runs every tier, which is what `npm run verify` and CI run.
+`--path` takes one or more paths and may repeat; a bare path works as one `--path`. The script
+exits 0 when everything agrees, 1 when anything disagrees, and 2 when a path is refused.
 
 Build first: both run the compiled `mh` under `dist/`.
 

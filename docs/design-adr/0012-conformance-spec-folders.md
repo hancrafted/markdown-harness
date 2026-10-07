@@ -18,7 +18,8 @@ name, so `mh` finds it with no flag. It holds `expected-check.json`, exactly wha
 run inside the folder. It holds `expected-audit.json` where Rules compete for a file, and
 `expected-query.json` where paths were asked. And it holds its cases. Line 1 of the config is
 `# Spec: <sentence>`. A human verifies a folder with
-`cd <folder> && npx mh | diff - expected-check.json`, or with `npm run conformance -- <folder>`.
+`cd <folder> && npx mh | diff - expected-check.json`, or with `npm run conformance -- --path <folder>`. With no path the script runs every
+tier, and `npm run verify` and CI run it that way.
 The tier runner and the script both go through one comparison function, so the two cannot drift.
 
 **Naming.** A folder is named `<key>__<behaviour>`. The key is spelled as the config writes it, or

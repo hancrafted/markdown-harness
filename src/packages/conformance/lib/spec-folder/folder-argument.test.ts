@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { folderRequestOf } from './folder-argument.pure.ts';
+import { conformanceArgumentsOf, folderRequestOf } from './folder-argument.pure.ts';
 
 const TIERS = [
   { name: 'body-structure', unit: 'spec-folder' },
@@ -96,6 +96,75 @@ describe('folderRequestOf', () => {
       const actual = folderRequestOf(argument, TIERS);
       // ASSERT
       expect(actual.kind).toBe(refused);
+    });
+  });
+});
+
+describe('conformanceArgumentsOf', () => {
+  describe('success cases', () => {
+    it('reads no argument as every tier, which is what the gate runs', () => {
+      // ARRANGE
+      const expected = { kind: 'every-tier' };
+      // ACT
+      const actual = conformanceArgumentsOf([]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reads every path after --path, across repeats, in the order typed', () => {
+      // ARRANGE
+      const argv = ['--path', 'body-structure/docs/a', 'integrated/docs/b', '--path', 'rejected-config/c'];
+      const expected = { kind: 'paths', paths: ['body-structure/docs/a', 'integrated/docs/b', 'rejected-config/c'] };
+      // ACT
+      const actual = conformanceArgumentsOf(argv);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses --path that names no path, with the usage', () => {
+      // ARRANGE
+      const expected = {
+        kind: 'refused',
+        reason: '--path names no path — usage: npm run conformance [-- --path <path> [<path> ...]]',
+      };
+      // ACT
+      const actual = conformanceArgumentsOf(['--path']);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('refuses an option it does not know, rather than running every tier', () => {
+      // ARRANGE
+      const expected = {
+        kind: 'refused',
+        reason: 'unknown option --paths — usage: npm run conformance [-- --path <path> [<path> ...]]',
+      };
+      // ACT
+      const actual = conformanceArgumentsOf(['--paths', 'body-structure']);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('reads a bare path as if --path preceded it, so the one-folder form keeps working', () => {
+      // ARRANGE
+      const expected = { kind: 'paths', paths: ['body-structure/docs/a'] };
+      // ACT
+      const actual = conformanceArgumentsOf(['body-structure/docs/a']);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('reads blank arguments as no path, so an empty shell variable still runs every tier', () => {
+      // ARRANGE
+      const expected = { kind: 'every-tier' };
+      // ACT
+      const actual = conformanceArgumentsOf(['', '  ']);
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
   });
 });

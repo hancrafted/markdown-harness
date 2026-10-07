@@ -92,6 +92,10 @@ jobs:
       # artefact is absent rather than failing 24 times without naming a build.
       - name: build
         run: npm run build
+      # Every Conformance tier, each spec folder and rejected-config case run the
+      # way `npm run conformance -- --path <path>` runs one, against the build above.
+      - name: conformance
+        run: npm run conformance
       # Includes the process-boundary suite, which spawns the `bin.mh` entry under
       # this Node: the shebang, the compiled entry, the runtime floor and the exit
       # codes are all covered here. What it cannot cover is the artefact an adopter
