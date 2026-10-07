@@ -5,7 +5,7 @@
 
 import type { Localisation, RungNumber, RungObservation, RungStatus } from './rung-localiser.types.ts';
 
-export const RUNGS: readonly RungNumber[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const RUNGS: readonly RungNumber[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 /** A full observation record: every rung clean unless the overrides say otherwise. */
 export function rungObservations(overrides: Partial<Record<RungNumber, RungStatus>>): RungObservation[] {

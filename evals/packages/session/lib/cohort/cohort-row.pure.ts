@@ -55,7 +55,7 @@ export const COHORT_FIELDS: readonly string[] = [
 ];
 
 /** The fields that define a cohort: rows differing in any of them are never paired. */
-export const PAIRING_FIELDS: readonly string[] = [
+const PAIRING_FIELDS: readonly string[] = [
   'hostName',
   'hostVersion',
   'resolvedModel',

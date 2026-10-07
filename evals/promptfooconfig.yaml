@@ -1,0 +1,28 @@
+# The eval tool's configuration: the matrix of cases, cells (arm, delivery channel,
+# provider options), repetition and assertion. Cases are the tool's own test-case
+# files, so adding a case or a cell is a data change. Every value that could default
+# is written out: delivery channel and arm are provider fields, never implicit.
+#
+# Run it through the wrapper, never directly: the wrapper owns the exit code, turns
+# the tool's cache, telemetry and sharing off, and counts the results it wrote.
+description: steering eval, phase 1, Claude Code, push delivery
+prompts:
+  - '{{task}}'
+providers:
+  - id: file://packages/adapters/claude-provider.ts
+    label: push-steered
+    config: { arm: steered, deliveryChannel: push, model: sonnet, hostName: claude-code }
+  - id: file://packages/adapters/claude-provider.ts
+    label: push-neutralised
+    config: { arm: neutralised, deliveryChannel: push, model: sonnet, hostName: claude-code }
+  - id: file://packages/adapters/claude-provider.ts
+    label: trusted-prompt-control
+    config: { arm: control, deliveryChannel: user-turn, model: sonnet, hostName: claude-code }
+tests: file://suites/steering/cases/research-note.yaml
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://packages/adapters/steering-assertion.ts:gradeSteering
+evaluateOptions:
+  maxConcurrency: 1
+  cache: false

@@ -2,8 +2,28 @@
 // non-vacuous: a planted reference goes red, and a real chain reports the known
 // gate steps rather than an empty expansion.
 
+import { readFileSync, readdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { scanForLiveScripts } from './live-exclusion.pure.ts';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../..');
+const REAL_FORBIDDEN = ['evals:live', 'evals:self-test', 'promptfoo', 'claude -p', 'run-evals', 'run-self-test'];
+
+function realInput() {
+  const manifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts: Record<string, string> };
+  const read = (directory: string) =>
+    readdirSync(join(ROOT, directory))
+      .filter((name) => /\.ya?ml$|^pre-|^commit-msg$/.test(name))
+      .map((name) => [`${directory}/${name}`, readFileSync(join(ROOT, directory, name), 'utf8')] as const);
+  return {
+    scripts: manifest.scripts,
+    gateScripts: ['verify', 'verify:commit'],
+    workflows: Object.fromEntries([...read('.github/workflows'), ...read('.husky')]),
+    forbidden: REAL_FORBIDDEN,
+  };
+}
 
 const SCRIPTS = {
   verify: 'archgate check && npm run lint:boundaries && vitest run',
@@ -38,6 +58,30 @@ describe('scanForLiveScripts', () => {
       // ASSERT
       expect(report.violations).toEqual([]);
       expect(report.chain).toEqual(expect.arrayContaining(expectedChain));
+    });
+
+    it('finds no live or self-test script in the verify chain, the commit chain, the workflows or the hooks, over a non-empty chain', () => {
+      // ARRANGE
+      const expectedChain = ['verify', 'verify:commit', 'lint:boundaries', 'build'];
+      // ACT
+      const report = scanForLiveScripts(realInput());
+      // ASSERT
+      expect(report.violations).toEqual([]);
+      expect(report.chain).toEqual(expect.arrayContaining(expectedChain));
+    });
+
+    it('goes red on the real repository once a live script is planted in the verify chain', () => {
+      // ARRANGE
+      const input = realInput();
+      const planted = {
+        ...input,
+        scripts: { ...input.scripts, verify: `${input.scripts.verify} && npm run evals:live` },
+      };
+      const expected = 'the gate chain reaches evals:live';
+      // ACT
+      const report = scanForLiveScripts(planted);
+      // ASSERT
+      expect(report.violations).toContain(expected);
     });
   });
 

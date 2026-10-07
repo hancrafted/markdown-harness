@@ -2,7 +2,7 @@
 // and carrier, redrawn when it occurs anywhere in the supplied corpus.
 
 import { describe, expect, it } from 'vitest';
-import { MARKER_FAMILY_SHAPE, drawSteeringMarker, markerPattern } from './steering-marker.pure.ts';
+import { MARKER_FAMILY_SHAPE, drawSteeringMarker, transcriptionGuardHits } from './steering-marker.pure.ts';
 
 const SEED = 'seed-one';
 const CASE_ID = 'research-note';
@@ -64,14 +64,53 @@ describe('drawSteeringMarker', () => {
   });
 
   describe('edge cases', () => {
-    it('builds a word-bounded exact pattern that matches the code and nothing longer', () => {
+    it('draws the same code for the same inputs even when the corpus is large', () => {
       // ARRANGE
-      const code = draw('');
-      const pattern = markerPattern(code);
+      const corpus = 'filler text '.repeat(1000);
+      const expected = draw(corpus);
       // ACT
-      const actual = [pattern.test(`line\n${code}\n`), pattern.test(`${code}9`), pattern.test('')];
+      const actual = draw(corpus);
       // ASSERT
-      expect(actual).toEqual([true, false, false]);
+      expect(actual).toEqual(expected);
+    });
+  });
+});
+
+describe('transcriptionGuardHits', () => {
+  describe('success cases', () => {
+    it('names a committed file holding a code of the family, and only that one', () => {
+      // ARRANGE
+      const files = [
+        { path: 'task.md', text: 'Write a note. AB12-3456 is the code.' },
+        { path: 'clean.md', text: 'plain' },
+      ];
+      const expected = ['task.md'];
+      // ACT
+      const actual = transcriptionGuardHits(files);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('reads nothing as clean only when it was handed files', () => {
+      // ARRANGE
+      const expected: string[] = [];
+      // ACT
+      const actual = transcriptionGuardHits([{ path: 'a', text: 'no code here' }]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('does not match a longer token that merely contains the shape', () => {
+      // ARRANGE
+      const files = [{ path: 'a', text: 'XAB12-34567' }];
+      // ACT
+      const actual = transcriptionGuardHits(files);
+      // ASSERT
+      expect(actual).toEqual([]);
     });
   });
 });

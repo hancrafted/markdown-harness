@@ -48,3 +48,9 @@ export function deriveArm(input: DeriveArmInput): DerivedArm {
   const charactersDelivered = carriers.reduce((sum, carrier) => sum + carrier.text.length, 0);
   return { configText: stringify(document), carriers, substitutions, charactersDelivered };
 }
+
+/** The address of the carrier whose text holds the placeholder, or undefined when none does. */
+export function testedCarrierAddress(configText: string, placeholder: string): string | undefined {
+  const document: unknown = parse(configText);
+  return intentCarriers(document).find(({ path }) => read(document, path).includes(placeholder))?.address;
+}

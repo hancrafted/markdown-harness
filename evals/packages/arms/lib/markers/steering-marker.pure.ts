@@ -7,7 +7,7 @@
 // that occurs anywhere in the corpus is redrawn, so a marker never exists in the
 // checkout before a run.
 
-import type { MarkerDraw } from './steering-marker.types.ts';
+import type { GuardFile, MarkerDraw } from './steering-marker.types.ts';
 
 const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const MAX_ATTEMPTS = 200;
@@ -42,7 +42,8 @@ export function drawSteeringMarker(draw: MarkerDraw): string {
   throw new Error(`steering marker: every one of ${MAX_ATTEMPTS} candidates collided with the corpus`);
 }
 
-/** The grading pattern for one drawn code: exact, case-sensitive, word-bounded. */
-export function markerPattern(code: string): RegExp {
-  return new RegExp(`\\b${code.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}\\b`);
+/** The committed half of the transcription guard: every committed file that holds a code of the marker family. */
+export function transcriptionGuardHits(files: readonly GuardFile[]): string[] {
+  const family = new RegExp(MARKER_FAMILY_SHAPE.source);
+  return files.filter((file) => family.test(file.text)).map((file) => file.path);
 }

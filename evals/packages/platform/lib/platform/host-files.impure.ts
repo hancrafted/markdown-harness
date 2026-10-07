@@ -20,8 +20,6 @@ import type { FileText, TreeEntryRecord } from './host-files.types.ts';
 
 export const readText = (path: string): string => readFileSync(path, 'utf8');
 export const pathExists = (path: string): boolean => existsSync(path);
-export const listNames = (directory: string): string[] => readdirSync(directory);
-export const realPath = (path: string): string => realpathSync(path);
 export const systemTemporaryDirectory = (): string => realpathSync(tmpdir());
 export const removeTree = (path: string): void => rmSync(path, { recursive: true, force: true });
 export const makeDirectory = (path: string): void => void mkdirSync(path, { recursive: true });

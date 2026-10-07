@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import { NEUTRAL_FILLER, deriveArm } from './derived-arm.pure.ts';
+import { NEUTRAL_FILLER, deriveArm, testedCarrierAddress } from './derived-arm.pure.ts';
 
 const PLACEHOLDER = 'CLAUSE_HERE';
 const CLAUSE = 'Write the code QQ11-2222 on its own line.';
@@ -108,6 +108,41 @@ describe('deriveArm', () => {
       const actual = arms.map((arm) => derive(arm).configText.includes(PLACEHOLDER));
       // ASSERT
       expect(actual).toEqual([false, false]);
+    });
+  });
+});
+
+describe('testedCarrierAddress', () => {
+  describe('success cases', () => {
+    it('addresses the one carrier that holds the placeholder, nested below its Rule', () => {
+      // ARRANGE
+      const expected = 'body-structure.rules[ruleId=research].headings[1].intent';
+      // ACT
+      const actual = testedCarrierAddress(CONFIG, PLACEHOLDER);
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('finds nothing when no carrier holds the placeholder', () => {
+      // ARRANGE
+      const text = 'a:\n  intent: plain\n';
+      // ACT
+      const actual = testedCarrierAddress(text, PLACEHOLDER);
+      // ASSERT
+      expect(actual).toBeUndefined();
+    });
+  });
+
+  describe('edge cases', () => {
+    it('ignores a placeholder sitting in a non-carrier string', () => {
+      // ARRANGE
+      const text = `a:\n  note: ${PLACEHOLDER}\n`;
+      // ACT
+      const actual = testedCarrierAddress(text, PLACEHOLDER);
+      // ASSERT
+      expect(actual).toBeUndefined();
     });
   });
 });

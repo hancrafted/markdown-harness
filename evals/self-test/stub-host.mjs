@@ -4,10 +4,11 @@
 // takes the real argv, runs the root's real hook script, writes a real file and
 // prints a stream shaped like Claude Code's. No model is behind it.
 //
-//   node stub-host.mjs [--mode obey|ignore|auth-fail|slow] [--log <file>] -p <task> ...
+//   node stub-host.mjs [--mode obey|deaf|ignore|auth-fail|slow] [--log <file>] -p <task> ...
 //
 // obey: acts like an agent that does what the hook (or the user turn) tells it.
-// ignore: writes a plain note and never uses what it was told.
+// deaf: the hook fires and delivers, and the agent does not revise (a rung 4 null).
+// ignore: writes a plain note, never reads the hook; with no hook it is a rung 3 null.
 
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -81,6 +82,7 @@ const noteWith = (code) => `${draft}\n${code}\n`;
 
 let told = CODE.exec(task)?.[0];
 if (hooksOn && mode !== 'ignore') {
+  // 'deaf' runs the hook and then does not act on it
   emit({ type: 'assistant', message: { content: [{ type: 'text', text: 'Writing the note.' }] } });
   // PreToolUse: the call is announced, the hook runs BEFORE the file exists, then the write lands.
   announce('w1', draft);
@@ -94,7 +96,7 @@ if (hooksOn && mode !== 'ignore') {
   emit({ type: 'system', subtype: 'hook_response', hook_name: 'PreToolUse:Write', output: run.stdout });
   land('w1', draft);
   told = CODE.exec(run.stdout)?.[0] ?? told;
-  if (told) write('w2', noteWith(told));
+  if (told && mode !== 'deaf') write('w2', noteWith(told));
 } else {
   write('w1', mode === 'ignore' || !told ? draft : noteWith(told));
 }
