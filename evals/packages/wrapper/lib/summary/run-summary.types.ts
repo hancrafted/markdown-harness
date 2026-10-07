@@ -1,6 +1,8 @@
+import type { ArmKind } from '../../../session/observe-session.ts';
+
 export interface SessionSummary {
   readonly cell: string;
-  readonly arm: 'steered' | 'neutralised' | 'control';
+  readonly arm: ArmKind;
   readonly graded: boolean;
   readonly failureKind?: string;
   readonly steeringMarkerPresent: boolean;

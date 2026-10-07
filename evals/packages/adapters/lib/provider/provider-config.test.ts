@@ -1,7 +1,14 @@
 // Colocated unit test for reading the provider's inputs: nothing defaults.
 
 import { describe, expect, it } from 'vitest';
-import { fillClause, readCaseVars, readCellConfig, readRunSettings, taskFor } from './provider-config.pure.ts';
+import {
+  derivationArmFor,
+  fillClause,
+  readCaseVars,
+  readCellConfig,
+  readRunSettings,
+  taskFor,
+} from './provider-config.pure.ts';
 
 const CELL = { arm: 'steered', deliveryChannel: 'push', model: 'sonnet', hostName: 'claude-code' };
 const VARS = {
@@ -51,6 +58,15 @@ describe('provider inputs', () => {
         taskFor({ arm: 'control', task: 'do it', controlPrefix: 'Note: {clause}', clause }),
         taskFor({ arm: 'steered', task: 'do it', controlPrefix: 'Note: {clause}', clause }),
       ];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('derives the steered config for the steered arm and the intent-neutralised config for the other two', () => {
+      // ARRANGE
+      const expected = ['steered', 'neutralised', 'neutralised'];
+      // ACT
+      const actual = [derivationArmFor('steered'), derivationArmFor('neutralised'), derivationArmFor('control')];
       // ASSERT
       expect(actual).toEqual(expected);
     });

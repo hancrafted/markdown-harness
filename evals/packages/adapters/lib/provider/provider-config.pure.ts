@@ -1,6 +1,8 @@
 // Reading the provider's inputs. Nothing defaults: a missing field names itself
 // and fails the call as an instrument failure rather than becoming a guess.
 
+import type { ArmName } from '../../../arms/derive-arms.ts';
+import type { ArmKind } from '../../../session/observe-session.ts';
 import type { CaseVars, CellConfig, RunSettings, TaskParts } from './provider-config.types.ts';
 
 type Bag = Readonly<Record<string, unknown>>;
@@ -68,4 +70,18 @@ export function fillClause(template: string, steeringMarker: string): string {
 export function taskFor(parts: TaskParts): string {
   if (parts.arm !== 'control') return parts.task;
   return `${parts.controlPrefix.split('{clause}').join(parts.clause)} ${parts.task}`;
+}
+
+/**
+ * The config an arm's root is minted with. The control arm has no hook and carries its clause in the user
+ * turn, so its config is the intent-neutralised one. The switch is exhaustive: a fourth arm fails the type check.
+ */
+export function derivationArmFor(arm: ArmKind): ArmName {
+  switch (arm) {
+    case 'steered':
+      return 'steered';
+    case 'neutralised':
+    case 'control':
+      return 'neutralised';
+  }
 }

@@ -1,7 +1,7 @@
 import type { deriveArm } from '../../../arms/derive-arms.ts';
 import type { SteeringGrade } from '../../../grading/grade-steering-marker.ts';
 import type { Localisation } from '../../../grading/localise-rung.ts';
-import type { SessionObservation } from '../../../session/observe-session.ts';
+import type { ArmKind, SessionObservation } from '../../../session/observe-session.ts';
 import type { TrialOutcome } from '../../../session/run-trial.ts';
 import type { ParsedSession } from '../../../session/session-stream.ts';
 import type { CaseVars, CellConfig, RunSettings } from './provider-config.types.ts';
@@ -10,7 +10,7 @@ import type { CaseVars, CellConfig, RunSettings } from './provider-config.types.
 export interface SessionSidecar {
   readonly sessionKey: string;
   readonly cell: string;
-  readonly arm: 'steered' | 'neutralised' | 'control';
+  readonly arm: ArmKind;
   readonly graded: boolean;
   readonly failureKind?: string;
   readonly detail?: string;

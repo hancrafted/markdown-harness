@@ -1,4 +1,7 @@
-export type ArmName = 'steered' | 'neutralised';
+import type { ArmKind } from '../../../session/observe-session.ts';
+
+/** The arms a config is derived for: every arm but the trusted-prompt control, which has no derived config of its own. */
+export type ArmName = Exclude<ArmKind, 'control'>;
 
 /** What an arm's derived config delivers at one carrier. */
 export interface DeliveredCarrier {

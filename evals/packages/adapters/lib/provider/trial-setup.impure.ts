@@ -7,7 +7,7 @@ import { readText, readTextFiles } from '../../../platform/host-files.ts';
 import { sourcesFor } from '../../../session/mint-guards.ts';
 import type { TrialOutcome } from '../../../session/run-trial.ts';
 import { runTrial } from '../../../session/run-trial.ts';
-import { fillClause, taskFor } from './provider-config.pure.ts';
+import { derivationArmFor, fillClause, taskFor } from './provider-config.pure.ts';
 import type { Prepared, TrialParts } from './session-record.types.ts';
 
 const CORPUS_SKIP = ['node_modules', 'dist', '.git', '.worktrees', '.claude', '.scratch'];
@@ -29,7 +29,7 @@ function prepare(parts: TrialParts): Prepared {
     corpus: corpusOf(settings.checkout),
   });
   const clause = fillClause(vars.clauseTemplate, steeringMarker);
-  const arm = cell.arm === 'steered' ? 'steered' : 'neutralised';
+  const arm = derivationArmFor(cell.arm);
   return { steeringMarker, clause, derived: deriveArm({ configText, arm, placeholder: vars.placeholder, clause }) };
 }
 
