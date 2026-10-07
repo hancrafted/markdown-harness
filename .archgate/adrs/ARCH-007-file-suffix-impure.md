@@ -4,8 +4,8 @@ id: ARCH-007
 title: 'The impure Classifier'
 domain: architecture
 rules: false
-files: ['src/**/*']
-paths: ['src/**/*.impure.*']
+files: ['src/**/*', 'evals/**/*']
+paths: ['src/**/*.impure.*', 'evals/**/*.impure.*']
 description: 'What the impure classifier claims: membership is decided by exclusion and signalled by dependency or effect, effects sit at the edges of a call rather than through its middle, deterministic logic is extracted into a pure function that receives its data as arguments, and a conditional never encodes a business rule.'
 ---
 

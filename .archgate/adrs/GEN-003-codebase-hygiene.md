@@ -4,8 +4,8 @@ id: GEN-003
 title: 'Codebase Hygiene'
 domain: general
 rules: true
-files: ['src/**/*']
-paths: ['src/**/*']
+files: ['src/**/*', 'evals/**/*']
+paths: ['src/**/*', 'evals/**/*']
 description: 'Repo-wide hygiene Disciplines binding every file under src/ whatever its language: the admission test for what belongs in the collection, and the ban on inline lint suppression.'
 ---
 
@@ -13,13 +13,13 @@ description: 'Repo-wide hygiene Disciplines binding every file under src/ whatev
 
 ## Context
 
-This record is a **collection**: the home for hygiene Disciplines that bind every file under `src/` whatever its language, and that belong to no one subsystem.
+This record is a **collection**: the home for hygiene Disciplines that bind every file under `src/` or `evals/` whatever its language, and that belong to no one subsystem.
 
 ## Decision
 
 ### 1. No inline eslint suppression (📜 Rule: `no-eslint-disable`)
 
-1. A file under `src/` MUST NOT carry an eslint directive comment — `eslint-disable`, `eslint-disable-line`, `eslint-disable-next-line`, or the paired `eslint-enable` — in either the `//` or the `/* */` form.
+1. A file under `src/` or `evals/` MUST NOT carry an eslint directive comment — `eslint-disable`, `eslint-disable-line`, `eslint-disable-next-line`, or the paired `eslint-enable` — in either the `//` or the `/* */` form.
 
 ## Do's and Don'ts
 
@@ -43,7 +43,7 @@ This record is a **collection**: the home for hygiene Disciplines that bind ever
 
 ## Compliance and Enforcement
 
-**Enforcer:** `GEN-003-codebase-hygiene.rules.ts`, `error` tier, scoped by `files:` to `src/**/*`. eslint declares no `linterOptions`, so it honours every directive it is handed — the gap this rule closes.
+**Enforcer:** `GEN-003-codebase-hygiene.rules.ts`, `error` tier, scoped by `files:` to `src/**/*` and `evals/**/*`. eslint declares no `linterOptions`, so it honours every directive it is handed — the gap this rule closes.
 
 **Exceptions:** raise a separate ADR; human approval required.
 

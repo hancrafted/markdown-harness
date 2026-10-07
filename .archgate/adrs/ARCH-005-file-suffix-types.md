@@ -4,8 +4,8 @@ id: ARCH-005
 title: 'The types Classifier'
 domain: architecture
 rules: false
-files: ['src/**/*']
-paths: ['src/**/*.types.*']
+files: ['src/**/*', 'evals/**/*']
+paths: ['src/**/*.types.*', 'evals/**/*.types.*']
 description: 'What the types classifier claims: every exported type declaration lives in a types file, that file holds declarations and no runtime value, private local types stay beside their consumer, and the ambient declaration extension stays unreached.'
 ---
 
