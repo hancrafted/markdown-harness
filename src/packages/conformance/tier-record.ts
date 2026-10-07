@@ -38,9 +38,9 @@ export const CONFORMANCE_TIERS = [
   },
   {
     name: 'integrated',
-    caseKind: 'markdown',
-    configFile: 'valid-test-config.yaml',
-    caseCount: 30,
+    caseKind: 'spec-folder',
+    configFile: ADOPTER_CONFIG_FILE,
+    caseCount: 33,
   },
   {
     name: 'rejected-config',

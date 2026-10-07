@@ -1,0 +1,45 @@
+{
+  "docs/sealed/new.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "docs/sealed/new.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/sealed/new.md",
+      "modules": [
+        {
+          "module": "frontmatter",
+          "rule": {
+            "ruleId": "sealed",
+            "intent": "A sealed page carries no frontmatter at all."
+          },
+          "requirements": {
+            "frontmatter": "forbidden"
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "sealed-title",
+            "intent": "A sealed page has exactly one title."
+          },
+          "requirements": {
+            "types": [
+              "sealed"
+            ],
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

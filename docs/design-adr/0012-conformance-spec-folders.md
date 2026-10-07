@@ -64,6 +64,16 @@ times and hides which cases form one argument. Keeping the shared config and add
 frozen slices was rejected because a folder still would not run alone. A `.yml` lookup or an include
 key was rejected because both change the adopter's config contract to suit a test layout.
 
+**The `integrated` tier keeps its paths.** Its 30 cases became ten spec folders, split by the key
+each case tests. There, every Rule is copied byte for byte with its folder token unchanged, and
+every case keeps its former tier-relative path under the folder's own `docs/`. Each Module's
+selector is exactly what that tier composes, whether by folder alone, by `type` as well, or with an
+exclusion, so rewriting a token to `./` would change the claim. Each folder writes both Module
+sections, `body-structure:` first, because the response nests blocks in declared Module order
+whatever order the config uses. Three folders gained a PASSES partner. The tier held no audit
+table, and its seven frozen `query` answers moved into the six folders whose Rules they name. The
+same ledger showed all 30 moved cases answering the same verdict, winning Rules and violations.
+
 **The `rejected-config` tier keeps its case directories.** A rejected config produces no document,
 so a case there is already a synthetic repo root holding the adopter's config file name, and needs
 no spec folder around it. Its 85 directories were renamed `<module>__<behaviour>`, after the Module
@@ -76,5 +86,5 @@ prints inside the case — root `.` and the bare config name — with the payloa
 runner and `npm run conformance -- rejected-config/<case>` run the same comparison, `mh` inside the
 case directory, against every frozen file. ARCH-002's `rejected-case-name` rule holds the names.
 
-The `integrated` tier migrates in its own change. The `frontmatter` tier stays as it is, because its
+The `frontmatter` tier stays as it is, because its
 selector-translation guard is two-sided over the tier root.

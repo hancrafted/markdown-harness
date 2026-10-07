@@ -46,7 +46,7 @@
 //
 // Self-contained by design: archgate forbids imports between rules files.
 const CASE_GLOB = 'fixtures/conformance/*/docs/**/*.md';
-const SPEC_FOLDER_TIERS = ['body-structure'];
+const SPEC_FOLDER_TIERS = ['body-structure', 'integrated'];
 const SPEC_CONFIG = 'markdown-harness.config.yaml';
 const VERBATIM_MANIFEST = 'verbatim-cases.json';
 const MANIFEST_GLOB = `fixtures/conformance/*/docs/*/${VERBATIM_MANIFEST}`;

@@ -1,0 +1,20 @@
+# Spec: A Rule that selects by `folders` alone still reads the body of a file whose frontmatter is unreadable or unterminated, beside `frontmatter`'s report of the block.
+#
+# Rules copied byte for byte from the tier's former shared config, in declared order, with their
+# folder tokens unchanged: each Module's selector is what this tier composes, so the cases keep
+# their tier-relative paths under docs/.
+body-structure:
+  rules:
+    - ruleId: mixed-title
+      folders: [docs/mixed/]
+      intent: 'A mixed page has exactly one title, whatever its frontmatter does.'
+      headings:
+        - { purpose: heading, level: 1 }
+
+frontmatter:
+  rules:
+    - ruleId: mixed
+      folders: [docs/mixed/]
+      intent: 'A mixed page says what it is.'
+      fields:
+        type: { presence: required }

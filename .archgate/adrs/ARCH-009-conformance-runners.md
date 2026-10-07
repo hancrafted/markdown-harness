@@ -93,7 +93,7 @@ The failure this record exists to prevent is a suite that is green over nothing.
 
 **§3's pinned instant** is the `assessmentInstant` in the tier record, the only instant that tier's Assessment half is judged against. An unpinned suite is non-existent because a wall-clock assertion is green tomorrow for a different reason.
 
-**§4** is held by the `body-structure` runner, one test per spec folder through `compareSpecFolder`, and by `tests/conformance-script.test.ts`, which runs the script on a passing folder, a mismatched scratch copy and a refused `frontmatter` subfolder. §4.4 is held by the rejected-config runner, one process-boundary test per case plus a hand-stated list of envelope cases, so a deleted frozen file fails.
+**§4** is held by the `body-structure` and `integrated` runners, each one test per spec folder through `compareSpecFolder`, and by `tests/conformance-script.test.ts`, which runs the script on a passing folder, a mismatched scratch copy and a refused `frontmatter` subfolder. §4.4 is held by the rejected-config runner, one process-boundary test per case plus a hand-stated list of envelope cases, so a deleted frozen file fails.
 
 **Manual review duties** (never linted): a reviewed tier-record count was actually re-counted rather than incremented on faith (§1.1); this Package was not quietly enrolled in the declared Module set (§1.4).
 

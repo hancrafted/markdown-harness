@@ -1045,8 +1045,9 @@ describe('mh --help', () => {
 
 /** Both tiers' Module keys, in declared order — the order every response must name them in. */
 const BOTH_MODULES = ['frontmatter', 'body-structure'];
-const INTEGRATED_CONFIG = 'fixtures/conformance/integrated/valid-test-config.yaml';
-const INTEGRATED_ROOT = 'fixtures/conformance/integrated';
+/** One `integrated` spec folder, where both Modules govern one tree and both fail somewhere. */
+const INTEGRATED_ROOT = 'fixtures/conformance/integrated/docs/headings__nested-spine-beside-frontmatter';
+const INTEGRATED_CONFIG = `${INTEGRATED_ROOT}/markdown-harness.config.yaml`;
 
 describe('mh <module-key> <command>', () => {
   describe('success cases', () => {

@@ -1,0 +1,97 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 4,
+      "invalidFiles": 3,
+      "totalViolations": 4
+    },
+    "files": [
+      {
+        "path": "docs/research/body-fails.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research",
+            "ruleIntent": "Research opens with a title and gives its findings, so a reviewer reads it the same way every time.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Findings$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/research/both-fail.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "research",
+            "ruleIntent": "Research says what it is and what it is about, so an agent can choose it without opening it.",
+            "violations": [
+              {
+                "field": "description",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required"
+                }
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "research",
+            "ruleIntent": "Research opens with a title and gives its findings, so a reviewer reads it the same way every time.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Findings$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/research/frontmatter-fails.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "research",
+            "ruleIntent": "Research says what it is and what it is about, so an agent can choose it without opening it.",
+            "violations": [
+              {
+                "field": "description",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

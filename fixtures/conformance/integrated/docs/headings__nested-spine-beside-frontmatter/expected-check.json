@@ -1,0 +1,142 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 3,
+      "invalidFiles": 2,
+      "totalViolations": 5
+    },
+    "files": [
+      {
+        "path": "docs/titles/both-fail.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "titles",
+            "ruleIntent": "A note says what it is about.",
+            "violations": [
+              {
+                "field": "description",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required"
+                }
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "titles-notes",
+            "ruleIntent": "A note has a title and a prose summary, and the headings under the summary come from a short fixed set.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 3,
+                "content": "Improved",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Summary",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Summary$",
+                  "mayHold": [
+                    "prose"
+                  ],
+                  "headings": [
+                    {
+                      "purpose": "enumeration",
+                      "level": 3,
+                      "minCount": 0,
+                      "allowed": [
+                        {
+                          "title": "Added",
+                          "intent": "What the note adds."
+                        },
+                        {
+                          "title": "Fixed"
+                        }
+                      ],
+                      "mayHold": [
+                        "unordered-list"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/titles/nested-holds-prose.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "titles",
+            "ruleIntent": "A note says what it is about.",
+            "violations": [
+              {
+                "field": "description",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required"
+                }
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "titles-notes",
+            "ruleIntent": "A note has a title and a prose summary, and the headings under the summary come from a short fixed set.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1,
+                  0
+                ],
+                "under": "Summary",
+                "content": "Added",
+                "kind": "prose",
+                "found": 1,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 3,
+                  "minCount": 0,
+                  "allowed": [
+                    {
+                      "title": "Added",
+                      "intent": "What the note adds."
+                    },
+                    {
+                      "title": "Fixed"
+                    }
+                  ],
+                  "mayHold": [
+                    "unordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

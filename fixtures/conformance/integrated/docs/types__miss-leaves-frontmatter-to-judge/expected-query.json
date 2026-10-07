@@ -1,0 +1,50 @@
+{
+  "docs/lenient/new.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "docs/lenient/new.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/lenient/new.md",
+      "modules": [
+        {
+          "module": "frontmatter",
+          "rule": {
+            "ruleId": "lenient",
+            "intent": "A lenient page says what it is about and leaves its type unchecked."
+          },
+          "requirements": {
+            "fields": [
+              {
+                "field": "description",
+                "presence": "required"
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "lenient-notes",
+            "intent": "A lenient note has exactly one title."
+          },
+          "requirements": {
+            "types": [
+              "note"
+            ],
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

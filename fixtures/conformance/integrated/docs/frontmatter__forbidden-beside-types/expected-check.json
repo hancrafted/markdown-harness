@@ -1,0 +1,60 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 2,
+      "invalidFiles": 1,
+      "totalViolations": 2
+    },
+    "files": [
+      {
+        "path": "docs/sealed/with-block.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "sealed",
+            "ruleIntent": "A sealed page carries no frontmatter at all.",
+            "violations": [
+              {
+                "field": null,
+                "value": {
+                  "keys": [
+                    "type"
+                  ]
+                },
+                "violation": "FRONTMATTER__FORBIDDEN",
+                "requirement": {
+                  "frontmatter": "forbidden"
+                }
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "sealed-title",
+            "ruleIntent": "A sealed page has exactly one title.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

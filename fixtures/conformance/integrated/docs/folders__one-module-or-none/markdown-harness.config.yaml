@@ -1,0 +1,20 @@
+# Spec: When only one Module's `folders` reach a file, that Module alone governs it; when neither's do, the file is invisible.
+#
+# Rules copied byte for byte from the tier's former shared config, in declared order, with their
+# folder tokens unchanged: each Module's selector is what this tier composes, so the cases keep
+# their tier-relative paths under docs/.
+body-structure:
+  rules:
+    - ruleId: shaped-title
+      folders: [docs/shaped/]
+      intent: 'A shaped document has exactly one title.'
+      headings:
+        - { purpose: heading, level: 1 }
+
+frontmatter:
+  rules:
+    - ruleId: plain-metadata
+      folders: [docs/plain/]
+      intent: 'Every plain document says what it is.'
+      fields:
+        type: { presence: required }

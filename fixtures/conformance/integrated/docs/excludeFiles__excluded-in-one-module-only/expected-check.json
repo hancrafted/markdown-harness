@@ -1,0 +1,41 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 2,
+      "invalidFiles": 1,
+      "totalViolations": 1
+    },
+    "files": [
+      {
+        "path": "docs/research/scratch.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research",
+            "ruleIntent": "Research opens with a title and gives its findings, so a reviewer reads it the same way every time.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Findings$"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

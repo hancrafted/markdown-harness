@@ -1,0 +1,92 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 6,
+      "invalidFiles": 3,
+      "totalViolations": 4
+    },
+    "files": [
+      {
+        "path": "docs/research/mangled.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "research",
+            "ruleIntent": "Research says what it is and what it is about, so an agent can choose it without opening it.",
+            "violations": [
+              {
+                "field": null,
+                "violation": "FRONTMATTER__UNPARSEABLE"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/research/misspelt-type.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "research",
+            "ruleIntent": "Research says what it is and what it is about, so an agent can choose it without opening it.",
+            "violations": [
+              {
+                "field": "type",
+                "value": "reserch",
+                "violation": "FRONTMATTER__VALUE_NOT_ALLOWED",
+                "requirement": {
+                  "presence": "required",
+                  "allowed": [
+                    {
+                      "value": "research",
+                      "intent": "Findings gathered to settle a question, with sources."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/research/no-type.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "research",
+            "ruleIntent": "Research says what it is and what it is about, so an agent can choose it without opening it.",
+            "violations": [
+              {
+                "field": "type",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required",
+                  "allowed": [
+                    {
+                      "value": "research",
+                      "intent": "Findings gathered to settle a question, with sources."
+                    }
+                  ]
+                }
+              },
+              {
+                "field": "description",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

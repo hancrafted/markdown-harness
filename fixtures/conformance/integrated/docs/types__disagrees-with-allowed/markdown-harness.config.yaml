@@ -1,0 +1,24 @@
+# Spec: When `frontmatter`'s `allowed` type and `body-structure`'s `types` disagree, nothing reconciles them: each Module judges the files it selects, so the value the second governs is one the first refuses.
+#
+# Rules copied byte for byte from the tier's former shared config, in declared order, with their
+# folder tokens unchanged: each Module's selector is what this tier composes, so the cases keep
+# their tier-relative paths under docs/.
+body-structure:
+  rules:
+    - ruleId: vocabulary
+      folders: [docs/vocab/]
+      types: [research-report]
+      intent: 'A research report in the vocabulary folder has exactly one title.'
+      headings:
+        - { purpose: heading, level: 1 }
+
+frontmatter:
+  rules:
+    - ruleId: vocabulary
+      folders: [docs/vocab/]
+      intent: 'The vocabulary folder admits one kind of document.'
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: research, intent: 'Findings gathered to settle a question, with sources.' }
