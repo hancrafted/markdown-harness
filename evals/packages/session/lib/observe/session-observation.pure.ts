@@ -60,7 +60,7 @@ function flaggedInjection(input: ObserveInput): boolean {
 }
 
 function gather(input: ObserveInput): Facts {
-  const calls = creatingCalls(input.events, input.targetPath);
+  const calls = creatingCalls(input.events, input.targetPath, input.root);
   const delivery = findDelivery(input.events, input.surface.channel, input.steeringMarkers);
   return {
     lives: input.steeringMarkers.map((steeringMarker) => lifeOf(steeringMarker, calls, input.finalFile)),
