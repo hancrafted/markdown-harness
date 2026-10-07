@@ -15,8 +15,10 @@ function cellLine(cell: string, sessions: readonly SessionSummary[], trials: num
   const rungs = new Map<string, number>();
   for (const session of graded.filter((entry) => !entry.markerPresent))
     rungs.set(session.localised, (rungs.get(session.localised) ?? 0) + 1);
+  const seen = graded.find((session) => session.observations !== undefined)?.observations;
+  const table = seen === undefined ? '' : `; rungs: ${seen}`;
   const where = [...rungs].map(([rung, count]) => `${rung}:${count}`).join(' ') || 'none';
-  return `${cell}: ${hits}/${graded.length} steering marker hits (${trials} trials planned, ${mine.length - graded.length} instrument failures); nulls by rung: ${where}`;
+  return `${cell}: ${hits}/${graded.length} steering marker hits (${trials} trials planned, ${mine.length - graded.length} instrument failures); nulls by rung: ${where}${table}`;
 }
 
 function count(sessions: readonly SessionSummary[], arm: SessionSummary['arm']): { hits: number; n: number } {

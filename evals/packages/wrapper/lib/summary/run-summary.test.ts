@@ -38,6 +38,16 @@ describe('summarise', () => {
   });
 
   describe('failure cases', () => {
+    it('prints the rungs a cell could observe, taken from the record and not hand-written', () => {
+      // ARRANGE
+      const sessions = [{ ...row('c', 'steered', true), observations: '1 observed; 2 not applicable' }];
+      const expected = '; rungs: 1 observed; 2 not applicable';
+      // ACT
+      const lines = summarise({ sessions, expected: 1, trialsPerCell: 1, canaryFailure: undefined });
+      // ASSERT
+      expect(lines[0]).toContain(expected);
+    });
+
     it('says incomplete when a session is missing or an instrument failure sits among them', () => {
       // ARRANGE
       const missing = summarise({

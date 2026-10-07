@@ -9,7 +9,8 @@ export function parseSidecar(text: string): SidecarRow | undefined {
   try {
     const raw = JSON.parse(text) as SessionSummary & { sessionId?: string; cohortRow?: Record<string, unknown> };
     if (typeof raw.cell !== 'string' || typeof raw.graded !== 'boolean') return undefined;
-    return { sessionId: raw.sessionId, cohortRow: raw.cohortRow, summary: raw };
+    const observations = typeof raw.cohortRow?.observations === 'string' ? raw.cohortRow.observations : undefined;
+    return { sessionId: raw.sessionId, cohortRow: raw.cohortRow, summary: { ...raw, observations } };
   } catch {
     return undefined;
   }
