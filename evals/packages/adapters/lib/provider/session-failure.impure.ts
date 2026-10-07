@@ -22,7 +22,7 @@ export function reportFailure(report: FailureReport): SessionReturn {
     graded: false,
     failureKind: kind,
     detail,
-    markerPresent: false,
+    steeringMarkerPresent: false,
     localised: 'not graded',
   };
   writeSidecar(settings.runDir, record);

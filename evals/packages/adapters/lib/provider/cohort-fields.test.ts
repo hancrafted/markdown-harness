@@ -58,9 +58,9 @@ const SOURCES: CohortSources = {
   },
   observation: {
     observations: rungObservations({}),
-    firstWriteHasMarker: false,
-    unionHasMarker: true,
-    finalHasMarker: true,
+    firstWriteHasSteeringMarker: false,
+    unionHasSteeringMarker: true,
+    finalHasSteeringMarker: true,
     hookDelivered: true,
     injectionFlagged: false,
     creatingTool: 'Write',

@@ -3,22 +3,22 @@
 // does not fire on everything).
 
 import { describe, expect, it } from 'vitest';
-import { sweepForMarker } from './leak-sweep.pure.ts';
+import { sweepForSteeringMarker } from './leak-sweep.pure.ts';
 
-const MARKER = 'QQ11-2222';
+const STEERING_MARKER = 'QQ11-2222';
 const CLEAN = [
   { path: 'AGENTS.md', text: 'plain' },
   { path: 'docs/a.md', text: 'also plain' },
 ];
 
-describe('sweepForMarker', () => {
+describe('sweepForSteeringMarker', () => {
   describe('success cases', () => {
-    it('canary, firing side: finds a planted marker in a nested file and names it', () => {
+    it('canary, firing side: finds a planted steering marker in a nested file and names it', () => {
       // ARRANGE
-      const planted = [...CLEAN, { path: 'node_modules/x/y.txt', text: `hello ${MARKER} there` }];
+      const planted = [...CLEAN, { path: 'node_modules/x/y.txt', text: `hello ${STEERING_MARKER} there` }];
       const expectedPath = 'node_modules/x/y.txt';
       // ACT
-      const verdict = sweepForMarker(planted, MARKER, { kind: 'none' });
+      const verdict = sweepForSteeringMarker(planted, STEERING_MARKER, { kind: 'none' });
       // ASSERT
       expect(verdict.ok).toBe(false);
       expect(verdict.hits.map((hit) => hit.path)).toEqual([expectedPath]);
@@ -28,16 +28,16 @@ describe('sweepForMarker', () => {
       // ARRANGE
       const expectedFiles = CLEAN.length;
       // ACT
-      const verdict = sweepForMarker(CLEAN, MARKER, { kind: 'none' });
+      const verdict = sweepForSteeringMarker(CLEAN, STEERING_MARKER, { kind: 'none' });
       // ASSERT
       expect(verdict).toMatchObject({ ok: true, occurrences: 0, filesOpened: expectedFiles });
     });
 
     it('passes a steered root holding exactly the occurrences the substitution placed', () => {
       // ARRANGE
-      const files = [...CLEAN, { path: 'markdown-harness.config.yaml', text: `intent: ${MARKER}` }];
+      const files = [...CLEAN, { path: 'markdown-harness.config.yaml', text: `intent: ${STEERING_MARKER}` }];
       // ACT
-      const verdict = sweepForMarker(files, MARKER, { kind: 'exactly', occurrences: 1 });
+      const verdict = sweepForSteeringMarker(files, STEERING_MARKER, { kind: 'exactly', occurrences: 1 });
       // ASSERT
       expect(verdict.ok).toBe(true);
     });
@@ -48,18 +48,18 @@ describe('sweepForMarker', () => {
       // ARRANGE
       const none: never[] = [];
       // ACT
-      const verdict = sweepForMarker(none, MARKER, { kind: 'none' });
+      const verdict = sweepForSteeringMarker(none, STEERING_MARKER, { kind: 'none' });
       // ASSERT
       expect(verdict).toMatchObject({ ok: false, filesOpened: 0 });
     });
 
     it('fails a steered root holding more or fewer occurrences than placed', () => {
       // ARRANGE
-      const twice = [{ path: 'a', text: `${MARKER} ${MARKER}` }];
+      const twice = [{ path: 'a', text: `${STEERING_MARKER} ${STEERING_MARKER}` }];
       // ACT
       const verdicts = [
-        sweepForMarker(twice, MARKER, { kind: 'exactly', occurrences: 1 }),
-        sweepForMarker(CLEAN, MARKER, { kind: 'exactly', occurrences: 1 }),
+        sweepForSteeringMarker(twice, STEERING_MARKER, { kind: 'exactly', occurrences: 1 }),
+        sweepForSteeringMarker(CLEAN, STEERING_MARKER, { kind: 'exactly', occurrences: 1 }),
       ];
       // ASSERT
       expect(verdicts.map((verdict) => verdict.ok)).toEqual([false, false]);
@@ -69,10 +69,10 @@ describe('sweepForMarker', () => {
   describe('edge cases', () => {
     it('counts repeated occurrences within one file', () => {
       // ARRANGE
-      const files = [{ path: 'a', text: `${MARKER}\n${MARKER}\n${MARKER}` }];
+      const files = [{ path: 'a', text: `${STEERING_MARKER}\n${STEERING_MARKER}\n${STEERING_MARKER}` }];
       const expected = [{ path: 'a', count: 3 }];
       // ACT
-      const verdict = sweepForMarker(files, MARKER, { kind: 'none' });
+      const verdict = sweepForSteeringMarker(files, STEERING_MARKER, { kind: 'none' });
       // ASSERT
       expect(verdict.hits).toEqual(expected);
     });

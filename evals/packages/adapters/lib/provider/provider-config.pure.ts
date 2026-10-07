@@ -60,8 +60,8 @@ export function readRunSettings(env: Readonly<Record<string, string | undefined>
 }
 
 /** The clause an arm is told: the steered arm through the config, the control arm through the user turn. */
-export function fillClause(template: string, marker: string): string {
-  return template.split('{marker}').join(marker);
+export function fillClause(template: string, steeringMarker: string): string {
+  return template.split('{steeringMarker}').join(steeringMarker);
 }
 
 /** The task as the arm's user turn carries it: the control arm prepends the case's declared prefix. */

@@ -1,19 +1,19 @@
-// The steering-marker generator. A marker is a code of two letters, two digits, a
+// The steering-marker generator. A steering marker is a code of two letters, two digits, a
 // separator and four digits: the family with the lowest prior and the most
 // reliable reproduction in the research. One is drawn per run, case and carrier
 // from a seed, so a hit attributes to one carrier.
 //
 // Pure: the seed and the corpus of tracked text arrive as arguments. A candidate
-// that occurs anywhere in the corpus is redrawn, so a marker never exists in the
+// that occurs anywhere in the corpus is redrawn, so a steering marker never exists in the
 // checkout before a run.
 
-import type { GuardFile, MarkerDraw } from './steering-marker.types.ts';
+import type { GuardFile, SteeringMarkerDraw } from './steering-marker.types.ts';
 
 const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const MAX_ATTEMPTS = 200;
 
 /** The shape of every code this generator can draw; the transcription guard scans committed text for it. */
-export const MARKER_FAMILY_SHAPE = /\b[A-Z]{2}\d{2}-\d{4}\b/;
+export const STEERING_MARKER_FAMILY_SHAPE = /\b[A-Z]{2}\d{2}-\d{4}\b/;
 
 function hash32(text: string): number {
   let hash = 0x811c9dc5;
@@ -24,7 +24,7 @@ function hash32(text: string): number {
   return hash >>> 0;
 }
 
-function candidate(draw: MarkerDraw, attempt: number): string {
+function candidate(draw: SteeringMarkerDraw, attempt: number): string {
   const base = `${draw.seed}|${draw.caseId}|${draw.address}|${attempt}`;
   const letters = hash32(`${base}|letters`);
   const digits = hash32(`${base}|digits`);
@@ -34,7 +34,7 @@ function candidate(draw: MarkerDraw, attempt: number): string {
   return `${pair}${head}-${tail}`;
 }
 
-export function drawSteeringMarker(draw: MarkerDraw): string {
+export function drawSteeringMarker(draw: SteeringMarkerDraw): string {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const code = candidate(draw, attempt);
     if (!draw.corpus.includes(code)) return code;
@@ -42,8 +42,8 @@ export function drawSteeringMarker(draw: MarkerDraw): string {
   throw new Error(`steering marker: every one of ${MAX_ATTEMPTS} candidates collided with the corpus`);
 }
 
-/** The committed half of the transcription guard: every committed file that holds a code of the marker family. */
+/** The committed half of the transcription guard: every committed file that holds a code of the steering marker family. */
 export function transcriptionGuardHits(files: readonly GuardFile[]): string[] {
-  const family = new RegExp(MARKER_FAMILY_SHAPE.source);
+  const family = new RegExp(STEERING_MARKER_FAMILY_SHAPE.source);
   return files.filter((file) => family.test(file.text)).map((file) => file.path);
 }

@@ -11,9 +11,9 @@ function cellsOf(sessions: readonly SessionSummary[]): string[] {
 function cellLine(cell: string, sessions: readonly SessionSummary[], trials: number): string {
   const mine = sessions.filter((session) => session.cell === cell);
   const graded = mine.filter((session) => session.graded);
-  const hits = graded.filter((session) => session.markerPresent).length;
+  const hits = graded.filter((session) => session.steeringMarkerPresent).length;
   const rungs = new Map<string, number>();
-  for (const session of graded.filter((entry) => !entry.markerPresent))
+  for (const session of graded.filter((entry) => !entry.steeringMarkerPresent))
     rungs.set(session.localised, (rungs.get(session.localised) ?? 0) + 1);
   const seen = graded.find((session) => session.observations !== undefined)?.observations;
   const table = seen === undefined ? '' : `; rungs: ${seen}`;
@@ -23,7 +23,7 @@ function cellLine(cell: string, sessions: readonly SessionSummary[], trials: num
 
 function count(sessions: readonly SessionSummary[], arm: SessionSummary['arm']): { hits: number; n: number } {
   const graded = sessions.filter((session) => session.arm === arm && session.graded);
-  return { hits: graded.filter((session) => session.markerPresent).length, n: graded.length };
+  return { hits: graded.filter((session) => session.steeringMarkerPresent).length, n: graded.length };
 }
 
 function comparisonLine(sessions: readonly SessionSummary[]): string {
@@ -46,7 +46,8 @@ export function summarise(input: SummaryInput): string[] {
   const head = input.canaryFailure === undefined ? [] : [`NOT MEASURED: ${input.canaryFailure}`];
   const body = cellsOf(input.sessions).map((cell) => cellLine(cell, input.sessions, input.trialsPerCell));
   const neutralHits = count(input.sessions, 'neutralised').hits;
-  const leak = neutralHits > 0 ? [`DEFECT IN THE CASE: ${neutralHits} marker hits in the intent-neutralised arm`] : [];
+  const leak =
+    neutralHits > 0 ? [`DEFECT IN THE CASE: ${neutralHits} steering marker hits in the intent-neutralised arm`] : [];
   const tail = incomplete ? ['INCOMPLETE: not every expected session ran and was graded; re-run'] : [];
   return [...head, ...body, comparisonLine(input.sessions), ...leak, ...tail];
 }

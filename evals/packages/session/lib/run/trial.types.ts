@@ -20,9 +20,9 @@ export interface TrialRequest {
   readonly derivedConfig: string;
   readonly host: HostSpec;
   readonly task: string;
-  readonly marker: string;
+  readonly steeringMarker: string;
   readonly targetPath: string;
-  /** What the root must hold of the marker before the session starts. */
+  /** What the root must hold of the steering marker before the session starts. */
   readonly sweepExpectation: SweepExpectation;
   /** A parent for the mint; defaults to the system temporary directory. */
   readonly under?: string;

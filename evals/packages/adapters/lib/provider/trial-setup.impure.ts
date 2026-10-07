@@ -22,15 +22,15 @@ function prepare(parts: TrialParts): Prepared {
   const { settings, cell, vars } = parts;
   const configText = readText(`${settings.checkout}/${vars.seedDir}/markdown-harness.config.yaml`);
   const address = testedCarrierAddress(configText, vars.placeholder) ?? 'untested';
-  const marker = drawSteeringMarker({
+  const steeringMarker = drawSteeringMarker({
     seed: settings.seed,
     caseId: vars.caseId,
     address,
     corpus: corpusOf(settings.checkout),
   });
-  const clause = fillClause(vars.clauseTemplate, marker);
+  const clause = fillClause(vars.clauseTemplate, steeringMarker);
   const arm = cell.arm === 'steered' ? 'steered' : 'neutralised';
-  return { marker, clause, derived: deriveArm({ configText, arm, placeholder: vars.placeholder, clause }) };
+  return { steeringMarker, clause, derived: deriveArm({ configText, arm, placeholder: vars.placeholder, clause }) };
 }
 
 function hostFor(parts: TrialParts): Parameters<typeof runTrial>[0]['host'] {
@@ -60,7 +60,7 @@ function requestFor(parts: TrialParts, prepared: Prepared): Parameters<typeof ru
     derivedConfig: prepared.derived.configText,
     host: hostFor(parts),
     task,
-    marker: prepared.marker,
+    steeringMarker: prepared.steeringMarker,
     targetPath: vars.targetPath,
     sweepExpectation: steered ? { kind: 'exactly', occurrences: prepared.derived.substitutions } : { kind: 'none' },
   };

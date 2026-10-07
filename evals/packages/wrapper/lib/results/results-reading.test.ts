@@ -7,13 +7,13 @@ const SIDECAR = JSON.stringify({
   cell: 'push-steered',
   arm: 'steered',
   graded: true,
-  markerPresent: true,
+  steeringMarkerPresent: true,
   localised: 'clean',
   sessionId: 'a',
 });
 const row = (sessionId: string | undefined) => ({
   sessionId,
-  summary: { cell: 'c', arm: 'steered', graded: true, markerPresent: true, localised: 'clean' } as const,
+  summary: { cell: 'c', arm: 'steered', graded: true, steeringMarkerPresent: true, localised: 'clean' } as const,
 });
 
 describe('parseSidecar', () => {

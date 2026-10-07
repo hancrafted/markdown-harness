@@ -2,7 +2,7 @@
 // and carrier, redrawn when it occurs anywhere in the supplied corpus.
 
 import { describe, expect, it } from 'vitest';
-import { MARKER_FAMILY_SHAPE, drawSteeringMarker, transcriptionGuardHits } from './steering-marker.pure.ts';
+import { STEERING_MARKER_FAMILY_SHAPE, drawSteeringMarker, transcriptionGuardHits } from './steering-marker.pure.ts';
 
 const SEED = 'seed-one';
 const CASE_ID = 'research-note';
@@ -16,7 +16,7 @@ describe('drawSteeringMarker', () => {
   describe('success cases', () => {
     it('draws two letters, two digits, a separator and four digits', () => {
       // ARRANGE
-      const shape = new RegExp(`^${MARKER_FAMILY_SHAPE.source}$`);
+      const shape = new RegExp(`^${STEERING_MARKER_FAMILY_SHAPE.source}$`);
       // ACT
       const actual = draw('');
       // ASSERT
@@ -48,7 +48,7 @@ describe('drawSteeringMarker', () => {
       const actual = draw(`some tracked text mentioning ${first} here`);
       // ASSERT
       expect(actual).not.toEqual(first);
-      expect(actual).toMatch(MARKER_FAMILY_SHAPE);
+      expect(actual).toMatch(STEERING_MARKER_FAMILY_SHAPE);
     });
   });
 

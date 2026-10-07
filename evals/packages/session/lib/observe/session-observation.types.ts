@@ -6,7 +6,7 @@ export type ArmKind = 'steered' | 'neutralised' | 'control';
 export interface ObserveInput {
   readonly arm: ArmKind;
   readonly events: readonly SessionEvent[];
-  readonly marker: string;
+  readonly steeringMarker: string;
   /** The target path relative to the minted root. */
   readonly targetPath: string;
   /** The real path of the minted root, so an absolute tool path can be made relative. */
@@ -18,9 +18,9 @@ export interface ObserveInput {
 
 export interface SessionObservation {
   readonly observations: readonly RungObservation[];
-  readonly firstWriteHasMarker: boolean;
-  readonly unionHasMarker: boolean;
-  readonly finalHasMarker: boolean;
+  readonly firstWriteHasSteeringMarker: boolean;
+  readonly unionHasSteeringMarker: boolean;
+  readonly finalHasSteeringMarker: boolean;
   readonly hookDelivered: boolean;
   readonly injectionFlagged: boolean;
   /** The tool of the first creating call, named in a rung 3 reason. */

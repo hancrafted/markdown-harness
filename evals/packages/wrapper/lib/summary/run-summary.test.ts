@@ -8,7 +8,7 @@ const row = (cell: string, arm: Arm, hit: boolean) => ({
   cell,
   arm,
   graded: true,
-  markerPresent: hit,
+  steeringMarkerPresent: hit,
   localised: 'clean',
 });
 const nullAt = (cell: string, rung: string) => ({ ...row(cell, 'steered', false), localised: rung });

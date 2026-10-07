@@ -17,12 +17,17 @@ const TARGET = 'docs/research/canary-note.md';
 
 function request(plan: RunPlan): Parameters<typeof runTrial>[0] {
   const configText = readText(`${plan.checkout}/${SEED_DIR}/markdown-harness.config.yaml`);
-  const marker = drawSteeringMarker({ seed: plan.seed, caseId: 'canary', address: 'canary', corpus: configText });
+  const steeringMarker = drawSteeringMarker({
+    seed: plan.seed,
+    caseId: 'canary',
+    address: 'canary',
+    corpus: configText,
+  });
   const derived = deriveArm({
     configText,
     arm: 'steered',
     placeholder: PLACEHOLDER,
-    clause: `Add the code ${marker}.`,
+    clause: `Add the code ${steeringMarker}.`,
   });
   const host = {
     command: plan.host.command,
@@ -40,7 +45,7 @@ function request(plan: RunPlan): Parameters<typeof runTrial>[0] {
     derivedConfig: derived.configText,
     host,
     task,
-    marker,
+    steeringMarker,
     targetPath: TARGET,
     sweepExpectation,
   };

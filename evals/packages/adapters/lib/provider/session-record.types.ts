@@ -15,7 +15,7 @@ export interface SessionSidecar {
   readonly failureKind?: string;
   readonly detail?: string;
   readonly sessionId?: string;
-  readonly markerPresent: boolean;
+  readonly steeringMarkerPresent: boolean;
   readonly localised: string;
   readonly cohortRow?: Readonly<Record<string, unknown>>;
 }
@@ -59,7 +59,7 @@ export interface FailureReport {
 }
 
 export interface Prepared {
-  readonly marker: string;
+  readonly steeringMarker: string;
   readonly clause: string;
   readonly derived: ReturnType<typeof deriveArm>;
 }

@@ -4,7 +4,7 @@ export interface GradeInput {
   /** The final file read back from the minted root, or undefined when the target path holds no file. */
   readonly finalFile: string | undefined;
   /** The exact code the carrier was told to include. */
-  readonly marker: string;
+  readonly steeringMarker: string;
   /** The carrier's governed section. */
   readonly scope: SectionScope;
 }

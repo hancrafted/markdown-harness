@@ -44,14 +44,14 @@ export const COHORT_FIELDS: readonly string[] = [
   'canary',
   'observations',
   'localisedRung',
-  'markerPresent',
-  'markerPlaced',
-  'markerCount',
-  'markerFenceCount',
-  'markerFrontmatterCount',
-  'firstWriteHasMarker',
-  'unionHasMarker',
-  'finalHasMarker',
+  'steeringMarkerPresent',
+  'steeringMarkerPlaced',
+  'steeringMarkerCount',
+  'steeringMarkerFenceCount',
+  'steeringMarkerFrontmatterCount',
+  'firstWriteHasSteeringMarker',
+  'unionHasSteeringMarker',
+  'finalHasSteeringMarker',
 ];
 
 /** The fields that define a cohort: rows differing in any of them are never paired. */

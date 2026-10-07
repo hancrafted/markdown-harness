@@ -3,7 +3,7 @@ export interface SessionSummary {
   readonly arm: 'steered' | 'neutralised' | 'control';
   readonly graded: boolean;
   readonly failureKind?: string;
-  readonly markerPresent: boolean;
+  readonly steeringMarkerPresent: boolean;
   /** The localised rung as printed: a number, `clean`, or `cannot localise`. */
   readonly localised: string;
   /** The rungs the cell could observe, printed from the record: `1 observed; 2 not applicable; ...`. */

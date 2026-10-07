@@ -13,7 +13,7 @@ import {
 import { runProcess } from '../../../platform/host-process.ts';
 import type { FailureKind } from '../failure/failure-classifier.types.ts';
 import { buildChildEnvironment, buildClaudeArgv } from '../host/host-invocation.pure.ts';
-import { sweepForMarker } from '../leak/leak-sweep.pure.ts';
+import { sweepForSteeringMarker } from '../leak/leak-sweep.pure.ts';
 import { mintRoot } from '../mint/mint-root.impure.ts';
 import { checkRung1, checkRung2 } from '../preflight/preconditions.pure.ts';
 import { parseSessionStream } from '../stream/session-stream.pure.ts';
@@ -46,16 +46,20 @@ function preflight(root: string, request: TrialRequest): Declared {
   if (check.status !== 0)
     return { kind: 'rung-1-failed', detail: 'the derived config does not pass `mh check` over the seeded state' };
   const query = runNode(root, [`${root}/${MH_ENTRY}`, 'query', request.targetPath], '');
-  const rung1 = checkRung1(query.stdout, request.marker, request.arm);
+  const rung1 = checkRung1(query.stdout, request.steeringMarker, request.arm);
   if (rung1 !== undefined) return { kind: 'rung-1-failed', detail: rung1 };
   if (request.arm !== 'steered') return undefined;
   const payload = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: `${root}/${request.targetPath}` } });
-  const rung2 = checkRung2(runNode(root, [`${root}/${HOOK_SCRIPT}`], payload).stdout, request.marker);
+  const rung2 = checkRung2(runNode(root, [`${root}/${HOOK_SCRIPT}`], payload).stdout, request.steeringMarker);
   return rung2 === undefined ? undefined : { kind: 'rung-2-failed', detail: rung2 };
 }
 
 function sweepProblem(root: string, request: TrialRequest): { problem: Declared; opened: number } {
-  const verdict = sweepForMarker(readTextFiles(root, ['.git']), request.marker, request.sweepExpectation);
+  const verdict = sweepForSteeringMarker(
+    readTextFiles(root, ['.git']),
+    request.steeringMarker,
+    request.sweepExpectation,
+  );
   return {
     problem: verdict.ok ? undefined : { kind: 'mint-refused', detail: `leak sweep: ${verdict.reason}` },
     opened: verdict.filesOpened,

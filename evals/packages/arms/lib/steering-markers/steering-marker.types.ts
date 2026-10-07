@@ -1,4 +1,4 @@
-export interface MarkerDraw {
+export interface SteeringMarkerDraw {
   readonly seed: string;
   readonly caseId: string;
   readonly address: string;

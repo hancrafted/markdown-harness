@@ -16,16 +16,16 @@ function finalFileOf(output: string): string | undefined {
 
 interface Spec {
   readonly arm: string;
-  readonly marker: string;
+  readonly steeringMarker: string;
   readonly scope: { level: number; titlePattern: string };
 }
 
 function specOf(metadata: Metadata): Spec | undefined {
   const arm = metadata?.arm;
-  const marker = metadata?.marker;
+  const steeringMarker = metadata?.steeringMarker;
   const scope = metadata?.scope as Spec['scope'] | undefined;
-  return typeof arm === 'string' && typeof marker === 'string' && scope !== undefined
-    ? { arm, marker, scope }
+  return typeof arm === 'string' && typeof steeringMarker === 'string' && scope !== undefined
+    ? { arm, steeringMarker, scope }
     : undefined;
 }
 
@@ -34,14 +34,18 @@ function reasonFor(spec: Spec, seenPlaced: { present: boolean; placed: boolean |
   const expected = spec.arm !== 'neutralised' ? 'present' : 'absent';
   const seen = present ? 'present' : 'absent';
   const rung = String(metadata?.localised ?? 'unknown');
-  return `${spec.arm}: marker ${seen} (expected ${expected}); placed=${String(placed)}; localised: ${rung}; creating tool: ${String(metadata?.creatingTool ?? 'none')}`;
+  return `${spec.arm}: steering marker ${seen} (expected ${expected}); placed=${String(placed)}; localised: ${rung}; creating tool: ${String(metadata?.creatingTool ?? 'none')}`;
 }
 
 export function gradeSteeringAssertion(output: string, metadata: Metadata): AssertionResult {
   const spec = specOf(metadata);
   if (spec === undefined)
     return { pass: false, score: 0, reason: 'the provider returned no steering-marker specification' };
-  const grade = gradeSteeringMarker({ finalFile: finalFileOf(output), marker: spec.marker, scope: spec.scope });
+  const grade = gradeSteeringMarker({
+    finalFile: finalFileOf(output),
+    steeringMarker: spec.steeringMarker,
+    scope: spec.scope,
+  });
   const pass = grade.present === (spec.arm !== 'neutralised');
   return { pass, score: pass ? 1 : 0, reason: reasonFor(spec, grade, metadata) };
 }

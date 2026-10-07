@@ -5,8 +5,8 @@
 
 import type { SweepExpectation, SweepVerdict, SweptFile } from './leak-sweep.types.ts';
 
-function countIn(text: string, marker: string): number {
-  return marker === '' ? 0 : text.split(marker).length - 1;
+function countIn(text: string, steeringMarker: string): number {
+  return steeringMarker === '' ? 0 : text.split(steeringMarker).length - 1;
 }
 
 function reasonFor(filesOpened: number, occurrences: number, expectation: SweepExpectation): string {
@@ -15,13 +15,13 @@ function reasonFor(filesOpened: number, occurrences: number, expectation: SweepE
   return occurrences === wanted ? 'as expected' : `found ${occurrences} occurrences, expected ${wanted}`;
 }
 
-export function sweepForMarker(
+export function sweepForSteeringMarker(
   files: readonly SweptFile[],
-  marker: string,
+  steeringMarker: string,
   expectation: SweepExpectation,
 ): SweepVerdict {
   const hits = files
-    .map((file) => ({ path: file.path, count: countIn(file.text, marker) }))
+    .map((file) => ({ path: file.path, count: countIn(file.text, steeringMarker) }))
     .filter((hit) => hit.count > 0);
   const occurrences = hits.reduce((sum, hit) => sum + hit.count, 0);
   const reason = reasonFor(files.length, occurrences, expectation);

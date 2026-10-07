@@ -1,2 +1,2 @@
-export { drawSteeringMarker, transcriptionGuardHits } from './lib/markers/steering-marker.pure.ts';
-export type { GuardFile, MarkerDraw } from './lib/markers/steering-marker.types.ts';
+export { drawSteeringMarker, transcriptionGuardHits } from './lib/steering-markers/steering-marker.pure.ts';
+export type { GuardFile, SteeringMarkerDraw } from './lib/steering-markers/steering-marker.types.ts';

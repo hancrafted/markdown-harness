@@ -4,22 +4,22 @@
 import { describe, expect, it } from 'vitest';
 import { gradeSteeringAssertion } from './steering-assertion.pure.ts';
 
-const MARKER = 'QQ11-2222';
+const STEERING_MARKER = 'QQ11-2222';
 const SCOPE = { level: 2, titlePattern: '^Findings$' };
 const out = (finalFile: string | null) => JSON.stringify({ finalFile });
 const meta = (arm: string, extra: object = {}) => ({
   arm,
-  marker: MARKER,
+  steeringMarker: STEERING_MARKER,
   scope: SCOPE,
   localised: 'clean',
   creatingTool: 'Write',
   ...extra,
 });
-const WITH = `## Findings\nx ${MARKER}\n`;
+const WITH = `## Findings\nx ${STEERING_MARKER}\n`;
 
 describe('gradeSteeringAssertion', () => {
   describe('success cases', () => {
-    it('passes a steered or control trial that carries the marker, and a neutralised one that does not', () => {
+    it('passes a steered or control trial that carries the steering marker, and a neutralised one that does not', () => {
       // ARRANGE
       const expected = [true, true, true];
       // ACT
@@ -44,7 +44,7 @@ describe('gradeSteeringAssertion', () => {
       expect(result.reason).toContain(expected);
     });
 
-    it('fails a neutralised trial that carries the marker, which is a defect in the case', () => {
+    it('fails a neutralised trial that carries the steering marker, which is a defect in the case', () => {
       // ARRANGE
       const expected = { pass: false, score: 0 };
       // ACT

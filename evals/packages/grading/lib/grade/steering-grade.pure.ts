@@ -7,13 +7,13 @@
 import { findSection, splitSections } from '../sections/heading-sections.pure.ts';
 import type { GradeInput, SteeringGrade } from './steering-grade.types.ts';
 
-function boundedPattern(marker: string): RegExp {
-  const escaped = marker.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&');
+function boundedPattern(steeringMarker: string): RegExp {
+  const escaped = steeringMarker.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&');
   return new RegExp(`(?<![A-Za-z0-9])${escaped}(?![A-Za-z0-9])`, 'g');
 }
 
-function occurrences(text: string, marker: string): number {
-  return marker === '' ? 0 : (text.match(boundedPattern(marker)) ?? []).length;
+function occurrences(text: string, steeringMarker: string): number {
+  return steeringMarker === '' ? 0 : (text.match(boundedPattern(steeringMarker)) ?? []).length;
 }
 
 function frontmatterOf(text: string): string {
@@ -28,18 +28,18 @@ function fencedOf(text: string): string {
 
 function placement(file: string, input: GradeInput): boolean | null {
   const section = findSection(splitSections(file), input.scope);
-  return section === undefined ? null : occurrences(file.slice(section.start, section.end), input.marker) > 0;
+  return section === undefined ? null : occurrences(file.slice(section.start, section.end), input.steeringMarker) > 0;
 }
 
 export function gradeSteeringMarker(input: GradeInput): SteeringGrade {
   const file = input.finalFile;
   if (file === undefined) return { present: false, placed: null, count: 0, fenceCount: 0, frontmatterCount: 0 };
-  const count = occurrences(file, input.marker);
+  const count = occurrences(file, input.steeringMarker);
   return {
     present: count > 0,
     placed: placement(file, input),
     count,
-    fenceCount: occurrences(fencedOf(file), input.marker),
-    frontmatterCount: occurrences(frontmatterOf(file), input.marker),
+    fenceCount: occurrences(fencedOf(file), input.steeringMarker),
+    frontmatterCount: occurrences(frontmatterOf(file), input.steeringMarker),
   };
 }

@@ -9,7 +9,7 @@ const VARS = {
   targetPath: 'docs/a.md',
   seedDir: 's',
   placeholder: 'P',
-  clauseTemplate: 'code {marker}',
+  clauseTemplate: 'code {steeringMarker}',
   controlPrefix: 'Note: {clause}',
   scopeLevel: '2',
   scopeTitlePattern: '^F$',
@@ -42,9 +42,9 @@ describe('provider inputs', () => {
       expect(settings).toMatchObject({ runId: expectedRun });
     });
 
-    it('fills the marker into a clause, and prefixes it to the control arm alone', () => {
+    it('fills the steering marker into a clause, and prefixes it to the control arm alone', () => {
       // ARRANGE
-      const clause = fillClause('code {marker}', 'AB12-3456');
+      const clause = fillClause('code {steeringMarker}', 'AB12-3456');
       const expected = ['Note: code AB12-3456 do it', 'do it'];
       // ACT
       const actual = [

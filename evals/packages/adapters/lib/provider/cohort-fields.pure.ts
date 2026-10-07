@@ -71,14 +71,14 @@ function measured(sources: CohortSources): Record<string, unknown> {
     charactersDelivered: sources.charactersDelivered,
     observations: observableTable(observations).join('; '),
     localisedRung: localisedText(sources.localised),
-    markerPresent: grade.present,
-    markerPlaced: grade.placed === null ? 'no-section' : grade.placed,
-    markerCount: grade.count,
-    markerFenceCount: grade.fenceCount,
-    markerFrontmatterCount: grade.frontmatterCount,
-    firstWriteHasMarker: observation.firstWriteHasMarker,
-    unionHasMarker: observation.unionHasMarker,
-    finalHasMarker: observation.finalHasMarker,
+    steeringMarkerPresent: grade.present,
+    steeringMarkerPlaced: grade.placed === null ? 'no-section' : grade.placed,
+    steeringMarkerCount: grade.count,
+    steeringMarkerFenceCount: grade.fenceCount,
+    steeringMarkerFrontmatterCount: grade.frontmatterCount,
+    firstWriteHasSteeringMarker: observation.firstWriteHasSteeringMarker,
+    unionHasSteeringMarker: observation.unionHasSteeringMarker,
+    finalHasSteeringMarker: observation.finalHasSteeringMarker,
   };
 }
 

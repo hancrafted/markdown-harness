@@ -27,7 +27,7 @@ function observationOf(parts: GradeParts): ReturnType<typeof observeSession> {
   return observeSession({
     arm: cell.arm,
     events: parsed.events,
-    marker: prepared.marker,
+    steeringMarker: prepared.steeringMarker,
     targetPath: vars.targetPath,
     root: outcome.root ?? '',
     finalFile: outcome.finalFile,
@@ -41,7 +41,11 @@ function scopeOf(parts: GradeParts): { level: number; titlePattern: string } {
 
 function fieldsOf(parts: GradeParts, observation: ReturnType<typeof observeSession>): Record<string, unknown> {
   const { outcome, prepared } = parts;
-  const grade = gradeSteeringMarker({ finalFile: outcome.finalFile, marker: prepared.marker, scope: scopeOf(parts) });
+  const grade = gradeSteeringMarker({
+    finalFile: outcome.finalFile,
+    steeringMarker: prepared.steeringMarker,
+    scope: scopeOf(parts),
+  });
   const localised = localiseRung(observation.observations);
   const timing = { startedAtMs: outcome.startedAtMs, durationMs: outcome.durationMs, nodeVersion: nodeVersion() };
   return cohortFields({
@@ -63,7 +67,7 @@ function recordOf(
   row: Readonly<Record<string, unknown>>,
 ): SessionSidecar {
   const { call, cell } = parts;
-  const present = fields.markerPresent === true;
+  const present = fields.steeringMarkerPresent === true;
   const localised = String(fields.localisedRung);
   return {
     sessionKey: sessionKey(call.cellLabel, call.trialIndex),
@@ -71,7 +75,7 @@ function recordOf(
     arm: cell.arm,
     graded: true,
     sessionId: String(fields.sessionId),
-    markerPresent: present,
+    steeringMarkerPresent: present,
     localised,
     cohortRow: row,
   };
@@ -93,7 +97,7 @@ function returnOf(
     output,
     metadata: {
       arm: cell.arm,
-      marker: prepared.marker,
+      steeringMarker: prepared.steeringMarker,
       scope: scopeOf(parts),
       localised,
       creatingTool: observation.creatingTool ?? null,
