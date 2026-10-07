@@ -1,0 +1,66 @@
+// The mint's pure guards and copy plan (R0 item 8, R3 isolation).
+//
+// Roots are minted by copy, never by link. The plan is a positive list: the seed
+// tree, the built `mh` with its manifest and two runtime dependencies, and the
+// hook scripts. The held-out cases directory is excluded by never being in it.
+
+import type { AncestorListing, CopyStep, MintSources, TreeEntry } from './mint-plan.types.ts';
+
+/** Names a Host harness reads from a parent directory, so any of them above a minted root leaks into it. */
+const PARENT_LEAKS = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', '.claude'];
+const INSTRUCTION_FILES = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md'];
+const GIVEAWAY_WORDS = /eval|steer|neutral|control|arm\b|marker|case/i;
+
+const PACKAGE_HOME = 'node_modules/@hancrafted/markdown-harness';
+
+export function checkParentChain(chain: readonly AncestorListing[]): string[] {
+  return chain.flatMap(({ dir, entries }) =>
+    entries.filter((entry) => PARENT_LEAKS.includes(entry)).map((entry) => `${dir === '/' ? '' : dir}/${entry}`),
+  );
+}
+
+function hookStep(script: string): CopyStep {
+  return { from: script, to: `hooks/${script.slice(script.lastIndexOf('/') + 1)}` };
+}
+
+export function planCopies(sources: MintSources): CopyStep[] {
+  return [
+    { from: sources.seedDir, to: '.' },
+    { from: sources.mhDist, to: `${PACKAGE_HOME}/dist` },
+    { from: sources.mhManifest, to: `${PACKAGE_HOME}/package.json` },
+    { from: sources.markedDir, to: 'node_modules/marked' },
+    { from: sources.yamlDir, to: 'node_modules/yaml' },
+    ...sources.hookScripts.map(hookStep),
+  ];
+}
+
+function within(path: string, directory: string): boolean {
+  return path === directory || path.startsWith(`${directory}/`);
+}
+
+/** Held-out directories the plan would copy from or into. */
+export function heldOutViolations(plan: readonly CopyStep[], heldOut: readonly string[]): string[] {
+  return heldOut.filter((directory) => plan.some((step) => within(step.from, directory)));
+}
+
+function instructionProblems(tree: readonly TreeEntry[]): string[] {
+  const root = tree.filter((entry) => !entry.path.includes('/') && INSTRUCTION_FILES.includes(entry.path));
+  const extras = root.filter((entry) => entry.path !== 'AGENTS.md').map((entry) => `instruction file: ${entry.path}`);
+  return root.some((entry) => entry.path === 'AGENTS.md')
+    ? extras
+    : ['instruction file: AGENTS.md is missing', ...extras];
+}
+
+export function checkMintedTree(tree: readonly TreeEntry[]): string[] {
+  const symlinks = tree.filter((entry) => entry.kind === 'symlink').map((entry) => `symlink: ${entry.path}`);
+  const cases = tree
+    .filter((entry) => entry.path.split('/').includes('cases'))
+    .filter((entry) => entry.kind === 'dir')
+    .map((entry) => `held-out cases: ${entry.path}`);
+  return [...symlinks, ...cases, ...instructionProblems(tree)];
+}
+
+/** An opaque path names no arm and no eval; the whole path is read, case-insensitively. */
+export function isOpaquePath(path: string): boolean {
+  return !GIVEAWAY_WORDS.test(path);
+}

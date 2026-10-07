@@ -2,8 +2,8 @@
 // R1's decision-procedure order, never two rungs.
 
 import { describe, expect, it } from 'vitest';
+import type { RungNumber, RungStatus } from '../../localise-rung.ts';
 import { localiseRung, observableTable, rungObservations } from './rung-localiser.pure.ts';
-import type { RungNumber, RungStatus } from './rung-localiser.types.ts';
 
 function record(overrides: Partial<Record<RungNumber, RungStatus>>) {
   return rungObservations(overrides);
