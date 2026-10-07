@@ -71,7 +71,7 @@ const land = (id, content) => {
     message: { content: [{ type: 'tool_result', tool_use_id: id, content: 'File written', is_error: false }] },
   });
 };
-const write = (id, content) => {
+const writeNote = (id, content) => {
   announce(id, content);
   land(id, content);
 };
@@ -96,9 +96,9 @@ if (hooksOn && mode !== 'ignore') {
   emit({ type: 'system', subtype: 'hook_response', hook_name: 'PreToolUse:Write', output: run.stdout });
   land('w1', draft);
   told = CODE.exec(run.stdout)?.[0] ?? told;
-  if (told && mode !== 'deaf') write('w2', noteWith(told));
+  if (told && mode !== 'deaf') writeNote('w2', noteWith(told));
 } else {
-  write('w1', mode === 'ignore' || !told ? draft : noteWith(told));
+  writeNote('w1', mode === 'ignore' || !told ? draft : noteWith(told));
 }
 
 emit({

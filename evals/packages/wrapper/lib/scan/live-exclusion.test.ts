@@ -13,14 +13,14 @@ const REAL_FORBIDDEN = ['evals:live', 'evals:self-test', 'promptfoo', 'claude -p
 
 function realInput() {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts: Record<string, string> };
-  const read = (directory: string) =>
+  const readDirectory = (directory: string) =>
     readdirSync(join(ROOT, directory))
       .filter((name) => /\.ya?ml$|^pre-|^commit-msg$/.test(name))
       .map((name) => [`${directory}/${name}`, readFileSync(join(ROOT, directory, name), 'utf8')] as const);
   return {
     scripts: manifest.scripts,
     gateScripts: ['verify', 'verify:commit'],
-    workflows: Object.fromEntries([...read('.github/workflows'), ...read('.husky')]),
+    workflows: Object.fromEntries([...readDirectory('.github/workflows'), ...readDirectory('.husky')]),
     forbidden: REAL_FORBIDDEN,
   };
 }

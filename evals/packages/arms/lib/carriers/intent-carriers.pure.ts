@@ -9,11 +9,11 @@
 
 import type { IntentCarrier } from './intent-carriers.types.ts';
 
-type Key = string | number;
+type PathKey = string | number;
 
 interface Position {
   readonly address: string;
-  readonly path: readonly Key[];
+  readonly path: readonly PathKey[];
 }
 
 function itemLabel(item: unknown, index: number): string {
@@ -21,7 +21,7 @@ function itemLabel(item: unknown, index: number): string {
   return typeof ruleId === 'string' ? `[ruleId=${ruleId}]` : `[${index}]`;
 }
 
-function child(at: Position, key: Key, label: string): Position {
+function child(at: Position, key: PathKey, label: string): Position {
   return { address: `${at.address}${label}`, path: [...at.path, key] };
 }
 

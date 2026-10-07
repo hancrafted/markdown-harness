@@ -14,12 +14,12 @@ export const NEUTRAL_FILLER = 'No further guidance applies here.';
 
 type Cursor = Record<string | number, unknown>;
 
-function write(document: unknown, path: readonly (string | number)[], text: string): void {
+function writeAtPath(document: unknown, path: readonly (string | number)[], text: string): void {
   const parent = path.slice(0, -1).reduce((node, key) => (node as Cursor)[key], document);
   (parent as Cursor)[path[path.length - 1] as string | number] = text;
 }
 
-function read(document: unknown, path: readonly (string | number)[]): string {
+function readAtPath(document: unknown, path: readonly (string | number)[]): string {
   return path.reduce((node, key) => (node as Cursor)[key], document) as string;
 }
 
@@ -29,17 +29,17 @@ function substituted(text: string, input: DeriveArmInput): string {
 }
 
 function delivered(document: unknown): DeliveredCarrier[] {
-  return intentCarriers(document).map(({ address, path }) => ({ address, text: read(document, path) }));
+  return intentCarriers(document).map(({ address, path }) => ({ address, text: readAtPath(document, path) }));
 }
 
 export function deriveArm(input: DeriveArmInput): DerivedArm {
   const document: unknown = parse(input.configText);
   let substitutions = 0;
   for (const { path } of intentCarriers(document)) {
-    const before = read(document, path);
+    const before = readAtPath(document, path);
     const after = substituted(before, input);
     if (input.arm === 'steered' && after !== before) substitutions += 1;
-    if (after !== before) write(document, path, after);
+    if (after !== before) writeAtPath(document, path, after);
   }
   if (input.arm === 'steered' && substitutions === 0) {
     throw new Error(`steered arm: placeholder ${input.placeholder} appears in no carrier`);
@@ -52,5 +52,5 @@ export function deriveArm(input: DeriveArmInput): DerivedArm {
 /** The address of the carrier whose text holds the placeholder, or undefined when none does. */
 export function testedCarrierAddress(configText: string, placeholder: string): string | undefined {
   const document: unknown = parse(configText);
-  return intentCarriers(document).find(({ path }) => read(document, path).includes(placeholder))?.address;
+  return intentCarriers(document).find(({ path }) => readAtPath(document, path).includes(placeholder))?.address;
 }
