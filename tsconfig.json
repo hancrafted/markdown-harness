@@ -12,5 +12,5 @@
     "resolveJsonModule": true,
     "noEmit": true
   },
-  "include": ["src", "*.ts", "*.mts"]
+  "include": ["src", "evals", "*.ts", "*.mts"]
 }

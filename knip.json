@@ -1,6 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": [".archgate/adrs/*.rules.ts", "src/packages/cli/cli.ts"],
-  "project": ["src/**/*.ts", "*.ts", ".archgate/**/*.ts"],
+  "entry": [
+    ".archgate/adrs/*.rules.ts",
+    "src/packages/cli/cli.ts",
+    "evals/packages/wrapper/*.ts",
+    "evals/packages/adapters/*.ts"
+  ],
+  "project": ["src/**/*.ts", "evals/**/*.ts", "*.ts", ".archgate/**/*.ts"],
   "exclude": ["types", "nsTypes"]
 }

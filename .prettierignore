@@ -43,3 +43,6 @@ fixtures/conformance/body-structure/**
 # `prettier --write` on every staged `.md` and `.json`. Ignoring the directory
 # keeps the commit hook from reformatting a frozen file.
 fixtures/conformance/integrated/**
+
+# Eval run output: gitignored, and must not be reformatted or checked.
+evals/runs/
