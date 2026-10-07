@@ -62,9 +62,14 @@ export function checkMintedTree(tree: readonly TreeEntry[]): string[] {
   return [...symlinks, ...cases, ...instructionProblems(tree)];
 }
 
-/** An opaque path names no arm and no eval; the whole path is read, case-insensitively. */
-export function isOpaquePath(path: string): boolean {
-  return !GIVEAWAY_WORDS.test(path);
+/**
+ * An opaque path names no arm and no eval. Only the segments minted below `parent` are read, case-insensitively:
+ * the parent is a system temporary directory or a caller's choice, and a word in it must not refuse the mint.
+ * A path that is not below the parent has no minted segment to vouch for, so it is refused.
+ */
+export function isOpaquePath(path: string, parent: string): boolean {
+  const prefix = parent.endsWith('/') ? parent : `${parent}/`;
+  return path.startsWith(prefix) && !GIVEAWAY_WORDS.test(path.slice(prefix.length));
 }
 
 const SKILL_SCRIPTS = '.agents/skills/markdown-harness/scripts';

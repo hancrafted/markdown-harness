@@ -26,7 +26,8 @@ const HOOK_COMMAND = 'node "$CLAUDE_PROJECT_DIR/.agents/skills/markdown-harness/
 const SETTINGS = { hooks: { PreToolUse: [{ matcher: 'Write', hooks: [{ type: 'command', command: HOOK_COMMAND }] }] } };
 
 function refusalsBefore(root: string, request: MintRequest, plan: ReturnType<typeof planCopies>): string[] {
-  const opaque = isOpaquePath(root) ? [] : [`the mint path ${root} names an arm or an eval`];
+  const parent = request.under ?? systemTemporaryDirectory();
+  const opaque = isOpaquePath(root, parent) ? [] : [`the mint path ${root} names an arm or an eval`];
   const held = heldOutViolations(plan, request.heldOut).map((path) => `held-out directory in the copy plan: ${path}`);
   const parents = checkParentChain(ancestorListings(root)).map((path) => `instruction file in a parent: ${path}`);
   return [...opaque, ...held, ...parents];

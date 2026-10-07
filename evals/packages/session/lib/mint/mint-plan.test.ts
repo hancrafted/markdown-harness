@@ -166,9 +166,20 @@ describe('isOpaquePath', () => {
   describe('success cases', () => {
     it('accepts a random identifier under a system temporary directory', () => {
       // ARRANGE
-      const path = '/private/var/folders/zz/T/9f2c41ab07de';
+      const parent = '/private/var/folders/zz/T';
+      const path = `${parent}/9f2c41ab07de`;
       // ACT
-      const actual = isOpaquePath(path);
+      const actual = isOpaquePath(path, parent);
+      // ASSERT
+      expect(actual).toBe(true);
+    });
+
+    it('does not judge the parent it was handed, only the segments minted below it', () => {
+      // ARRANGE
+      const parent = '/private/var/folders/evals-casey/T';
+      const path = `${parent}/9f2c41ab07de`;
+      // ACT
+      const actual = isOpaquePath(path, parent);
       // ASSERT
       expect(actual).toBe(true);
     });
@@ -181,11 +192,20 @@ describe('isOpaquePath', () => {
         // ARRANGE
         const expected = false;
         // ACT
-        const actual = isOpaquePath(path);
+        const actual = isOpaquePath(path, '/tmp');
         // ASSERT
         expect(actual).toBe(expected);
       },
     );
+
+    it('refuses a path that is not below the parent, since nothing can then be called minted', () => {
+      // ARRANGE
+      const expected = false;
+      // ACT
+      const actual = isOpaquePath('/elsewhere/9f2c41ab07de', '/tmp');
+      // ASSERT
+      expect(actual).toBe(expected);
+    });
   });
 
   describe('edge cases', () => {
@@ -193,7 +213,7 @@ describe('isOpaquePath', () => {
       // ARRANGE
       const path = '/tmp/EVALS/abc';
       // ACT
-      const actual = isOpaquePath(path);
+      const actual = isOpaquePath(path, '/tmp');
       // ASSERT
       expect(actual).toBe(false);
     });
