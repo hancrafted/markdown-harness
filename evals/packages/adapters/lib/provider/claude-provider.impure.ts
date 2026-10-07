@@ -3,6 +3,7 @@
 // nothing of its own but the cell's label and options.
 
 import { environment } from '../../../platform/host-ambient.ts';
+import { readCellConfig } from './provider-config.pure.ts';
 import type { SessionReturn } from './session-record.types.ts';
 import { runSteeringSession } from './steering-session.impure.ts';
 
@@ -16,12 +17,17 @@ interface CallContext {
   readonly vars?: unknown;
 }
 
-let counter = 0;
+// Module-level, so every provider instance the eval tool builds in this process draws from one sequence.
+// The self-test run shows trial indices 0 to 5 across three cells, none repeated. The eval tool is held to one
+// process by the wrapper's concurrency of one; a second worker would load the module afresh and count from zero
+// again, so the trial index orders trials within a process and never identifies one: the session key carries a
+// random suffix for that.
+let nextTrialIndex = 0;
 
 /** A cell is named by what distinguishes it: its delivery channel and arm. */
 function cellLabel(config: unknown): string | undefined {
-  const bag = (config ?? {}) as { arm?: string; deliveryChannel?: string };
-  return bag.arm === undefined || bag.deliveryChannel === undefined ? undefined : `${bag.deliveryChannel}-${bag.arm}`;
+  const cell = readCellConfig(config);
+  return Array.isArray(cell) ? undefined : `${cell.deliveryChannel}-${cell.arm}`;
 }
 
 export default class ClaudeCodeProvider {
@@ -38,8 +44,8 @@ export default class ClaudeCodeProvider {
   }
 
   async callApi(_prompt: string, context?: CallContext): Promise<SessionReturn> {
-    const trialIndex = counter;
-    counter += 1;
+    const trialIndex = nextTrialIndex;
+    nextTrialIndex += 1;
     return runSteeringSession({
       cellLabel: this.label,
       config: this.config,
