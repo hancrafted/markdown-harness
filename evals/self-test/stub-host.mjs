@@ -4,7 +4,7 @@
 // takes the real argv, runs the root's real hook script, writes a real file and
 // prints a stream shaped like Claude Code's. No model is behind it.
 //
-//   node stub-host.mjs [--mode obey|deaf|ignore|partial|shell|auth-fail|slow] [--log <file>] -p <task> ...
+//   node stub-host.mjs [--mode obey|deaf|ignore|partial|shell|auth-fail|slow] [--log <file>] [--say <word>] -p <task> ...
 //
 // obey: acts like an agent that does what the hook, the pull command (bin/mh) or the user turn tells it.
 // deaf: the hook or the pull command delivers, and the agent does not act on it (a rung 4 null for the hook).
@@ -55,6 +55,25 @@ if (mode === 'auth-fail') {
     num_turns: 0,
     terminal_reason: 'api_error',
     result: 'Not logged in · Please run /login',
+  });
+  finish(0);
+}
+// A pre-screen session: no tools offered. It answers in plain text and writes nothing; --say plants a word.
+if (argv.includes('--tools') && flag('--tools') === '') {
+  const say = flag('--say');
+  emit({
+    type: 'assistant',
+    message: { content: [{ type: 'text', text: `Here is a short answer.${say ? ` ${say}.` : ''}` }] },
+  });
+  emit({
+    type: 'result',
+    subtype: 'success',
+    is_error: false,
+    num_turns: 1,
+    terminal_reason: 'completed',
+    result: 'Done.',
+    modelUsage: { 'stub-model': {} },
+    permission_denials: [],
   });
   finish(0);
 }

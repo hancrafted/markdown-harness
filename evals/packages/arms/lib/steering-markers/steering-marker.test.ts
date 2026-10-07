@@ -2,7 +2,12 @@
 // and carrier, redrawn when it occurs anywhere in the supplied corpus.
 
 import { describe, expect, it } from 'vitest';
-import { STEERING_MARKER_FAMILY_SHAPE, drawSteeringMarker, transcriptionGuardHits } from './steering-marker.pure.ts';
+import {
+  STEERING_MARKER_FAMILY_SHAPE,
+  drawCoinedWord,
+  drawSteeringMarker,
+  transcriptionGuardHits,
+} from './steering-marker.pure.ts';
 
 const SEED = 'seed-one';
 const CASE_ID = 'research-note';
@@ -111,6 +116,57 @@ describe('transcriptionGuardHits', () => {
       const actual = transcriptionGuardHits(files);
       // ASSERT
       expect(actual).toEqual([]);
+    });
+  });
+});
+
+describe('drawCoinedWord', () => {
+  const wordDraw = (corpus: string, address = 'candidate-0') =>
+    drawCoinedWord({ seed: SEED, caseId: 'prescreen', address, corpus });
+
+  describe('success cases', () => {
+    it('draws a lowercase pseudo-word of eight to ten letters, the same one again from the same draw', () => {
+      // ARRANGE
+      const expected = wordDraw('');
+      // ACT
+      const actual = wordDraw('');
+      // ASSERT
+      expect(actual).toEqual(expected);
+      expect(actual).toMatch(/^[a-z]{8,10}$/);
+    });
+
+    it('draws a different word for a different candidate address', () => {
+      // ARRANGE
+      const base = wordDraw('');
+      // ACT
+      const others = [1, 2, 3, 4].map((index) => wordDraw('', `candidate-${index}`));
+      // ASSERT
+      expect(others.some((other) => other !== base)).toBe(true);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('redraws a word that occurs in the corpus, whatever its case', () => {
+      // ARRANGE
+      const first = wordDraw('');
+      const corpus = `prose that mentions ${first.toUpperCase()} once`;
+      // ACT
+      const actual = wordDraw(corpus);
+      // ASSERT
+      expect(actual).not.toEqual(first);
+      expect(corpus.toLowerCase()).not.toContain(actual);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('draws a word that no corpus text contains inside it, so a longer word cannot hide a hit', () => {
+      // ARRANGE
+      const first = wordDraw('');
+      const corpus = `x${first}x`;
+      // ACT
+      const actual = wordDraw(corpus);
+      // ASSERT
+      expect(actual).not.toEqual(first);
     });
   });
 });

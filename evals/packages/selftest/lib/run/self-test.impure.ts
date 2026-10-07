@@ -11,6 +11,7 @@ import { judgeBreaks, judgeMatrix, parseInvocationLog } from '../checks/self-che
 import type { Finding, MatrixRun } from '../checks/self-checks.types.ts';
 
 const WRAPPER = 'evals/packages/wrapper/run-evals.ts';
+const PRESCREEN = 'evals/packages/prescreen/run-prescreen.ts';
 const SHARING = ['promptfoo.app', 'api.promptfoo', 'share.promptfoo'];
 const TRIALS = 2;
 const MATRIX_CONFIG = 'evals/promptfooconfig.yaml';
@@ -32,11 +33,11 @@ interface Execution {
   readonly runDir: string | undefined;
 }
 
-function wrapper(extra: readonly string[]): Execution {
+function wrapper(extra: readonly string[], script = WRAPPER): Execution {
   const env = { PATH: environment().PATH ?? '', HOME: environment().HOME ?? '' };
   const report = runProcess({
     command: nodeExecutable(),
-    args: [WRAPPER, ...extra],
+    args: [script, ...extra],
     cwd: process.cwd(),
     env,
     timeoutMs: 20 * 60_000,
@@ -166,6 +167,28 @@ function surfaceFindings(): Finding[] {
   return [...pullFindings(), ...carrierFindings(), ...shellFindings(), ...pullCanaryFindings()];
 }
 
+function screen(extra: readonly string[]): Execution {
+  const base = ['--host', 'stub', '--models', 'sonnet', '--candidates', 'quelmarvin,tolrafeso', '--seed', 'self-t'];
+  return wrapper([...base, ...extra], PRESCREEN);
+}
+
+/** Phase 3: the pooled word-family pre-screen, driven against the stub with no model. */
+function prescreenFindings(): Finding[] {
+  const clean = screen([]);
+  const leaky = screen(['--stub-say', 'quelmarvin']);
+  const broken = screen(['--stub-mode', 'auth-fail']);
+  return [
+    expectExit('a clean pre-screen exits zero', clean, 0),
+    expectOutput('pre-screen: zero hits admits every candidate', clean, /2 of 2 candidates admitted/),
+    expectExit('a leaked word is a result, not an instrument failure, exit zero', leaky, 0),
+    expectOutput('pre-screen: the planted word is refused', leaky, /quelmarvin: REFUSED/),
+    expectOutput('pre-screen: the unplanted word is still admitted', leaky, /tolrafeso: admitted/),
+    expectExit('a pre-screen whose sessions fail is an instrument failure, exit one', broken, 1),
+    expectExit('a sample count below twenty is misuse, exit two', screen(['--samples', '19']), 2),
+    expectExit('a pre-screen over the session budget is misuse, exit two', screen(['--models', 'a,b,c']), 2),
+  ];
+}
+
 function scenarios(): Finding[] {
   const deaf = wrapper(trialsArgs('self-c', ['--stub-mode', 'deaf']));
   const auth = wrapper(['--host', 'stub', '--trials', '1', '--stub-mode', 'auth-fail']);
@@ -174,6 +197,7 @@ function scenarios(): Finding[] {
     ...matrixFindings(),
     ...breakFindings(),
     ...surfaceFindings(),
+    ...prescreenFindings(),
     expectExit('a graded failure exits zero, whatever the eval tool status (rung 4 nulls)', deaf, 0),
     {
       check: 'a graded null is localised to a rung in the summary',

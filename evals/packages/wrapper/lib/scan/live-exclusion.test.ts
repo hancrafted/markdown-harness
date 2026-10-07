@@ -9,7 +9,16 @@ import { describe, expect, it } from 'vitest';
 import { scanForLiveScripts } from './live-exclusion.pure.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../..');
-const REAL_FORBIDDEN = ['evals:live', 'evals:self-test', 'promptfoo', 'claude -p', 'run-evals', 'run-self-test'];
+const REAL_FORBIDDEN = [
+  'evals:live',
+  'evals:self-test',
+  'promptfoo',
+  'claude -p',
+  'run-evals',
+  'run-self-test',
+  'evals:prescreen',
+  'run-prescreen',
+];
 
 function realInput() {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts: Record<string, string> };

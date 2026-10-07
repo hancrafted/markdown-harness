@@ -44,6 +44,7 @@
     "verify": "archgate check && mh check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && npm run build && vitest run && knip",
     "verify:commit": "lint-staged && archgate check && tsc --noEmit && npm run build && vitest run",
     "evals:self-test": "node evals/packages/selftest/run-self-test.ts",
+    "evals:prescreen": "node evals/packages/prescreen/run-prescreen.ts",
     "evals:live": "node evals/packages/wrapper/run-evals.ts --host claude"
   },
   "dependencies": {

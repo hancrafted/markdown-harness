@@ -47,3 +47,25 @@ export function transcriptionGuardHits(files: readonly GuardFile[]): string[] {
   const family = new RegExp(STEERING_MARKER_FAMILY_SHAPE.source);
   return files.filter((file) => family.test(file.text)).map((file) => file.path);
 }
+
+const CONSONANTS = 'bcdfghjklmnprstvwz';
+const VOWELS = 'aeiou';
+
+/**
+ * A coined pseudo-word of eight to ten lowercase letters, alternating consonant and vowel so it reads as a
+ * word and no model has seen it. It is the word family the pre-screen bounds; the committed steering markers
+ * stay the code family above. Redrawn when it occurs in the corpus, whatever its case.
+ */
+export function drawCoinedWord(draw: SteeringMarkerDraw): string {
+  const corpus = draw.corpus.toLowerCase();
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    const base = `${draw.seed}|${draw.caseId}|${draw.address}|${attempt}|word`;
+    const length = 8 + (hash32(`${base}|length`) % 3);
+    const word = Array.from({ length }, (_, index) => {
+      const pool = index % 2 === 0 ? CONSONANTS : VOWELS;
+      return pool[hash32(`${base}|${index}`) % pool.length];
+    }).join('');
+    if (!corpus.includes(word)) return word;
+  }
+  throw new Error(`coined word: every one of ${MAX_ATTEMPTS} candidates collided with the corpus`);
+}
