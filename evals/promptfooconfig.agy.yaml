@@ -1,0 +1,62 @@
+# The eval tool's configuration for Antigravity (`agy`), pull delivery and the trusted-prompt control.
+#
+# Why no push cell: whether a hook fires in headless `agy` is an unprobed capability (R3 section 3), and the
+# Host harness profile refuses a push cell until that probe is recorded. A push cell here would be refused
+# at plan time, so none is written.
+#
+# What a cell here does not control: `agy` has no isolation flag, no turn cap and no scoped permission mode that
+# was measured, so each session runs with every permission skipped and with the account's own settings, hooks,
+# skills and MCP servers in reach. The cohort row records that (isolation, leakedSurface, turnCap, wallClockMs),
+# and the wall-clock bound is the only limit on a session. `shell: query-only` names the surface the cell
+# measures, not a restriction `agy` enforces.
+#
+# `model` is an id from `agy models`, never a default: `agy` can run Claude models, and a cohort row records the
+# resolved model and its family so a comparison across Host harnesses is never confounded by the model.
+#
+# Run it through the wrapper, never directly: `npm run evals:agy`. The wrapper refuses a live run while any
+# Antigravity probe is unprobed; `--host stub --matrix agy` drives these cells against the stand-in with no model.
+description: steering eval, Antigravity, pull delivery (json encoding) and the trusted-prompt control
+prompts:
+  - '{{task}}'
+providers:
+  - id: file://packages/adapters/antigravity-provider.ts
+    label: antigravity-pull-json-steered
+    config:
+      {
+        arm: steered,
+        deliveryChannel: pull,
+        shell: query-only,
+        encoding: json,
+        model: gemini-3.8-flash-low,
+        hostName: antigravity,
+      }
+  - id: file://packages/adapters/antigravity-provider.ts
+    label: antigravity-pull-json-neutralised
+    config:
+      {
+        arm: neutralised,
+        deliveryChannel: pull,
+        shell: query-only,
+        encoding: json,
+        model: gemini-3.8-flash-low,
+        hostName: antigravity,
+      }
+  - id: file://packages/adapters/antigravity-provider.ts
+    label: antigravity-trusted-prompt-control
+    config:
+      {
+        arm: control,
+        deliveryChannel: user-turn,
+        shell: none,
+        encoding: none,
+        model: gemini-3.8-flash-low,
+        hostName: antigravity,
+      }
+tests: file://suites/steering/cases/research-note.yaml
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://packages/adapters/steering-assertion.ts:gradeSteering
+evaluateOptions:
+  maxConcurrency: 1
+  cache: false

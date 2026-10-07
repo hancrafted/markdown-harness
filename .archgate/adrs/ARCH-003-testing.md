@@ -24,7 +24,7 @@ Test-driven development (TDD) and the red-green-refactor cycle are the primary a
 
 ### 2. Suite structure
 
-1. Under `src/**/*.test.ts`, a top-level suite MUST split into exactly three `describe` blocks — `success cases`, `failure cases`, `edge cases` — each holding at least one test. There is no fourth name.
+1. Under `src/**/*.test.ts` and `evals/**/*.test.ts`, a top-level suite MUST split into exactly three `describe` blocks — `success cases`, `failure cases`, `edge cases` — each holding at least one test. There is no fourth name.
 2. `describe` MUST NOT nest past two levels; a test MUST NOT sit at file top level.
 
 ### 3. Test-body structure
@@ -37,6 +37,7 @@ Test-driven development (TDD) and the red-green-refactor cycle are the primary a
 
 1. `<pkg>/tests/*.test.ts` is the Package's integration suite: entry points only, at the grain a caller sees; `*.impure.ts` is exercised here too — through the entry point, never imported directly.
 2. `<pkg>/<subfolder>/*.test.ts` is a unit suite. It MAY import its same-directory, same-name `.pure.ts` sibling, Package root entry points, and platform builtins (exempted by `only-the-gate-imports-a-builtin` when needed for in-test file fixtures), and no other Package internals.
+3. Decisions 2 to 4 apply under `evals/packages/` as under `src/packages/`.
 
 ## Do's and Don'ts
 
@@ -82,7 +83,7 @@ Test-driven development (TDD) and the red-green-refactor cycle are the primary a
 ## Compliance and Enforcement
 
 1. **Determinism & Real Execution (Decision 1)** — ESLint `no-restricted-syntax` and `no-restricted-properties` in `eslint.config.mjs` (`**/*.test.ts`). Ambient network calls are not mechanically checkable (review duty).
-2. **Suite Structure (Decision 2)** — ESLint `no-restricted-syntax` in `eslint.config.mjs` (`src/**/*.test.ts`).
+2. **Suite Structure (Decision 2)** — ESLint `no-restricted-syntax` in `eslint.config.mjs` (`src/**/*.test.ts` and `evals/**/*.test.ts`).
 3. **Test-Body Structure (Decision 3)** — Inline ESLint rule `test-body-aaa` in `eslint.config.mjs`. Rich matcher usage is a review duty.
 4. **Test Homes & Boundaries (Decision 4)** — Dependency-cruiser rules `tests-through-entrypoints` and `colocated-test-lane` in `.dependency-cruiser.cjs` (`npm run lint:boundaries`).
 5. **Tautological Assertions** — Not mechanically checkable (review duty).

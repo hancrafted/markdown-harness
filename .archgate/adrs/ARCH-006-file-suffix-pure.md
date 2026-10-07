@@ -4,8 +4,8 @@ id: ARCH-006
 title: 'The pure Classifier'
 domain: architecture
 rules: false
-files: ['src/**/*.pure.*']
-paths: ['src/**/*.pure.*']
+files: ['src/**/*.pure.*', 'evals/**/*.pure.*']
+paths: ['src/**/*.pure.*', 'evals/**/*.pure.*']
 description: 'What the pure classifier claims: a member is admissible only if its result is a function of its arguments alone, the two ambient reads that decide the Math and Date boundary, the evasion bans, and the mutation duty the check cannot hold.'
 ---
 

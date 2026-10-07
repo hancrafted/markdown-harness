@@ -147,6 +147,17 @@ describe('no-eslint-disable', () => {
     expect(violations).toEqual([]);
   });
 
+  it('fails on a directive in a file under evals/', async () => {
+    // ARRANGE
+    const evalsFile = 'evals/packages/arms/lib/carriers.pure.ts';
+    const source = `// ${DISABLE}-next-line no-console\nconsole.log(1);\n`;
+    const { ctx, violations } = makeCtx({ [evalsFile]: source });
+    // ACT
+    await rule.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([evalsFile]);
+  });
+
   it('carries the GEN-003 provenance tag in its messages', async () => {
     // ARRANGE
     const provenance = '(GEN-003 [no-eslint-disable])';

@@ -11,26 +11,39 @@
 //
 // The only thing you should ever need to edit here is PACKAGES_ROOT.
 
-/** Where packages live. One immediate child dir per package (flat, no nesting). */
-const PACKAGES_ROOT = 'src/packages';
+/**
+ * Where packages live, one root per application tree (ARCH-004 §5). One
+ * immediate child dir per package (flat, no nesting). `evals/` mirrors `src/`
+ * and is a second root, never a Package inside the first.
+ */
+const SRC_PACKAGES = 'src/packages';
+const EVALS_PACKAGES = 'evals/packages';
+/**
+ * The alternation every layout rule matches with. NON-capturing on purpose: the
+ * rules below use `$1` for the package name, and a capture group here would
+ * shift every back-reference by one.
+ */
+const PACKAGES_ROOT = `(?:${SRC_PACKAGES}|${EVALS_PACKAGES})`;
 
 // --- derived patterns (no need to edit) -------------------------------------
-const R = PACKAGES_ROOT;
+const P = PACKAGES_ROOT;
 /**
  * A package's private internals: anything nested inside a package subfolder.
  * The package's root files are its entry points and are NOT matched here:
  * they stay importable from outside.
  */
-const PACKAGE_INTERNALS = `^${R}/[^/]+/[^/]+/`;
+const PACKAGE_INTERNALS = `^${P}/[^/]+/[^/]+/`;
 
 /**
- * The shared foundation Package: the gate through which the filesystem and
- * every other platform read is reached (ARCH-008 §2). Named here as a literal
- * rather than derived, because "which Package is the gate" is a product
- * decision and not a naming convention — a second Package called something
- * foundation-ish must not inherit the exemption by spelling.
+ * Each tree's platform gate (ARCH-008 §2.1): the one Package through which its
+ * filesystem and every other platform read is reached. Named here as literals
+ * rather than derived, because "which Package is the gate" is a decision and not
+ * a naming convention — a second Package called something foundation-ish must
+ * not inherit the exemption by spelling. Exactly one per tree: `foundation` in
+ * `src/`, which never spawns, and `platform` in `evals/`, which may.
  */
-const GATE = 'foundation';
+const SRC_GATE = `${SRC_PACKAGES}/foundation/`;
+const EVALS_GATE = `${EVALS_PACKAGES}/platform/`;
 
 /**
  * ARCH-003 Decision 4's two test homes — `<pkg>/tests/*.test.ts` and
@@ -46,7 +59,7 @@ const GATE = 'foundation';
  * fixtures under this exemption. It is spent on test files only, and never on a
  * production file.
  */
-const TEST_HOMES = `^${R}/[^/]+/.+/[^/]+\\.test\\.ts$`;
+const TEST_HOMES = `^${P}/[^/]+/.+/[^/]+\\.test\\.ts$`;
 
 /**
  * Every Module Package, written out.
@@ -67,6 +80,9 @@ const TEST_HOMES = `^${R}/[^/]+/.+/[^/]+\\.test\\.ts$`;
  */
 const MODULES = ['frontmatter-harness', 'body-structure-harness'];
 
+/** Modules exist under `src/` only (ARCH-008 §6.3). */
+const R = SRC_PACKAGES;
+
 /** The alternation the Module rule matches with, on both ends of the edge. */
 const ANY_MODULE = `^${R}/(${MODULES.join('|')})/`;
 
@@ -77,7 +93,7 @@ module.exports = {
       name: 'entrypoint-boundary-from-app',
       comment: "App/root code may import a package's entry points (its root files), but nothing inside its subfolders.",
       severity: 'error',
-      from: { pathNot: `^${R}/` }, // importer is NOT inside any package
+      from: { pathNot: `^${P}/` }, // importer is NOT inside any package
       to: { path: PACKAGE_INTERNALS },
     },
     {
@@ -86,10 +102,10 @@ module.exports = {
         "A package's own files import each other freely, but may reach OTHER packages only through their entry points, never their internals.",
       severity: 'error',
       // importer is inside a package ($1), but is not a test file
-      from: { path: `^${R}/([^/]+)/`, pathNot: `^${R}/[^/]+/tests/` },
+      from: { path: `^${P}/([^/]+)/`, pathNot: `^${P}/[^/]+/tests/` },
       to: {
         path: PACKAGE_INTERNALS,
-        pathNot: `^${R}/$1/`, // same package → intra-package freedom
+        pathNot: `^${P}/$1/`, // same package → intra-package freedom
       },
     },
     {
@@ -97,10 +113,10 @@ module.exports = {
       comment:
         "A package's tests exercise it through its entry points like everyone else: they may import any package's entry points and their own tests/ fixtures, but never any package's internals, not even their own.",
       severity: 'error',
-      from: { path: `^${R}/([^/]+)/tests/` }, // a test file, in package $1
+      from: { path: `^${P}/([^/]+)/tests/` }, // a test file, in package $1
       to: {
         path: PACKAGE_INTERNALS,
-        pathNot: `^${R}/$1/tests/`, // own tests/ fixtures → allowed
+        pathNot: `^${P}/$1/tests/`, // own tests/ fixtures → allowed
       },
     },
     {
@@ -111,18 +127,18 @@ module.exports = {
       // $1 package, $2 directory path below the package root, $3 base name. The
       // directory group is mandatory rather than optional: a colocated test is
       // always in a subfolder, because a package root file may carry no suffix.
-      from: { path: `^${R}/([^/]+)/(.+)/([^/]+)\\.test\\.ts$`, pathNot: `^${R}/[^/]+/tests/` },
+      from: { path: `^${P}/([^/]+)/(.+)/([^/]+)\\.test\\.ts$`, pathNot: `^${P}/[^/]+/tests/` },
       to: {
         path: PACKAGE_INTERNALS,
-        pathNot: `^${R}/$1/$2/$3\\.pure\\.ts$`, // the sibling under test → allowed
+        pathNot: `^${P}/$1/$2/$3\\.pure\\.ts$`, // the sibling under test → allowed
       },
     },
     {
       name: 'tests-folder-is-private',
       comment: "A package's tests/ folder is reachable only from tests: nothing else may import fixtures.",
       severity: 'error',
-      from: { pathNot: `^${R}/[^/]+/tests/` }, // importer is not itself a test
-      to: { path: `^${R}/[^/]+/tests/` },
+      from: { pathNot: `^${P}/[^/]+/tests/` }, // importer is not itself a test
+      to: { path: `^${P}/[^/]+/tests/` },
     },
     // --- Purity boundary ------------------------------------------------------
     // A file carrying the deterministic classifier must produce a result that is
@@ -138,7 +154,7 @@ module.exports = {
       comment:
         'A .pure.ts file may not import an .impure.ts file. Extracting deterministic logic out of an impure file and then importing that file back is not an extraction: the dependency survives and only the line count moved.',
       severity: 'error',
-      from: { path: `^${R}/[^/]+/.*\\.pure\\.ts$` },
+      from: { path: `^${P}/[^/]+/.*\\.pure\\.ts$` },
       to: { path: `\\.impure\\.ts$` },
     },
     {
@@ -146,24 +162,51 @@ module.exports = {
       comment:
         'A .pure.ts file may not import a platform builtin. A builtin reads the host, and a value read from the host arrives through no argument. This covers node:path deliberately: path.sep and path.join change with the host platform, so they are ambient reads like any other.',
       severity: 'error',
-      from: { path: `^${R}/[^/]+/.*\\.pure\\.ts$` },
+      from: { path: `^${P}/[^/]+/.*\\.pure\\.ts$` },
       to: { dependencyTypes: ['core'] },
     },
     {
       name: 'only-the-gate-imports-a-builtin',
       comment:
-        "ARCH-008 §2.1: only the foundation Package may import a platform builtin; every other Package reaches the filesystem, the host separator and a module's own location through it. Two copies of a read are how two Modules end up disagreeing about whether a path is readable at all. Written against `dependencyTypes: [core]`, which is dependency-cruiser's word for a Node builtin and never this repository's word for Core.",
+        "ARCH-008 §2.1: each tree has exactly one platform gate — `foundation` in src/, `platform` in evals/ — and only it may import a platform builtin; every other Package reaches the filesystem, the host separator and a module's own location through it. Two copies of a read are how two Modules end up disagreeing about whether a path is readable at all. Written against `dependencyTypes: [core]`, which is dependency-cruiser's word for a Node builtin and never this repository's word for Core.",
       severity: 'error',
-      from: { path: `^${R}/`, pathNot: [`^${R}/${GATE}/`, TEST_HOMES] },
+      from: { path: `^${P}/`, pathNot: [`^${SRC_GATE}`, `^${EVALS_GATE}`, TEST_HOMES] },
       to: { dependencyTypes: ['core'] },
     },
     {
       name: 'gate-builtins-sit-in-platform',
       comment:
-        'ARCH-008 §2.2: inside the foundation Package, a builtin import must sit in `lib/platform/`. The gate is only reviewable if the syscalls are in one folder rather than scattered through the Package that is allowed to make them.',
+        'ARCH-008 §2.2: inside either gate, a builtin import must sit in `lib/platform/`. The gate is only reviewable if the syscalls are in one folder rather than scattered through the Package that is allowed to make them.',
       severity: 'error',
-      from: { path: `^${R}/${GATE}/`, pathNot: [`^${R}/${GATE}/lib/platform/`, TEST_HOMES] },
+      from: {
+        path: [`^${SRC_GATE}`, `^${EVALS_GATE}`],
+        pathNot: [`^${SRC_GATE}lib/platform/`, `^${EVALS_GATE}lib/platform/`, TEST_HOMES],
+      },
       to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'foundation-never-spawns',
+      comment:
+        'ARCH-008 §2.3: the product spawns no process, makes no network call and owns no temporary directory, so `foundation` — the src/ gate — never imports the builtins that do. The evals/ gate may. `fetch` is a global and invisible here: a review duty.',
+      severity: 'error',
+      from: { path: `^${SRC_GATE}`, pathNot: TEST_HOMES },
+      to: { dependencyTypes: ['core'], path: '^(?:node:)?(?:child_process|os|net|http|https|dns)$' },
+    },
+    {
+      name: 'src-never-imports-evals',
+      comment:
+        'ARCH-008 §6.1: nothing under src/ imports anything under evals/. The product owes the eval nothing, and the build must never reach an eval file.',
+      severity: 'error',
+      from: { path: '^src/' },
+      to: { path: '^evals/' },
+    },
+    {
+      name: 'evals-never-imports-src',
+      comment:
+        'ARCH-008 §6.2: nothing under evals/ imports anything under src/. The eval reaches `mh` through the compiled CLI in dist/ only, so the product keeps one oracle.',
+      severity: 'error',
+      from: { path: '^evals/' },
+      to: { path: '^src/' },
     },
     {
       name: 'modules-never-import-modules',

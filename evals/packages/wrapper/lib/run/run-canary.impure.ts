@@ -1,0 +1,92 @@
+// The canaries: one for each Host harness, delivery channel and root layout the
+// matrix reaches, through the session module directly, with a task that forces the
+// surface to be used. A push canary forces the Write tool, so the hook can fire; a
+// pull canary names the query command, so the allow-list is exercised; an assess canary
+// reads the layout's stale note, so the post-read hook can fire and its seed is proved stale. Each proves
+// the surface works headless in that Host harness, delivery channel and root layout.
+// A failed canary is an instrument failure for every cell sharing the configuration.
+
+import { deriveArm, placeholdersIn } from '../../../arms/derive-arms.ts';
+import { drawSteeringMarker } from '../../../arms/steering-markers.ts';
+import { readText } from '../../../platform/host-files.ts';
+import { sessionCause } from '../../../session/classify-session.ts';
+import type { Canary } from '../../../session/delivery-surface.ts';
+import { CHANNELS } from '../../../session/delivery-surface.ts';
+import { profileOf } from '../../../session/host-profile.ts';
+import { sourcesFor } from '../../../session/mint-guards.ts';
+import { runTrial } from '../../../session/run-trial.ts';
+import { describeKey } from '../canary/canary-keys.pure.ts';
+import type { CanaryKey } from '../canary/canary-keys.types.ts';
+import type { RunPlan } from './run-plan.types.ts';
+
+/** The note a canary creates when its channel needs no seeded file; an assess canary reads the seed's own note instead. */
+const NEW_FILE_TARGET = 'docs/research/canary-note.md';
+
+/** The Host harness a key names, with the model its profile canaries with; a key's host is typed, so no fallback exists. */
+function hostOf(plan: RunPlan, key: CanaryKey): Parameters<typeof runTrial>[0]['host'] {
+  const { command, maxTurns, wallClockMs, tools, probes, home } = plan.host;
+  const model = profileOf(key.host, probes).canaryModel;
+  return { name: key.host, command, model, maxTurns, wallClockMs, tools, probes, home };
+}
+
+/** One steering marker per placeholder the layout's config holds, each drawn for its own carrier. */
+function request(plan: RunPlan, key: CanaryKey, canary: Canary): Parameters<typeof runTrial>[0] {
+  const target = canary.target ?? NEW_FILE_TARGET;
+  const configText = readText(`${plan.checkout}/${key.layout}/markdown-harness.config.yaml`);
+  const placeholders = placeholdersIn(configText);
+  const drawn = placeholders.map((placeholder) => ({
+    placeholder,
+    steeringMarker: drawSteeringMarker({ seed: plan.seed, caseId: 'canary', address: placeholder, corpus: configText }),
+  }));
+  const substitutes = drawn.map((one) => ({
+    placeholder: one.placeholder,
+    clause: `Add the code ${one.steeringMarker}.`,
+  }));
+  const derived = deriveArm({ configText, arm: 'steered', substitutes });
+  return {
+    arm: 'steered',
+    surface: canary.surface,
+    pullLine: CHANNELS[key.channel].line ?? '',
+    sources: sourcesFor({ checkout: plan.checkout, seedRelative: key.layout }),
+    heldOut: [],
+    derivedConfig: derived.configText,
+    host: hostOf(plan, key),
+    task: canary.task(target),
+    steeringMarkers: drawn.map((one, index) => ({
+      steeringMarker: one.steeringMarker,
+      sweepExpectation: { kind: 'exactly', occurrences: derived.occurrences[index] ?? 0 },
+    })),
+    targetPath: target,
+  };
+}
+
+type Outcome = ReturnType<typeof runTrial>;
+
+/** What went wrong with the session itself, before its stream is read for the canary's own question. */
+function sessionProblem(outcome: Outcome): string | undefined {
+  if (outcome.declared !== undefined) return `${outcome.declared.kind}: ${outcome.declared.detail}`;
+  if (outcome.raw?.spawnError !== undefined) return `the Host harness could not start (${outcome.raw.spawnError})`;
+  const cause = outcome.raw === undefined ? undefined : sessionCause(outcome.raw);
+  return cause?.outcome === 'instrument-failure' ? `${cause.kind}: ${cause.detail}` : undefined;
+}
+
+function runCanary(plan: RunPlan, key: CanaryKey): string | undefined {
+  const canary = CHANNELS[key.channel].canary;
+  if (canary === undefined) return `canary failed: the ${key.channel} channel has no canary to run`;
+  const outcome = runTrial(request(plan, key, canary));
+  const problem = sessionProblem(outcome);
+  return problem === undefined ? canary.verdict(outcome.raw?.parsed.events ?? []) : `canary failed: ${problem}`;
+}
+
+/**
+ * Every canary the matrix owes, stopping at the first failure and naming its key. One run drives one Host
+ * harness, so the command that drives a key is the plan's one command, and the matrix gate has already refused a
+ * key whose Host harness cannot be canaried.
+ */
+export function runCanaries(plan: RunPlan): string | undefined {
+  for (const key of plan.canaryKeys) {
+    const failure = runCanary(plan, key);
+    if (failure !== undefined) return `${failure} [${describeKey(key)}]`;
+  }
+  return undefined;
+}

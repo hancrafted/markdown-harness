@@ -9,7 +9,7 @@
 // stays green while the rule stops holding at that site (GEN-003 §2). Runs at
 // error (GEN-001 §7). Self-contained by design: archgate forbids imports
 // between rules files.
-const SRC_GLOB = 'src/**/*';
+const GOVERNED_GLOBS = ['src/**/*', 'evals/**/*'];
 
 // An eslint directive is only live as the FIRST token of a comment, so the
 // opener must sit immediately before the keyword — prose naming a directive is
@@ -27,12 +27,14 @@ export default {
         'No file under src/ carries an eslint directive comment — eslint-disable, its -line and -next-line variants, or the paired enable — in either the // or the /* */ form. A lint rule wrong for a class of files is turned off in eslint.config.mjs behind a files: glob; a lint rule wrong at one site means the code is wrong.',
       severity: 'error',
       async check(ctx) {
-        for (const hit of await ctx.grepFiles(ESLINT_DIRECTIVE_RE, SRC_GLOB)) {
-          ctx.report.violation({
-            message: `Inline eslint suppression — delete the directive and fix the code, or turn the rule off in eslint.config.mjs behind a files: glob carrying its reason (GEN-003 [no-eslint-disable]).`,
-            file: hit.file,
-            line: hit.line,
-          });
+        for (const glob of GOVERNED_GLOBS) {
+          for (const hit of await ctx.grepFiles(ESLINT_DIRECTIVE_RE, glob)) {
+            ctx.report.violation({
+              message: `Inline eslint suppression — delete the directive and fix the code, or turn the rule off in eslint.config.mjs behind a files: glob carrying its reason (GEN-003 [no-eslint-disable]).`,
+              file: hit.file,
+              line: hit.line,
+            });
+          }
         }
       },
     },

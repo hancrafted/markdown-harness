@@ -1,0 +1,159 @@
+// Colocated unit test for which canaries a matrix owes.
+
+import { describe, expect, it } from 'vitest';
+import { NO_PROBES } from '../../../session/host-profile.ts';
+import { canaryKeysFor, describeKey, readCellKinds, unprovableKeys } from './canary-keys.pure.ts';
+
+const PUSH = { hostName: 'claude-code', deliveryChannel: 'push' } as const;
+const USER_TURN = { hostName: 'claude-code', deliveryChannel: 'user-turn' } as const;
+const LAYOUT = 'evals/suites/steering/seed/research-note';
+
+describe('canaryKeysFor', () => {
+  describe('success cases', () => {
+    it('owes one canary to the phase 1 matrix: one Host harness, one push channel, one root layout', () => {
+      // ARRANGE
+      const expected = [{ host: 'claude-code', channel: 'push', layout: LAYOUT }];
+      // ACT
+      const actual = canaryKeysFor([PUSH, PUSH, USER_TURN], [LAYOUT, LAYOUT]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('owes a pull cell its own canary beside a push cell over the same root layout', () => {
+      // ARRANGE
+      const pull = { hostName: 'claude-code', deliveryChannel: 'pull' } as const;
+      const expected = ['claude-code/pull/a', 'claude-code/push/a'];
+      // ACT
+      const actual = canaryKeysFor([PUSH, pull], ['a']).map(describeKey);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('owes an assess cell its own canary, keyed by the assess channel and the stale layout', () => {
+      // ARRANGE
+      const assess = { hostName: 'claude-code', deliveryChannel: 'assess' } as const;
+      const expected = [{ host: 'claude-code', channel: 'assess', layout: 'stale' }];
+      // ACT
+      const actual = canaryKeysFor([assess, USER_TURN], ['stale']);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('owes a canary to each new Host harness and each new root layout, so phase 2 adds rows', () => {
+      // ARRANGE
+      const other = { hostName: 'antigravity', deliveryChannel: 'push' } as const;
+      const expected = ['antigravity/push/a', 'antigravity/push/b', 'claude-code/push/a', 'claude-code/push/b'];
+      // ACT
+      const actual = canaryKeysFor([PUSH, other], ['a', 'b']).map(describeKey);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('owes none to a channel with nothing to canary, the trusted-prompt control', () => {
+      // ARRANGE
+      const expected: string[] = [];
+      // ACT
+      const actual = canaryKeysFor([USER_TURN], [LAYOUT]).map(describeKey);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('owes none to a matrix with no cells or no layouts', () => {
+      // ARRANGE
+      const expected = [0, 0];
+      // ACT
+      const actual = [canaryKeysFor([], [LAYOUT]).length, canaryKeysFor([PUSH], []).length];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});
+
+describe('unprovableKeys', () => {
+  const agyPull = { host: 'antigravity', channel: 'pull', layout: LAYOUT } as const;
+  const agyPush = { host: 'antigravity', channel: 'push', layout: LAYOUT } as const;
+  const claudePush = { host: 'claude-code', channel: 'push', layout: LAYOUT } as const;
+
+  describe('success cases', () => {
+    it('owes an Antigravity pull canary, which the canary itself proves at run time, and a Claude Code push one', () => {
+      // ARRANGE
+      const expected: string[] = [];
+      // ACT
+      const actual = unprovableKeys([agyPull, claudePush], NO_PROBES);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('keys Antigravity cells under their own host name', () => {
+      // ARRANGE
+      const cell = { hostName: 'antigravity', deliveryChannel: 'pull' } as const;
+      const expected = ['antigravity/pull/a'];
+      // ACT
+      const actual = canaryKeysFor([cell], ['a']).map(describeKey);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses an Antigravity push key, whose hook-firing probe is unprobed, instead of owing a canary nobody can pass', () => {
+      // ARRANGE
+      const expected = ['antigravity push: hook-fires-headless is unprobed, so no canary can be owed for it'];
+      // ACT
+      const actual = unprovableKeys([agyPush], NO_PROBES);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('reads the recorded hook probe, so a probe that works opens the first gate and the table still refuses the push channel', () => {
+      // ARRANGE
+      const record = { 'hook-fires-headless': { status: 'works', detail: 'd', recordedAt: 't' } } as const;
+      const expected = ['antigravity push: no hook root is built for this Host harness yet'];
+      // ACT
+      const actual = unprovableKeys([agyPush], record);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});
+
+describe('readCellKinds', () => {
+  describe('success cases', () => {
+    it('reads a cell that names a known Host harness and a delivery channel', () => {
+      // ARRANGE
+      const expected = { kinds: [{ hostName: 'antigravity', deliveryChannel: 'pull' }], refusals: [] };
+      // ACT
+      const actual = readCellKinds([{ hostName: 'antigravity', deliveryChannel: 'pull' }]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('refuses a cell whose host is not a known Host harness rather than guessing a profile or dropping it', () => {
+      // ARRANGE
+      const expected = { kinds: [], refusals: ['codex: no such Host harness'] };
+      // ACT
+      const actual = readCellKinds([{ hostName: 'codex', deliveryChannel: 'push' }]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('skips a cell with no host or no valid channel, which the provider refuses cell by cell', () => {
+      // ARRANGE
+      const expected = { kinds: [], refusals: [] };
+      // ACT
+      const actual = readCellKinds([{ deliveryChannel: 'push' }, { hostName: 'claude-code', deliveryChannel: 'x' }]);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});

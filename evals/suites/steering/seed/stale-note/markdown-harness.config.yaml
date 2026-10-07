@@ -1,0 +1,20 @@
+# The seed config for the steering eval's stale-note case, the assess surface. Its one rule
+# governs research notes and carries two sentences the assess hook can put in front of an agent
+# that reads a note past its stale_after: the rule's intent and the Operator's stale sentence.
+#
+# The stale sentence ends in a plain-string placeholder where the steered arm substitutes a
+# generated clause, so this file loads and passes `mh check` exactly as it stands. Staleness is
+# not a check violation, so the seeded note below passes it too; only `mh assess` tells it apart.
+frontmatter:
+  rules:
+    - ruleId: research
+      folders: [docs/research/]
+      intent: 'Research is re-read against how the team works now before anyone trusts it.'
+      assess:
+        stale: 'Re-read this note against how the team works now, then move stale_after. STEERING_CLAUSE_PLACEHOLDER'
+      fields:
+        type:
+          presence: required
+          allowed:
+            - { value: research, intent: 'Findings gathered to settle a question.' }
+        stale_after: { presence: required, format: datetime }

@@ -36,13 +36,19 @@
     "prepack": "npm run build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint:boundaries": "depcruise src",
+    "lint:boundaries": "depcruise src evals",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "knip": "knip",
     "prepare": "husky",
     "verify": "archgate check && mh check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && npm run build && vitest run && knip",
-    "verify:commit": "lint-staged && archgate check && tsc --noEmit && npm run build && vitest run"
+    "verify:commit": "lint-staged && archgate check && tsc --noEmit && npm run build && vitest run",
+    "evals:self-test": "node evals/packages/selftest/run-self-test.ts",
+    "evals:prescreen": "node evals/packages/prescreen/run-prescreen.ts",
+    "evals:live": "node evals/packages/wrapper/run-evals.ts --host claude",
+    "evals:assess": "node evals/packages/wrapper/run-evals.ts --host claude --matrix assess",
+    "evals:agy": "node evals/packages/wrapper/run-evals.ts --host agy --matrix agy",
+    "evals:agy-probe": "node evals/packages/probe/run-agy-probe.ts"
   },
   "dependencies": {
     "marked": "~18.0.14",

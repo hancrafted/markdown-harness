@@ -1,0 +1,53 @@
+# The pull matrix: the same case as the push matrix, delivered through the one command a pull cell's shell
+# allows, `bin/mh query`, which the constructed AGENTS.md line tells the agent to run. Three steered cells vary
+# only the encoding of the answer (rung 6): the raw `mh query` JSON, the hook's prose rendering, and the
+# intents alone. One intent-neutralised cell is the leak detector, and the trusted-prompt control separates a
+# surface that failed from a model that never follows the steering marker.
+#
+# Run it through the wrapper (`--matrix pull`), never directly.
+description: steering eval, Claude Code, pull delivery, three encodings
+prompts:
+  - '{{task}}'
+providers:
+  - id: file://packages/adapters/claude-provider.ts
+    label: pull-json-steered
+    config:
+      { arm: steered, deliveryChannel: pull, shell: query-only, encoding: json, model: sonnet, hostName: claude-code }
+  - id: file://packages/adapters/claude-provider.ts
+    label: pull-json-neutralised
+    config:
+      {
+        arm: neutralised,
+        deliveryChannel: pull,
+        shell: query-only,
+        encoding: json,
+        model: sonnet,
+        hostName: claude-code,
+      }
+  - id: file://packages/adapters/claude-provider.ts
+    label: pull-prose-steered
+    config:
+      { arm: steered, deliveryChannel: pull, shell: query-only, encoding: prose, model: sonnet, hostName: claude-code }
+  - id: file://packages/adapters/claude-provider.ts
+    label: pull-intent-only-steered
+    config:
+      {
+        arm: steered,
+        deliveryChannel: pull,
+        shell: query-only,
+        encoding: intent-only,
+        model: sonnet,
+        hostName: claude-code,
+      }
+  - id: file://packages/adapters/claude-provider.ts
+    label: trusted-prompt-control
+    config:
+      { arm: control, deliveryChannel: user-turn, shell: none, encoding: none, model: sonnet, hostName: claude-code }
+tests: file://suites/steering/cases/research-note.yaml
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://packages/adapters/steering-assertion.ts:gradeSteering
+evaluateOptions:
+  maxConcurrency: 1
+  cache: false

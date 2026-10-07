@@ -14,23 +14,28 @@ import tseslint from 'typescript-eslint';
 // and the exhaustiveness net below consume the SAME strings, so the two checks
 // cannot drift apart.
 //
-// TWO anchors, and the difference is load-bearing. Governance starts at SRC_ROOT,
-// so any file under `src/` that matches no classifier is caught. The classifier
-// globs stay at PACKAGES_ROOT because that is where the Package tier physically
+// TWO anchors, and the difference is load-bearing. Governance starts at each tree's
+// root (TREE_ROOTS), so any file under `src/` or `evals/` that matches no classifier is caught. The classifier
+// globs stay at PACKAGES_ROOTS because that is where the Package tier physically
 // is: ENTRY_POINTS and INTERNALS encode exactly one directory tier, so moving
 // them up to `src/` shifts every tier and breaks the check in BOTH directions:
 // a stray `src/<folder>/<name>.ts` outside the packages root would read as an
 // entry point — a false PASS, hiding it from the net — while a real entry point
 // like `src/packages/config-contract/index.ts` would read as an internal and be
 // failed for carrying no classifier.
-const SRC_ROOT = 'src';
-const PACKAGES_ROOT = 'src/packages';
-const ENTRY_POINTS = `${PACKAGES_ROOT}/*/*.ts`;
-const INTERNALS = `${PACKAGES_ROOT}/*/*/**/*.ts`;
-const GOVERNED = `${SRC_ROOT}/**/*.ts`;
-const TYPES_FILES = `${SRC_ROOT}/**/*.types.ts`;
-const PURE_FILES = `${SRC_ROOT}/**/*.pure.ts`;
-const CLASSIFIED = [ENTRY_POINTS, INTERNALS];
+//
+// TWO TREES (ARCH-004 §5): `evals/` mirrors `src/`, so every constant below is a
+// list of one glob per tree. Each tree's Package tier sits one level under its
+// own root, which is why the classifier globs name `src/packages` and
+// `evals/packages` rather than a shared pattern.
+const TREE_ROOTS = ['src', 'evals'];
+const PACKAGES_ROOTS = TREE_ROOTS.map((root) => `${root}/packages`);
+const ENTRY_POINTS = PACKAGES_ROOTS.map((root) => `${root}/*/*.ts`);
+const INTERNALS = PACKAGES_ROOTS.map((root) => `${root}/*/*/**/*.ts`);
+const GOVERNED = TREE_ROOTS.map((root) => `${root}/**/*.ts`);
+const TYPES_FILES = TREE_ROOTS.map((root) => `${root}/**/*.types.ts`);
+const PURE_FILES = TREE_ROOTS.map((root) => `${root}/**/*.pure.ts`);
+const CLASSIFIED = [...ENTRY_POINTS, ...INTERNALS];
 
 // `check-file` matches the value pattern against the basename with the FINAL
 // extension stripped — undocumented, so write `*.pure`, never `*.pure.ts`.
@@ -163,7 +168,7 @@ const TEST_BEHAVIOUR = [
 // sits, these hold only under `src/`. The sibling tests of ADR rules files are
 // exempt — they exercise a rule function against a hand-built double, where a
 // three-way split is ceremony rather than evidence.
-const SRC_TESTS = 'src/**/*.test.ts';
+const SRC_TESTS = TREE_ROOTS.map((root) => `${root}/**/*.test.ts`);
 
 // Exactly three names. No fourth is admitted: the moment one exists it becomes
 // the drawer every ambiguous case goes into, and the split stops forcing the
@@ -354,12 +359,15 @@ export default tseslint.config(
 
   // Exactly one classifier per file, enforced by name.
   {
-    files: [GOVERNED],
+    files: GOVERNED,
     plugins: { 'check-file': checkFile },
     rules: {
       'check-file/filename-naming-convention': [
         'error',
-        { [ENTRY_POINTS]: 'KEBAB_CASE', [INTERNALS]: ONE_SUFFIX },
+        {
+          ...Object.fromEntries(ENTRY_POINTS.map((glob) => [glob, 'KEBAB_CASE'])),
+          ...Object.fromEntries(INTERNALS.map((glob) => [glob, ONE_SUFFIX])),
+        },
         {
           errorMessage:
             'stop: "{{ target }}" does not match "{{ pattern }}". A package root file is kebab-case with no suffix; every file below it carries exactly one of .pure .impure .types .test.',
@@ -372,12 +380,12 @@ export default tseslint.config(
   // below that sets no-restricted-syntax states the complete list for the files
   // it matches. Order is load-bearing: later blocks win.
   {
-    files: [GOVERNED],
-    ignores: [TYPES_FILES],
+    files: GOVERNED,
+    ignores: TYPES_FILES,
     rules: { 'no-restricted-syntax': ['error', ...EXPORTED_TYPE_DECLARATION] },
   },
   {
-    files: [PURE_FILES],
+    files: PURE_FILES,
     rules: {
       'no-restricted-syntax': ['error', ...EXPORTED_TYPE_DECLARATION, ...DETERMINISM],
       'no-restricted-properties': [
@@ -417,7 +425,7 @@ export default tseslint.config(
   // `no-restricted-properties` is deliberately NOT restated: nothing here changes
   // it, and an unset rule keeps the value the earlier block gave it.
   {
-    files: [SRC_TESTS],
+    files: SRC_TESTS,
     plugins: localPlugin,
     rules: {
       'no-restricted-syntax': [
@@ -450,7 +458,7 @@ export default tseslint.config(
   // The body regime is enabled here too, and DELIBERATELY WITHOUT
   // SUITE_STRUCTURE. `ARCH-003` exempts these files from the three-way split — a
   // rules test drives one rule function against a hand-built double — while
-  // still requiring the marked body. Held behind `files: [SRC_TESTS]`, that
+  // still requiring the marked body. Held behind `files: SRC_TESTS`, that
   // second half promised a reach no enforcer had. The record is named by id and
   // never by section number: its numbering moves whenever it is rewritten, and a
   // coordinate that has gone stale reads as authority. `no-restricted-syntax` is
@@ -473,7 +481,7 @@ export default tseslint.config(
   // CLASSIFIED verbatim, so it closes over exactly what the vocabulary admits.
   // It is last, so one clear message wins over the type-declaration ban.
   {
-    files: [GOVERNED],
+    files: GOVERNED,
     ignores: CLASSIFIED,
     rules: {
       'no-restricted-syntax': [
@@ -481,7 +489,7 @@ export default tseslint.config(
         {
           selector: 'Program',
           message:
-            'stop: this file sits outside src/packages/<package>/ and no ADR governs it. Move it into a package, or open a needs-triage issue.',
+            'stop: this file sits outside src/packages/<package>/ and evals/packages/<package>/ and no ADR governs it. Move it into a package, or open a needs-triage issue.',
         },
       ],
     },

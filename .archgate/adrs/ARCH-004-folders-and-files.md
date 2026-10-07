@@ -4,8 +4,8 @@ id: ARCH-004
 title: 'Folders and Files'
 domain: architecture
 rules: false
-files: ['src/**/*']
-paths: ['src/**/*']
+files: ['src/**/*', 'evals/**/*']
+paths: ['src/**/*', 'evals/**/*']
 description: 'Where a source file may sit and what it may be called: the Package tree, exactly one classifier per file by position then suffix, the import boundaries, and subject naming.'
 ---
 
@@ -13,7 +13,7 @@ description: 'Where a source file may sit and what it may be called: the Package
 
 ## Context
 
-This ADR serves to orient an agent on how to architect, structure, and write files within the `src/` source folder. It holds what any project with this layout would do; which way dependencies run between a Module, `foundation` and `cli` is this product's own choice, and lives in `ARCH-008-module-boundaries`.
+This ADR serves to orient an agent on how to architect, structure, and write files within the `src/` source folder and the `evals/` tree that mirrors it. It holds what any project with this layout would do; which way dependencies run between a Module, `foundation` and `cli` is this product's own choice, and lives in `ARCH-008-module-boundaries`.
 
 **Example Shape**:
 
@@ -43,7 +43,7 @@ src/packages/
 
 ### 1. The source tree
 
-1. Every source file under `src/` MUST sit in a flat, non-nested **Package** directly under `src/packages/`.
+1. Every source file under `src/` or `evals/` MUST sit in a flat, non-nested **Package** directly under `src/packages/` or `evals/packages/`.
 2. A Package's root files are its public entry points; all files in subfolders are private internals (which MAY nest as needed).
 3. `src/packages/` MUST hold only Package folders and agent instructions (`AGENTS.md`/`CLAUDE.md`), never source files; Packages MAY hold that same pair.
 4. A Package MAY expose multiple narrow entry points; barrel files re-exporting entire subtrees are forbidden.
@@ -104,11 +104,13 @@ src/packages/
 
 ## Compliance and Enforcement
 
-**Enforcer per Discipline.** The tree shape and the import boundaries (Decisions 1 and 3) are held by the six named rules in `.dependency-cruiser.cjs` — `entrypoint-boundary-from-app`, `entrypoint-boundary-across-packages`, `tests-through-entrypoints`, `colocated-test-lane`, `tests-folder-is-private` and `no-circular` — all at `error`, run by `npm run lint:boundaries` inside `npm run verify`. The classifier vocabulary (Decision 2) is held in `eslint.config.mjs` by `check-file/filename-naming-convention` over two keys — `ENTRY_POINTS` and `INTERNALS`, both anchored at `src/packages/` — plus a core `no-restricted-syntax` `Program` selector scoped to `GOVERNED`, anchored one level higher at `src/`. The anchors differ deliberately: governance starts at `src/` so a source file outside every Package is still caught, while the classifier keys stay at the tier where Packages physically sit. What keeps the two from disagreeing is that the net's `ignores` **is** the classifier key set, so the net fires on exactly the files the keys do not classify. Anchoring the keys at `src/` instead shifts every tier and fails in both directions — a stray `src/<folder>/<name>.ts` reads as an entry point, a false pass that hides it from the net, while a real entry point reads as an unclassified internal. Measured, not reasoned: 16 errors with one false, against 3 true errors the correct way. Kebab-case (Decision 4, item 1) is held by the same `check-file` key.
+**Enforcer per Discipline.** The tree shape and the import boundaries (Decisions 1 and 3) are held by the six named rules in `.dependency-cruiser.cjs` — `entrypoint-boundary-from-app`, `entrypoint-boundary-across-packages`, `tests-through-entrypoints`, `colocated-test-lane`, `tests-folder-is-private` and `no-circular` — all at `error`, run by `npm run lint:boundaries` inside `npm run verify`. The classifier vocabulary (Decision 2) is held in `eslint.config.mjs` by `check-file/filename-naming-convention` over two keys — `ENTRY_POINTS` and `INTERNALS`, both anchored at `src/packages/` and `evals/packages/` — plus a core `no-restricted-syntax` `Program` selector scoped to `GOVERNED`, anchored one level higher at `src/`. The anchors differ deliberately: governance starts at `src/` so a source file outside every Package is still caught, while the classifier keys stay at the tier where Packages physically sit. What keeps the two from disagreeing is that the net's `ignores` **is** the classifier key set, so the net fires on exactly the files the keys do not classify. Anchoring the keys at `src/` instead shifts every tier and fails in both directions — a stray `src/<folder>/<name>.ts` reads as an entry point, a false pass that hides it from the net, while a real entry point reads as an unclassified internal. Measured, not reasoned: 16 errors with one false, against 3 true errors the correct way. Kebab-case (Decision 4, item 1) is held by the same `check-file` key.
 
 **Not mechanically enforced — review duty:** that a name states its subject rather than a mechanism (Decision 4, item 2); that a barrel has not been reintroduced under a legal file name (Decision 1, item 4).
 
 **Known reach gap.** The six rules named above hold Decisions 1 and 3 only while `.dependency-cruiser.cjs` sets `tsPreCompilationDeps: true`. Without it dependency-cruiser sees post-compilation edges only, so every `import type` and `export type … from` is erased before the rules run — and `config-contract` is types-only, so all six would cruise it and check nothing while `npm run lint:boundaries` still reported success. Measured 2026-09-02: the flag took the tree from 3 to 7 dependencies cruised. The diagnostic is the dependency count on that line, never the checkmark.
+
+**Second root.** `evals/` mirrors `src/` and is held by the same rules, written over both roots. It stays out of `tsconfig.build.json`, so it never reaches `dist/` or the tarball; its run output sits in the gitignored `evals/runs/`.
 
 **Exceptions:** raise a separate ADR; human approval required.
 
