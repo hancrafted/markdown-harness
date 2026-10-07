@@ -6,7 +6,9 @@
 // Each returns a problem string naming the rung, or undefined. A problem is an
 // instrument failure: the fixture is wrong, and no model was spent finding out.
 
+import type { FailureKind } from '../failure/failure-classifier.types.ts';
 import type { ArmKind } from '../observe/session-observation.types.ts';
+import type { Encoding } from '../surface/delivery-surface.types.ts';
 
 function occurrences(text: string, steeringMarker: string): number {
   return text.split(steeringMarker).length - 1;
@@ -60,4 +62,16 @@ export function checkRung2(hookOutput: string, steeringMarkers: readonly string[
   return steeringMarkers.every((steeringMarker) => text.includes(steeringMarker))
     ? undefined
     : 'rung 2: the rendered notice lost a steering marker';
+}
+
+/**
+ * The instrument failure a failing pull answer is named. Raw JSON is the answer itself (rung 1); the prose
+ * rendering goes through the hook, so it is lost in rendering (rung 2). The intents-only encoding has no
+ * rendering step, so rung 2 is not applicable to it (a deviation from the spec text, recorded where rung 2 is
+ * observed): its failure is the pull command's own answer failing, which is an instrument failure and is
+ * named that, never rung 2.
+ */
+export function pullFailureKind(encoding: Encoding): FailureKind {
+  if (encoding === 'json') return 'rung-1-failed';
+  return encoding === 'prose' ? 'rung-2-failed' : 'pull-answer-failed';
 }

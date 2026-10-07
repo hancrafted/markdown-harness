@@ -3,7 +3,7 @@
 // rung: the fixture is wrong, not the steering.
 
 import { describe, expect, it } from 'vitest';
-import { checkPullAnswer, checkRung1, checkRung2 } from './preconditions.pure.ts';
+import { checkPullAnswer, checkRung1, checkRung2, pullFailureKind } from './preconditions.pure.ts';
 
 const STEERING_MARKER = 'QQ11-2222';
 const TARGET = 'docs/research/a.md';
@@ -183,6 +183,50 @@ describe('checkPullAnswer', () => {
       const problem = checkPullAnswer(twice, [STEERING_MARKER], 'steered');
       // ASSERT
       expect(problem).toMatch(expected);
+    });
+  });
+});
+
+describe('pullFailureKind', () => {
+  describe('success cases', () => {
+    it('names a failing raw JSON answer rung 1, because the answer itself failed', () => {
+      // ARRANGE
+      const expected = 'rung-1-failed';
+      // ACT
+      const kind = pullFailureKind('json');
+      // ASSERT
+      expect(kind).toBe(expected);
+    });
+
+    it('names a failing prose rendering rung 2, because it was lost in rendering', () => {
+      // ARRANGE
+      const expected = 'rung-2-failed';
+      // ACT
+      const kind = pullFailureKind('prose');
+      // ASSERT
+      expect(kind).toBe(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('does not call an intent-only failure rung 2, which that encoding has none of', () => {
+      // ARRANGE
+      const notRung2 = 'rung-2-failed';
+      // ACT
+      const kind = pullFailureKind('intent-only');
+      // ASSERT
+      expect(kind).not.toBe(notRung2);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('names an intent-only failure an instrument failure of the pull answer itself', () => {
+      // ARRANGE
+      const expected = 'pull-answer-failed';
+      // ACT
+      const kind = pullFailureKind('intent-only');
+      // ASSERT
+      expect(kind).toBe(expected);
     });
   });
 });

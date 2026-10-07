@@ -3,7 +3,7 @@
 // shown red against a run constructed to trip it, and quiet against one that does not.
 
 import { describe, expect, it } from 'vitest';
-import { carrierProfileLine, encodingContrastLines, shellLine } from './surface-lines.pure.ts';
+import { carrierProfileLine, encodingContrastLines, rungLegendLines, shellLine } from './surface-lines.pure.ts';
 
 interface Surface {
   channel: string;
@@ -165,6 +165,52 @@ describe('carrierProfileLine', () => {
       const line = carrierProfileLine('n', sessions);
       // ASSERT
       expect(line).toBeUndefined();
+    });
+  });
+});
+
+describe('rungLegendLines', () => {
+  describe('success cases', () => {
+    it('says rung 2 is not applicable for raw JSON and the intents alone, and a checked precondition for prose', () => {
+      // ARRANGE
+      const sessions = [session('pull-intent-only-steered', PULL('intent-only'), true)];
+      const expected = /rung 2 \(pull\): not applicable for json and intent-only \(no rendering step\)/;
+      // ACT
+      const lines = rungLegendLines(sessions).join('\n');
+      // ASSERT
+      expect(lines).toMatch(expected);
+    });
+
+    it('names the deviation from the spec text and says an intent-only precondition failure is not rung 2', () => {
+      // ARRANGE
+      const sessions = [session('pull-intent-only-steered', PULL('intent-only'), true)];
+      const expected = /deviates from the spec text.*pull-answer-failed, an instrument failure, never rung 2/;
+      // ACT
+      const lines = rungLegendLines(sessions).join('\n');
+      // ASSERT
+      expect(lines).toMatch(expected);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('is silent for a run with no pull cell', () => {
+      // ARRANGE
+      const sessions = [session('push-steered', { channel: 'push', shell: 'none', encoding: 'hook-prose' }, true)];
+      // ACT
+      const lines = rungLegendLines(sessions);
+      // ASSERT
+      expect(lines).toEqual([]);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('is silent when the sidecar recorded no surface', () => {
+      // ARRANGE
+      const sessions = [{ ...session('old', PULL('json'), true), surface: undefined }];
+      // ACT
+      const lines = rungLegendLines(sessions);
+      // ASSERT
+      expect(lines).toEqual([]);
     });
   });
 });

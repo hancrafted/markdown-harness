@@ -10,7 +10,10 @@
 //   rung 10 a steering marker in the union and absent from the final file
 //
 // Rungs 1 and 2 are preconditions checked before the session: reaching a session
-// means they were clean, except rung 2 for the raw JSON pull answer, which has no rendering step.
+// means they were clean. Rung 2 is recorded not applicable for a pull encoding that never renders through the
+// hook: raw JSON and the intents alone. This deviates from the spec text for pull ("recorded as not applicable,
+// not clean"), which is read for the encodings with no rendering step; the prose pull encoding does render
+// through the hook, so its rung 2 stays a checked precondition and is recorded clean.
 
 import type { RungNumber, RungStatus } from '../../../grading/localise-rung.ts';
 import { rungObservations } from '../../../grading/localise-rung.ts';
@@ -93,14 +96,15 @@ function pathStatus(input: ObserveInput, delivery: Delivery | undefined): RungSt
 
 /**
  * Rungs 2 and 6, which depend on how the surface renders and encodes what it delivers. Rung 6 (delivered, unparsed)
- * can be told from rung 8 only across cells, by the encoding contrast: a steering marker in the final file proves
- * the answer was parsed, the intents-only encoding has little to misparse, and any other null leaves it unobservable.
+ * is clean only when a steering marker reached the file, which proves the answer was parsed. Any null, in any
+ * encoding, leaves it unobservable per session: an intent-only null is not called clean, and the cross-cell
+ * encoding contrast resolves it.
  */
 function surfaceStatuses(input: ObserveInput, facts: Facts): Statuses {
   const { channel, encoding } = input.surface;
   if (channel !== 'pull') return { 6: 'not-applicable' };
-  const parsed = encoding === 'intent-only' || facts.lives.some((life) => life.final);
-  return { 2: encoding === 'json' ? 'not-applicable' : 'clean', 6: parsed ? 'clean' : 'not-observable' };
+  const parsed = facts.lives.some((life) => life.final);
+  return { 2: encoding === 'prose' ? 'clean' : 'not-applicable', 6: parsed ? 'clean' : 'not-observable' };
 }
 
 function reachedStatuses(input: ObserveInput, facts: Facts): Statuses {

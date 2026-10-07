@@ -15,7 +15,7 @@ import type { FailureKind } from '../failure/failure-classifier.types.ts';
 import { buildChildEnvironment, buildClaudeArgv } from '../host/host-invocation.pure.ts';
 import { sweepForSteeringMarker } from '../leak/leak-sweep.pure.ts';
 import { mintRoot } from '../mint/mint-root.impure.ts';
-import { checkPullAnswer, checkRung1, checkRung2 } from '../preflight/preconditions.pure.ts';
+import { checkPullAnswer, checkRung1, checkRung2, pullFailureKind } from '../preflight/preconditions.pure.ts';
 import { parseSessionStream } from '../stream/session-stream.pure.ts';
 import { SHIM_PATH, allowedToolsFor, toolsFor } from '../surface/delivery-surface.pure.ts';
 import type { TrialOutcome, TrialRequest } from './trial.types.ts';
@@ -49,12 +49,12 @@ function pushProblem(root: string, request: TrialRequest, steeringMarkers: reado
   return rung2 === undefined ? undefined : { kind: 'rung-2-failed', detail: rung2 };
 }
 
-/** The pull command is run as the agent will run it; a raw JSON answer failing is rung 1, a rendered one rung 2. */
+/** The pull command is run as the agent will run it; the encoding names the failure (see `pullFailureKind`). */
 function pullProblem(root: string, request: TrialRequest, steeringMarkers: readonly string[]): Declared {
   const printed = runNode(root, [`${root}/${SHIM_PATH}`, 'query', request.targetPath], '').stdout;
   const problem = checkPullAnswer(printed, steeringMarkers, request.arm);
   if (problem === undefined) return undefined;
-  return { kind: request.surface.encoding === 'json' ? 'rung-1-failed' : 'rung-2-failed', detail: problem };
+  return { kind: pullFailureKind(request.surface.encoding), detail: problem };
 }
 
 function surfaceProblem(root: string, request: TrialRequest, steeringMarkers: readonly string[]): Declared {

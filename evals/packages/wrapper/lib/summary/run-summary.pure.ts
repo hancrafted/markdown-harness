@@ -3,7 +3,7 @@
 
 import { SIGNIFICANCE, fisherOneSided } from './arm-comparison.pure.ts';
 import type { SessionSummary, SummaryInput } from './run-summary.types.ts';
-import { carrierProfileLine, encodingContrastLines, shellLine } from './surface-lines.pure.ts';
+import { carrierProfileLine, encodingContrastLines, rungLegendLines, shellLine } from './surface-lines.pure.ts';
 
 function cellsOf(sessions: readonly SessionSummary[]): string[] {
   return [...new Set(sessions.map((session) => session.cell))];
@@ -75,6 +75,7 @@ export function summarise(input: SummaryInput): string[] {
     ...surfaceLines(cells, input.sessions),
     comparisonLine(input.sessions),
     ...encodingContrastLines(input.sessions),
+    ...rungLegendLines(input.sessions),
     ...leakLines(input.sessions),
     canaryLine(input.canaries),
     OUTBOUND,

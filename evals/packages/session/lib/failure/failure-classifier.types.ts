@@ -12,6 +12,7 @@ export type FailureKind =
   | 'mint-refused'
   | 'rung-1-failed'
   | 'rung-2-failed'
+  | 'pull-answer-failed'
   | 'canary-failed'
   | 'cohort-field-missing'
   | 'duplicate-session-id';

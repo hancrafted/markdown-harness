@@ -75,3 +75,17 @@ export function carrierProfileLine(cell: string, sessions: readonly SessionSumma
   });
   return `${cell}: carrier profile (rung 9): ${parts.join('; ')}`;
 }
+
+/**
+ * What rung 2 means on a pull surface, printed when the run has one. The spec says rung 2 is "recorded not
+ * applicable, not clean" for pull; this run reads that for the encodings with no rendering step and keeps rung 2 a
+ * checked precondition for the prose encoding, which renders through the hook. For the intents alone a failing
+ * precondition is the pull command's own answer failing, so it is not called rung 2.
+ */
+export function rungLegendLines(sessions: readonly SessionSummary[]): string[] {
+  if (!sessions.some((session) => session.surface?.channel === 'pull')) return [];
+  return [
+    'rung 2 (pull): not applicable for json and intent-only (no rendering step); clean for prose, a checked precondition because it renders through the hook',
+    'rung 2 legend deviates from the spec text ("not applicable, not clean" for pull); an intent-only precondition failure is named pull-answer-failed, an instrument failure, never rung 2',
+  ];
+}

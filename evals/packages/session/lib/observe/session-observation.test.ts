@@ -266,10 +266,10 @@ describe('observeSession over a pull surface', () => {
       expect(localiseRung(seen.observations)).toEqual(expected);
     });
 
-    it('localises that same null to rung 8 for the intents-only encoding, the simplest, where rung 6 is clean', () => {
+    it('cannot localise a model-side null for the intents-only encoding either, because an intent-only null is not clean', () => {
       // ARRANGE
       const events = [askEvent(1), answerEvent(2, STEERING_MARKER), writeEvent(3, 'plain')];
-      const expected = { kind: 'rung', rung: 8 };
+      const expected = { kind: 'cannot-localise', blockedBy: 6 };
       // ACT
       const seen = observeMany({ events, finalFile: 'plain', surface: { ...PULL, encoding: 'intent-only' } });
       // ASSERT
@@ -290,18 +290,29 @@ describe('observeSession over a pull surface', () => {
   });
 
   describe('edge cases', () => {
-    it('records rung 2 as not applicable for raw JSON and clean for a rendered encoding', () => {
+    it('records rung 2 as not applicable for raw JSON and the intents alone, and clean for the prose rendering', () => {
       // ARRANGE
       const events = [askEvent(1), answerEvent(2, STEERING_MARKER), writeEvent(3, STEERING_MARKER)];
-      const rung2 = (encoding: 'json' | 'prose') =>
+      const rung2 = (encoding: 'json' | 'prose' | 'intent-only') =>
         observeMany({ events, finalFile: STEERING_MARKER, surface: { ...PULL, encoding } }).observations.find(
           (entry) => entry.rung === 2,
         )?.status;
-      const expected = ['not-applicable', 'clean'];
+      const expected = ['not-applicable', 'clean', 'not-applicable'];
       // ACT
-      const actual = [rung2('json'), rung2('prose')];
+      const actual = [rung2('json'), rung2('prose'), rung2('intent-only')];
       // ASSERT
       expect(actual).toEqual(expected);
+    });
+
+    it('records rung 6 clean for the intents alone when a steering marker reached the file', () => {
+      // ARRANGE
+      const events = [askEvent(1), answerEvent(2, STEERING_MARKER), writeEvent(3, STEERING_MARKER)];
+      const expected = 'clean';
+      const parsingRung = 6;
+      // ACT
+      const seen = observeMany({ events, finalFile: STEERING_MARKER, surface: { ...PULL, encoding: 'intent-only' } });
+      // ASSERT
+      expect(seen.observations.find((entry) => entry.rung === parsingRung)?.status).toBe(expected);
     });
   });
 });
