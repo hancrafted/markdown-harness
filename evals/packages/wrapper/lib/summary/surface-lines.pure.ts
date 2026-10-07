@@ -6,11 +6,13 @@
 //
 // Each prints a count out of its total beside the verdict, and says what it is not computed from.
 
+import type { Encoding } from '../../../session/delivery-surface.ts';
+import { grantsShellWrites } from '../../../session/delivery-surface.ts';
 import { SIGNIFICANCE, fisherOneSided } from './arm-comparison.pure.ts';
 import type { SessionSummary } from './run-summary.types.ts';
 
 /** From simplest to richest: the intents alone, the hook's prose rendering, the raw JSON. */
-const ENCODINGS_SIMPLEST_FIRST = ['intent-only', 'prose', 'json'];
+const ENCODINGS_SIMPLEST_FIRST: Encoding[] = ['intent-only', 'prose', 'json'];
 
 function pullSteered(sessions: readonly SessionSummary[]): SessionSummary[] {
   return sessions.filter(
@@ -59,7 +61,7 @@ export function encodingContrastLines(sessions: readonly SessionSummary[]): stri
 /** Files created through the shell, for a cell that allowed one: the Write matcher's coverage hole, measured. */
 export function shellLine(cell: string, sessions: readonly SessionSummary[]): string | undefined {
   const mine = sessions.filter((session) => session.cell === cell && session.graded);
-  if (mine.length === 0 || mine[0]?.surface?.shell !== 'widened') return undefined;
+  if (mine.length === 0 || !grantsShellWrites(mine[0]?.surface?.shell)) return undefined;
   const created = mine.filter((session) => session.shellCreated === true).length;
   return `${cell}: created through the shell in ${created}/${mine.length} sessions (shell allowed; the hook matches Write only)`;
 }

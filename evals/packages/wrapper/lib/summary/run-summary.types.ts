@@ -1,3 +1,4 @@
+import type { DeliverySurface } from '../../../session/delivery-surface.ts';
 import type { ArmKind } from '../../../session/observe-session.ts';
 
 export interface SessionSummary {
@@ -11,7 +12,7 @@ export interface SessionSummary {
   /** The rungs the cell could observe, printed from the record: `1 observed; 2 not applicable; ...`. */
   readonly observations?: string;
   /** Which surface the cell measured; absent on a sidecar written before surfaces were recorded. */
-  readonly surface?: { readonly channel: string; readonly shell: string; readonly encoding: string };
+  readonly surface?: DeliverySurface;
   /** A creating call was a shell call. */
   readonly shellCreated?: boolean;
   /** Per tested carrier, whether its steering marker reached the final file. */

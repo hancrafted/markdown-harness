@@ -2,24 +2,71 @@
 // the Host harness. A pull surface gives the agent one shell command, `bin/mh query`,
 // and an instruction-file line saying to use it; the shell allow-list holds that
 // command and nothing else, until a cell widens it on purpose.
+//
+// Everything that differs by delivery channel is one row of CHANNELS, keyed by DeliveryChannel: the shells and
+// encodings it may pair with, whether it ships the hook script, its canary, and the instruction-file line.
 
-import type { DeliverySurface, Encoding, ShellScope } from './delivery-surface.types.ts';
+import { evaluateCanary, evaluatePullCanary } from '../canary/canary.pure.ts';
+import type { ChannelRow, DeliveryChannel, DeliverySurface, ShellScope } from './delivery-surface.types.ts';
 
 export const SHIM_PATH = 'bin/mh';
+/** The one command a pull surface hands the agent; the allow-list, the instruction line and the canary task all say it. */
+export const QUERY_COMMAND_TEXT = `${SHIM_PATH} query`;
 
-const QUERY_ALLOWED = ['Bash(bin/mh query:*)', 'Bash(./bin/mh query:*)'];
-// File-writing commands a widened cell adds, so an agent can create the target file without the Write tool.
+/** The default instruction-file line a pull surface adds, for a canary that has no case to take its words from. */
+export const PULL_LINE = `Before you create a markdown file, run \`${QUERY_COMMAND_TEXT} <path>\` and follow what it says.`;
+
+const QUERY_ALLOWED = [`Bash(${QUERY_COMMAND_TEXT}:*)`, `Bash(./${QUERY_COMMAND_TEXT}:*)`];
+// File-writing commands a widened cell adds, so an agent can create the target file without the Write tool. The
+// widening is partial on purpose: `cp`, `mv`, `python` and `sed -i` stay denied, so a file written through
+// them is not measured, and creation detection (observe/creation.pure.ts) follows this list.
 const WRITING_ALLOWED = ['Bash(cat:*)', 'Bash(tee:*)', 'Bash(printf:*)', 'Bash(echo:*)', 'Bash(mkdir:*)'];
 
-const COHERENT: Readonly<Record<DeliverySurface['channel'], { shells: ShellScope[]; encodings: Encoding[] }>> = {
-  push: { shells: ['none', 'widened'], encodings: ['hook-prose'] },
-  pull: { shells: ['query-only'], encodings: ['json', 'prose', 'intent-only'] },
-  'user-turn': { shells: ['none'], encodings: ['none'] },
+export const CHANNELS: Readonly<Record<DeliveryChannel, ChannelRow>> = {
+  push: {
+    // The widened shell sits here because the coverage hole is push's Write matcher; pull stays query-only.
+    shells: ['none', 'widened'],
+    encodings: ['hook-prose'],
+    needsHook: () => true,
+    canary: {
+      surface: { channel: 'push', shell: 'none', encoding: 'hook-prose' },
+      task: (target) => `Use the Write tool to create ${target} with a short note.`,
+      verdict: evaluateCanary,
+    },
+    line: undefined,
+  },
+  pull: {
+    shells: ['query-only'],
+    encodings: ['json', 'prose', 'intent-only'],
+    // The prose encoding renders through the hook script, so it ships it; the others never touch it.
+    needsHook: (surface) => surface.encoding === 'prose',
+    canary: {
+      surface: { channel: 'pull', shell: 'query-only', encoding: 'json' },
+      task: (target) =>
+        `Run ${QUERY_COMMAND_TEXT} ${target} first, then use the Write tool to create ${target} with a short note.`,
+      verdict: evaluatePullCanary,
+    },
+    line: PULL_LINE,
+  },
+  'user-turn': {
+    shells: ['none'],
+    encodings: ['none'],
+    needsHook: () => false,
+    canary: undefined,
+    line: undefined,
+  },
 };
+
+export function isDeliveryChannel(value: unknown): value is DeliveryChannel {
+  return typeof value === 'string' && Object.hasOwn(CHANNELS, value);
+}
+
+/** Whether the shell may write files, the push cell's widening: the coverage hole of the Write matcher. */
+export const grantsShellWrites = (shell: ShellScope | undefined): boolean => shell === 'widened';
 
 /** A sentence naming what is wrong with a surface, or undefined when its three fields agree. */
 export function incoherentSurface(surface: DeliverySurface): string | undefined {
-  const allowed = COHERENT[surface.channel];
+  const allowed = CHANNELS[surface.channel];
   if (!allowed.shells.includes(surface.shell))
     return `shell ${surface.shell} is not a ${surface.channel} surface (${allowed.shells.join(' or ')})`;
   if (!allowed.encodings.includes(surface.encoding))
@@ -35,60 +82,15 @@ export function toolsFor(shell: ShellScope, base: readonly string[]): string[] {
 /** The shell permission patterns pre-approved for a session; any other shell command is denied in a headless run. */
 export function allowedToolsFor(shell: ShellScope): string[] {
   if (shell === 'none') return [];
-  return shell === 'query-only' ? QUERY_ALLOWED : [...QUERY_ALLOWED, ...WRITING_ALLOWED];
+  return grantsShellWrites(shell) ? [...QUERY_ALLOWED, ...WRITING_ALLOWED] : [...QUERY_ALLOWED];
 }
 
 /** Whether a surface ships the hook script into the root: the push hook, or the prose pull command that renders through it. */
 export function needsHookScript(surface: DeliverySurface): boolean {
-  return surface.channel === 'push' || surface.encoding === 'prose';
+  return CHANNELS[surface.channel].needsHook(surface);
 }
 
 /** The constructed instruction-file line a pull surface adds; the committed case supplies its words. */
 export function withPullLine(instructions: string, pullLine: string): string {
   return `${instructions.replace(/\n*$/, '\n')}\n${pullLine}\n`;
-}
-
-const SHIM_HEAD = `#!/usr/bin/env node
-'use strict';
-const { spawnSync } = require('node:child_process');
-const path = require('node:path');
-const ENCODING = '__ENCODING__';
-const root = path.resolve(__dirname, '..');
-const cli = path.join(root, 'node_modules/@hancrafted/markdown-harness/dist/packages/cli/cli.js');
-const hook = path.join(root, '.agents/skills/markdown-harness/scripts/query-hook.mjs');
-const args = process.argv.slice(2);
-const run = (file, argv, input) => spawnSync(process.execPath, [file, ...argv], { cwd: process.cwd(), input, encoding: 'utf8' });
-`;
-
-const SHIM_BODY = `const answer = run(cli, args);
-const intents = (value) =>
-  typeof value !== 'object' || value === null
-    ? []
-    : Object.entries(value).flatMap(([key, child]) => (key === 'intent' && typeof child === 'string' ? [child] : intents(child)));
-function prose() {
-  const payload = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: path.resolve(process.cwd(), args[1] ?? '') } });
-  return JSON.parse(run(hook, [], payload).stdout).hookSpecificOutput.additionalContext + '\\n';
-}
-function render() {
-  if (args[0] !== 'query' || ENCODING === 'json') return answer.stdout;
-  if (ENCODING === 'intent-only') return intents(JSON.parse(answer.stdout).result).join('\\n') + '\\n';
-  return prose();
-}
-let text;
-try {
-  text = render();
-} catch {
-  text = 'No steering content for this path.\\n';
-}
-process.stdout.write(text);
-process.stderr.write(answer.stderr);
-process.exit(answer.status ?? 1);
-`;
-
-/**
- * The source of the pull command written to `bin/mh` in a minted root. It runs the copied, built `mh` and
- * returns its answer in the surface's encoding: untouched JSON, the hook's prose rendering, or the intents alone.
- */
-export function pullShimSource(encoding: Encoding): string {
-  return `${SHIM_HEAD.replace('__ENCODING__', encoding)}${SHIM_BODY}`;
 }

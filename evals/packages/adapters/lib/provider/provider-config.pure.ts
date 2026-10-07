@@ -3,7 +3,7 @@
 
 import type { ArmName } from '../../../arms/derive-arms.ts';
 import type { DeliverySurface } from '../../../session/delivery-surface.ts';
-import { incoherentSurface } from '../../../session/delivery-surface.ts';
+import { grantsShellWrites, incoherentSurface, isDeliveryChannel } from '../../../session/delivery-surface.ts';
 import type { ArmKind } from '../../../session/observe-session.ts';
 import type { CaseVars, CellConfig, RunSettings, TaskParts } from './provider-config.types.ts';
 
@@ -13,10 +13,8 @@ function need(bag: Bag, names: readonly string[], where: string): string[] {
   return names.filter((name) => bag[name] === undefined || bag[name] === '').map((name) => `${where}.${name}`);
 }
 
-const CHANNELS = ['push', 'pull', 'user-turn'];
-
-function surfaceProblem(bag: Bag): string[] {
-  if (!CHANNELS.includes(bag.deliveryChannel as string))
+function cellSurfaceProblem(bag: Bag): string[] {
+  if (!isDeliveryChannel(bag.deliveryChannel))
     return [`config.deliveryChannel (${String(bag.deliveryChannel)} is not push, pull or user-turn)`];
   const problem = incoherentSurface(surfaceOf(bag as unknown as CellConfig));
   return problem === undefined ? [] : [`config.shell or config.encoding (${problem})`];
@@ -31,13 +29,13 @@ export function readCellConfig(config: unknown): CellConfig | string[] {
   const bag = (config ?? {}) as Bag;
   const missing = need(bag, ['arm', 'deliveryChannel', 'shell', 'encoding', 'model', 'hostName'], 'config');
   if (missing.length > 0) return missing;
-  const problems = surfaceProblem(bag);
+  const problems = cellSurfaceProblem(bag);
   return problems.length > 0 ? problems : (bag as unknown as CellConfig);
 }
 
 /** A cell is named by what distinguishes it: its channel, the shell when widened, the pull encoding, and its arm. */
 export function cellLabelOf(cell: CellConfig): string {
-  const shell = cell.shell === 'widened' ? 'shell' : undefined;
+  const shell = grantsShellWrites(cell.shell) ? 'shell' : undefined;
   const encoding = cell.deliveryChannel === 'pull' ? cell.encoding : undefined;
   return [cell.deliveryChannel, shell, encoding, cell.arm].filter((part) => part !== undefined).join('-');
 }

@@ -3,8 +3,13 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  CHANNELS,
+  PULL_LINE,
+  QUERY_COMMAND_TEXT,
   allowedToolsFor,
+  grantsShellWrites,
   incoherentSurface,
+  isDeliveryChannel,
   needsHookScript,
   toolsFor,
   withPullLine,
@@ -80,6 +85,17 @@ describe('shell scope', () => {
   });
 
   describe('failure cases', () => {
+    it('returns a copy of the allow-list, so a caller changing it cannot widen the next session', () => {
+      // ARRANGE
+      const before = [...allowedToolsFor('query-only')];
+      // ACT
+      allowedToolsFor('query-only').push('Bash(rm:*)');
+      allowedToolsFor('widened').push('Bash(rm:*)');
+      const after = allowedToolsFor('query-only');
+      // ASSERT
+      expect(after).toEqual(before);
+    });
+
     it('allows no write-capable command in a query-only shell', () => {
       // ARRANGE
       const allowed = allowedToolsFor('query-only').join(' ');
@@ -143,6 +159,78 @@ describe('withPullLine', () => {
       const actual = withPullLine('Notes.\n\n\n', 'Run the query.');
       // ASSERT
       expect(actual).toBe(expected);
+    });
+  });
+});
+
+describe('the channel table', () => {
+  const CHANNEL_NAMES = ['push', 'pull', 'user-turn'];
+
+  describe('success cases', () => {
+    it('holds one row for each delivery channel and knows no other', () => {
+      // ARRANGE
+      const expected = [CHANNEL_NAMES.map(() => true), false];
+      // ACT
+      const actual = [CHANNEL_NAMES.map(isDeliveryChannel), isDeliveryChannel('push-and-pull')];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('owes a canary to the push and pull channels and none to the user turn', () => {
+      // ARRANGE
+      const expected = [true, true, false];
+      // ACT
+      const actual = [CHANNELS.push.canary, CHANNELS.pull.canary, CHANNELS['user-turn'].canary].map(
+        (canary) => canary !== undefined,
+      );
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('names the query command once: the instruction line, the pull canary task and the allow-list all say it', () => {
+      // ARRANGE
+      const target = 'docs/a.md';
+      const allowed = allowedToolsFor('query-only').join(' ');
+      // ACT
+      const said = [PULL_LINE, CHANNELS.pull.canary?.task(target) ?? '', allowed];
+      // ASSERT
+      for (const text of said) expect(text).toContain(QUERY_COMMAND_TEXT);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('lets the push canary force the Write tool and not the query command', () => {
+      // ARRANGE
+      const target = 'docs/a.md';
+      // ACT
+      const task = CHANNELS.push.canary?.task(target) ?? '';
+      // ASSERT
+      expect(task).not.toContain(QUERY_COMMAND_TEXT);
+    });
+
+    it('gives the push and user-turn channels no instruction-file line', () => {
+      // ARRANGE
+      const expected = [undefined, undefined, PULL_LINE];
+      // ACT
+      const actual = [CHANNELS.push.line, CHANNELS['user-turn'].line, CHANNELS.pull.line];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('grants shell writes to the widened scope alone, and to an unrecorded scope not at all', () => {
+      // ARRANGE
+      const expected = [false, false, true, false];
+      // ACT
+      const actual = [
+        grantsShellWrites('none'),
+        grantsShellWrites('query-only'),
+        grantsShellWrites('widened'),
+        grantsShellWrites(undefined),
+      ];
+      // ASSERT
+      expect(actual).toEqual(expected);
     });
   });
 });

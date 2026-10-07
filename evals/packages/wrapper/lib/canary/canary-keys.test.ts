@@ -3,8 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import { canaryKeysFor, describeKey } from './canary-keys.pure.ts';
 
-const PUSH = { hostName: 'claude-code', deliveryChannel: 'push' };
-const USER_TURN = { hostName: 'claude-code', deliveryChannel: 'user-turn' };
+const PUSH = { hostName: 'claude-code', deliveryChannel: 'push' } as const;
+const USER_TURN = { hostName: 'claude-code', deliveryChannel: 'user-turn' } as const;
 const LAYOUT = 'evals/suites/steering/seed/research-note';
 
 describe('canaryKeysFor', () => {
@@ -20,7 +20,7 @@ describe('canaryKeysFor', () => {
 
     it('owes a pull cell its own canary beside a push cell over the same root layout', () => {
       // ARRANGE
-      const pull = { hostName: 'claude-code', deliveryChannel: 'pull' };
+      const pull = { hostName: 'claude-code', deliveryChannel: 'pull' } as const;
       const expected = ['claude-code/pull/a', 'claude-code/push/a'];
       // ACT
       const actual = canaryKeysFor([PUSH, pull], ['a']).map(describeKey);
@@ -30,7 +30,7 @@ describe('canaryKeysFor', () => {
 
     it('owes a canary to each new Host harness and each new root layout, so phase 2 adds rows', () => {
       // ARRANGE
-      const other = { hostName: 'codex', deliveryChannel: 'push' };
+      const other = { hostName: 'codex', deliveryChannel: 'push' } as const;
       const expected = ['claude-code/push/a', 'claude-code/push/b', 'codex/push/a', 'codex/push/b'];
       // ACT
       const actual = canaryKeysFor([PUSH, other], ['a', 'b']).map(describeKey);

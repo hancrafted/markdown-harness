@@ -3,15 +3,11 @@
 // shown red against a run constructed to trip it, and quiet against one that does not.
 
 import { describe, expect, it } from 'vitest';
+import type { DeliverySurface, Encoding } from '../../../session/delivery-surface.ts';
 import { carrierProfileLine, encodingContrastLines, rungLegendLines, shellLine } from './surface-lines.pure.ts';
 
-interface Surface {
-  channel: string;
-  shell: string;
-  encoding: string;
-}
-const PULL = (encoding: string): Surface => ({ channel: 'pull', shell: 'query-only', encoding });
-const session = (cell: string, surface: Surface, hit: boolean) => ({
+const PULL = (encoding: Encoding): DeliverySurface => ({ channel: 'pull', shell: 'query-only', encoding });
+const session = (cell: string, surface: DeliverySurface, hit: boolean) => ({
   cell,
   arm: 'steered' as const,
   graded: true,
@@ -19,7 +15,7 @@ const session = (cell: string, surface: Surface, hit: boolean) => ({
   localised: hit ? 'clean' : 'cannot localise',
   surface,
 });
-const many = (cell: string, surface: Surface, tally: { hits: number; total: number }) =>
+const many = (cell: string, surface: DeliverySurface, tally: { hits: number; total: number }) =>
   Array.from({ length: tally.total }, (_, index) => session(cell, surface, index < tally.hits));
 
 describe('encodingContrastLines', () => {
@@ -71,7 +67,7 @@ describe('encodingContrastLines', () => {
   describe('edge cases', () => {
     it('prints nothing when fewer than two encodings ran, and ignores push cells', () => {
       // ARRANGE
-      const push = { channel: 'push', shell: 'none', encoding: 'hook-prose' };
+      const push = { channel: 'push', shell: 'none', encoding: 'hook-prose' } as const;
       const sessions = [
         ...many('pull-json-steered', PULL('json'), { hits: 4, total: 8 }),
         ...many('push-steered', push, { hits: 0, total: 8 }),
@@ -85,7 +81,7 @@ describe('encodingContrastLines', () => {
 });
 
 describe('shellLine', () => {
-  const WIDENED = { channel: 'push', shell: 'widened', encoding: 'hook-prose' };
+  const WIDENED = { channel: 'push', shell: 'widened', encoding: 'hook-prose' } as const;
 
   describe('success cases', () => {
     it('counts the sessions that created the file through the shell, over the cell total', () => {

@@ -8,33 +8,23 @@
 import { deriveArm, placeholdersIn } from '../../../arms/derive-arms.ts';
 import { drawSteeringMarker } from '../../../arms/steering-markers.ts';
 import { readText } from '../../../platform/host-files.ts';
-import { evaluateCanary, evaluatePullCanary } from '../../../session/canary-verdict.ts';
-import type { DeliverySurface } from '../../../session/delivery-surface.ts';
+import type { Canary } from '../../../session/delivery-surface.ts';
+import { CHANNELS } from '../../../session/delivery-surface.ts';
 import { sourcesFor } from '../../../session/mint-guards.ts';
 import { runTrial } from '../../../session/run-trial.ts';
-import type { ParsedSession } from '../../../session/session-stream.ts';
 import { describeKey } from '../canary/canary-keys.pure.ts';
 import type { CanaryKey } from '../canary/canary-keys.types.ts';
 import type { RunPlan } from './run-plan.types.ts';
 
 const TARGET = 'docs/research/canary-note.md';
-const PULL_LINE = 'Before you create a markdown file, run `bin/mh query <path>` and follow what it says.';
-const PUSH: DeliverySurface = { channel: 'push', shell: 'none', encoding: 'hook-prose' };
-const PULL: DeliverySurface = { channel: 'pull', shell: 'query-only', encoding: 'json' };
 
 function hostOf(plan: RunPlan): Parameters<typeof runTrial>[0]['host'] {
   const { command, maxTurns, wallClockMs, tools } = plan.host;
   return { command, model: 'sonnet', maxTurns, wallClockMs, tools };
 }
 
-function taskFor(channel: string): string {
-  if (channel === 'pull')
-    return `Run bin/mh query ${TARGET} first, then use the Write tool to create ${TARGET} with a short note.`;
-  return `Use the Write tool to create ${TARGET} with a short note.`;
-}
-
 /** One steering marker per placeholder the layout's config holds, each drawn for its own carrier. */
-function request(plan: RunPlan, key: CanaryKey): Parameters<typeof runTrial>[0] {
+function request(plan: RunPlan, key: CanaryKey, canary: Canary): Parameters<typeof runTrial>[0] {
   const configText = readText(`${plan.checkout}/${key.layout}/markdown-harness.config.yaml`);
   const placeholders = placeholdersIn(configText);
   const drawn = placeholders.map((placeholder) => ({
@@ -48,13 +38,13 @@ function request(plan: RunPlan, key: CanaryKey): Parameters<typeof runTrial>[0] 
   const derived = deriveArm({ configText, arm: 'steered', substitutes });
   return {
     arm: 'steered',
-    surface: key.channel === 'pull' ? PULL : PUSH,
-    pullLine: PULL_LINE,
+    surface: canary.surface,
+    pullLine: CHANNELS[key.channel].line ?? '',
     sources: sourcesFor({ checkout: plan.checkout, seedRelative: key.layout }),
     heldOut: [],
     derivedConfig: derived.configText,
     host: hostOf(plan),
-    task: taskFor(key.channel),
+    task: canary.task(TARGET),
     steeringMarkers: drawn.map((one, index) => ({
       steeringMarker: one.steeringMarker,
       sweepExpectation: { kind: 'exactly', occurrences: derived.occurrences[index] ?? 0 },
@@ -63,17 +53,14 @@ function request(plan: RunPlan, key: CanaryKey): Parameters<typeof runTrial>[0] 
   };
 }
 
-function verdictOf(key: CanaryKey, parsed: ParsedSession | undefined): string | undefined {
-  const events = parsed?.events ?? [];
-  return key.channel === 'pull' ? evaluatePullCanary(events) : evaluateCanary(events);
-}
-
 function runCanary(plan: RunPlan, key: CanaryKey): string | undefined {
-  const outcome = runTrial(request(plan, key));
+  const canary = CHANNELS[key.channel].canary;
+  if (canary === undefined) return `canary failed: the ${key.channel} channel has no canary to run`;
+  const outcome = runTrial(request(plan, key, canary));
   if (outcome.declared !== undefined) return `canary failed: ${outcome.declared.kind}: ${outcome.declared.detail}`;
   if (outcome.raw?.spawnError !== undefined)
     return `canary failed: the Host harness could not start (${outcome.raw.spawnError})`;
-  return verdictOf(key, outcome.raw?.parsed);
+  return canary.verdict(outcome.raw?.parsed.events ?? []);
 }
 
 /**

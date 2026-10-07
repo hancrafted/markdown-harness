@@ -5,6 +5,7 @@ import { parse } from 'yaml';
 import { environment, nowIso, randomHex } from '../../../platform/host-ambient.ts';
 import { readText } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
+import { isDeliveryChannel } from '../../../session/delivery-surface.ts';
 import { configFileFor } from '../args/run-args.pure.ts';
 import type { RunArgs } from '../args/run-args.types.ts';
 import { canaryKeysFor } from '../canary/canary-keys.pure.ts';
@@ -24,7 +25,7 @@ function cellKinds(path: string): CellKind[] {
   const document = parse(readText(path)) as { providers?: { config?: Partial<CellKind> }[] };
   return (document.providers ?? []).flatMap((provider) => {
     const { hostName, deliveryChannel } = provider.config ?? {};
-    return hostName === undefined || deliveryChannel === undefined ? [] : [{ hostName, deliveryChannel }];
+    return hostName === undefined || !isDeliveryChannel(deliveryChannel) ? [] : [{ hostName, deliveryChannel }];
   });
 }
 

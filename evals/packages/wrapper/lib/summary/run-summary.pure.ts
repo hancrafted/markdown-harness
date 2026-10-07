@@ -1,6 +1,7 @@
 // The printed summary. Every rate prints beside its count out of its total and the
 // trial count behind it; the report says "incomplete" when any cell did not run.
 
+import { grantsShellWrites } from '../../../session/delivery-surface.ts';
 import { SIGNIFICANCE, fisherOneSided } from './arm-comparison.pure.ts';
 import type { SessionSummary, SummaryInput } from './run-summary.types.ts';
 import { carrierProfileLine, encodingContrastLines, rungLegendLines, shellLine } from './surface-lines.pure.ts';
@@ -25,7 +26,7 @@ function cellLine(cell: string, sessions: readonly SessionSummary[], trials: num
 /** Steered sessions in a widened-shell cell are left out of the arm comparison: that cell has no intent-neutralised peer. */
 function count(sessions: readonly SessionSummary[], arm: SessionSummary['arm']): { hits: number; n: number } {
   const graded = sessions.filter(
-    (session) => session.arm === arm && session.graded && session.surface?.shell !== 'widened',
+    (session) => session.arm === arm && session.graded && !grantsShellWrites(session.surface?.shell),
   );
   return { hits: graded.filter((session) => session.steeringMarkerPresent).length, n: graded.length };
 }

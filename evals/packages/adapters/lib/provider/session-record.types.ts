@@ -1,6 +1,7 @@
 import type { deriveArm } from '../../../arms/derive-arms.ts';
 import type { SectionScope, SteeringGrade } from '../../../grading/grade-steering-marker.ts';
 import type { Localisation } from '../../../grading/localise-rung.ts';
+import type { DeliverySurface } from '../../../session/delivery-surface.ts';
 import type { ArmKind, SessionObservation } from '../../../session/observe-session.ts';
 import type { TrialOutcome } from '../../../session/run-trial.ts';
 import type { ParsedSession } from '../../../session/session-stream.ts';
@@ -19,7 +20,7 @@ export interface SessionSidecar {
   readonly steeringMarkerPresent: boolean;
   readonly localised: string;
   /** Which surface the cell measured, so the summary can group by encoding and count shell-created files. */
-  readonly surface?: { readonly channel: string; readonly shell: string; readonly encoding: string };
+  readonly surface?: DeliverySurface;
   readonly shellCreated?: boolean;
   /** Per tested carrier, whether its steering marker reached the final file: the partial-action profile. */
   readonly carrierHits?: Readonly<Record<string, boolean>>;

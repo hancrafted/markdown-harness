@@ -9,9 +9,9 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import { carrierClosure } from '../../../arms/derive-arms.ts';
+import { carrierClosure } from '../../arms/derive-arms.ts';
 
-const EVALS = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
+const EVALS = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const CASES = join(EVALS, 'suites/steering/cases');
 
 interface CaseEntry {

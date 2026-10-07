@@ -1,13 +1,13 @@
 // Grading a session that ran: rung observation, one steering-marker grade per tested
 // carrier, the localised rung, the cohort row and its sidecar.
 
-import { gradeSteeringMarker } from '../../../grading/grade-steering-marker.ts';
+import { armHit, gradeSteeringMarker } from '../../../grading/grade-steering-marker.ts';
 import { localiseRung } from '../../../grading/localise-rung.ts';
 import { nodeVersion } from '../../../platform/host-ambient.ts';
 import { buildCohortRow } from '../../../session/cohort-row.ts';
 import { observeSession } from '../../../session/observe-session.ts';
 import type { TrialOutcome } from '../../../session/run-trial.ts';
-import { carrierHitsOf, cohortFields, hitOf, localisedText } from './cohort-fields.pure.ts';
+import { carrierHitsOf, cohortFields, localisedText } from './cohort-fields.pure.ts';
 import { surfaceOf } from './provider-config.pure.ts';
 import { reportFailure, sessionKey, writeSidecar } from './session-failure.impure.ts';
 import type { GradeParts, SessionReturn, SessionSidecar } from './session-record.types.ts';
@@ -77,9 +77,9 @@ function recordOf(
     arm: cell.arm,
     graded: true,
     sessionId: String(row.sessionId),
-    steeringMarkerPresent: hitOf(cell.arm, grades),
+    steeringMarkerPresent: armHit(cell.arm, grades),
     localised: String(row.localisedRung),
-    surface: { channel: cell.deliveryChannel, shell: cell.shell, encoding: cell.encoding },
+    surface: surfaceOf(cell),
     shellCreated: row.shellCreated === true,
     carrierHits: carrierHitsOf(
       prepared.carriers.map((carrier) => carrier.address),

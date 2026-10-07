@@ -20,7 +20,8 @@ import {
   writeText,
 } from '../../../platform/host-files.ts';
 import { runProcess } from '../../../platform/host-process.ts';
-import { SHIM_PATH, needsHookScript, pullShimSource, withPullLine } from '../surface/delivery-surface.pure.ts';
+import { SHIM_PATH, needsHookScript, withPullLine } from '../surface/delivery-surface.pure.ts';
+import { pullShimSource } from '../surface/pull-shim.pure.ts';
 import { checkMintedTree, checkParentChain, heldOutViolations, isOpaquePath, planCopies } from './mint-plan.pure.ts';
 import type { MintRequest, MintResult } from './mint-root.types.ts';
 
