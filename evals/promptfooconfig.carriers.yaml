@@ -3,6 +3,10 @@
 # follows one steering marker and not the other is rung 9, and the profile names the carrier that decayed. The push hook
 # renders body-structure only, so this matrix has no push cell; the case file says why.
 #
+# Residual, rung 9 across encodings: the two-carrier case runs on raw JSON pull only, so whether a carrier decays
+# differently under the prose or the intents-only encoding is not measured. Rung 9's profile is therefore a
+# raw-JSON finding, and a claim about another encoding needs its own carriers cell.
+#
 # Run it through the wrapper (`--matrix carriers`), never directly.
 description: steering eval, Claude Code, pull delivery, two tested carriers
 prompts:

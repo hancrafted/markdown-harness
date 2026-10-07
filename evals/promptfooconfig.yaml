@@ -3,6 +3,12 @@
 # files, so adding a case or a cell is a data change. Every value that could default
 # is written out: delivery channel and arm are provider fields, never implicit.
 #
+# Where the widened shell sits: on the push cell, because the coverage hole is push's. The hook matches the Write
+# tool only, so a file created through the shell escapes it; that is what `push-shell-steered` measures. The pull
+# cells stay query-only, since a pull agent is told to run one command and the Write matcher is not their surface.
+# The widening is partial on purpose: the allow-list adds `cat`, `tee`, `printf`, `echo` and `mkdir`, and `python`,
+# `sed -i`, `cp` and `mv` stay denied, so a file written through any of those is not measured here.
+#
 # Run it through the wrapper, never directly: the wrapper owns the exit code, turns
 # the tool's cache, telemetry and sharing off, and counts the results it wrote.
 description: steering eval, Claude Code, push delivery (the hook), with a widened-shell cell
@@ -28,7 +34,8 @@ providers:
     label: trusted-prompt-control
     config:
       { arm: control, deliveryChannel: user-turn, shell: none, encoding: none, model: sonnet, hostName: claude-code }
-  # The widened-shell cell: the hook still matches the Write tool only, and the agent may now create the file
+  # The widened-shell cell, on push because the Write matcher's coverage hole is push's (pull stays query-only):
+  # the hook still matches the Write tool only, and the agent may now create the file
   # through the shell. It measures the Write matcher's coverage hole (R0 D6): a file created by the shell counts
   # if it is the file at the target path, and a null with the shell as the creating tool is a rung 3 finding.
   - id: file://packages/adapters/claude-provider.ts

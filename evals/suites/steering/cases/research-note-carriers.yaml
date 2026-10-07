@@ -7,6 +7,9 @@
 # never speaks for the frontmatter carrier, and the prose pull rendering goes through the same hook script. A cell
 # with either would fail rung 2 before a model was spent, which is the instrument saying the combination is empty.
 #
+# Residual: because it runs over raw JSON pull only, rung 9 is not measured across encodings; the carrier profile
+# says which carrier decays under the raw JSON answer and nothing about the prose or intents-only encodings.
+#
 # Neither clause carries code: each code is drawn per run from a seed, one per carrier, and substituted where its
 # own placeholder sits.
 - description: research note, the Findings entry and the frontmatter Rule each carry a steering marker
