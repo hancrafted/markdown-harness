@@ -50,6 +50,7 @@ frontmatter:
           docs/design-adr/,
           docs/okf/,
           docs/research/,
+          docs/research/evals/,
           docs/research/parts/,
           docs/vision/,
           docs/workshop/,

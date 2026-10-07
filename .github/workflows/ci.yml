@@ -67,13 +67,8 @@ jobs:
       # evidence about the artefact an adopter installs. Duplicated from
       # `npm run verify` like every other step in this chain.
       # https://github.com/hancrafted/markdown-harness/issues/57
-      #
-      # Still the flag form ON PURPOSE, here and in `verify`: the published
-      # devDependency predates the word commands (#229) and refuses `mh check`
-      # with exit 2. Move both to `mh check` in the same change that bumps the
-      # devDependency to a release carrying them.
       - name: markdown-harness
-        run: npx mh --check
+        run: npx mh check
       - name: eslint
         run: npx eslint .
       - name: prettier
