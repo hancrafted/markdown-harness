@@ -1,0 +1,138 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 5,
+      "invalidFiles": 4,
+      "totalViolations": 9
+    },
+    "files": [
+      {
+        "path": "every-level.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-levels",
+            "ruleIntent": "A one-section page names its single heading, so a title or any deeper heading is a heading the page was not meant to have.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 1,
+                "content": "One",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 3,
+                "content": "Three",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 3,
+                "content": "Three",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 4,
+                "content": "Four",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 5,
+                "content": "Five",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 6,
+                "content": "Six",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "h1-undefined.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-levels",
+            "ruleIntent": "A one-section page names its single heading, so a title or any deeper heading is a heading the page was not meant to have.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 1,
+                "content": "Title",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "raw-content.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-levels",
+            "ruleIntent": "A one-section page names its single heading, so a title or any deeper heading is a heading the page was not meant to have.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 3,
+                "content": "**Bold** title",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "same-title-other-level.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-levels",
+            "ruleIntent": "A one-section page names its single heading, so a title or any deeper heading is a heading the page was not meant to have.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 3,
+                "content": "Overview",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

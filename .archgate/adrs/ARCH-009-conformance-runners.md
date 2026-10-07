@@ -6,7 +6,7 @@ domain: architecture
 rules: false
 files: ['src/packages/conformance/**']
 paths: ['src/packages/conformance/**']
-description: 'The runner half of the Conformance suite in src/packages/conformance/: one runner per corpus tier, tier enrolment, coverage and closure over the config vocabulary, and the pinned assessment instant.'
+description: 'The runner half of the Conformance suite in src/packages/conformance/: one runner per corpus tier, tier enrolment, the shared spec-folder comparison, coverage and closure over the config vocabulary, and the pinned assessment instant.'
 ---
 
 # Conformance Runners
@@ -37,6 +37,12 @@ The failure this record exists to prevent is a suite that is green over nothing.
 1. Each tier's Assessment half MUST be judged against one pinned instant in its tier record.
 2. An unpinned suite MUST be treated as non-existent, not passing.
 
+### 4. Spec-folder tiers
+
+1. A spec-folder tier's record MUST name its config through `ADOPTER_CONFIG_FILE`, the one constant for the adopter's file name.
+2. Its runner MUST compare each spec folder through `compareSpecFolder` in `spec-folder.ts`, one test per folder named after it; `npm run conformance` MUST call the same function, never a copy.
+3. The comparison MUST run the compiled `mh` inside the folder with no flag and hold stdout byte for byte against each frozen file.
+
 ## Do's and Don'ts
 
 ### Do's
@@ -46,6 +52,7 @@ The failure this record exists to prevent is a suite that is green over nothing.
 3. **DO** compare the fixture tree and runner set independently with the declaration, and reject undeclared fixture directories. (Decision 1.3, 1.4)
 4. **DO** use one paired coverage-and-closure operation for every vocabulary tier. (Decision 2.1, 2.2)
 5. **DO** pin each Assessment tier's instant in its record. (Decision 3.1)
+6. **DO** route every spec-folder comparison, test or script, through `compareSpecFolder`. (Decision 4.2)
 
 ### Don'ts
 
@@ -54,6 +61,7 @@ The failure this record exists to prevent is a suite that is green over nothing.
 3. **DON'T** rely on a presence check to prove a value survived parsing. (Decision 2.3)
 4. **DON'T** treat this Package as a Module, or move it into one. (Decision 1.4)
 5. **DON'T** read the assessment instant from the wall clock, the config under test, or a runner-local constant. (Decision 3)
+6. **DON'T** write a spec-folder config name as a string literal, or regenerate a frozen file to make a run agree. (Decision 4)
 
 ## Consequences
 
@@ -63,8 +71,11 @@ The failure this record exists to prevent is a suite that is green over nothing.
 - **An emptied tier fails.** Enrolment reads each runner's own-record declaration, while the reviewed record count closes the fixture loop.
 - **The Package is owned by no Module.** A tier that two Modules govern has somewhere to live, which it does not when the runner sits inside a Module's Package.
 
+- **The script and the suite cannot drift.** A human's `npm run conformance` and the runner share one comparison.
+
 ### Negative
 
+- **Process spawns cost time.** One `mh` run per spec folder plus one per case asked alone.
 - **Reviewed tier records age.** Adding a case means editing a record, and the number carries no meaning beyond being reviewed.
 
 ### Risks
@@ -80,6 +91,8 @@ The failure this record exists to prevent is a suite that is green over nothing.
 **§2's coverage and closure** are held by `coverageAndClosure` in `src/packages/conformance/lib/tier/`, called from the frontmatter and rejected-config runners. It answers both directions in one result, and fails the moment a tier's config stops exercising the vocabulary or carries a value outside it. §2.2 exists because either half alone is blind: the named-format tier once had coverage and no closure test, so `format: datetiem` failed nothing.
 
 **§3's pinned instant** is the `assessmentInstant` in the tier record, the only instant that tier's Assessment half is judged against. An unpinned suite is non-existent because a wall-clock assertion is green tomorrow for a different reason.
+
+**§4** is held by the `body-structure` runner, one test per spec folder through `compareSpecFolder`, and by `tests/conformance-script.test.ts`, which runs the script on a passing folder, a mismatched scratch copy and a refused `frontmatter` subfolder.
 
 **Manual review duties** (never linted): a reviewed tier-record count was actually re-counted rather than incremented on faith (§1.1); this Package was not quietly enrolled in the declared Module set (§1.4).
 

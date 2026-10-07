@@ -1,0 +1,63 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 3,
+      "invalidFiles": 2,
+      "totalViolations": 2
+    },
+    "files": [
+      {
+        "path": "one.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "anonymous-pair",
+            "ruleIntent": "A page with a title and exactly two second-level headings, whatever they say.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  2
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "three.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "anonymous-pair",
+            "ruleIntent": "A page with a title and exactly two second-level headings, whatever they say.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  1
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

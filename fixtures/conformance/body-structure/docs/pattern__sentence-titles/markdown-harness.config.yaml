@@ -1,0 +1,9 @@
+# Spec: A pattern can require a title shaped as an instruction, case-sensitively.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: sentence-titles
+      folders: ['./']
+      intent: 'A how-to is titled in the shape of an instruction.'
+      headings:
+        - { purpose: heading, level: 1, pattern: '^How to [a-z]+( [a-z]+)*$' }

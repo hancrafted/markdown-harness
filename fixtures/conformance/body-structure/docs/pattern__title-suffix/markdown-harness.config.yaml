@@ -1,0 +1,9 @@
+# Spec: A pattern anchored at the end only requires the title to end with its text.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: suffix-titles
+      folders: ['./']
+      intent: 'A report is titled as one.'
+      headings:
+        - { purpose: heading, level: 1, pattern: ' Report$' }

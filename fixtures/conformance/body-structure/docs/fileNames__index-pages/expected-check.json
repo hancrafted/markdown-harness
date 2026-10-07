@@ -1,0 +1,38 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 3,
+      "invalidFiles": 1,
+      "totalViolations": 1
+    },
+    "files": [
+      {
+        "path": "docs/plain/nested/index.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "index-pages",
+            "ruleIntent": "An index page names its folder and lists what is in it, so it has one title and nothing deeper than the second level.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 3,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 2
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

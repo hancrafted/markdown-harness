@@ -1,0 +1,85 @@
+{
+  "x.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "x.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "x.md",
+      "modules": [
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "guides",
+            "intent": "A guide is a title and at least two sections, wherever it lives."
+          },
+          "requirements": {
+            "types": [
+              "guide"
+            ],
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "enumeration",
+                "level": 2,
+                "minCount": 2
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "nested-depth",
+            "intent": "A guide has one title, at least one part, and in every part a summary that gives its details."
+          },
+          "requirements": {
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1,
+                "headings": [
+                  {
+                    "purpose": "enumeration",
+                    "level": 2,
+                    "minCount": 1,
+                    "headings": [
+                      {
+                        "purpose": "heading",
+                        "level": 3,
+                        "allowed": [
+                          {
+                            "title": "Summary"
+                          }
+                        ],
+                        "headings": [
+                          {
+                            "purpose": "heading",
+                            "level": 5,
+                            "allowed": [
+                              {
+                                "title": "Details"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

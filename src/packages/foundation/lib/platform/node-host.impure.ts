@@ -20,10 +20,11 @@
  * Package.
  */
 
+import { spawnSync } from 'node:child_process';
 import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { basename, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { HostEntry, HostEntryKind, HostRead } from './node-host.types.ts';
+import type { HostEntry, HostEntryKind, HostRead, HostRun } from './node-host.types.ts';
 
 /**
  * Read one file as text, or say why not.
@@ -149,4 +150,23 @@ export function directoryOfModule(moduleUrl: string): string {
 /** The filename of the module at `moduleUrl`. */
 export function fileNameOfModule(moduleUrl: string): string {
   return basename(fileURLToPath(moduleUrl));
+}
+
+/**
+ * Run one JavaScript entry under this same Node binary, in `cwd`, and answer
+ * what it printed and how it exited.
+ *
+ * Synchronous and unbuffered beyond the child's own output: the only callers
+ * run a short-lived command and read its whole answer. A spawn that cannot
+ * start at all answers rather than throws, with no exit code and the reason
+ * on `stderr`, like every other call in this file.
+ *
+ * @param entry The script to run, as a host path.
+ * @param args The arguments after it.
+ * @param cwd The working directory the child starts in.
+ */
+export function runHostEntry(entry: string, args: readonly string[], cwd: string): HostRun {
+  const child = spawnSync(process.execPath, [entry, ...args], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  if (child.error !== undefined) return { stdout: '', stderr: child.error.message, code: null };
+  return { stdout: child.stdout, stderr: child.stderr, code: child.status };
 }

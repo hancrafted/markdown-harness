@@ -1,0 +1,9 @@
+# Spec: A pattern counts characters, so a title is measured in code points, not bytes.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: short-titles
+      folders: ['./']
+      intent: 'A code page has a title of two or three characters.'
+      headings:
+        - { purpose: heading, level: 1, pattern: '^.{2,3}$' }

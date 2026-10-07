@@ -1,0 +1,10 @@
+# Spec: An enumeration with `minCount: 0` admits no repeats at all, and any number of them.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: free-sections
+      folders: ['./']
+      intent: 'A free page has a title and any number of second-level sections, none included.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 0 }

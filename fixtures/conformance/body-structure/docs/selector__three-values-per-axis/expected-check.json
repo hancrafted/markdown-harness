@@ -1,0 +1,110 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 5,
+      "invalidFiles": 4,
+      "totalViolations": 4
+    },
+    "files": [
+      {
+        "path": "docs/tp/one/a.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "triple-plural",
+            "ruleIntent": "Every axis lists three values, so a file is governed only when each axis matches and the match need not be the first listed.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/tp/three/a.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "triple-plural",
+            "ruleIntent": "Every axis lists three values, so a file is governed only when each axis matches and the match need not be the first listed.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/tp/three/c.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "triple-plural",
+            "ruleIntent": "Every axis lists three values, so a file is governed only when each axis matches and the match need not be the first listed.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/tp/two/b.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "triple-plural",
+            "ruleIntent": "Every axis lists three values, so a file is governed only when each axis matches and the match need not be the first listed.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

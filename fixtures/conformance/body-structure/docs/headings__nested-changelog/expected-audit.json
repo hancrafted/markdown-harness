@@ -1,0 +1,52 @@
+{
+  "command": "audit",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "modules": [
+      {
+        "module": "frontmatter",
+        "rules": []
+      },
+      {
+        "module": "body-structure",
+        "rules": [
+          {
+            "rule": {
+              "ruleId": "guides",
+              "selector": {
+                "types": [
+                  "guide"
+                ]
+              },
+              "intent": "A guide is a title and at least two sections, wherever it lives."
+            },
+            "won": 0,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "nested-changelog",
+              "selector": {
+                "folders": [
+                  "./"
+                ]
+              },
+              "intent": "A changelog has one title and a heading per release, and each release lists its changes under at most one heading per change type, in the order Keep a Changelog gives them."
+            },
+            "won": 5,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          }
+        ]
+      }
+    ]
+  }
+}

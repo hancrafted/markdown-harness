@@ -1,0 +1,70 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 4,
+      "invalidFiles": 2,
+      "totalViolations": 2
+    },
+    "files": [
+      {
+        "path": "prefix-of.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-set",
+            "ruleIntent": "An evaluation has a title and one or two sections, each a Pros or a Cons.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^(Pros|Cons)$",
+                  "minCount": 1,
+                  "maxCount": 2
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "three.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-set",
+            "ruleIntent": "An evaluation has a title and one or two sections, each a Pros or a Cons.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 3,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^(Pros|Cons)$",
+                  "minCount": 1,
+                  "maxCount": 2
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+# Spec: `undefinedHeadings: forbid` reports a heading no entry names at every level, the title included.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: closed-levels
+      folders: ['./']
+      intent: 'A one-section page names its single heading, so a title or any deeper heading is a heading the page was not meant to have.'
+      undefinedHeadings: forbid
+      headings:
+        - { purpose: heading, level: 2, pattern: '^Overview$' }

@@ -38,6 +38,7 @@
     "format:check": "prettier --check .",
     "lint:boundaries": "depcruise src",
     "test": "vitest run",
+    "conformance": "node src/packages/conformance/run-spec-folder.ts",
     "test:watch": "vitest watch",
     "knip": "knip",
     "prepare": "husky",

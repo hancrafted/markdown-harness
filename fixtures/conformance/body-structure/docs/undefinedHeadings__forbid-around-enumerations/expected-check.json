@@ -1,0 +1,125 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 5,
+      "invalidFiles": 4,
+      "totalViolations": 6
+    },
+    "files": [
+      {
+        "path": "after-the-spine.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-sources",
+            "ruleIntent": "A report has a title, one or two sources and a conclusion, and no other heading.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Appendix",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "between-repeats.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-sources",
+            "ruleIntent": "A report has a title, one or two sources and a conclusion, and no other heading.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Aside",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "nested-between-repeats.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-sources",
+            "ruleIntent": "A report has a title, one or two sources and a conclusion, and no other heading.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 3,
+                "content": "Method",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Aside",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "outside-run.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-sources",
+            "ruleIntent": "A report has a title, one or two sources and a conclusion, and no other heading.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Source: ",
+                  "minCount": 1,
+                  "maxCount": 2
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+                "entry": [
+                  1
+                ],
+                "found": 3,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Source: ",
+                  "minCount": 1,
+                  "maxCount": 2
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

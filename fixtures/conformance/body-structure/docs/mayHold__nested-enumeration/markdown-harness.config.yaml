@@ -1,0 +1,10 @@
+# Spec: A section ends at its first subheading, so a parent and its nested enumeration each hold their own blocks.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: section-nested
+      folders: ['./']
+      intent: 'A decision is argued in prose and then broken into numbered anchors, each of which holds a numbered list.'
+      headings:
+        - { purpose: heading, level: 2, pattern: '^Decision$', mayHold: [prose] }
+        - { purpose: enumeration, level: 3, pattern: '^[0-9]+\. ', minCount: 1, mayHold: [ordered-list] }

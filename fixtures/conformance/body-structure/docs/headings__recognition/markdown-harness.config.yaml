@@ -1,0 +1,19 @@
+# Spec: Only a line CommonMark reads as a heading counts as one: fences, indented code, HTML, escapes and setext underlines decide it.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: guides
+      types: [guide]
+      intent: 'A guide is a title and at least two sections, wherever it lives.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 2 }
+
+    - ruleId: recognition
+      folders: ['./']
+      intent: 'A recognition case has one title and at most one second-level heading, so a heading read wrongly flips its verdict.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, maxCount: 1 }

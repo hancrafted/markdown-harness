@@ -1,0 +1,279 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 13,
+      "invalidFiles": 10,
+      "totalViolations": 13
+    },
+    "files": [
+      {
+        "path": "order-before-title.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Findings$",
+                  "intent": "What was measured, with numbers."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "order-source-first.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  3
+                ],
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Source: ",
+                  "minCount": 1,
+                  "intent": "One section per source consulted."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "report-detail-after-source.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  2
+                ],
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 3,
+                  "pattern": "^Detail",
+                  "maxCount": 2,
+                  "intent": "Supporting detail under Findings, two at most."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "report-h4-no-h1.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 4,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 3
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "report-h4.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 4,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 3
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "report-h5-h6.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 5,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 3
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 6,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 3
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "report-no-h1.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "report-three-h3.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_ABOVE_MAXIMUM",
+                "entry": [
+                  2
+                ],
+                "found": 3,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 3,
+                  "pattern": "^Detail",
+                  "maxCount": 2,
+                  "intent": "Supporting detail under Findings, two at most."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "report-title-only.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  1
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Findings$",
+                  "intent": "What was measured, with numbers."
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  3
+                ],
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "pattern": "^Source: ",
+                  "minCount": 1,
+                  "intent": "One section per source consulted."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "report-two-h1.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "research-reports",
+            "ruleIntent": "Research reads the same way every time, so a reviewer can skim it for findings and sources.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

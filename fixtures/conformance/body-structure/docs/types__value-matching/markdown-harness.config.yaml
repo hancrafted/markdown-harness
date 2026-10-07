@@ -1,0 +1,33 @@
+# Spec: A `type` matches only as an exact string; any other value, or no readable frontmatter, falls through to the folder Rule.
+# Selector reach: cases keep their tier paths, and every competing Rule is copied byte for byte in declared order,
+# because the first Rule that selects a file wins it.
+body-structure:
+  rules:
+    - ruleId: research-reports
+      folders: [docs/research/]
+      types: [research]
+      excludeFiles:
+        - { fileNames: [scratch.md] }
+      intent: 'Research reads the same way every time, so a reviewer can skim it for findings and sources.'
+      maxLevel: 3
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2, pattern: '^Findings$', intent: 'What was measured, with numbers.' }
+        - { purpose: enumeration, level: 3, pattern: '^Detail', maxCount: 2, intent: 'Supporting detail under Findings, two at most.' }
+        - { purpose: enumeration, level: 2, pattern: '^Source: ', minCount: 1, intent: 'One section per source consulted.' }
+
+    - ruleId: research-notes
+      folders: [docs/research/]
+      types: [note, memo, brief]
+      intent: 'A research note is short, so it has one title and at most three sections.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, maxCount: 3 }
+
+    - ruleId: research-untyped
+      folders: [docs/research/]
+      intent: 'A research file whose type names no template here still has exactly one title and nothing beneath it.'
+      maxLevel: 1
+      headings:
+        - { purpose: heading, level: 1 }

@@ -1,0 +1,10 @@
+# Spec: A parenthesised alternation anchored at both ends admits exactly its listed titles, counted as one enumeration.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: closed-set
+      folders: ['./']
+      intent: 'An evaluation has a title and one or two sections, each a Pros or a Cons.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, pattern: '^(Pros|Cons)$', minCount: 1, maxCount: 2 }

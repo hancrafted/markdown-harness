@@ -1,0 +1,64 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 4,
+      "invalidFiles": 2,
+      "totalViolations": 2
+    },
+    "files": [
+      {
+        "path": "docs/releases/HISTORY.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "changelogs",
+            "ruleIntent": "A changelog is titled as one and carries one section per release.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": "^Changelog$"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/releases/RELEASES.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "changelogs",
+            "ruleIntent": "A changelog is titled as one and carries one section per release.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "pattern": "^Changelog$"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

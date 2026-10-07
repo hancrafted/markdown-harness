@@ -1,0 +1,74 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 5,
+      "invalidFiles": 2,
+      "totalViolations": 4
+    },
+    "files": [
+      {
+        "path": "h3-h4-h6.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "depth-only",
+            "ruleIntent": "A depth-only Rule forbids nesting past the second level and asks nothing else of the outline.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 3,
+                "found": 2,
+                "requirement": {
+                  "maxLevel": 2
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 4,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 2
+                }
+              },
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 6,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 2
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "h3.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "depth-only",
+            "ruleIntent": "A depth-only Rule forbids nesting past the second level and asks nothing else of the outline.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 3,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 2
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

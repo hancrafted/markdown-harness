@@ -1,0 +1,11 @@
+# Spec: A Rule that selects by `types` alone governs a file of that type in any folder, and nothing else.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: guides
+      types: [guide]
+      intent: 'A guide is a title and at least two sections, wherever it lives.'
+      maxLevel: 2
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 2 }

@@ -1,67 +1,69 @@
 // The `body-structure` tier's runner, under `fixtures/conformance/body-structure/`.
 //
+// A SPEC-FOLDER TIER (#231). Every directory directly under the tier's `docs/` is
+// one spec folder: a synthetic repo root holding the adopter's config file, whose
+// first line states the spec, its Conformance cases, and the frozen output `mh`
+// prints when run inside it with no flag — `expected-check.json` always,
+// `expected-audit.json` where Rules compete for a file, `expected-query.json`
+// where paths were asked. A human verifies one folder with
+// `cd <folder> && npx mh | diff - expected-check.json`, or with
+// `npm run conformance -- <folder>`, and this runner asks the same question of
+// every folder through the same shared module, `../spec-folder.ts`.
+//
 // SPECIFICATION: every case states its verdict in an `<!-- expect: -->` marker,
-// and `expected-findings.json` freezes, for every GOVERNED case, the Rule that
-// wins it and its exact violations. The one exception is the verbatim case, a
-// byte-identical copy that cannot carry a marker and states its verdict in
-// `verbatim-cases.json` instead. Both were written from the spec in #221 and
-// never from an implementation, so a disagreement here is answered by deciding
-// which side is wrong — never by editing a case, a marker or a frozen finding to
-// agree with the code (ARCH-010).
+// and the frozen files state, for every failing case, the Rule that won it and
+// its exact violations. The one exception is the verbatim case, a byte-identical
+// copy that cannot carry a marker and states its verdict in its folder's
+// `verbatim-cases.json`. The cases and their findings were written from the spec
+// in #221 and never from an implementation, and #231 moved them into spec folders
+// by rename and cut each frozen file from the old tier-wide ones; a disagreement
+// here is answered by deciding which side is wrong — never by editing a case, a
+// marker or a frozen file to agree with the code (ARCH-010).
 //
-// AT THE PROCESS BOUNDARY, on purpose. The tier was written before its Module
-// existed, so the only seam that could hold it without naming the Module's own
-// internals is the compiled `mh` — the same artefact `cli.test.ts` spawns, and
-// the one a reimplementation is judged at. Two consequences follow.
+// AT THE PROCESS BOUNDARY, on purpose: the compiled `mh` is the artefact a
+// reimplementation is judged at. Two consequences follow.
 //
-// 1. Per-case governance is asked of a corpus of ONE, and that rests on one
-//    premise: A BODY-STRUCTURE VERDICT IS A FUNCTION OF THE CONFIG PLUS ONE
-//    FILE'S PATH AND BYTES. A `check` response lists only failing files and
-//    counts the governed ones, so it cannot tell a PASSES file from an
-//    UNGOVERNED one. Each case is therefore copied byte for byte into a root of
-//    its own and asked there: `governedFiles` is then that file's governance,
-//    the `check` block its violations, and the one `audit` row that won it
-//    names its Rule. A Module whose verdict read a second file would break the
-//    premise, and this seam with it.
+// 1. `check` lists only failing files and counts the governed ones, so it cannot
+//    tell a PASSES file from an UNGOVERNED one. Each case is therefore ALSO copied
+//    byte for byte into a root of its own and asked there under its folder's
+//    config: `governedFiles` is then that file's governance. That rests on one
+//    premise: A BODY-STRUCTURE VERDICT IS A FUNCTION OF THE CONFIG PLUS ONE FILE'S
+//    PATH AND BYTES. A Module whose verdict read a second file would break it.
 // 2. Build before running this file alone (trap 9 in
 //    docs/agents/verification.md): it measures `dist/`, never `src/`.
 
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MODULE_SET } from '../../cli/module-set.ts';
 import { loadConfig } from '../../foundation/load-config.ts';
-import { readTextIn } from '../../foundation/read-text.ts';
 import { parseYamlDocument } from '../../foundation/yaml-document.ts';
-import type { ModuleCheck } from '../../response-contract/index.ts';
-import { casesIn, tierRoot } from '../case-corpus.ts';
-import { casesStating, FAILS, PASSES, UNGOVERNED, verdictOf } from '../case-marker.ts';
+import { casesIn } from '../case-corpus.ts';
+import { FAILS, PASSES, UNGOVERNED } from '../case-marker.ts';
 import { coverageAndClosure } from '../coverage-closure.ts';
-import { tierForRunner } from '../tier-record.ts';
-import type { ToolRefusal, ToolRun } from '../tool-answer.ts';
+import {
+  compareSpecFolder,
+  EXPECTED_CHECK,
+  specFolderPath,
+  specFoldersIn,
+  statedVerdictsIn,
+  VERBATIM_MANIFEST,
+} from '../spec-folder.ts';
+import { ADOPTER_CONFIG_FILE, tierForRunner } from '../tier-record.ts';
+import type { ToolBlock, ToolRun } from '../tool-answer.ts';
 import { envelopeOf, refusalOf, toolEntry } from '../tool-answer.ts';
 
 const TIER = tierForRunner(import.meta.url);
-if (TIER.caseKind !== 'markdown') throw new Error(`${TIER.name} is not a markdown tier`);
-
-/** The synthetic repo root the tier's config is written relative to. */
-const CORPUS_ROOT = tierRoot(TIER.name);
-
-/** The tier root and config exactly as a caller types them from the repository root. */
-const TYPED_ROOT = `fixtures/conformance/${TIER.name}`;
-const TYPED_CONFIG = `${TYPED_ROOT}/${TIER.configFile}`;
+if (TIER.caseKind !== 'spec-folder') throw new Error(`${TIER.name} is not a spec-folder tier`);
 
 /** The Module's top-level key, which names its block in every response. */
 const MODULE = 'body-structure';
 
-/** The frozen findings, beside the config. */
-const FINDINGS_FILE = 'expected-findings.json';
-
 // ---------------------------------------------------------------------------
-// The spec, read off the tier: config, markers and frozen findings.
+// The spec, read off every spec folder: config, markers and frozen check.
 // ---------------------------------------------------------------------------
 
 interface HeadingEntry {
@@ -94,25 +96,102 @@ interface Finding {
   readonly violations: readonly unknown[];
 }
 
-function readTierText(file: string): string {
-  const found = readTextIn(CORPUS_ROOT, file);
-  if (found.kind !== 'text') throw new Error(`${file} in the ${TIER.name} tier is ${found.kind}`);
-  return found.text;
+interface VerbatimCase extends Finding {
+  readonly source: string;
+  readonly bytes: number;
+  readonly sha256: string;
+  readonly verdict: string;
 }
 
-// The config as the Operator WROTE it, parsed and not validated: the loader
-// refuses this section until the Module exists, and the vocabulary checks below
-// are about what the tier writes, which needs no Module to answer.
-const parsedConfig = parseYamlDocument(readTierText(TIER.configFile), 'fault');
-if (parsedConfig.kind !== 'mapping') throw new Error('the tier config is not a YAML mapping');
-const writtenConfig = parsedConfig.document;
-const writtenSection = writtenConfig[MODULE] as { rules: readonly RuleSpec[] };
-const rules = writtenSection.rules;
-const ruleNamed = (ruleId: string): RuleSpec => {
-  const rule = rules.find((candidate) => candidate.ruleId === ruleId);
-  if (rule === undefined) throw new Error(`the tier config has no Rule ${ruleId}`);
-  return rule;
-};
+/** One spec folder as written: its config, each case's stated verdict, and its frozen failing findings. */
+interface SpecFolder {
+  readonly name: string;
+  readonly root: string;
+  readonly section: Record<string, unknown>;
+  readonly rules: readonly RuleSpec[];
+  readonly stated: readonly { readonly path: string; readonly verdict: string }[];
+  readonly failing: ReadonlyMap<string, Finding>;
+  readonly summary: { readonly governedFiles: number; readonly invalidFiles: number; readonly totalViolations: number };
+  readonly verbatim: Readonly<Record<string, VerbatimCase>>;
+}
+
+const FOLDER_NAMES = specFoldersIn(TIER.name);
+
+/** A folder file the spec requires, as text. */
+function required(root: string, file: string): string {
+  return readFileSync(join(root, file), 'utf8');
+}
+
+/** A folder file the spec permits, as text, or `undefined`. */
+function optional(root: string, file: string): string | undefined {
+  try {
+    return readFileSync(join(root, file), 'utf8');
+  } catch {
+    return undefined;
+  }
+}
+
+// The config as the Operator WROTE it, parsed and not validated, so the
+// vocabulary checks below need no Module to answer.
+function readFolder(name: string): SpecFolder {
+  const root = specFolderPath(TIER.name, name);
+  const parsed = parseYamlDocument(required(root, ADOPTER_CONFIG_FILE), 'fault');
+  if (parsed.kind !== 'mapping') throw new Error(`the config of ${name} is not a YAML mapping`);
+  const section = parsed.document[MODULE] as Record<string, unknown>;
+  const check = JSON.parse(required(root, EXPECTED_CHECK)) as {
+    result: {
+      summary: SpecFolder['summary'];
+      files: readonly { path: string; modules: readonly (Finding & { module: string })[] }[];
+    };
+  };
+  const failing = new Map(
+    check.result.files.map((file) => {
+      const block = file.modules.find((candidate) => candidate.module === MODULE);
+      return [file.path, { ruleId: block?.ruleId ?? '', violations: block?.violations ?? [] }] as const;
+    }),
+  );
+  const manifest = optional(root, VERBATIM_MANIFEST);
+  return {
+    name,
+    root,
+    section,
+    rules: section.rules as readonly RuleSpec[],
+    stated: statedVerdictsIn(root),
+    failing,
+    summary: check.result.summary,
+    verbatim: manifest === undefined ? {} : (JSON.parse(manifest) as Record<string, VerbatimCase>),
+  };
+}
+
+const folders = FOLDER_NAMES.map(readFolder);
+
+/** Every stated case across the tier, its path tier-relative, with the folder that holds it. */
+const allStated = folders.flatMap((folder) =>
+  folder.stated.map((line) => ({
+    folder,
+    path: line.path,
+    verdict: line.verdict,
+    key: `docs/${folder.name}/${line.path}`,
+  })),
+);
+const stated = (verdict: string): readonly string[] =>
+  allStated.filter((line) => line.verdict === verdict).map((line) => line.key);
+const caseNamed = new Map(allStated.map((line) => [line.key, line]));
+
+/**
+ * Every Rule the tier writes, once. A Rule copied into several folders is the
+ * same Rule in each — only a folder token is rewritten when its cases moved to
+ * the folder root — so the first copy speaks for all of them.
+ */
+const rulesById = new Map<string, RuleSpec>();
+for (const folder of folders)
+  for (const rule of folder.rules) if (!rulesById.has(rule.ruleId)) rulesById.set(rule.ruleId, rule);
+const rules = [...rulesById.values()];
+
+/** A Rule with its folder tokens dropped, which is what every copy of it must share. */
+function withoutFolders(rule: RuleSpec): Omit<RuleSpec, 'folders'> {
+  return Object.fromEntries(Object.entries(rule).filter(([key]) => key !== 'folders')) as Omit<RuleSpec, 'folders'>;
+}
 
 /** Every entry of a list and of every list nested under it, depth-first in config order. */
 function entriesWithin(list: readonly HeadingEntry[] | undefined): readonly HeadingEntry[] {
@@ -124,15 +203,389 @@ function depthOf(list: readonly HeadingEntry[] | undefined): number {
   return list === undefined ? 0 : 1 + Math.max(0, ...list.map((entry) => depthOf(entry.headings)));
 }
 
-const frozen = JSON.parse(readTierText(FINDINGS_FILE)) as Record<string, Finding>;
+/** Every key the Module's vocabulary admits (#221, the listing's vocabulary paragraph). */
+const SECTION_KEYS = ['rules'];
+const RULE_KEYS = [
+  'ruleId',
+  'intent',
+  'folders',
+  'fileNames',
+  'types',
+  'excludeFiles',
+  'maxLevel',
+  'undefinedHeadings',
+  'headings',
+];
+const ENTRY_KEYS = [
+  'purpose',
+  'level',
+  'pattern',
+  'allowed',
+  'presence',
+  'minCount',
+  'maxCount',
+  'intent',
+  'mayHold',
+  'headings',
+];
+const PURPOSE_VALUES = ['heading', 'enumeration'];
+const PRESENCE_VALUES = ['required', 'optional'];
+const UNDEFINED_HEADINGS_VALUES = ['allow', 'forbid'];
+// An `allowed` item has two keys (#229) and a `mayHold` set has three kinds (#227):
+// the configs write every key and every kind, and no other.
+const ALLOWED_ITEM_KEYS = ['title', 'intent'];
+const BLOCK_KIND_VALUES = ['prose', 'ordered-list', 'unordered-list'];
 
-const corpus = casesIn(TIER.name);
-const stated = (verdict: string): string[] => [...casesStating(TIER.name, verdict)];
+describe('the body-structure tier states one coherent specification', () => {
+  describe('success cases', () => {
+    it('proves coverage and closure over the union of every spec folder config', () => {
+      // Splitting one config into many must lose no key: coverage and closure are
+      // read off every folder config together, as WRITTEN, whatever the loader answers.
+      // ARRANGE
+      const complete = { unreached: [], undeclared: [] };
+      const sectionKeys = folders.flatMap((folder) => Object.keys(folder.section));
+      const ruleKeys = rules.flatMap((rule) => Object.keys(rule));
+      const entries = rules.flatMap((rule) => entriesWithin(rule.headings));
+      const entryKeys = entries.flatMap((entry) => Object.keys(entry));
+      const purposes = entries.map((entry) => entry.purpose);
+      // A `heading` entry that omits `presence` is required: the omitted key is the
+      // written spelling of `required`. An `enumeration` never carries `presence`.
+      const presences = entries
+        .filter((entry) => entry.purpose === 'heading')
+        .map((entry) => entry.presence ?? 'required');
+      const undefinedHeadings = rules.flatMap((rule) =>
+        rule.undefinedHeadings === undefined ? [] : [rule.undefinedHeadings],
+      );
+      const items = entries.flatMap((entry) => entry.allowed ?? []);
+      const itemKeys = items.flatMap((item) => Object.keys(item));
+      const blockKinds = entries.flatMap((entry) => entry.mayHold ?? []);
+      // ACT
+      const actual = {
+        section: coverageAndClosure(SECTION_KEYS, sectionKeys, sectionKeys),
+        rule: coverageAndClosure(RULE_KEYS, ruleKeys, ruleKeys),
+        entry: coverageAndClosure(ENTRY_KEYS, entryKeys, entryKeys),
+        purpose: coverageAndClosure(PURPOSE_VALUES, purposes, purposes),
+        presence: coverageAndClosure(PRESENCE_VALUES, presences, presences),
+        undefinedHeadings: coverageAndClosure(UNDEFINED_HEADINGS_VALUES, undefinedHeadings, undefinedHeadings),
+        allowedItem: coverageAndClosure(ALLOWED_ITEM_KEYS, itemKeys, itemKeys),
+        blockKind: coverageAndClosure(BLOCK_KIND_VALUES, blockKinds, blockKinds),
+      };
+      // ASSERT
+      expect(actual).toEqual({
+        section: complete,
+        rule: complete,
+        entry: complete,
+        purpose: complete,
+        presence: complete,
+        undefinedHeadings: complete,
+        allowedItem: complete,
+        blockKind: complete,
+      });
+    });
+
+    it('writes maxLevel on some Rules and omits it on others, and writes presence: optional fourteen times', () => {
+      // Counted over distinct Rules, at every depth: #221 wrote it once, #225 twice,
+      // #227 eight times and #229 fourteen. A tier that always wrote maxLevel, or
+      // never did, could not tell open depth from forbidden depth.
+      // ARRANGE
+      const expected = { writesMaxLevel: true, omitsMaxLevel: true, optionalEntries: 14 };
+      // ACT
+      const actual = {
+        writesMaxLevel: rules.some((rule) => rule.maxLevel !== undefined),
+        omitsMaxLevel: rules.some((rule) => rule.maxLevel === undefined),
+        optionalEntries: rules
+          .flatMap((rule) => entriesWithin(rule.headings))
+          .filter((entry) => entry.presence === 'optional').length,
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('nests a list under a heading entry and under an enumeration, four lists deep at most', () => {
+      // #229 decision 1: both purposes may carry `headings:`, at any depth down to level 6.
+      // ARRANGE
+      const expected = { underHeading: true, underEnumeration: true, deepest: 4 };
+      // ACT
+      const parents = rules.flatMap((rule) => entriesWithin(rule.headings)).filter((entry) => entry.headings);
+      const actual = {
+        underHeading: parents.some((entry) => entry.purpose === 'heading'),
+        underEnumeration: parents.some((entry) => entry.purpose === 'enumeration'),
+        deepest: Math.max(...rules.map((rule) => depthOf(rule.headings))),
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('writes every copy of a Rule as the same Rule, folder tokens aside', () => {
+      // A first-match folder copies its competing Rules; a copy that drifted would
+      // specify a second Rule under the first one's ID.
+      // ARRANGE
+      const none: readonly string[] = [];
+      // ACT
+      const drifted = folders.flatMap((folder) =>
+        folder.rules
+          .filter(
+            (rule) =>
+              JSON.stringify(withoutFolders(rule)) !== JSON.stringify(withoutFolders(rulesById.get(rule.ruleId)!)),
+          )
+          .map((rule) => `${folder.name}: ${rule.ruleId}`),
+      );
+      // ASSERT
+      expect(drifted).toEqual(none);
+    });
+  });
+
+  describe('failure cases', () => {
+    it('freezes a failing finding for exactly the cases whose marker says FAILS', () => {
+      // ARRANGE
+      const expected = [...stated(FAILS)].sort();
+      // ACT
+      const frozen = folders
+        .flatMap((folder) => [...folder.failing.keys()].map((path) => `docs/${folder.name}/${path}`))
+        .sort();
+      // ASSERT
+      expect(frozen).toEqual(expected);
+    });
+
+    it('freezes at least one violation for every failing file', () => {
+      // ARRANGE
+      const none: readonly string[] = [];
+      // ACT
+      const empty = folders.flatMap((folder) =>
+        [...folder.failing]
+          .filter(([, finding]) => finding.violations.length === 0)
+          .map(([path]) => `${folder.name}/${path}`),
+      );
+      // ASSERT
+      expect(empty).toEqual(none);
+    });
+
+    it('names a Rule its own folder config declares in every frozen finding', () => {
+      // ARRANGE
+      const none: readonly string[] = [];
+      // ACT
+      const undeclared = folders.flatMap((folder) =>
+        [...folder.failing.values()]
+          .filter((finding) => !folder.rules.some((rule) => rule.ruleId === finding.ruleId))
+          .map((finding) => `${folder.name}: ${finding.ruleId}`),
+      );
+      // ASSERT
+      expect(undeclared).toEqual(none);
+    });
+
+    it('writes no two case paths that differ only by case', () => {
+      // A case-insensitive checkout would fold two such files into one.
+      // ARRANGE
+      const none: readonly string[] = [];
+      // ACT
+      const corpus = casesIn(TIER.name);
+      const folded = corpus.map((path) => path.toLowerCase());
+      const colliding = corpus.filter((_, index) => folded.indexOf(folded[index]) !== index);
+      // ASSERT
+      expect(colliding).toEqual(none);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('enumerates every Conformance case the suite declares', () => {
+      // Stated by hand in the tier record, never counted back off the tree. #231
+      // moved 296 cases (the verbatim one now a `.md` the walk reaches) and added
+      // five governed partners.
+      // ARRANGE
+      const declaredCases = TIER.caseCount;
+      // ACT
+      const enumerated = casesIn(TIER.name).length;
+      // ASSERT
+      expect(enumerated).toBe(declaredCases);
+    });
+
+    it('holds the frozen audit and query files the tier-wide tables were cut into', () => {
+      // ARCH-010 §1.3: the comparison reads `expected-audit.json` and
+      // `expected-query.json` only where a folder holds them, so a deleted one
+      // would pass silently. #231 cut the 45-row audit table into 19 folders
+      // where Rules compete and the 20 frozen query answers into the folders
+      // whose Rules they name; these hand-stated counts make a deletion fail.
+      // ARRANGE
+      const expected = { audits: 19, queries: 20 };
+      // ACT
+      const actual = {
+        audits: folders.filter((folder) => optional(folder.root, 'expected-audit.json') !== undefined).length,
+        queries: folders.reduce(
+          (sum, folder) => sum + Object.keys(JSON.parse(optional(folder.root, 'expected-query.json') ?? '{}')).length,
+          0,
+        ),
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('tallies the verdicts and violations the spec states', () => {
+      // #221's counts as #225, #227 and #229 left them — 122 PASSES, 155 FAILS,
+      // 18 UNGOVERNED, 173 violations — plus the verbatim PASSES case and the five
+      // PASSES partners #231 added so every spec folder holds a governed PASSES case.
+      // ARRANGE
+      const expected = { passes: 128, fails: 155, ungoverned: 18, violations: 173 };
+      // ACT
+      const actual = {
+        passes: stated(PASSES).length,
+        fails: stated(FAILS).length,
+        ungoverned: stated(UNGOVERNED).length,
+        violations: folders.reduce((sum, folder) => sum + folder.summary.totalViolations, 0),
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('keeps the bytes the byte-sensitive cases exist to state', () => {
+      // ARCH-010 makes these bytes the contract, and nothing but this test reads
+      // them as bytes: an editor trimming a space, or a checkout converting line
+      // endings, would otherwise move a verdict with every check still green.
+      // ARRANGE
+      const expected = {
+        leadingBytes: [0xef, 0xbb, 0xbf, 0x2d],
+        findingsLine: '## Findings   ',
+        extraLeadingSpace: '##  Findings',
+        sourceLine: '## Source: ',
+        doubleSpaceLine: '## Source:  One',
+        suffixLine: '# Q3 Report ',
+        astralLine: '# a\u{1F600}b',
+        indentedCode: ['    ### Not a heading', '    #### Nor this'],
+        indentFourAfterText: '    ### Not a heading',
+        indentThree: ['   ## One', '   ## Two'],
+        titleLine: '#\tTitle',
+        emptyHeadings: ['##', '## '],
+        bareLineFeeds: 0,
+        lastBytes: '\r\n',
+        nestedInOrdered: ['   - A bullet inside it.', '   - Another.', '   1. A numbered item inside it.'],
+        looseParagraph: ['   More about the first.'],
+        nestedInBullets: ['  1. A numbered item inside it.', '  2. Another.'],
+      };
+      const bytes = (path: string): Buffer => readFileSync(join(specFolderPath(TIER.name, ''), path));
+      const linesOf = (path: string): string[] => bytes(path).toString('utf8').split('\n');
+      const crlf = bytes('headings__recognition/crlf.md').toString('utf8');
+      // ACT
+      const actual = {
+        leadingBytes: [
+          ...bytes('types__value-matching/docs/research/bom-frontmatter.md').subarray(0, expected.leadingBytes.length),
+        ],
+        findingsLine: linesOf('pattern__anchored-section-title/title-trailing-spaces.md').find((line) =>
+          line.startsWith('## F'),
+        ),
+        extraLeadingSpace: linesOf('pattern__anchored-section-title/title-extra-leading-space.md').find((line) =>
+          line.includes('Findings'),
+        ),
+        sourceLine: linesOf('pattern__source-prefix/prefix-bare.md').find((line) => line.startsWith('## S')),
+        doubleSpaceLine: linesOf('pattern__source-prefix/prefix-double-space.md').find((line) =>
+          line.startsWith('## S'),
+        ),
+        suffixLine: linesOf('pattern__title-suffix/trailing-space.md').find((line) => line.startsWith('# Q')),
+        astralLine: linesOf('pattern__title-length/emoji.md').find((line) => line.startsWith('# ')),
+        indentedCode: linesOf('headings__recognition/indented-code.md').filter((line) => line.startsWith('    ')),
+        indentFourAfterText: linesOf('headings__recognition/indent-four-after-text.md').find((line) =>
+          line.startsWith('    '),
+        ),
+        indentThree: linesOf('headings__recognition/indent-three.md').filter((line) => line.startsWith('   ##')),
+        titleLine: linesOf('headings__recognition/tab-after-hash.md').find((line) => line.endsWith('Title')),
+        emptyHeadings: linesOf('headings__recognition/empty-h2-twice.md').filter((line) => /^##\s*$/u.test(line)),
+        bareLineFeeds: crlf.split('\n').length - crlf.split('\r\n').length,
+        lastBytes: crlf.slice(-expected.lastBytes.length),
+        nestedInOrdered: linesOf('mayHold__block-kinds/ordered-nested.md').filter((line) => line.startsWith('   ')),
+        looseParagraph: linesOf('mayHold__block-kinds/ordered-loose.md').filter((line) => line.startsWith('   ')),
+        nestedInBullets: linesOf('mayHold__block-kinds/bullets-nested-ordered.md').filter((line) =>
+          line.startsWith('  '),
+        ),
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+});
 
 // ---------------------------------------------------------------------------
-// The tool, spawned. Async so every one-file corpus can be asked in parallel. The
-// spawn stays here: only a test file may import a platform builtin outside
-// `foundation` (ARCH-008 §2.1), so the shared half is `../tool-answer.ts`.
+// Each spec folder, run as a human runs it, against its frozen files.
+// ---------------------------------------------------------------------------
+
+/**
+ * A folder's `check` answer IN PROCESS, reached through the declared Module set
+ * and the port every Module implements — never through a Module's own files,
+ * which this suite must not name — reduced to what the frozen check states.
+ */
+function inProcessCheck(folder: SpecFolder): unknown {
+  const loaded = loadConfig(join(folder.root, ADOPTER_CONFIG_FILE), MODULE_SET);
+  if (loaded.config === undefined) return { refused: loaded.faults };
+  const descriptor = MODULE_SET.find((candidate) => candidate.key === MODULE);
+  if (descriptor?.check === undefined) return { refused: `no ${MODULE} check in the declared Module set` };
+  const answer = descriptor.check(
+    folder.root,
+    folder.stated.map((line) => line.path),
+    loaded.config,
+  );
+  if (answer.kind !== 'checked') return answer;
+  return {
+    governed: answer.result.governed.length,
+    failing: Object.fromEntries(
+      answer.result.files.map(({ path, ruleId, violations }) => [path, { ruleId, violations }]),
+    ),
+  };
+}
+
+describe('each body-structure spec folder answers as its frozen files state', () => {
+  describe('success cases', () => {
+    it.each(FOLDER_NAMES)('%s', (name) => {
+      // The shared comparison `npm run conformance` prints: the `# Spec:` line, each
+      // marker against the failing-file list, the governed count, and every frozen
+      // file byte for byte. Anything but an empty list names what disagreed.
+      // ARRANGE
+      const none: readonly string[] = [];
+      // ACT
+      const report = compareSpecFolder(specFolderPath(TIER.name, name), name);
+      const disagreements = [
+        ...(report.spec === undefined ? ['# Spec: line'] : []),
+        ...report.cases.filter((line) => !line.agrees).map((line) => `${line.path} ${line.stated}`),
+        ...(report.governed.stated === report.governed.reported
+          ? []
+          : [`governed ${report.governed.stated} stated, ${report.governed.reported} reported`]),
+        ...report.frozen.filter((comparison) => !comparison.agrees).map((comparison) => comparison.label),
+      ];
+      // ASSERT
+      expect(disagreements).toEqual(none);
+    });
+  });
+
+  describe('failure cases', () => {
+    it.each(FOLDER_NAMES)('%s answers through the port with exactly its frozen failing findings', (name) => {
+      // The same answer at the in-process seam, reached through the declared
+      // Module set and the port every Module implements — never through a Module's
+      // own files, which this suite must not name.
+      // ARRANGE
+      const folder = folders.find((candidate) => candidate.name === name)!;
+      const expected = {
+        governed: folder.stated.filter((line) => line.verdict === PASSES || line.verdict === FAILS).length,
+        failing: Object.fromEntries(folder.failing),
+      };
+      // ACT
+      const actual = inProcessCheck(folder);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('holds a governed PASSES case in every spec folder, so no folder states only failures', () => {
+      // ARRANGE
+      const none: readonly string[] = [];
+      // ACT
+      const without = folders
+        .filter((folder) => !folder.stated.some((line) => line.verdict === PASSES))
+        .map((folder) => folder.name);
+      // ASSERT
+      expect(without).toEqual(none);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Each case asked alone, against what it states.
 // ---------------------------------------------------------------------------
 
 const ENTRY = toolEntry();
@@ -165,413 +618,90 @@ async function inPool<T, R>(items: readonly T[], width: number, work: (item: T) 
   return results;
 }
 
-/**
- * What one case answers when asked alone: its verdict and, when governed, its
- * finding — or the refusal that stopped the tool answering at all.
- */
-type CaseAnswer = { readonly verdict: string; readonly finding?: Finding } | { readonly refusal: ToolRefusal };
+/** What one case answers when asked alone: its verdict and, when failing, its finding — or a refusal. */
+type CaseAnswer = { readonly verdict: string; readonly finding?: Finding } | { readonly refusal: unknown };
 
 let scratch = '';
 const answers = new Map<string, CaseAnswer>();
-let tierCheck: ToolRun;
-let tierAudit: ToolRun;
 
-/** This Module's violations in one `check` run, across every file it reports. */
-function violationsIn(check: ToolRun): readonly unknown[] {
-  const files = envelopeOf(check).result?.files ?? [];
-  const blocks = files.flatMap((file) => file.modules).filter((block) => block.module === MODULE);
-  return blocks.flatMap((block) => block.violations ?? []);
-}
-
-/** Every Rule of this Module that won a file in one `audit` run, joined in config order. */
-function winnersIn(audit: ToolRun): string {
-  const blocks = (envelopeOf(audit).result?.modules ?? []).filter((block) => block.module === MODULE);
-  const rows = blocks.flatMap((block) => block.rules ?? []);
-  return rows
-    .filter((row) => row.won > 0)
-    .map((row) => row.rule.ruleId)
-    .join(', ');
-}
-
-/**
- * Ask a root already seeded with one file: its verdict and, when governed, its
- * finding — or the refusal that stopped the tool answering at all.
- */
-async function answerSeeded(root: string): Promise<CaseAnswer> {
-  const [check, audit] = await Promise.all([
-    mh(['check', '--root', root, '--config', TYPED_CONFIG]),
-    mh(['audit', '--root', root, '--config', TYPED_CONFIG]),
-  ]);
-  const refusal = refusalOf(check) ?? refusalOf(audit);
-  if (refusal !== undefined) return { refusal };
-  if (envelopeOf(check).result?.summary?.governedFiles === 0) return { verdict: UNGOVERNED };
-  const violations = violationsIn(check);
-  return {
-    verdict: violations.length > 0 ? FAILS : PASSES,
-    finding: { ruleId: winnersIn(audit), violations },
-  };
-}
-
-/** Ask one case alone, in a root holding nothing but its own bytes at its own path. */
-async function answerAlone(path: string, index: number): Promise<CaseAnswer> {
+/** Seed a fresh root with one case's own bytes at its own folder-relative path. */
+function seedAlone(key: string, index: number): { readonly root: string; readonly config: string } {
+  const { folder, path } = caseNamed.get(key)!;
   const root = join(scratch, `case-${index}`);
   mkdirSync(dirname(join(root, path)), { recursive: true });
-  copyFileSync(join(CORPUS_ROOT, path), join(root, path));
-  return answerSeeded(root);
+  copyFileSync(join(folder.root, path), join(root, path));
+  return { root, config: join(folder.root, ADOPTER_CONFIG_FILE) };
+}
+
+/** This Module's block in the one file a `check` of a single-case root lists, if it lists one. */
+function blockOfAlone(check: ToolRun): ToolBlock | undefined {
+  const files = envelopeOf(check).result?.files ?? [];
+  return files.flatMap((file) => file.modules).find((candidate) => candidate.module === MODULE);
+}
+
+/** One case's verdict and, when failing, its finding, read off a `check` of a root holding it alone. */
+function verdictOfAlone(check: ToolRun): CaseAnswer {
+  const refusal = refusalOf(check);
+  if (refusal !== undefined) return { refusal };
+  if (envelopeOf(check).result?.summary?.governedFiles === 0) return { verdict: UNGOVERNED };
+  const block = blockOfAlone(check);
+  if (block === undefined) return { verdict: PASSES };
+  return { verdict: FAILS, finding: { ruleId: String(block.ruleId), violations: block.violations ?? [] } };
+}
+
+/** Ask one case alone, under its own folder's config. */
+async function answerAlone(key: string, index: number): Promise<CaseAnswer> {
+  const { root, config } = seedAlone(key, index);
+  return verdictOfAlone(await mh(['check', '--root', root, '--config', config]));
 }
 
 beforeAll(async () => {
   scratch = mkdtempSync(join(tmpdir(), 'mh-body-structure-tier-'));
-  const width = 8;
-  const alone = await inPool(corpus, width, (path) => answerAlone(path, corpus.indexOf(path)));
-  corpus.forEach((path, index) => answers.set(path, alone[index]));
-  [tierCheck, tierAudit] = await Promise.all([
-    mh(['check', '--root', TYPED_ROOT, '--config', TYPED_CONFIG]),
-    mh(['audit', '--root', TYPED_ROOT, '--config', TYPED_CONFIG]),
-  ]);
+  const keys = allStated.map((line) => line.key);
+  const alone = await inPool(keys, 8, (key) => answerAlone(key, keys.indexOf(key)));
+  keys.forEach((key, index) => answers.set(key, alone[index]));
 }, 120_000);
 
 afterAll(() => {
   if (scratch !== '') rmSync(scratch, { recursive: true, force: true });
 });
 
-/** The tier config's location as this file hands it to the loader in process. */
-const IN_PROCESS_CONFIG = join(CORPUS_ROOT, TIER.configFile);
-
-/**
- * The Module's own `check` answer for the whole tier, IN PROCESS, reached through
- * the declared Module set and the port every Module implements — never through
- * a Module's own files, which this suite must not name. While the section is
- * refused, no descriptor carries the key or it implements no `check`, the
- * answer is the reason why.
- */
-function inProcessCheck(): unknown {
-  const loaded = loadConfig(IN_PROCESS_CONFIG, MODULE_SET);
-  if (loaded.config === undefined) return { refused: loaded.faults };
-  const descriptor = MODULE_SET.find((candidate) => candidate.key === MODULE);
-  if (descriptor === undefined) return { refused: `no descriptor keyed ${MODULE} in the declared Module set` };
-  if (descriptor.check === undefined) return { refused: `the ${MODULE} Module implements no check` };
-  return projected(descriptor.check(CORPUS_ROOT, corpus, loaded.config));
-}
-
-/**
- * A port `check` answer reduced to what the frozen findings state: governance,
- * winner and violations. Typed with the response contract's own `ModuleCheck`,
- * so a renamed finding field fails `tsc` here rather than reading as absent.
- */
-function projected(answer: { readonly kind: string; readonly result?: ModuleCheck }): unknown {
-  if (answer.kind !== 'checked' || answer.result === undefined) return answer;
-  const files = answer.result.files.map(({ path, ruleId, violations }) => ({ path, ruleId, violations }));
-  return { governed: answer.result.governed, files };
-}
-
-/** What the spec states for one case: its marker and, when governed, its frozen finding. */
-function statedAnswer(path: string): CaseAnswer {
-  const verdict = verdictOf(CORPUS_ROOT, path);
-  const finding = frozen[path];
+/** What the spec states for one case: its verdict and, when failing, its frozen finding. */
+function statedAnswer(key: string): CaseAnswer {
+  const { folder, path, verdict } = caseNamed.get(key)!;
+  const finding = folder.failing.get(path);
   return finding === undefined ? { verdict } : { verdict, finding };
 }
 
-function answerFor(path: string): CaseAnswer | undefined {
-  return answers.get(path);
-}
-
-// ---------------------------------------------------------------------------
-// The spec's internal agreement: no tool asked.
-// ---------------------------------------------------------------------------
-
-/** Every key the Module's vocabulary admits (#221, the listing's vocabulary paragraph). */
-const SECTION_KEYS = ['rules'];
-const RULE_KEYS = [
-  'ruleId',
-  'intent',
-  'folders',
-  'fileNames',
-  'types',
-  'excludeFiles',
-  'maxLevel',
-  'undefinedHeadings',
-  'headings',
-];
-const ENTRY_KEYS = [
-  'purpose',
-  'level',
-  'pattern',
-  'allowed',
-  'presence',
-  'minCount',
-  'maxCount',
-  'intent',
-  'mayHold',
-  'headings',
-];
-const PURPOSE_VALUES = ['heading', 'enumeration'];
-const PRESENCE_VALUES = ['required', 'optional'];
-const UNDEFINED_HEADINGS_VALUES = ['allow', 'forbid'];
-// An `allowed` item has two keys (#229) and a `mayHold` set has three kinds (#227):
-// the config writes every key and every kind, and no other.
-const ALLOWED_ITEM_KEYS = ['title', 'intent'];
-const BLOCK_KIND_VALUES = ['prose', 'ordered-list', 'unordered-list'];
-
-describe('the body-structure tier states one coherent specification', () => {
+describe('the tool answers each body-structure case asked alone as it states', () => {
   describe('success cases', () => {
-    it('proves coverage and closure for the section, rule, entry, purpose, presence, undefinedHeadings, allowed-item and block-kind vocabularies together', () => {
-      // Read off the config as WRITTEN, so this holds whatever the loader
-      // answers; the suite below asks the loader and the tool.
+    it.each(stated(PASSES))('passes %s, governed and with no violation', (key) => {
       // ARRANGE
-      const complete = { unreached: [], undeclared: [] };
-      const sectionKeys = Object.keys(writtenSection);
-      const ruleKeys = rules.flatMap((rule) => Object.keys(rule));
-      // Every entry at every depth (#229): a nested list is written in the same grammar as the top one.
-      const entries = rules.flatMap((rule) => entriesWithin(rule.headings));
-      const entryKeys = entries.flatMap((entry) => Object.keys(entry));
-      const purposes = entries.map((entry) => entry.purpose);
-      // A `heading` entry that omits `presence` is required: that is the default the
-      // spec states, so an omitted key is the written spelling of `required`. An
-      // `enumeration` may never carry `presence`, so it contributes none.
-      const presences = entries
-        .filter((entry) => entry.purpose === 'heading')
-        .map((entry) => entry.presence ?? 'required');
-      // `undefinedHeadings` is a Rule key with a value set of its own (#225): the config
-      // writes both values and no other, and a Rule that omits it is the open spine.
-      const undefinedHeadings = rules.flatMap((rule) =>
-        rule.undefinedHeadings === undefined ? [] : [rule.undefinedHeadings],
-      );
-      // `allowed` is an entry key whose items carry two keys (#229), and `mayHold` an entry key whose
-      // values are the three block kinds (#227): the config writes every one and no other.
-      const items = entries.flatMap((entry) => entry.allowed ?? []);
-      const itemKeys = items.flatMap((item) => Object.keys(item));
-      const blockKinds = entries.flatMap((entry) => entry.mayHold ?? []);
+      const expected = statedAnswer(key);
       // ACT
-      const actual = {
-        section: coverageAndClosure(SECTION_KEYS, sectionKeys, sectionKeys),
-        rule: coverageAndClosure(RULE_KEYS, ruleKeys, ruleKeys),
-        entry: coverageAndClosure(ENTRY_KEYS, entryKeys, entryKeys),
-        purpose: coverageAndClosure(PURPOSE_VALUES, purposes, purposes),
-        presence: coverageAndClosure(PRESENCE_VALUES, presences, presences),
-        undefinedHeadings: coverageAndClosure(UNDEFINED_HEADINGS_VALUES, undefinedHeadings, undefinedHeadings),
-        allowedItem: coverageAndClosure(ALLOWED_ITEM_KEYS, itemKeys, itemKeys),
-        blockKind: coverageAndClosure(BLOCK_KIND_VALUES, blockKinds, blockKinds),
-      };
-      // ASSERT
-      expect(actual).toEqual({
-        section: complete,
-        rule: complete,
-        entry: complete,
-        purpose: complete,
-        presence: complete,
-        undefinedHeadings: complete,
-        allowedItem: complete,
-        blockKind: complete,
-      });
-    });
-
-    it('writes maxLevel on some Rules and omits it on others, and writes presence: optional fourteen times', () => {
-      // The listing: "`maxLevel` both written and omitted and with `presence:
-      // optional` written" -- once in #221, and twice since #225 added
-      // `closed-record`'s `Consequences` entry as the second, and eight since #227 added the
-      // six optional entries of `section-kinds`, and fourteen since #229 added the six nested
-      // change types of `nested-changelog`, counted at every depth. #221's "written once"
-      // described that round's config and not a property of the Module. A tier that
-      // always wrote it, or never wrote it, could not tell open depth from forbidden depth.
-      // ARRANGE
-      const expected = { writesMaxLevel: true, omitsMaxLevel: true, optionalEntries: 14 };
-      // ACT
-      const actual = {
-        writesMaxLevel: rules.some((rule) => rule.maxLevel !== undefined),
-        omitsMaxLevel: rules.some((rule) => rule.maxLevel === undefined),
-        optionalEntries: rules
-          .flatMap((rule) => entriesWithin(rule.headings))
-          .filter((entry) => entry.presence === 'optional').length,
-      };
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('nests a list under a heading entry and under an enumeration, four lists deep at most', () => {
-      // #229 decision 1: both purposes may carry `headings:`, at any depth down to level 6. A tier that
-      // nested under one purpose only, or one level only, could not tell a depth-bound walk from a general one.
-      // ARRANGE
-      const expected = { underHeading: true, underEnumeration: true, deepest: 4 };
-      // ACT
-      const parents = rules.flatMap((rule) => entriesWithin(rule.headings)).filter((entry) => entry.headings);
-      const actual = {
-        underHeading: parents.some((entry) => entry.purpose === 'heading'),
-        underEnumeration: parents.some((entry) => entry.purpose === 'enumeration'),
-        deepest: Math.max(...rules.map((rule) => depthOf(rule.headings))),
-      };
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('freezes a finding for exactly the cases whose marker says they are governed', () => {
-      // ARRANGE
-      const governed = [...stated(PASSES), ...stated(FAILS)].sort();
-      // ACT
-      const keys = Object.keys(frozen).sort();
-      // ASSERT
-      expect(keys).toEqual(governed);
-    });
-  });
-
-  describe('failure cases', () => {
-    it('freezes violations for every FAILS case and none for a PASSES case', () => {
-      // ARRANGE
-      const none: readonly string[] = [];
-      // ACT
-      const passingWithViolations = stated(PASSES).filter((path) => frozen[path]?.violations.length !== 0);
-      const failingWithout = stated(FAILS).filter((path) => (frozen[path]?.violations.length ?? 0) === 0);
-      // ASSERT
-      expect(passingWithViolations).toEqual(none);
-      expect(failingWithout).toEqual(none);
-    });
-
-    it('names a Rule the config declares in every frozen finding', () => {
-      // ARRANGE
-      const declared = rules.map((rule) => rule.ruleId);
-      // ACT
-      const named = [...new Set(Object.values(frozen).map((f) => f.ruleId))];
-      const undeclared = named.filter((ruleId) => !declared.includes(ruleId));
-      // ASSERT
-      expect(undeclared).toEqual([]);
-    });
-
-    it('writes no two case paths that differ only by case', () => {
-      // A case-insensitive checkout would fold two such files into one.
-      // ARRANGE
-      const none: readonly string[] = [];
-      // ACT
-      const folded = corpus.map((path) => path.toLowerCase());
-      const colliding = corpus.filter((_, index) => folded.indexOf(folded[index]) !== index);
-      // ASSERT
-      expect(colliding).toEqual(none);
-    });
-  });
-
-  describe('edge cases', () => {
-    it('enumerates every Conformance case the suite declares', () => {
-      // Stated by hand in the tier record, never counted back off the tree.
-      // ARRANGE
-      const declaredCases = TIER.caseCount;
-      // ACT
-      const enumerated = corpus.length;
-      // ASSERT
-      expect(enumerated).toBe(declaredCases);
-    });
-
-    it('tallies the verdicts and violations the spec states', () => {
-      // #221's expected counts, as #225 and #227 extend them and #229 reshapes them: the 22 heading-vocabulary
-      // cases retire with the key, and 22 nested-spine and allowed-title cases take their place.
-      // 122 PASSES, 155 FAILS, 18 UNGOVERNED, 173 violations.
-      // ARRANGE
-      const expected = { passes: 122, fails: 155, ungoverned: 18, violations: 173 };
-      // ACT
-      const actual = {
-        passes: stated(PASSES).length,
-        fails: stated(FAILS).length,
-        ungoverned: stated(UNGOVERNED).length,
-        violations: Object.values(frozen).reduce((sum, f) => sum + f.violations.length, 0),
-      };
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('keeps the bytes the byte-sensitive cases exist to state', () => {
-      // ARCH-010 makes these bytes the contract, and nothing but this test reads
-      // them as bytes: an editor trimming a space, or a checkout converting line
-      // endings, would otherwise move a verdict with every check still green.
-      // ARRANGE
-      const expected = {
-        leadingBytes: [0xef, 0xbb, 0xbf, 0x2d],
-        findingsLine: '## Findings   ',
-        extraLeadingSpace: '##  Findings',
-        sourceLine: '## Source: ',
-        doubleSpaceLine: '## Source:  One',
-        suffixLine: '# Q3 Report ',
-        astralLine: '# a\u{1F600}b',
-        indentedCode: ['    ### Not a heading', '    #### Nor this'],
-        indentFourAfterText: '    ### Not a heading',
-        indentThree: ['   ## One', '   ## Two'],
-        titleLine: '#\tTitle',
-        emptyHeadings: ['##', '## '],
-        bareLineFeeds: 0,
-        lastBytes: '\r\n',
-        // #227: the nested items of three section-content cases. An editor that stripped an
-        // indent would turn a nested list into a second one and move a verdict with every check green.
-        nestedInOrdered: ['   - A bullet inside it.', '   - Another.', '   1. A numbered item inside it.'],
-        looseParagraph: ['   More about the first.'],
-        nestedInBullets: ['  1. A numbered item inside it.', '  2. Another.'],
-      };
-      const bytes = (path: string): Buffer => readFileSync(join(CORPUS_ROOT, path));
-      const linesOf = (path: string): string[] => bytes(path).toString('utf8').split('\n');
-      const crlf = bytes('docs/recognition/crlf.md').toString('utf8');
-      // ACT
-      const actual = {
-        leadingBytes: [...bytes('docs/research/bom-frontmatter.md').subarray(0, expected.leadingBytes.length)],
-        findingsLine: linesOf('docs/research/title-trailing-spaces.md').find((line) => line.startsWith('## F')),
-        extraLeadingSpace: linesOf('docs/research/title-extra-leading-space.md').find((line) =>
-          line.includes('Findings'),
-        ),
-        sourceLine: linesOf('docs/research/prefix-bare.md').find((line) => line.startsWith('## S')),
-        doubleSpaceLine: linesOf('docs/research/prefix-double-space.md').find((line) => line.startsWith('## S')),
-        suffixLine: linesOf('docs/suffix/trailing-space.md').find((line) => line.startsWith('# Q')),
-        astralLine: linesOf('docs/length/emoji.md').find((line) => line.startsWith('# ')),
-        indentedCode: linesOf('docs/recognition/indented-code.md').filter((line) => line.startsWith('    ')),
-        indentFourAfterText: linesOf('docs/recognition/indent-four-after-text.md').find((line) =>
-          line.startsWith('    '),
-        ),
-        indentThree: linesOf('docs/recognition/indent-three.md').filter((line) => line.startsWith('   ##')),
-        titleLine: linesOf('docs/recognition/tab-after-hash.md').find((line) => line.endsWith('Title')),
-        emptyHeadings: linesOf('docs/recognition/empty-h2-twice.md').filter((line) => /^##\s*$/u.test(line)),
-        bareLineFeeds: crlf.split('\n').length - crlf.split('\r\n').length,
-        lastBytes: crlf.slice(-expected.lastBytes.length),
-        nestedInOrdered: linesOf('docs/section-kinds/ordered-nested.md').filter((line) => line.startsWith('   ')),
-        looseParagraph: linesOf('docs/section-kinds/ordered-loose.md').filter((line) => line.startsWith('   ')),
-        nestedInBullets: linesOf('docs/section-kinds/bullets-nested-ordered.md').filter((line) =>
-          line.startsWith('  '),
-        ),
-      };
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// The specification half: each case asked alone, against what it states.
-// ---------------------------------------------------------------------------
-
-describe('the tool answers each body-structure case as it states', () => {
-  describe('success cases', () => {
-    it.each(stated(PASSES))('passes %s under the Rule it names, with no violation', (path) => {
-      // A PASSES case must be GOVERNED and carry nothing, and its frozen finding
-      // names the Rule that won it — the marker alone cannot.
-      // ARRANGE
-      const expected = statedAnswer(path);
-      // ACT
-      const actual = answerFor(path);
+      const actual = answers.get(key);
       // ASSERT
       expect(actual).toEqual(expected);
     });
   });
 
   describe('failure cases', () => {
-    it.each(stated(FAILS))('fails %s under the Rule it names, with exactly its frozen violations', (path) => {
+    it.each(stated(FAILS))('fails %s under the Rule its folder freezes, with exactly its violations', (key) => {
       // ARRANGE
-      const expected = statedAnswer(path);
+      const expected = statedAnswer(key);
       // ACT
-      const actual = answerFor(path);
+      const actual = answers.get(key);
       // ASSERT
       expect(actual).toEqual(expected);
     });
   });
 
   describe('edge cases', () => {
-    it.each(stated(UNGOVERNED))('never governs %s, so its real faults go unreported', (path) => {
+    it.each(stated(UNGOVERNED))('never governs %s, so its real faults go unreported', (key) => {
       // ARRANGE
-      const expected = statedAnswer(path);
+      const expected = statedAnswer(key);
       // ACT
-      const actual = answerFor(path);
+      const actual = answers.get(key);
       // ASSERT
       expect(actual).toEqual(expected);
     });
@@ -588,65 +718,42 @@ describe('the tool answers each body-structure case as it states', () => {
 });
 
 // ---------------------------------------------------------------------------
-// The verbatim case (#227): `GEN-001` byte for byte.
-//
-// A byte-identical copy cannot carry the `expect` marker ARCH-002 §2.1 requires in every
-// case under `docs/`, so the copy is held outside `docs/` and outside `.md`, in
-// `verbatim/`, and `verbatim-cases.json` states what the tier's config must answer for it.
-// It is asked exactly as a case is: alone, in a root of its own, at the path the entry's key
-// names. It does NOT read `.archgate/`: the corpus is the portable specification and
-// adopters never receive that directory.
+// The verbatim case (#227): `GEN-001` byte for byte. Its bytes cannot carry the
+// marker every case needs, so its folder's `verbatim-cases.json` states its
+// verdict, and the `expect-marker` rule reads the manifest for exactly the paths
+// it lists. It is never read from `.archgate/`: the corpus is the portable
+// specification and adopters never receive that directory.
 // ---------------------------------------------------------------------------
 
-/** The verbatim cases, beside the config. */
-const VERBATIM_FILE = 'verbatim-cases.json';
+const verbatimCases = folders.flatMap((folder) =>
+  Object.entries(folder.verbatim).map(([path, entry]) => ({ folder, path, entry, key: `docs/${folder.name}/${path}` })),
+);
 
-interface VerbatimCase extends Finding {
-  readonly stored: string;
-  readonly source: string;
-  readonly bytes: number;
-  readonly sha256: string;
-  readonly verdict: string;
-}
-
-const verbatimCases = JSON.parse(readTierText(VERBATIM_FILE)) as Record<string, VerbatimCase>;
-
-const storedBytes = (path: string): Buffer => readFileSync(join(CORPUS_ROOT, verbatimCases[path].stored));
-
-/** Ask one verbatim case alone: its stored bytes at its own path, in a root holding nothing else. */
-async function answerVerbatim(path: string, index: number): Promise<CaseAnswer> {
-  const root = join(scratch, `verbatim-${index}`);
-  mkdirSync(dirname(join(root, path)), { recursive: true });
-  writeFileSync(join(root, path), storedBytes(path));
-  return answerSeeded(root);
-}
-
-describe('the tool answers the verbatim body-structure case as it states', () => {
+describe('the verbatim body-structure case holds the bytes and the answer its manifest states', () => {
   describe('success cases', () => {
-    it.each(Object.keys(verbatimCases))(
-      'answers %s under the Rule it names, with the violations it states',
-      async (path) => {
-        // ARRANGE
-        const stated = verbatimCases[path];
-        const expected = { verdict: stated.verdict, finding: { ruleId: stated.ruleId, violations: stated.violations } };
-        // ACT
-        const actual = await answerVerbatim(path, Object.keys(verbatimCases).indexOf(path));
-        // ASSERT
-        expect(actual).toEqual(expected);
-      },
-    );
+    it.each(verbatimCases.map((verbatim) => verbatim.key))('answers %s under the Rule it names', (key) => {
+      // ARRANGE
+      const { entry } = verbatimCases.find((verbatim) => verbatim.key === key)!;
+      const expected =
+        entry.verdict === FAILS
+          ? { verdict: entry.verdict, finding: { ruleId: entry.ruleId, violations: entry.violations } }
+          : { verdict: entry.verdict };
+      // ACT
+      const actual = answers.get(key);
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
   });
 
   describe('failure cases', () => {
-    it.each(Object.keys(verbatimCases))(
-      'holds the stored bytes of %s to the length and hash the entry states',
-      (path) => {
-        // An edit to the copy goes red here, before any tool is asked.
+    it.each(verbatimCases.map((verbatim) => verbatim.key))(
+      'holds %s to the length and hash its entry states',
+      (key) => {
         // ARRANGE
-        const stated = verbatimCases[path];
-        const expected = { bytes: stated.bytes, sha256: stated.sha256 };
+        const { folder, path, entry } = verbatimCases.find((verbatim) => verbatim.key === key)!;
+        const expected = { bytes: entry.bytes, sha256: entry.sha256 };
         // ACT
-        const stored = storedBytes(path);
+        const stored = readFileSync(join(folder.root, path));
         const actual = { bytes: stored.length, sha256: createHash('sha256').update(stored).digest('hex') };
         // ASSERT
         expect(actual).toEqual(expected);
@@ -655,381 +762,82 @@ describe('the tool answers the verbatim body-structure case as it states', () =>
   });
 
   describe('edge cases', () => {
-    it('never enumerates a stored file as a case, which is what the .verbatim name is for', () => {
+    it('lists exactly one verbatim case, and it carries no expect marker', () => {
       // ARRANGE
-      const stored = Object.values(verbatimCases).map((entry) => entry.stored);
+      const expected = [{ key: 'docs/headings__real-gen-001-adr-passes/GEN-001-adr.md', markers: 0 }];
       // ACT
-      const enumerated = stored.filter((file) => corpus.includes(file));
+      const actual = verbatimCases.map(({ folder, path, key }) => ({
+        key,
+        markers: (readFileSync(join(folder.root, path), 'utf8').match(/<!--\s*expect:/gu) ?? []).length,
+      }));
       // ASSERT
-      expect(enumerated).toEqual([]);
+      expect(actual).toEqual(expected);
     });
   });
 });
 
 // ---------------------------------------------------------------------------
-// The whole tier at the process boundary: check, audit, query, assess.
+// `assess`, which this Module does not implement.
 // ---------------------------------------------------------------------------
-
-/** The `audit` rows #221 freezes for this tier, in config order. */
-const AUDIT_ROWS = [
-  { ruleId: 'index-pages', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'decision-records', won: 9, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'research-reports', won: 32, shadowed: 1, shadowedBy: ['index-pages'], excluded: 1 },
-  { ruleId: 'research-notes', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  {
-    ruleId: 'research-untyped',
-    won: 12,
-    shadowed: 36,
-    shadowedBy: ['index-pages', 'research-reports', 'research-notes'],
-    excluded: 0,
-  },
-  { ruleId: 'guides', won: 3, shadowed: 1, shadowedBy: ['research-untyped'], excluded: 0 },
-  { ruleId: 'changelogs', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'recognition', won: 24, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'open-template', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'plural-names', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'triple-plural', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'depth-only', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'steps', won: 8, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'pairs', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'free-sections', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'kinds', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'windowed', won: 9, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'swallow', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'anonymous-pair', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'suffix-titles', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'sentence-titles', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'short-titles', won: 6, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'substring-titles', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'closed-set', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'loose-alternation', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'escaped-literals', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'raw-markup', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'setext-lines', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'no-dotall', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'no-multiline', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'empty-heading', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'closed-record', won: 9, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'closed-levels', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'closed-sources', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'open-sources', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'closed-bare', won: 2, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'nested-changelog', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'nested-adr', won: 6, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'nested-depth', won: 5, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'allowed-titles', won: 6, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'section-kinds', won: 29, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'section-steps', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'section-nested', won: 3, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'section-closed', won: 4, shadowed: 0, shadowedBy: [], excluded: 0 },
-  { ruleId: 'adr-contract', won: 14, shadowed: 0, shadowedBy: [], excluded: 0 },
-];
-
-/** The `query` candidates #221 freezes, per path asked, in order. */
-const QUERY_CANDIDATES: readonly (readonly [string, readonly string[]])[] = [
-  ['docs/research/anything.md', ['research-reports', 'research-notes', 'research-untyped']],
-  ['docs/research/index.md', ['index-pages']],
-  ['docs/research/scratch.md', ['research-notes', 'research-untyped']],
-  ['docs/decisions/new.md', ['decision-records', 'guides']],
-  ['docs/elsewhere/x.md', ['guides']],
-  ['docs/releases/CHANGELOG.md', ['guides', 'changelogs']],
-  ['docs/recognition/x.md', ['guides', 'recognition']],
-  ['docs/manual/x.md', ['guides', 'open-template']],
-  ['docs/research/deep/report.md', ['guides']],
-  ['docs/tp/two/b.md', ['guides', 'triple-plural']],
-  ['docs/names/GUIDE.md', ['guides', 'plural-names']],
-  ['docs/steps/new.md', ['guides', 'steps']],
-  ['docs/closed-record/x.md', ['guides', 'closed-record']],
-  ['docs/open-sources/x.md', ['guides', 'open-sources']],
-  ['docs/closed-bare/x.md', ['guides', 'closed-bare']],
-  ['docs/nested-changelog/x.md', ['guides', 'nested-changelog']],
-  ['docs/nested-depth/x.md', ['guides', 'nested-depth']],
-  ['docs/allowed-titles/x.md', ['guides', 'allowed-titles']],
-  ['docs/section-kinds/x.md', ['guides', 'section-kinds']],
-  ['docs/adr/x.md', ['guides', 'adr-contract']],
-];
-
-/** A Rule's selector as written: an axis it never wrote is left out entirely. */
-function selectorOf(rule: RuleSpec): Record<string, readonly string[]> {
-  const axes = { folders: rule.folders, fileNames: rule.fileNames, types: rule.types };
-  return Object.fromEntries(Object.entries(axes).filter(([, tokens]) => tokens !== undefined)) as Record<
-    string,
-    readonly string[]
-  >;
-}
-
-/** A candidate block, its requirements copied verbatim from the Rule, an omitted key staying omitted. */
-function candidateBlock(ruleId: string): unknown {
-  const rule = ruleNamed(ruleId);
-  const written = {
-    types: rule.types,
-    maxLevel: rule.maxLevel,
-    undefinedHeadings: rule.undefinedHeadings,
-    headings: rule.headings,
-  };
-  const requirements = Object.fromEntries(Object.entries(written).filter(([, value]) => value !== undefined));
-  return { module: MODULE, rule: { ruleId: rule.ruleId, intent: rule.intent }, requirements };
-}
 
 /**
  * The instant handed to `assess`. This tier carries no `assess:` marker and its
  * tier record states no instant (#221), because the Module makes no freshness
- * claim; `--now` is supplied only so that no clock is read. The answer below is
- * the same at every instant.
+ * claim; `--now` is supplied only so that no clock is read.
  */
 const ASSESSMENT_INSTANT = '2026-12-01T00:00:00Z';
 
-describe('the tool answers for the whole body-structure tier', () => {
+describe('assess answers a body-structure case as ungoverned', () => {
   describe('success cases', () => {
-    it('loads the tier config through the declared Module set, naming the body-structure Module alone', () => {
+    it('answers assess with PROCEED for a file it reads, governed by body-structure or not', async () => {
       // ARRANGE
-      const expected = { faults: [], modules: [MODULE] };
+      const expected = { code: 0, agentAction: 'PROCEED' };
       // ACT
-      const loaded = loadConfig(IN_PROCESS_CONFIG, MODULE_SET);
-      const modules = MODULE_SET.filter((module) => loaded.config?.sectionFor(module) !== undefined).map(
-        (module) => module.key,
+      const run = await mh(
+        ['assess', 'two.md', '--now', ASSESSMENT_INSTANT],
+        specFolderPath(TIER.name, 'maxCount__exactly-two'),
       );
-      const actual = { faults: loaded.faults, modules };
+      const actual = { code: run.code, agentAction: envelopeOf(run).result?.agentAction };
       // ASSERT
       expect(actual).toEqual(expected);
     });
+  });
 
-    it('answers, through the port, a governed list equal to the frozen key set and every frozen failing finding', () => {
-      // #221's frozen-findings paragraph, at the in-process seam: the Module's
-      // governed list equals the key set, and each failing file's winner and
-      // violations deep-equal its entry. A PASSES file carries no finding in a
-      // `ModuleCheck`, so its winner is held by the per-case suite above.
+  describe('failure cases', () => {
+    it('answers assess with no body-structure block, because this Module implements no assess', async () => {
       // ARRANGE
-      const expected = {
-        governed: Object.keys(frozen).sort(),
-        files: [...stated(FAILS)].sort().map((path) => ({ path, ...frozen[path] })),
-      };
+      const expected = ['frontmatter'];
       // ACT
-      const actual = inProcessCheck();
+      const run = await mh(
+        ['assess', 'one.md', '--now', ASSESSMENT_INSTANT],
+        specFolderPath(TIER.name, 'maxCount__exactly-two'),
+      );
+      const actual = envelopeOf(run) as { modules?: readonly string[] };
       // ASSERT
-      expect(actual).toEqual(expected);
+      expect(actual.modules).toEqual(expected);
     });
+  });
 
-    it('reports every failing file once, in code-unit order, under the Rule that won it', () => {
+  describe('edge cases', () => {
+    it.each([
+      ['headings__research-report', 'report-pass.md'],
+      ['headings__research-report', 'report-h4-no-h1.md'],
+      ['fileNames__index-pages', 'docs/upper/INDEX.md'],
+    ])('answers assess %s/%s as ungoverned, because this Module implements no assess', async (name, path) => {
+      // A known imprecision, not a claim that the file is outside every Rule:
+      // this Module makes no freshness claim, so a file it governs reads
+      // `ungoverned` in an Assessment all the same.
       // ARRANGE
-      const expected = {
-        refusal: undefined,
-        files: [...stated(FAILS)].sort().map((path) => ({
-          path,
-          modules: [
-            {
-              module: MODULE,
-              ruleId: frozen[path].ruleId,
-              ruleIntent: ruleNamed(frozen[path].ruleId).intent,
-              violations: frozen[path].violations,
-            },
-          ],
-        })),
-      };
+      const expected = { code: 0, refusal: undefined, agentAction: 'PROCEED', state: 'ungoverned' };
       // ACT
-      const actual = { refusal: refusalOf(tierCheck), files: envelopeOf(tierCheck).result?.files };
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it.each(QUERY_CANDIDATES)('answers query %s with every candidate Rule in config order', async (path, ids) => {
-      // ARRANGE
-      const expected = { refusal: undefined, governance: 'governed', modules: ids.map(candidateBlock) };
-      const answered = 0;
-      // ACT
-      const run = await mh(['query', path, '--config', TYPED_CONFIG]);
+      const run = await mh(['assess', path, '--now', ASSESSMENT_INSTANT], specFolderPath(TIER.name, name));
       const result = envelopeOf(run).result;
-      const actual = { refusal: refusalOf(run), governance: result?.governance, modules: result?.modules };
-      // ASSERT
-      expect(actual).toEqual(expected);
-      expect(run.code).toBe(answered);
-    });
-  });
-
-  describe('failure cases', () => {
-    it('exits 1 on the tier and counts what the markers and the frozen findings state', () => {
-      // ARRANGE
-      const expected = {
-        code: 1,
-        refusal: undefined,
-        summary: { governedFiles: 277, invalidFiles: 155, totalViolations: 173 },
-      };
-      // ACT
       const actual = {
-        code: tierCheck.code,
-        refusal: refusalOf(tierCheck),
-        summary: envelopeOf(tierCheck).result?.summary,
+        code: run.code,
+        refusal: refusalOf(run),
+        agentAction: result?.agentAction,
+        state: result?.state,
       };
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it.each(['docs/research/report-pass.md', 'docs/research/report-h4-no-h1.md', 'docs/upper/INDEX.md'])(
-      'answers assess %s as ungoverned, because this Module implements no assess',
-      async (path) => {
-        // A known imprecision, not a claim that the file is
-        // outside every Rule: this Module makes no freshness claim, so a file it
-        // governs reads `ungoverned` in an Assessment all the same.
-        // ARRANGE
-        const expected = { code: 0, refusal: undefined, agentAction: 'PROCEED', state: 'ungoverned' };
-        // ACT
-        const run = await mh(['assess', path, '--config', TIER.configFile, '--now', ASSESSMENT_INSTANT], CORPUS_ROOT);
-        const result = envelopeOf(run).result;
-        const actual = {
-          code: run.code,
-          refusal: refusalOf(run),
-          agentAction: result?.agentAction,
-          state: result?.state,
-        };
-        // ASSERT
-        expect(actual).toEqual(expected);
-      },
-    );
-  });
-
-  describe('edge cases', () => {
-    it('audits beside the first Module, whose block is empty because this tier writes no frontmatter section', () => {
-      // 0010: an audit includes every declared Module, so a config that writes
-      // no `frontmatter:` section still answers an empty block for it.
-      // ARRANGE
-      const expected = { refusal: undefined, blocks: [{ module: 'frontmatter', rules: [] }] };
-      // ACT
-      const blocks = (envelopeOf(tierAudit).result?.modules ?? []).filter((block) => block.module !== MODULE);
-      const actual = { refusal: refusalOf(tierAudit), blocks };
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('audits the forty-five Rules in config order, so a shadowed or excluded file is visible', () => {
-      // ARRANGE
-      const expected = {
-        code: 0,
-        refusal: undefined,
-        blocks: [
-          {
-            module: MODULE,
-            rules: AUDIT_ROWS.map(({ ruleId, ...tally }) => ({
-              rule: { ruleId, selector: selectorOf(ruleNamed(ruleId)), intent: ruleNamed(ruleId).intent },
-              ...tally,
-            })),
-          },
-        ],
-      };
-      // ACT
-      const blocks = (envelopeOf(tierAudit).result?.modules ?? []).filter((block) => block.module === MODULE);
-      const actual = { code: tierAudit.code, refusal: refusalOf(tierAudit), blocks };
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// The hand-written tables above, held to the config and to each other. No tool
-// asked, so a wrong table is red here on its own rather than only through the
-// tool-asking tests that read it.
-// ---------------------------------------------------------------------------
-
-/** Where `ruleId` sits in the config, or -1 when the config declares no such Rule. */
-const configIndexOf = (ruleId: string): number => rules.findIndex((rule) => rule.ruleId === ruleId);
-
-/** `ids` minus every one already in config order, so an empty answer means ordered. */
-const outOfConfigOrder = (ids: readonly string[]): readonly string[] =>
-  ids.filter((ruleId, index) => index > 0 && configIndexOf(ruleId) <= configIndexOf(ids[index - 1]));
-
-describe('the hand-written audit and query tables agree with the tier config', () => {
-  describe('success cases', () => {
-    it('agrees with the frozen audit on how many files each Rule wins', () => {
-      // The spec's audit table and its per-case winners were written apart, so
-      // this is the one place they are held to each other.
-      // ARRANGE
-      const expected = Object.fromEntries(AUDIT_ROWS.map((row) => [row.ruleId, row.won]));
-      // ACT
-      const actual = Object.fromEntries(
-        rules.map((rule) => [rule.ruleId, Object.values(frozen).filter((f) => f.ruleId === rule.ruleId).length]),
-      );
-      // ASSERT
-      expect(actual).toEqual(expected);
-    });
-
-    it('audits exactly the Rules the config declares, one row each, in config order', () => {
-      // ARRANGE
-      const declared = rules.map((rule) => rule.ruleId);
-      // ACT
-      const audited = AUDIT_ROWS.map((row) => row.ruleId);
-      // ASSERT
-      expect(audited).toEqual(declared);
-    });
-
-    it('sums the won column to the governed count the markers state', () => {
-      // #221: "The `won` column sums to 178, the governed count".
-      // ARRANGE
-      const governed = stated(PASSES).length + stated(FAILS).length;
-      // ACT
-      const won = AUDIT_ROWS.reduce((sum, row) => sum + row.won, 0);
-      // ASSERT
-      expect(won).toBe(governed);
-    });
-  });
-
-  describe('failure cases', () => {
-    it('names only Rules the config declares, in every query candidate and every shadowedBy list', () => {
-      // A misspelled Rule ID would otherwise surface only as `ruleNamed`
-      // throwing inside a tool-asking test, or not at all.
-      // ARRANGE
-      const none: readonly string[] = [];
-      // ACT
-      const named = [...QUERY_CANDIDATES.flatMap(([, ids]) => ids), ...AUDIT_ROWS.flatMap((row) => row.shadowedBy)];
-      const undeclared = [...new Set(named.filter((ruleId) => configIndexOf(ruleId) < 0))];
-      // ASSERT
-      expect(undeclared).toEqual(none);
-    });
-
-    it('shadows a Rule only by Rules ahead of it, listed in config order, and only when it counts a shadowed file', () => {
-      // First-match: only an earlier Rule can win a file a later one also
-      // matches. A row counting shadowed files names at least one shadower,
-      // and a row counting none names none.
-      // ARRANGE
-      const consistent: readonly string[] = [];
-      // ACT
-      const broken = AUDIT_ROWS.filter(
-        (row) =>
-          row.shadowedBy.some((ruleId) => configIndexOf(ruleId) >= configIndexOf(row.ruleId)) ||
-          outOfConfigOrder(row.shadowedBy).length > 0 ||
-          row.shadowed > 0 !== row.shadowedBy.length > 0 ||
-          row.shadowedBy.length > row.shadowed,
-      ).map((row) => row.ruleId);
-      // ASSERT
-      expect(broken).toEqual(consistent);
-    });
-  });
-
-  describe('edge cases', () => {
-    it('lists every query answer in config order, ending at the first candidate that writes no types', () => {
-      // ARRANGE
-      const consistent: readonly string[] = [];
-      // ACT
-      const broken = QUERY_CANDIDATES.filter(
-        ([, ids]) =>
-          ids.length === 0 ||
-          outOfConfigOrder(ids).length > 0 ||
-          ids.slice(0, -1).some((ruleId) => ruleNamed(ruleId).types === undefined),
-      ).map(([path]) => path);
-      // ASSERT
-      expect(broken).toEqual(consistent);
-    });
-
-    it('excludes exactly the one file the spec names, from the one Rule whose excludeFiles removes it', () => {
-      // #221: the one `excluded` is `docs/research/scratch.md`, which
-      // `research-reports` matches on all three axes and its own `excludeFiles` removes.
-      // ARRANGE
-      const expected = [{ ruleId: 'research-reports', excluded: 1, writesExcludeFiles: true }];
-      // ACT
-      const actual = AUDIT_ROWS.filter((row) => row.excluded > 0).map((row) => ({
-        ruleId: row.ruleId,
-        excluded: row.excluded,
-        writesExcludeFiles: ruleNamed(row.ruleId).excludeFiles !== undefined,
-      }));
       // ASSERT
       expect(actual).toEqual(expected);
     });

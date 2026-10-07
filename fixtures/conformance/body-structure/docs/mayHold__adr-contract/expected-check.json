@@ -1,0 +1,268 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 14,
+      "invalidFiles": 9,
+      "totalViolations": 9
+    },
+    "files": [
+      {
+        "path": "anchor-bullets-second.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "adr-contract",
+            "ruleIntent": "An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  3
+                ],
+                "content": "2. Second anchor",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 3,
+                  "pattern": "^[0-9]+\\. ",
+                  "minCount": 1,
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "anchor-prose.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "adr-contract",
+            "ruleIntent": "An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  3
+                ],
+                "content": "1. First anchor",
+                "kind": "prose",
+                "found": 1,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 3,
+                  "pattern": "^[0-9]+\\. ",
+                  "minCount": 1,
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "consequences-bullets.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "adr-contract",
+            "ruleIntent": "An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  7
+                ],
+                "content": "Consequences",
+                "kind": "unordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Consequences$",
+                  "mayHold": [
+                    "prose",
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "context-list.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "adr-contract",
+            "ruleIntent": "An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  1
+                ],
+                "content": "Context",
+                "kind": "ordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Context$",
+                  "mayHold": [
+                    "prose"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "donts-first.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "adr-contract",
+            "ruleIntent": "An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_OUT_OF_ORDER",
+                "entry": [
+                  6
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 3,
+                  "pattern": "^Don'ts$",
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "dos-prose.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "adr-contract",
+            "ruleIntent": "An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  5
+                ],
+                "content": "Do's",
+                "kind": "prose",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 3,
+                  "pattern": "^Do's$",
+                  "mayHold": [
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "extra-section.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "adr-contract",
+            "ruleIntent": "An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 2,
+                "content": "Notes",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "no-consequences.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "adr-contract",
+            "ruleIntent": "An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  7
+                ],
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^Consequences$",
+                  "mayHold": [
+                    "prose",
+                    "ordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "references-numbered.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "adr-contract",
+            "ruleIntent": "An ADR has a title and six sections in a fixed order: its context is prose, its decisions are numbered anchors each holding a numbered list, its do and dont blocks are numbered lists, and its references are a bulleted list.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__BLOCK_KIND_NOT_ALLOWED",
+                "entry": [
+                  9
+                ],
+                "content": "References",
+                "kind": "ordered-list",
+                "found": 1,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 2,
+                  "pattern": "^References$",
+                  "mayHold": [
+                    "unordered-list"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

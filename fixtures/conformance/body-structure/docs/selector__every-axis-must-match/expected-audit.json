@@ -1,0 +1,131 @@
+{
+  "command": "audit",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "modules": [
+      {
+        "module": "frontmatter",
+        "rules": []
+      },
+      {
+        "module": "body-structure",
+        "rules": [
+          {
+            "rule": {
+              "ruleId": "decision-records",
+              "selector": {
+                "folders": [
+                  "docs/decisions/"
+                ],
+                "types": [
+                  "decision"
+                ]
+              },
+              "intent": "A decision record reads the same way every time, so a reviewer finds the status and the reasoning without hunting."
+            },
+            "won": 0,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "research-reports",
+              "selector": {
+                "folders": [
+                  "docs/research/"
+                ],
+                "types": [
+                  "research"
+                ]
+              },
+              "intent": "Research reads the same way every time, so a reviewer can skim it for findings and sources."
+            },
+            "won": 0,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "research-notes",
+              "selector": {
+                "folders": [
+                  "docs/research/"
+                ],
+                "types": [
+                  "note",
+                  "memo",
+                  "brief"
+                ]
+              },
+              "intent": "A research note is short, so it has one title and at most three sections."
+            },
+            "won": 0,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "research-untyped",
+              "selector": {
+                "folders": [
+                  "docs/research/"
+                ]
+              },
+              "intent": "A research file whose type names no template here still has exactly one title and nothing beneath it."
+            },
+            "won": 0,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "guides",
+              "selector": {
+                "types": [
+                  "guide"
+                ]
+              },
+              "intent": "A guide is a title and at least two sections, wherever it lives."
+            },
+            "won": 1,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "changelogs",
+              "selector": {
+                "folders": [
+                  "docs/releases/"
+                ],
+                "fileNames": [
+                  "CHANGELOG.md",
+                  "HISTORY.md",
+                  "RELEASES.md"
+                ],
+                "types": [
+                  "changelog"
+                ]
+              },
+              "intent": "A changelog is titled as one and carries one section per release."
+            },
+            "won": 3,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          }
+        ]
+      }
+    ]
+  }
+}

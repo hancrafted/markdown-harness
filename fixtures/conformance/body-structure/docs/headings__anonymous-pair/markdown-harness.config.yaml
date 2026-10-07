@@ -1,0 +1,11 @@
+# Spec: Two `heading` entries with no pattern ask for exactly two headings at that level, whatever they say.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: anonymous-pair
+      folders: ['./']
+      intent: 'A page with a title and exactly two second-level headings, whatever they say.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: heading, level: 2 }
+        - { purpose: heading, level: 2 }

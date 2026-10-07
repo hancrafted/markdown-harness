@@ -1,0 +1,11 @@
+# Spec: An open enumeration stops before the heading entry that follows it, so that heading is still required after the run.
+# Rules copied from the tier's former shared config in declared order, each folder token rewritten to './'.
+body-structure:
+  rules:
+    - ruleId: swallow
+      folders: ['./']
+      intent: 'A page of free second-level sections that ends in a Conclusion.'
+      headings:
+        - { purpose: heading, level: 1 }
+        - { purpose: enumeration, level: 2, minCount: 1 }
+        - { purpose: heading, level: 2, pattern: '^Conclusion$' }

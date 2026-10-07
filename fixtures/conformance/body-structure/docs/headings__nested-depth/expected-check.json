@@ -1,0 +1,190 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 5,
+      "invalidFiles": 4,
+      "totalViolations": 4
+    },
+    "files": [
+      {
+        "path": "details-missing.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "nested-depth",
+            "ruleIntent": "A guide has one title, at least one part, and in every part a summary that gives its details.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "under": "Summary",
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 5,
+                  "allowed": [
+                    {
+                      "title": "Details"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "no-part.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "nested-depth",
+            "ruleIntent": "A guide has one title, at least one part, and in every part a summary that gives its details.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__ENUMERATION_BELOW_MINIMUM",
+                "entry": [
+                  0,
+                  0
+                ],
+                "under": "Guide",
+                "found": 0,
+                "requirement": {
+                  "purpose": "enumeration",
+                  "level": 2,
+                  "minCount": 1,
+                  "headings": [
+                    {
+                      "purpose": "heading",
+                      "level": 3,
+                      "allowed": [
+                        {
+                          "title": "Summary"
+                        }
+                      ],
+                      "headings": [
+                        {
+                          "purpose": "heading",
+                          "level": 5,
+                          "allowed": [
+                            {
+                              "title": "Details"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "second-title.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "nested-depth",
+            "ruleIntent": "A guide has one title, at least one part, and in every part a summary that gives its details.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_REPEATED",
+                "entry": [
+                  0
+                ],
+                "found": 2,
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 1,
+                  "headings": [
+                    {
+                      "purpose": "enumeration",
+                      "level": 2,
+                      "minCount": 1,
+                      "headings": [
+                        {
+                          "purpose": "heading",
+                          "level": 3,
+                          "allowed": [
+                            {
+                              "title": "Summary"
+                            }
+                          ],
+                          "headings": [
+                            {
+                              "purpose": "heading",
+                              "level": 5,
+                              "allowed": [
+                                {
+                                  "title": "Details"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "summary-missing.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "nested-depth",
+            "ruleIntent": "A guide has one title, at least one part, and in every part a summary that gives its details.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_MISSING",
+                "entry": [
+                  0,
+                  0,
+                  0
+                ],
+                "under": "Part one",
+                "requirement": {
+                  "purpose": "heading",
+                  "level": 3,
+                  "allowed": [
+                    {
+                      "title": "Summary"
+                    }
+                  ],
+                  "headings": [
+                    {
+                      "purpose": "heading",
+                      "level": 5,
+                      "allowed": [
+                        {
+                          "title": "Details"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

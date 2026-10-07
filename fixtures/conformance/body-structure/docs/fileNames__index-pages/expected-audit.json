@@ -1,0 +1,94 @@
+{
+  "command": "audit",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "modules": [
+      {
+        "module": "frontmatter",
+        "rules": []
+      },
+      {
+        "module": "body-structure",
+        "rules": [
+          {
+            "rule": {
+              "ruleId": "index-pages",
+              "selector": {
+                "fileNames": [
+                  "index.md"
+                ]
+              },
+              "intent": "An index page names its folder and lists what is in it, so it has one title and nothing deeper than the second level."
+            },
+            "won": 3,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "research-reports",
+              "selector": {
+                "folders": [
+                  "docs/research/"
+                ],
+                "types": [
+                  "research"
+                ]
+              },
+              "intent": "Research reads the same way every time, so a reviewer can skim it for findings and sources."
+            },
+            "won": 0,
+            "shadowed": 1,
+            "shadowedBy": [
+              "index-pages"
+            ],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "research-notes",
+              "selector": {
+                "folders": [
+                  "docs/research/"
+                ],
+                "types": [
+                  "note",
+                  "memo",
+                  "brief"
+                ]
+              },
+              "intent": "A research note is short, so it has one title and at most three sections."
+            },
+            "won": 0,
+            "shadowed": 0,
+            "shadowedBy": [],
+            "excluded": 0
+          },
+          {
+            "rule": {
+              "ruleId": "research-untyped",
+              "selector": {
+                "folders": [
+                  "docs/research/"
+                ]
+              },
+              "intent": "A research file whose type names no template here still has exactly one title and nothing beneath it."
+            },
+            "won": 0,
+            "shadowed": 1,
+            "shadowedBy": [
+              "index-pages"
+            ],
+            "excluded": 0
+          }
+        ]
+      }
+    ]
+  }
+}

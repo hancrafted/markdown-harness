@@ -1,0 +1,61 @@
+{
+  "docs/tp/two/b.md": {
+    "command": "query",
+    "modules": [
+      "frontmatter",
+      "body-structure"
+    ],
+    "path": "docs/tp/two/b.md",
+    "config": "markdown-harness.config.yaml",
+    "result": {
+      "governance": "governed",
+      "path": "docs/tp/two/b.md",
+      "modules": [
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "guides",
+            "intent": "A guide is a title and at least two sections, wherever it lives."
+          },
+          "requirements": {
+            "types": [
+              "guide"
+            ],
+            "maxLevel": 2,
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              },
+              {
+                "purpose": "enumeration",
+                "level": 2,
+                "minCount": 2
+              }
+            ]
+          }
+        },
+        {
+          "module": "body-structure",
+          "rule": {
+            "ruleId": "triple-plural",
+            "intent": "Every axis lists three values, so a file is governed only when each axis matches and the match need not be the first listed."
+          },
+          "requirements": {
+            "types": [
+              "t1",
+              "t2",
+              "t3"
+            ],
+            "headings": [
+              {
+                "purpose": "heading",
+                "level": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

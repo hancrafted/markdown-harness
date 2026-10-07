@@ -1,0 +1,38 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 2,
+      "invalidFiles": 1,
+      "totalViolations": 1
+    },
+    "files": [
+      {
+        "path": "one-heading.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "closed-bare",
+            "ruleIntent": "A log entry is plain text and carries no heading at all.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__HEADING_UNDEFINED",
+                "level": 1,
+                "content": "Title",
+                "requirement": {
+                  "undefinedHeadings": "forbid"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
