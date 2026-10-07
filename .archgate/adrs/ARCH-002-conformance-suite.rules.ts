@@ -36,6 +36,14 @@
 // its verdict, and the rule reads that verdict for exactly the paths the
 // manifest lists.
 //
+// A REJECTED-CONFIG CASE is a directory straight under its tier, named
+// `<module>__<behaviour>` or `file__<behaviour>` (#231), so the listing says
+// which section of the config a fault sits in. `rejected-case-name` holds it
+// over EVERY case through `ctx.glob`: the behaviour is kebab-case, and a Module
+// prefix is a top-level key the case's own config writes — a config naming
+// `frontmatter__` must open a `frontmatter:` section. `file` is the one prefix
+// no section answers to, for faults no Module section holds.
+//
 // Self-contained by design: archgate forbids imports between rules files.
 const CASE_GLOB = 'fixtures/conformance/*/docs/**/*.md';
 const SPEC_FOLDER_TIERS = ['body-structure', 'integrated'];
@@ -45,6 +53,10 @@ const MANIFEST_GLOB = `fixtures/conformance/*/docs/*/${VERBATIM_MANIFEST}`;
 const SPEC_LINE_RE = /^# Spec: \S/;
 const FOLDER_NAME_RE = /^([A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)*)__([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 const CONTEXT_FILE = 'CONTEXT.md';
+const REJECTED_TIER = 'fixtures/conformance/rejected-config';
+const REJECTED_EXPECTATION = 'expected-rejection.json';
+const REJECTED_NAME_RE = /^([a-z]+(?:-[a-z]+)*)__([a-z0-9]+(?:-[a-z0-9]+)*)$/;
+const FILE_PREFIX = 'file';
 const MARKER_RE = /<!--\s*expect:\s*(\S+?)\s*-->/g;
 const KNOWN_VERDICTS = new Set(['PASSES', 'FAILS', 'UNGOVERNED']);
 const ASSESS_RE = /<!--\s*assess:\s*(\S+?)\s*-->/g;
@@ -104,6 +116,11 @@ function reportEmpty(ctx: RuleContext, folders: readonly string[], ruleId: strin
     message: `No spec folder found under ${SPEC_FOLDER_TIERS.map((tier) => `fixtures/conformance/${tier}/docs/`).join(', ')} — the tier moved or was renamed, and nothing is being governed (ARCH-002 [${ruleId}]).`,
   });
   return true;
+}
+
+/** Whether a YAML text opens `key` as a top-level mapping key. */
+function writesTopLevelKey(yaml: string, key: string): boolean {
+  return yaml.split('\n').some((line) => line.replace(/\s+$/u, '') === `${key}:` || line.startsWith(`${key}: `));
 }
 
 export default {
@@ -266,6 +283,44 @@ export default {
           if (!written && !family) {
             ctx.report.violation({
               message: `Spec folder '${name}' names the key '${key}', which its config never writes and ${CONTEXT_FILE} does not define — name the key the folder tests (ARCH-002 [spec-folder-key]).`,
+              file: folder,
+            });
+          }
+        }
+      },
+    },
+
+    'rejected-case-name': {
+      description:
+        'A rejected-config case directory is named `<module>__<behaviour>` or `file__<behaviour>`: the behaviour is kebab-case, and a Module prefix is a top-level key the case config writes.',
+      severity: 'error',
+      async check(ctx) {
+        const expectations = await ctx.glob(`${REJECTED_TIER}/*/${REJECTED_EXPECTATION}`);
+        // THE REACH GUARD: a tier that moved out from under the glob would
+        // leave this loop running over nothing.
+        if (expectations.length === 0) {
+          ctx.report.violation({
+            message: `No rejected-config case found under ${REJECTED_TIER}/ — the tier moved or was renamed, and nothing is being governed (ARCH-002 [rejected-case-name]).`,
+          });
+          return;
+        }
+        for (const expectation of expectations) {
+          const folder = expectation.slice(0, -REJECTED_EXPECTATION.length - 1);
+          const name = folder.split('/').pop() ?? '';
+          const match = REJECTED_NAME_RE.exec(name);
+          if (match === null) {
+            ctx.report.violation({
+              message: `Rejected-config case '${name}' is not named '<module>__<behaviour>' or 'file__<behaviour>' with a kebab-case behaviour (ARCH-002 [rejected-case-name]).`,
+              file: folder,
+            });
+            continue;
+          }
+          const prefix = match[1];
+          if (prefix === FILE_PREFIX) continue;
+          const config = (await configOf(ctx, folder)) ?? '';
+          if (!writesTopLevelKey(config, prefix)) {
+            ctx.report.violation({
+              message: `Rejected-config case '${name}' names the Module '${prefix}', whose section its config never opens — name the section the fault sits in, or 'file' for a fault outside every section (ARCH-002 [rejected-case-name]).`,
               file: folder,
             });
           }

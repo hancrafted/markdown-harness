@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { frozenRejection } from './frozen-rejection.pure.ts';
 
 /** The prefix a runner supplies: where this case's config file actually sits. */
-const CONFIG_PATH = '/tmp/conformance/rejected-config/config-not-found/markdown-harness.config.yaml';
+const CONFIG_PATH = '/tmp/conformance/rejected-config/file__config-not-found/markdown-harness.config.yaml';
 const CONFIG_FILE = 'markdown-harness.config.yaml';
 const CONFIG = { path: CONFIG_PATH, file: CONFIG_FILE };
 
 /** The case a failure names, so a broken expectation is traceable to its directory. */
-const CASE = 'config-not-found';
+const CASE = 'file__config-not-found';
 
 /** The one literal that marks the failure variant, spelled as a frozen file spells it. */
 const REJECTED = 'CONFIG_REJECTED';

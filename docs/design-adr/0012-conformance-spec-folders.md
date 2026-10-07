@@ -74,5 +74,17 @@ whatever order the config uses. Three folders gained a PASSES partner. The tier 
 table, and its seven frozen `query` answers moved into the six folders whose Rules they name. The
 same ledger showed all 30 moved cases answering the same verdict, winning Rules and violations.
 
-The `rejected-config` tier migrates in its own change. The `frontmatter` tier stays as it is,
-because its selector-translation guard is two-sided over the tier root.
+**The `rejected-config` tier keeps its case directories.** A rejected config produces no document,
+so a case there is already a synthetic repo root holding the adopter's config file name, and needs
+no spec folder around it. Its 85 directories were renamed `<module>__<behaviour>`, after the Module
+section the faulty key belongs to, or `file__<behaviour>` for a fault no Module section holds: the
+file is missing, unreadable or not YAML, or its top level carries a key no Module claims. A case
+whose faults span the top level and one section is named for the section, so `fault-order` became
+`frontmatter__fault-order`. Every config and `expected-rejection.json` moved byte for byte. The one
+`expected-check-response.json` could not: it froze the old case path, and it now freezes what `mh`
+prints inside the case — root `.` and the bare config name — with the payload unchanged. The tier
+runner and `npm run conformance -- rejected-config/<case>` run the same comparison, `mh` inside the
+case directory, against every frozen file. ARCH-002's `rejected-case-name` rule holds the names.
+
+The `frontmatter` tier stays as it is, because its
+selector-translation guard is two-sided over the tier root.

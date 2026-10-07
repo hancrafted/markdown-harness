@@ -520,6 +520,61 @@ describe('spec-folder-passes', () => {
   });
 });
 
+describe('rejected-case-name', () => {
+  const caseName = ruleSet.rules['rejected-case-name'];
+  const TIER = 'fixtures/conformance/rejected-config';
+  const caseFiles = (name: string, config: string | undefined): Record<string, string> => ({
+    [`${TIER}/${name}/expected-rejection.json`]: '{}',
+    ...(config === undefined ? {} : { [`${TIER}/${name}/markdown-harness.config.yaml`]: config }),
+  });
+
+  it('passes a Module case whose config opens that section, and a file case with no config at all', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx({
+      ...caseFiles('frontmatter__duplicate-rule-id', '# Two rules.\nfrontmatter:\n  rules: []\n'),
+      ...caseFiles('body-structure__empty-pattern', 'body-structure: { rules: [] }\n'),
+      ...caseFiles('file__config-not-found', undefined),
+    });
+    // ACT
+    await caseName.check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('fails a case named without a prefix, and one whose behaviour is not kebab-case', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx({
+      ...caseFiles('duplicate-rule-id', 'frontmatter:\n'),
+      ...caseFiles('frontmatter__Duplicate_Id', 'frontmatter:\n'),
+    });
+    // ACT
+    await caseName.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([`${TIER}/duplicate-rule-id`, `${TIER}/frontmatter__Duplicate_Id`]);
+  });
+
+  it('fails a Module prefix whose section the config only mentions in a comment or nests', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx({
+      ...caseFiles('body-structure__empty-pattern', '# body-structure:\nfrontmatter:\n  body-structure: 1\n'),
+    });
+    // ACT
+    await caseName.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.file)).toEqual([`${TIER}/body-structure__empty-pattern`]);
+  });
+
+  it('reports a tier its glob no longer reaches', async () => {
+    // ARRANGE
+    const { ctx, violations } = makeCtx({ 'fixtures/conformance/other/x/expected-rejection.json': '{}' });
+    const expected = [expect.stringContaining('No rejected-config case found')];
+    // ACT
+    await caseName.check(ctx);
+    // ASSERT
+    expect(violations.map((v) => v.message)).toEqual(expected);
+  });
+});
+
 // REACH over the real tree. A hand-built context proves what a rule decides
 // and nothing about whether its globs reach the committed corpus, so each rule
 // also runs here against the repository itself: every spec folder of every
@@ -531,7 +586,11 @@ describe('the spec-folder rules reach the real tree', () => {
       entry.isDirectory() ? realFiles(`${dir}/${entry.name}`) : [`${dir}/${entry.name}`],
     );
   const SPEC_TIERS = ['body-structure', 'integrated'];
-  const tree = [...SPEC_TIERS.flatMap((tier) => realFiles(`fixtures/conformance/${tier}`)), 'CONTEXT.md'];
+  const tree = [
+    ...SPEC_TIERS.flatMap((tier) => realFiles(`fixtures/conformance/${tier}`)),
+    ...realFiles('fixtures/conformance/rejected-config'),
+    'CONTEXT.md',
+  ];
 
   function realCtx(blanked?: string) {
     const violations: Reported[] = [];
@@ -565,6 +624,27 @@ describe('the spec-folder rules reach the real tree', () => {
       expect(violations).toEqual([]);
     },
   );
+
+  it('rejected-case-name passes every committed rejected-config case', async () => {
+    // ARRANGE
+    const { ctx, violations } = realCtx();
+    // ACT
+    await ruleSet.rules['rejected-case-name'].check(ctx);
+    // ASSERT
+    expect(violations).toEqual([]);
+  });
+
+  it('enumerates every rejected-config case directory, so rejected-case-name passed over all of them', () => {
+    // ARRANGE
+    const declared = { cases: 85, expectations: 85 };
+    const cases = readdirSync(join(ROOT, 'fixtures/conformance/rejected-config'));
+    // ACT
+    const expectations = tree.filter((f) =>
+      /^fixtures\/conformance\/rejected-config\/[^/]+\/expected-rejection\.json$/u.test(f),
+    );
+    // ASSERT
+    expect({ cases: cases.length, expectations: expectations.length }).toEqual(declared);
+  });
 
   it.each(SPEC_TIERS)('reaches the %s tier, so a folder there that breaks a rule fails', async (tier) => {
     // A tier the rules do not list passes every rule above over nothing, while
