@@ -19,6 +19,7 @@ export default defineConfig({
       // deliberately greedy, so it reaches them; they are meant to run only once the
       // stamp script has copied them into a run repo.
       '.agents/skills/prepare-ablation-run/assets/**',
+      'skills/prepare-ablation-run/assets/**',
     ],
     coverage: {
       provider: 'v8',

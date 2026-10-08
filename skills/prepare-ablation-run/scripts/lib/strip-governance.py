@@ -29,6 +29,7 @@ DROP_LINES = [
     "'.archgate/**/*.rules.ts',",
     "'.archgate/rules.d.ts',",
     "'.agents/skills/prepare-ablation-run/assets/**',",
+    "'skills/prepare-ablation-run/assets/**',",
 ]
 
 # Whole config blocks, matched from `{ files: [<glob>` to its closing `},`.

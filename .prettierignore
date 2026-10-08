@@ -15,6 +15,7 @@ docs/workshop/**/raw.md
 # Vendored material for repositories that do not exist yet. Formatting it here would
 # apply this repo's style to files whose style is part of what a run is measured on.
 .agents/skills/prepare-ablation-run/assets/**
+skills/prepare-ablation-run/assets/**
 
 
 # Conformance cases whose frontmatter block is deliberately defective -- a flow

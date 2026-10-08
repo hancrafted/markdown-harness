@@ -43,7 +43,7 @@
     "knip": "knip",
     "prepare": "husky",
     "verify": "archgate check && mh --check && eslint . && prettier --check . && tsc --noEmit && npm run lint:boundaries && npm run build && npm run conformance && vitest run && knip",
-    "verify:commit": "lint-staged && archgate check && tsc --noEmit && npm run build && vitest run"
+    "verify:commit": "lint-staged --no-stash && archgate check && tsc --noEmit && npm run build && vitest run"
   },
   "dependencies": {
     "marked": "~18.0.14",

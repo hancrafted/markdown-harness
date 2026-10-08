@@ -334,6 +334,7 @@ export default tseslint.config(
       // repo's config. Linting them here would judge them by this repo's regime,
       // which is the very thing they are built to vary.
       '.agents/skills/prepare-ablation-run/assets/**',
+      'skills/prepare-ablation-run/assets/**',
     ],
   },
   {
