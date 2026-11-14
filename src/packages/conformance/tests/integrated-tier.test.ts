@@ -164,6 +164,46 @@ describe('each integrated spec folder answers as its frozen files state', () => 
   });
 
   describe('failure cases', () => {
+    it('holds every frozen scoped check invocation even if its folder or a case disappears', () => {
+      // ARRANGE
+      const expected = [
+        {
+          folder: 'check__paths',
+          cases: [
+            {
+              name: 'governed violating file retains both findings',
+              args: ['check', './docs/scoped/broken.md'],
+            },
+            {
+              name: 'clean governed file counts as governed despite outside failures',
+              args: ['check', './docs/scoped/clean.md'],
+            },
+            {
+              name: 'existing ungoverned file preserves ordered raw occurrences without a pass',
+              args: ['check', 'loose.md', './loose.md'],
+            },
+            {
+              name: 'directory excludes outside failures and deduplicates overlapping file',
+              args: ['check', 'docs/scoped/', './docs/scoped/broken.md'],
+            },
+            {
+              name: 'Module scope counts clean membership without body-structure findings',
+              args: ['frontmatter', 'check', 'docs/scoped/body-only.md', './loose.md'],
+            },
+          ],
+        },
+      ];
+      // ACT
+      const actual = folders.flatMap((folder) => {
+        const text = optional(folder.root, 'expected-check-paths.json');
+        if (text === undefined) return [];
+        const cases = JSON.parse(text) as readonly { name: string; args: readonly string[] }[];
+        return [{ folder: folder.name, cases: cases.map(({ name, args }) => ({ name, args })) }];
+      });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('holds every frozen batch query case even if a fixture disappears', () => {
       // ARRANGE
       const expected = { folders: 1, cases: 6 };
@@ -206,6 +246,23 @@ describe('each integrated spec folder answers as its frozen files state', () => 
   });
 
   describe('edge cases', () => {
+    it('reports the same violating file in a scoped check and the full frozen baseline', () => {
+      // ARRANGE
+      const folder = folderNamed('check__paths');
+      const path = 'docs/scoped/broken.md';
+      const expected = folder.check.result?.files?.find((file) => file.path === path);
+      if (expected === undefined) throw new Error(`the full frozen check has no ${path}`);
+      // ACT
+      const full = JSON.parse(mhIn(folder.root, ['check']).stdout) as ToolEnvelope;
+      const scoped = JSON.parse(mhIn(folder.root, ['check', path]).stdout) as ToolEnvelope;
+      const actual = {
+        full: full.result?.files?.find((file) => file.path === path),
+        scoped: scoped.result?.files,
+      };
+      // ASSERT
+      expect(actual).toEqual({ full: expected, scoped: [expected] });
+    });
+
     it.each(FOLDER_NAMES)('%s freezes a check that agrees with its markers, before any tool is asked', (name) => {
       // The frozen response and the markers were written apart. Held to each
       // other here, tool-free, so a red comparison above is red for the tool's
@@ -335,20 +392,19 @@ describe('the integrated tier states one coherent specification', () => {
     it('enumerates every Conformance case the suite declares', () => {
       // ARRANGE
       const declaredCases = TIER.caseCount;
+      const declaredFolders = 11;
       // ACT
       const enumerated = casesIn(TIER.name).length;
       // ASSERT
       expect(enumerated).toBe(declaredCases);
+      expect(FOLDER_NAMES).toHaveLength(declaredFolders);
     });
 
     it('tallies the verdicts the spec states', () => {
-      // #221: 18 cases, of which 5 PASSES, 12 FAILS and 1 UNGOVERNED; #225 extends it to 25 cases,
-      // of which 7 PASSES, 16 FAILS and 2 UNGOVERNED; #227 extends it to 29 cases, of which 9 PASSES,
-      // 18 FAILS and 2 UNGOVERNED; #229 adds one nested-spine case, so 30 cases, of which 9 PASSES,
-      // 19 FAILS and 2 UNGOVERNED; #231 adds three PASSES partners so every spec folder holds one,
-      // so 33 cases, of which 12 PASSES, 19 FAILS and 2 UNGOVERNED.
+      // The 38 cases include a clean governed partner in every folder, failures
+      // in both Modules, and explicit ungoverned paths.
       // ARRANGE
-      const expected = { passes: 12, fails: 19, ungoverned: 2, other: 0 };
+      const expected = { passes: 13, fails: 22, ungoverned: 3, other: 0 };
       // ACT
       const actual = {
         passes: stated(PASSES).length,

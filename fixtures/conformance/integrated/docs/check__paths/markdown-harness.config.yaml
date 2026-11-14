@@ -1,0 +1,15 @@
+# Spec: `check` paths filter the full verdict and counts, distinguish clean governed files from ungoverned paths, and compose with Module scope without changing findings.
+body-structure:
+  rules:
+    - ruleId: scoped-depth
+      folders: [docs/scoped/, docs/outside/]
+      intent: 'Governed pages have only level-one headings.'
+      maxLevel: 1
+
+frontmatter:
+  rules:
+    - ruleId: scoped-type
+      folders: [docs/scoped/, docs/outside/]
+      intent: 'Governed pages declare their type.'
+      fields:
+        type: { presence: required }

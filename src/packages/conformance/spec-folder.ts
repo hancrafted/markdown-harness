@@ -5,7 +5,9 @@
 // synthetic repo root: the adopter's config file name, a first line stating the
 // spec, its Conformance cases, and the frozen output `mh` prints there —
 // `expected-check.json` always, `expected-audit.json` where Rules compete, and
-// `expected-query.json` where paths were asked. This module runs the compiled
+// `expected-query.json` where paths were asked. `expected-check-paths.json` and
+// `expected-batch-query.json` hold scoped process invocations and their outcomes.
+// This module runs the compiled
 // `mh` INSIDE the folder with no flag, exactly as a human does, and holds each
 // answer against its frozen file byte for byte. The tier runners and the script
 // both call it, so the two can never disagree about what a folder states.
@@ -44,6 +46,8 @@ const EXPECTED_AUDIT = 'expected-audit.json';
 const EXPECTED_QUERY = 'expected-query.json';
 /** Process-boundary query cases with their frozen envelopes and channel outcomes. */
 const EXPECTED_BATCH_QUERY = 'expected-batch-query.json';
+/** Process-boundary scoped checks with their frozen envelopes and channel outcomes. */
+const EXPECTED_CHECK_PATHS = 'expected-check-paths.json';
 /** The manifest that states a verbatim case's verdict, because its bytes cannot carry a marker. */
 export const VERBATIM_MANIFEST = 'verbatim-cases.json';
 
@@ -121,8 +125,8 @@ function queryComparisons(folder: string, frozenText: string): readonly FrozenCo
   });
 }
 
-/** Hold each independently stated query invocation against its process outcome. */
-function batchQueryComparisons(folder: string, frozenText: string): readonly FrozenComparison[] {
+/** Hold each independently stated invocation against its process outcome. */
+function invocationComparisons(folder: string, file: string, frozenText: string): readonly FrozenComparison[] {
   const cases = JSON.parse(frozenText) as readonly {
     name: string;
     args: readonly string[];
@@ -142,11 +146,7 @@ function batchQueryComparisons(folder: string, frozenText: string): readonly Fro
       stdout: run.stdout,
       stderr: stderr === 'usage' && run.stderr.startsWith('usage: mh') ? 'usage' : run.stderr,
     };
-    return frozenComparison(
-      `${EXPECTED_BATCH_QUERY} ${name}`,
-      JSON.stringify(expected, null, 2),
-      JSON.stringify(actual, null, 2),
-    );
+    return frozenComparison(`${file} ${name}`, JSON.stringify(expected, null, 2), JSON.stringify(actual, null, 2));
   });
 }
 
@@ -159,8 +159,10 @@ function frozenComparisons(folder: string, checkStdout: string): readonly Frozen
   if (audit !== undefined) frozen.push(frozenComparison(EXPECTED_AUDIT, audit, mhIn(folder, ['audit']).stdout));
   const query = textIn(folder, EXPECTED_QUERY);
   if (query !== undefined) frozen.push(...queryComparisons(folder, query));
-  const batchQuery = textIn(folder, EXPECTED_BATCH_QUERY);
-  if (batchQuery !== undefined) frozen.push(...batchQueryComparisons(folder, batchQuery));
+  for (const file of [EXPECTED_BATCH_QUERY, EXPECTED_CHECK_PATHS]) {
+    const invocations = textIn(folder, file);
+    if (invocations !== undefined) frozen.push(...invocationComparisons(folder, file, invocations));
+  }
   return frozen;
 }
 

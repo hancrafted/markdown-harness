@@ -1,0 +1,149 @@
+[
+  {
+    "name": "governed violating file retains both findings",
+    "args": ["check", "./docs/scoped/broken.md"],
+    "code": 1,
+    "stderr": "",
+    "stdout": {
+      "command": "check",
+      "modules": ["frontmatter", "body-structure"],
+      "root": ".",
+      "config": "markdown-harness.config.yaml",
+      "paths": ["./docs/scoped/broken.md"],
+      "result": {
+        "summary": { "governedFiles": 1, "invalidFiles": 1, "totalViolations": 2 },
+        "files": [
+          {
+            "path": "docs/scoped/broken.md",
+            "modules": [
+              {
+                "module": "frontmatter",
+                "ruleId": "scoped-type",
+                "ruleIntent": "Governed pages declare their type.",
+                "violations": [
+                  { "field": "type", "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD", "requirement": { "presence": "required" } }
+                ]
+              },
+              {
+                "module": "body-structure",
+                "ruleId": "scoped-depth",
+                "ruleIntent": "Governed pages have only level-one headings.",
+                "violations": [
+                  { "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP", "level": 2, "found": 1, "requirement": { "maxLevel": 1 } }
+                ]
+              }
+            ]
+          }
+        ],
+        "ungovernedPaths": []
+      }
+    }
+  },
+  {
+    "name": "clean governed file counts as governed despite outside failures",
+    "args": ["check", "./docs/scoped/clean.md"],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "check",
+      "modules": ["frontmatter", "body-structure"],
+      "root": ".",
+      "config": "markdown-harness.config.yaml",
+      "paths": ["./docs/scoped/clean.md"],
+      "result": {
+        "summary": { "governedFiles": 1, "invalidFiles": 0, "totalViolations": 0 },
+        "files": [],
+        "ungovernedPaths": []
+      }
+    }
+  },
+  {
+    "name": "existing ungoverned file preserves ordered raw occurrences without a pass",
+    "args": ["check", "loose.md", "./loose.md"],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "check",
+      "modules": ["frontmatter", "body-structure"],
+      "root": ".",
+      "config": "markdown-harness.config.yaml",
+      "paths": ["loose.md", "./loose.md"],
+      "result": {
+        "summary": { "governedFiles": 0, "invalidFiles": 0, "totalViolations": 0 },
+        "files": [],
+        "ungovernedPaths": ["loose.md", "./loose.md"]
+      }
+    }
+  },
+  {
+    "name": "directory excludes outside failures and deduplicates overlapping file",
+    "args": ["check", "docs/scoped/", "./docs/scoped/broken.md"],
+    "code": 1,
+    "stderr": "",
+    "stdout": {
+      "command": "check",
+      "modules": ["frontmatter", "body-structure"],
+      "root": ".",
+      "config": "markdown-harness.config.yaml",
+      "paths": ["docs/scoped/", "./docs/scoped/broken.md"],
+      "result": {
+        "summary": { "governedFiles": 3, "invalidFiles": 2, "totalViolations": 3 },
+        "files": [
+          {
+            "path": "docs/scoped/body-only.md",
+            "modules": [
+              {
+                "module": "body-structure",
+                "ruleId": "scoped-depth",
+                "ruleIntent": "Governed pages have only level-one headings.",
+                "violations": [
+                  { "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP", "level": 2, "found": 1, "requirement": { "maxLevel": 1 } }
+                ]
+              }
+            ]
+          },
+          {
+            "path": "docs/scoped/broken.md",
+            "modules": [
+              {
+                "module": "frontmatter",
+                "ruleId": "scoped-type",
+                "ruleIntent": "Governed pages declare their type.",
+                "violations": [
+                  { "field": "type", "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD", "requirement": { "presence": "required" } }
+                ]
+              },
+              {
+                "module": "body-structure",
+                "ruleId": "scoped-depth",
+                "ruleIntent": "Governed pages have only level-one headings.",
+                "violations": [
+                  { "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP", "level": 2, "found": 1, "requirement": { "maxLevel": 1 } }
+                ]
+              }
+            ]
+          }
+        ],
+        "ungovernedPaths": []
+      }
+    }
+  },
+  {
+    "name": "Module scope counts clean membership without body-structure findings",
+    "args": ["frontmatter", "check", "docs/scoped/body-only.md", "./loose.md"],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "check",
+      "modules": ["frontmatter"],
+      "root": ".",
+      "config": "markdown-harness.config.yaml",
+      "paths": ["docs/scoped/body-only.md", "./loose.md"],
+      "result": {
+        "summary": { "governedFiles": 1, "invalidFiles": 0, "totalViolations": 0 },
+        "files": [],
+        "ungovernedPaths": ["./loose.md"]
+      }
+    }
+  }
+]

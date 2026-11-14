@@ -16,6 +16,7 @@ import { conformanceRoot } from '../case-corpus.ts';
 const REPOSITORY = join(conformanceRoot(), '..', '..');
 const SCRIPT = join(REPOSITORY, 'src', 'packages', 'conformance', 'run-spec-folder.ts');
 const FOLDER = 'fixtures/conformance/body-structure/docs/maxCount__exactly-two';
+const SCOPED_FOLDER = 'fixtures/conformance/integrated/docs/check__paths';
 
 /**
  * The environment the script runs in, minus any `npm_config_path` the run that
@@ -50,6 +51,31 @@ afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
 describe('npm run conformance', () => {
   describe('success cases', () => {
+    it('compares the full check and all five scoped checks through the shared folder seam', () => {
+      // ARRANGE
+      const expected = {
+        code: 0,
+        stderr: '',
+        frozen: [
+          '  expected-check.json  identical',
+          '  expected-check-paths.json governed violating file retains both findings  identical',
+          '  expected-check-paths.json clean governed file counts as governed despite outside failures  identical',
+          '  expected-check-paths.json existing ungoverned file preserves ordered raw occurrences without a pass  identical',
+          '  expected-check-paths.json directory excludes outside failures and deduplicates overlapping file  identical',
+          '  expected-check-paths.json Module scope counts clean membership without body-structure findings  identical',
+        ],
+      };
+      // ACT
+      const run = conformance(SCOPED_FOLDER);
+      const actual = {
+        code: run.code,
+        stderr: run.stderr,
+        frozen: run.stdout.split('\n').filter((line) => line.startsWith('  expected-')),
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('prints the spec line, each case against its marker and the identical frozen check, and exits 0', () => {
       // ARRANGE
       const expected = {
@@ -91,6 +117,33 @@ describe('npm run conformance', () => {
   });
 
   describe('failure cases', () => {
+    it('rejects a scoped frozen mismatch even when the full check agrees', () => {
+      // ARRANGE
+      const copy = join(scratch, 'scoped-mismatch');
+      cpSync(join(REPOSITORY, SCOPED_FOLDER), copy, { recursive: true });
+      const golden = join(copy, 'expected-check-paths.json');
+      writeFileSync(golden, readFileSync(golden, 'utf8').replace('"code": 1', '"code": 0'));
+      const expected = {
+        code: 1,
+        stderr: '',
+        full: '  expected-check.json  identical',
+        scoped: '  expected-check-paths.json governed violating file retains both findings  DIFFERS',
+        verdict: 'DISAGREES',
+      };
+      // ACT
+      const run = conformance(copy);
+      const lines = run.stdout.trimEnd().split('\n');
+      const actual = {
+        code: run.code,
+        stderr: run.stderr,
+        full: lines.find((line) => line.startsWith('  expected-check.json ')),
+        scoped: lines.find((line) => line.startsWith('  expected-check-paths.json ')),
+        verdict: lines.at(-1),
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('refuses an option it does not know with exit 2, rather than running every tier', () => {
       // ARRANGE
       const expected = {
