@@ -24,7 +24,7 @@ export const DEFAULT_ROOT = '.';
  * line `usageRefusal` appends when a Module name was involved.
  */
 export const USAGE = `usage: mh [[<module>] check] [--root <dir>] [--config <file>]
-       mh [<module>]  query  <path>          [--config <file>]
+       mh [<module>]  query  [--batch] <path> [--config <file>]
        mh [<module>]  audit  [--root <dir>]  [--config <file>]
        mh [<module>]  assess <path> [--now <iso>] [--config <file>]
        mh --help
@@ -32,6 +32,7 @@ export const USAGE = `usage: mh [[<module>] check] [--root <dir>] [--config <fil
   check     every governed file with a violation, and the counts. The default command.
             Exits 1 when the corpus is wrong.
   query     what the config asks of one path, before anything exists there. Never exits 1.
+            --batch returns the batch envelope for exactly one path.
   audit     how every rule fared across the corpus, so a rule that governs nothing is visible.
             Never exits 1.
   assess    what one file is worth believing, at one instant. Reads the file and
@@ -75,6 +76,9 @@ export const HELP = `${USAGE}
   --root <dir>     the directory whose markdown files form the corpus. Default \`.\`.
   --config <file>  the config file, resolved from the current directory and never
                    from --root. Default \`${DEFAULT_CONFIG}\`.
+  --batch          query only; accepts exactly one path and returns its answer in
+                   result.results[0], associated with the raw paths[0]. A rejected
+                   config occupies result directly. Multiple paths are refused.
   --now <iso>      the instant assess judges against, as RFC 3339 with an
                    explicit offset: \`2026-12-01T00:00:00Z\`. Defaults to the host
                    clock, and is echoed in the response either way — so a run you

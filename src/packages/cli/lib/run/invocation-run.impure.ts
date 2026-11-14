@@ -76,17 +76,17 @@ function gatherConfig(config: string): ConfigOutcome<LoadedConfiguration> {
  * A Module without the verb is skipped, never asked.
  */
 function gatherQuery(invocation: Invocation): QueryGathered {
-  const { path, config } = invocation;
+  const { path, config, batch } = invocation;
   const querying = asked(invocation, 'query');
-  const modules = keysOf(querying);
+  const question = { modules: keysOf(querying), path, config, ...(batch ? { batch } : {}) };
   const cfg = gatherConfig(config);
-  if (cfg.kind === 'rejected') return { kind: 'query', modules, path, config, outcome: cfg };
+  if (cfg.kind === 'rejected') return { kind: 'query', ...question, outcome: cfg };
 
   const result = pathGovernance<DeclaredRequirements>(
     normalisePath(path),
     gatherAnswers(querying, (module) => module.query(path, cfg.result)),
   );
-  return { kind: 'query', modules, path, config, outcome: { kind: 'answered', result } };
+  return { kind: 'query', ...question, outcome: { kind: 'answered', result } };
 }
 
 /**

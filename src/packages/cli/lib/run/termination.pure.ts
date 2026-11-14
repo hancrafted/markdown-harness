@@ -9,6 +9,7 @@ import type { ConfigFault } from '../../../response-contract/index.ts';
 import {
   assessResponse,
   auditResponse,
+  batchQueryResponse,
   checkResponse,
   configError,
   isConfigError,
@@ -119,6 +120,14 @@ function fromConfigOutcome<Result>(
 }
 
 function queryTermination(gathered: QueryGathered): Termination {
+  if (gathered.batch) {
+    const question = { modules: gathered.modules, paths: [gathered.path], config: gathered.config };
+    return fromConfigOutcome(
+      gathered.outcome,
+      (faults) => responseTermination(batchQueryResponse(question, configError(faults))),
+      (result) => responseTermination(batchQueryResponse(question, { results: [result] })),
+    );
+  }
   return fromConfigOutcome(
     gathered.outcome,
     (faults) => responseTermination(queryResponse(gathered, configError(faults))),

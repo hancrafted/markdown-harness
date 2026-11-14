@@ -33,6 +33,7 @@ export interface QueryGathered {
   /** The keys of the Modules asked, in declared order — echoed as the response's `modules`. */
   readonly modules: readonly string[];
   readonly path: string;
+  readonly batch?: true;
   readonly config: string;
   readonly outcome: ConfigOutcome<DeclaredQueryResult>;
 }

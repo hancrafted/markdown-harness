@@ -3,7 +3,7 @@
  *
  * The grammar is `mh [<module-key>] <command> [<path>] [flags]`: the command is
  * a word, a Module's config key in front of it scopes the run to that Module,
- * and `--root`, `--config`, `--now` and `--help` stay flags, written anywhere.
+ * and `--root`, `--config`, `--now`, `--batch` and `--help` are flags, written anywhere.
  *
  * Conflicting input is refused rather than resolved by precedence. A *missing*
  * command is not conflicting input, which is why it has a default and the
@@ -28,8 +28,9 @@ const PATH_COMMANDS: readonly ReportingCommand[] = ['query', 'assess'];
 /** The flags that take a value. */
 const VALUE_FLAGS: readonly string[] = ['--root', '--config', '--now'];
 
-/** The one flag that takes none. */
+/** The flags that take no value. */
 const HELP_FLAG = '--help';
+const BATCH_FLAG = '--batch';
 
 /** The refusing half of what the parser answers. */
 type Refused = Extract<ParsedArgv, { kind: 'refused' }>;
@@ -73,18 +74,18 @@ function tokensOf(argv: readonly string[]): Tokens | undefined {
     const value = flagValue(token, argv[index + 1]);
     if (value === undefined || flags.has(token)) return undefined;
     flags.set(token, value);
-    if (token !== HELP_FLAG) index += 1;
+    if (token !== HELP_FLAG && token !== BATCH_FLAG) index += 1;
   }
   return { flags, words };
 }
 
 /**
- * What one flag carries — empty for `--help`, the next token for a value flag —
+ * What one flag carries — empty for a value-less flag, the next token for a value flag —
  * or `undefined` when the flag is unknown or its value is missing or itself
  * begins with `--`.
  */
 function flagValue(flag: string, next: string | undefined): string | undefined {
-  if (flag === HELP_FLAG) return '';
+  if (flag === HELP_FLAG || flag === BATCH_FLAG) return '';
   if (!VALUE_FLAGS.includes(flag)) return undefined;
   if (next === undefined || next.startsWith('--')) return undefined;
   return next;
@@ -106,6 +107,11 @@ interface Resolved {
   readonly command: ReportingCommand;
   readonly modules: readonly string[];
   readonly operands: readonly string[];
+}
+
+/** A batch envelope is a query-only question. */
+function invalidBatch(flags: Map<string, string>, command: ReportingCommand): boolean {
+  return flags.has(BATCH_FLAG) && command !== 'query';
 }
 
 /**
@@ -174,7 +180,7 @@ function conflicts(flags: Map<string, string>, { command, operands }: Resolved):
 
   // `--now` beside any command but `assess` would let a caller believe a
   // `check` had been pinned to an instant, and `check` reads no clock.
-  return flags.has('--now') && command !== 'assess';
+  return (flags.has('--now') && command !== 'assess') || invalidBatch(flags, command);
 }
 
 /** The invocation, with the two documented defaults applied. */
@@ -183,6 +189,7 @@ function invocationOf(flags: Map<string, string>, { command, modules, operands }
     command,
     modules,
     path: operands[0] ?? '',
+    ...(flags.has(BATCH_FLAG) ? { batch: true as const } : {}),
     root: flags.get('--root') ?? DEFAULT_ROOT,
     config: flags.get('--config') ?? DEFAULT_CONFIG,
     now: flags.get('--now') ?? '',

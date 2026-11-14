@@ -57,6 +57,7 @@ export type { GovernedPath, InvisiblePath, ModuleClaim, ModuleRequirements, Quer
 export {
   assessResponse,
   auditResponse,
+  batchQueryResponse,
   checkResponse,
   configError,
   queryResponse,
@@ -65,6 +66,7 @@ export {
 export type {
   AssessResponse,
   AuditResponse,
+  BatchQueryResponse,
   CheckResponse,
   MarkdownHarnessResponse,
   QueryResponse,

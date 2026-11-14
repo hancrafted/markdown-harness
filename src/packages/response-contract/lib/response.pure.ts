@@ -14,6 +14,7 @@ import type { QueryResult } from './query.types.ts';
 import type {
   AssessResponse,
   AuditResponse,
+  BatchQueryResponse,
   CheckResponse,
   MarkdownHarnessResponse,
   QueryResponse,
@@ -46,6 +47,15 @@ export function queryResponse<TRequirements>(
 ): QueryResponse<TRequirements> {
   const { modules, path, config } = invocation;
   return { command: 'query', modules, path, config, result };
+}
+
+/** Construct the batch query envelope. */
+export function batchQueryResponse<TRequirements>(
+  invocation: Pick<BatchQueryResponse, 'modules' | 'paths' | 'config'>,
+  result: BatchQueryResponse<TRequirements>['result'],
+): BatchQueryResponse<TRequirements> {
+  const { modules, paths, config } = invocation;
+  return { command: 'query', batch: true, modules, paths, config, result };
 }
 
 /** Construct the envelope for `audit`. */

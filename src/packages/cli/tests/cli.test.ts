@@ -280,6 +280,117 @@ function mhOnNode(
 
 describe('mh', () => {
   describe('success cases', () => {
+    it('documents the one-path batch contract in help', () => {
+      // ARRANGE
+      const expected = [
+        'query  [--batch] <path>',
+        '--batch          query only; accepts exactly one path',
+        'result.results[0]',
+        'Multiple paths are refused.',
+      ];
+      // ACT
+      const run = mh('--help');
+      // ASSERT
+      expect(run.code).toBe(0);
+      expect(run.stderr).toBe('');
+      for (const phrase of expected) expect(run.stdout).toContain(phrase);
+    });
+
+    it('returns ordered candidate claims without reading or creating the requested document', () => {
+      // ARRANGE
+      const config = [
+        'frontmatter:',
+        '  rules:',
+        '    - ruleId: metadata',
+        '      folders: [docs/candidates/]',
+        '      intent: Every candidate names its type.',
+        '      fields:',
+        '        type: { presence: required }',
+        'body-structure:',
+        '  rules:',
+        '    - { ruleId: guide, folders: [docs/candidates/], types: [guide], intent: Guide heading., headings: [{ purpose: heading, level: 1 }] }',
+        '    - { ruleId: report, folders: [docs/candidates/], types: [report], intent: Report heading., headings: [{ purpose: heading, level: 2 }] }',
+        '    - { ruleId: fallback, folders: [docs/candidates/], intent: Fallback heading., headings: [{ purpose: heading, level: 1 }] }',
+        '    - { ruleId: shadowed, folders: [docs/candidates/], intent: Shadowed heading., headings: [{ purpose: heading, level: 1 }] }',
+        '',
+      ].join('\n');
+      const configPath = join(canaryRoot, 'markdown-harness.config.yaml');
+      const directory = join(canaryRoot, 'docs', 'candidates');
+      const document = join(directory, 'new.md');
+      const content = '---\ntype: report\n---\n# conflicting content\n';
+      writeFileSync(configPath, config);
+      const expected = {
+        command: 'query',
+        batch: true,
+        modules: ['frontmatter', 'body-structure'],
+        paths: ['docs/candidates/new.md'],
+        config: 'markdown-harness.config.yaml',
+        result: {
+          results: [
+            {
+              governance: 'governed',
+              path: 'docs/candidates/new.md',
+              modules: [
+                {
+                  module: 'frontmatter',
+                  rule: { ruleId: 'metadata', intent: 'Every candidate names its type.' },
+                  requirements: { fields: [{ field: 'type', presence: 'required' }] },
+                },
+                {
+                  module: 'body-structure',
+                  rule: { ruleId: 'guide', intent: 'Guide heading.' },
+                  requirements: { types: ['guide'], headings: [{ purpose: 'heading', level: 1 }] },
+                },
+                {
+                  module: 'body-structure',
+                  rule: { ruleId: 'report', intent: 'Report heading.' },
+                  requirements: { types: ['report'], headings: [{ purpose: 'heading', level: 2 }] },
+                },
+                {
+                  module: 'body-structure',
+                  rule: { ruleId: 'fallback', intent: 'Fallback heading.' },
+                  requirements: { headings: [{ purpose: 'heading', level: 1 }] },
+                },
+              ],
+            },
+          ],
+        },
+      };
+      const expectedRun = { code: 0, stdout: `${JSON.stringify(expected, null, 2)}\n`, stderr: '' };
+      const beforeAbsent = existsSync(directory);
+      // ACT
+      const absent = mhIn(canaryRoot, 'query', '--batch', 'docs/candidates/new.md');
+      const afterAbsent = existsSync(directory);
+      mkdirSync(directory);
+      writeFileSync(document, content);
+      const beforeContent = readFileSync(document, 'utf8');
+      const written = mhIn(canaryRoot, 'query', '--batch', 'docs/candidates/new.md');
+      const afterContent = readFileSync(document, 'utf8');
+      // ASSERT
+      expect(absent).toEqual(expectedRun);
+      expect(written).toEqual(expectedRun);
+      expect(beforeAbsent).toBe(false);
+      expect(afterAbsent).toBe(beforeAbsent);
+      expect(afterContent).toBe(beforeContent);
+    });
+
+    it('answers a one-path batch with an ordered envelope', () => {
+      // ARRANGE
+      const expected = {
+        command: 'query',
+        batch: true,
+        modules: ['frontmatter', 'body-structure'],
+        paths: ['./README.md'],
+        config: CONFIG,
+        result: { results: [{ governance: 'invisible', path: 'README.md' }] },
+      };
+      const expectedRun = { code: 0, stdout: `${JSON.stringify(expected, null, 2)}\n`, stderr: '' };
+      // ACT
+      const run = mh('query', '--batch', './README.md', '--config', CONFIG);
+      // ASSERT
+      expect(run).toEqual(expectedRun);
+    });
+
     it('answers a governed query on stdout and exits 0', () => {
       // ARRANGE
       const success = 0;
@@ -356,6 +467,118 @@ describe('mh', () => {
   });
 
   describe('failure cases', () => {
+    it('preserves ordered config faults in one batch rejection', () => {
+      // ARRANGE
+      const config = 'fixtures/conformance/rejected-config/frontmatter__fault-order/markdown-harness.config.yaml';
+      const envelope = {
+        command: 'query',
+        batch: true,
+        modules: ['body-structure'],
+        paths: ['docs/new.md'],
+        config,
+        result: {
+          error: 'CONFIG_REJECTED',
+          faults: [
+            { code: 'CONFIG_UNRECOGNISED_KEY', location: 'not-a-module' },
+            { code: 'CONFIG_UNRECOGNISED_KEY', location: 'frontmatter.not-a-section-key' },
+            { code: 'CONFIG_DUPLICATE_RULE_ID', location: 'frontmatter.rules[1].ruleId' },
+            { code: 'CONFIG_EMPTY_INTENT', location: 'frontmatter.rules[0].intent' },
+            { code: 'CONFIG_MISSING_PATTERN_INTENT', location: 'frontmatter.rules[1].fields.slug' },
+          ],
+        },
+      };
+      const expected = { code: 2, stdout: `${JSON.stringify(envelope, null, 2)}\n`, stderr: '' };
+      // ACT
+      const run = mh('body-structure', 'query', '--batch', 'docs/new.md', '--config', config);
+      // ASSERT
+      expect(run).toEqual(expected);
+    });
+
+    it('rejects an unreadable config with the batch question', () => {
+      // ARRANGE
+      const config = 'fixtures/conformance/rejected-config';
+      const envelope = {
+        command: 'query',
+        batch: true,
+        modules: ['frontmatter', 'body-structure'],
+        paths: ['docs/new.md'],
+        config,
+        result: { error: 'CONFIG_REJECTED', faults: [{ code: 'CONFIG_UNREADABLE', location: config }] },
+      };
+      const expected = { code: 2, stdout: `${JSON.stringify(envelope, null, 2)}\n`, stderr: '' };
+      // ACT
+      const run = mh('query', '--batch', 'docs/new.md', '--config', config);
+      // ASSERT
+      expect(run).toEqual(expected);
+    });
+
+    it('refuses invalid batch invocations without a partial answer', () => {
+      // ARRANGE
+      const invocations = [
+        ['query', '--batch'],
+        ['query', '--batch', 'one.md', 'two.md'],
+        ['query', 'one.md', 'two.md'],
+        ['query', '--batch', '--batch', 'one.md'],
+        ['check', '--batch'],
+        ['audit', '--batch'],
+        ['assess', '--batch', 'one.md'],
+        ['--help', '--batch'],
+        ['query', '--batch', 'one.md', '--root', '.'],
+        ['query', '--batch', 'one.md', '--now', '2026-01-01T00:00:00Z'],
+        ['query', '--batch', 'one.md', '--unknown'],
+        ['query', '--batch', '--config', '--batch', 'one.md'],
+        ['--batch'],
+      ];
+      const expected = invocations.map(() => ({ code: 2, stdout: '', lead: USAGE_LEAD }));
+      // ACT
+      const actual = invocations.map((args) => {
+        const run = mh(...args);
+        return { code: run.code, stdout: run.stdout, lead: run.stderr.slice(0, USAGE_LEAD.length) };
+      });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('rejects a fault outside the selected Module in one batch envelope', () => {
+      // ARRANGE
+      const config =
+        'fixtures/conformance/rejected-config/body-structure__invalid-purpose/markdown-harness.config.yaml';
+      const expected = {
+        command: 'query',
+        batch: true,
+        modules: ['frontmatter'],
+        paths: ['docs/new.md'],
+        config,
+        result: {
+          error: 'CONFIG_REJECTED',
+          faults: [{ code: 'CONFIG_INVALID_VALUE', location: 'body-structure.rules[0].headings[0].purpose' }],
+        },
+      };
+      const expectedRun = { code: 2, stdout: `${JSON.stringify(expected, null, 2)}\n`, stderr: '' };
+      // ACT
+      const run = mh('frontmatter', 'query', '--batch', 'docs/new.md', '--config', config);
+      // ASSERT
+      expect(run).toEqual(expectedRun);
+    });
+
+    it('rejects malformed YAML with its batch question on stdout', () => {
+      // ARRANGE
+      const config = 'fixtures/conformance/rejected-config/file__config-not-yaml/markdown-harness.config.yaml';
+      const expected = {
+        command: 'query',
+        batch: true,
+        modules: ['frontmatter', 'body-structure'],
+        paths: ['docs/new.md'],
+        config,
+        result: { error: 'CONFIG_REJECTED', faults: [{ code: 'CONFIG_NOT_YAML', location: config }] },
+      };
+      const expectedRun = { code: 2, stdout: `${JSON.stringify(expected, null, 2)}\n`, stderr: '' };
+      // ACT
+      const run = mh('query', 'docs/new.md', '--config', config, '--batch');
+      // ASSERT
+      expect(run).toEqual(expectedRun);
+    });
+
     it('puts usage on stderr, nothing on stdout, and exits 2', () => {
       // The two flavours of exit 2 are told apart by channel, never by number.
       // ARRANGE
@@ -440,6 +663,54 @@ describe('mh', () => {
   });
 
   describe('edge cases', () => {
+    it('treats command and Module words as paths and normalises Windows-shaped paths', () => {
+      // ARRANGE
+      const paths = ['query', 'frontmatter', '.\\docs\\missing.md'];
+      const expectedPaths = ['query', 'frontmatter', 'docs/missing.md'];
+      const expected = paths.map((path, index) => ({
+        command: 'query',
+        batch: true,
+        modules: ['frontmatter', 'body-structure'],
+        paths: [path],
+        config: CONFIG,
+        result: { results: [{ governance: 'invisible', path: expectedPaths[index] }] },
+      }));
+      // ACT
+      const actual = paths.map((path) => {
+        const run = mh('--batch', 'query', path, '--config', CONFIG);
+        return { code: run.code, stderr: run.stderr, body: JSON.parse(run.stdout) };
+      });
+      // ASSERT
+      expect(actual).toEqual(expected.map((body) => ({ code: 0, stderr: '', body })));
+    });
+
+    it('preserves the single-path envelope and config refusal byte for byte', () => {
+      // ARRANGE
+      const config = 'no-such-config.yaml';
+      const success = {
+        command: 'query',
+        modules: ['frontmatter', 'body-structure'],
+        path: './README.md',
+        config: CONFIG,
+        result: { governance: 'invisible', path: 'README.md' },
+      };
+      const rejection = {
+        command: 'query',
+        modules: ['frontmatter', 'body-structure'],
+        path: 'docs/new.md',
+        config,
+        result: { error: 'CONFIG_REJECTED', faults: [{ code: 'CONFIG_NOT_FOUND', location: config }] },
+      };
+      const expected = [
+        { code: 0, stdout: `${JSON.stringify(success, null, 2)}\n`, stderr: '' },
+        { code: 2, stdout: `${JSON.stringify(rejection, null, 2)}\n`, stderr: '' },
+      ];
+      // ACT
+      const actual = [mh('query', './README.md', '--config', CONFIG), mh('query', 'docs/new.md', '--config', config)];
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it('writes JSON with two-space indentation and a trailing newline', () => {
       // ARRANGE
       const indented = '\n  "command"';

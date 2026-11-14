@@ -1,0 +1,114 @@
+[
+  {
+    "name": "both Modules claim an absent path",
+    "args": ["query", "--batch", "docs/sealed/new.md"],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "query",
+      "batch": true,
+      "modules": ["frontmatter", "body-structure"],
+      "paths": ["docs/sealed/new.md"],
+      "config": "markdown-harness.config.yaml",
+      "result": {
+        "results": [
+          {
+            "governance": "governed",
+            "path": "docs/sealed/new.md",
+            "modules": [
+              {
+                "module": "frontmatter",
+                "rule": { "ruleId": "sealed", "intent": "A sealed page carries no frontmatter at all." },
+                "requirements": { "frontmatter": "forbidden" }
+              },
+              {
+                "module": "body-structure",
+                "rule": { "ruleId": "sealed-title", "intent": "A sealed page has exactly one title." },
+                "requirements": { "types": ["sealed"], "headings": [{ "purpose": "heading", "level": 1 }] }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "an invisible path preserves its input spelling",
+    "args": ["--batch", "query", "./docs/absent.md"],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "query",
+      "batch": true,
+      "modules": ["frontmatter", "body-structure"],
+      "paths": ["./docs/absent.md"],
+      "config": "markdown-harness.config.yaml",
+      "result": { "results": [{ "governance": "invisible", "path": "docs/absent.md" }] }
+    }
+  },
+  {
+    "name": "scope retains only the selected Module",
+    "args": ["frontmatter", "query", "docs/sealed/new.md", "--batch"],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "query",
+      "batch": true,
+      "modules": ["frontmatter"],
+      "paths": ["docs/sealed/new.md"],
+      "config": "markdown-harness.config.yaml",
+      "result": {
+        "results": [
+          {
+            "governance": "governed",
+            "path": "docs/sealed/new.md",
+            "modules": [
+              {
+                "module": "frontmatter",
+                "rule": { "ruleId": "sealed", "intent": "A sealed page carries no frontmatter at all." },
+                "requirements": { "frontmatter": "forbidden" }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "legacy invisible query retains its envelope",
+    "args": ["query", "./docs/absent.md"],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "query",
+      "modules": ["frontmatter", "body-structure"],
+      "path": "./docs/absent.md",
+      "config": "markdown-harness.config.yaml",
+      "result": { "governance": "invisible", "path": "docs/absent.md" }
+    }
+  },
+  {
+    "name": "multiple paths are refused",
+    "args": ["query", "--batch", "docs/sealed/new.md", "docs/absent.md"],
+    "code": 2,
+    "stderr": "usage",
+    "stdout": ""
+  },
+  {
+    "name": "missing config rejects the whole batch",
+    "args": ["query", "--batch", "docs/sealed/new.md", "--config", "missing.yaml"],
+    "code": 2,
+    "stderr": "",
+    "stdout": {
+      "command": "query",
+      "batch": true,
+      "modules": ["frontmatter", "body-structure"],
+      "paths": ["docs/sealed/new.md"],
+      "config": "missing.yaml",
+      "result": {
+        "error": "CONFIG_REJECTED",
+        "faults": [{ "code": "CONFIG_NOT_FOUND", "location": "missing.yaml" }]
+      }
+    }
+  }
+]
