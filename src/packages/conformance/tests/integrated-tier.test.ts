@@ -166,7 +166,7 @@ describe('each integrated spec folder answers as its frozen files state', () => 
   describe('failure cases', () => {
     it('holds every frozen batch query case even if a fixture disappears', () => {
       // ARRANGE
-      const expected = { folders: 1, cases: 6 };
+      const expected = { folders: 2, cases: 12 };
       // ACT
       const batches = folders.map((folder) => optional(folder.root, 'expected-batch-query.json'));
       const actual = {
@@ -346,9 +346,10 @@ describe('the integrated tier states one coherent specification', () => {
       // of which 7 PASSES, 16 FAILS and 2 UNGOVERNED; #227 extends it to 29 cases, of which 9 PASSES,
       // 18 FAILS and 2 UNGOVERNED; #229 adds one nested-spine case, so 30 cases, of which 9 PASSES,
       // 19 FAILS and 2 UNGOVERNED; #231 adds three PASSES partners so every spec folder holds one,
-      // so 33 cases, of which 12 PASSES, 19 FAILS and 2 UNGOVERNED.
+      // so 33 cases, of which 12 PASSES, 19 FAILS and 2 UNGOVERNED; #247 adds the intents-view folder,
+      // so 35 cases, of which 13 PASSES, 20 FAILS and 2 UNGOVERNED.
       // ARRANGE
-      const expected = { passes: 12, fails: 19, ungoverned: 2, other: 0 };
+      const expected = { passes: 13, fails: 20, ungoverned: 2, other: 0 };
       // ACT
       const actual = {
         passes: stated(PASSES).length,

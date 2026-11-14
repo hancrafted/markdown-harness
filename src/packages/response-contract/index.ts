@@ -53,7 +53,15 @@ export { isConfigError } from './lib/config-error.pure.ts';
 // `cli` derives the concrete response from the declared Module set.
 export type { ConfigFault, ConfigFaultCode } from '../config-contract/index.ts';
 export type { ConfigErrorResult } from './lib/config-error.types.ts';
-export type { GovernedPath, InvisiblePath, ModuleClaim, ModuleRequirements, QueryResult } from './lib/query.types.ts';
+export { intentsOf } from './lib/intents.pure.ts';
+export type {
+  GovernedPath,
+  IntentRequirements,
+  InvisiblePath,
+  ModuleClaim,
+  ModuleRequirements,
+  QueryResult,
+} from './lib/query.types.ts';
 export {
   assessResponse,
   auditResponse,

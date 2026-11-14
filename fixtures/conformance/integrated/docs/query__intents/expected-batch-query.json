@@ -1,0 +1,346 @@
+[
+  {
+    "name": "a governed path keeps only the Steering content",
+    "args": [
+      "query",
+      "--intents",
+      "docs/notes/new.md"
+    ],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "query",
+      "intents": true,
+      "modules": [
+        "frontmatter",
+        "body-structure"
+      ],
+      "path": "docs/notes/new.md",
+      "config": "markdown-harness.config.yaml",
+      "result": {
+        "governance": "governed",
+        "path": "docs/notes/new.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "rule": {
+              "ruleId": "note",
+              "intent": "Every note says what it is."
+            },
+            "requirements": {
+              "fields": [
+                {
+                  "field": "type",
+                  "presence": "required",
+                  "intent": "The kind of note, so a reader can pick one without opening it.",
+                  "allowed": [
+                    {
+                      "value": "decision",
+                      "intent": "A choice made, with the reason."
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "module": "body-structure",
+            "rule": {
+              "ruleId": "note-shape",
+              "intent": "A note opens with a title and says why it exists."
+            },
+            "requirements": {
+              "headings": [
+                {
+                  "level": 1,
+                  "presence": "required",
+                  "intent": "The note names its subject here."
+                },
+                {
+                  "level": 2,
+                  "presence": "optional",
+                  "allowed": [
+                    {
+                      "title": "Outcome",
+                      "intent": "What was decided."
+                    }
+                  ],
+                  "headings": [
+                    {
+                      "level": 3,
+                      "pattern": "^Why$",
+                      "intent": "The reason, in one paragraph."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "an invisible path answers as it does without the view",
+    "args": [
+      "query",
+      "--intents",
+      "./docs/elsewhere/new.md"
+    ],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "query",
+      "intents": true,
+      "modules": [
+        "frontmatter",
+        "body-structure"
+      ],
+      "path": "./docs/elsewhere/new.md",
+      "config": "markdown-harness.config.yaml",
+      "result": {
+        "governance": "invisible",
+        "path": "docs/elsewhere/new.md"
+      }
+    }
+  },
+  {
+    "name": "a batch answers every path in order, duplicates kept",
+    "args": [
+      "query",
+      "--batch",
+      "--intents",
+      "docs/notes/new.md",
+      "./docs/elsewhere/new.md",
+      "docs/notes/new.md"
+    ],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "query",
+      "batch": true,
+      "intents": true,
+      "modules": [
+        "frontmatter",
+        "body-structure"
+      ],
+      "paths": [
+        "docs/notes/new.md",
+        "./docs/elsewhere/new.md",
+        "docs/notes/new.md"
+      ],
+      "config": "markdown-harness.config.yaml",
+      "result": {
+        "results": [
+          {
+            "governance": "governed",
+            "path": "docs/notes/new.md",
+            "modules": [
+              {
+                "module": "frontmatter",
+                "rule": {
+                  "ruleId": "note",
+                  "intent": "Every note says what it is."
+                },
+                "requirements": {
+                  "fields": [
+                    {
+                      "field": "type",
+                      "presence": "required",
+                      "intent": "The kind of note, so a reader can pick one without opening it.",
+                      "allowed": [
+                        {
+                          "value": "decision",
+                          "intent": "A choice made, with the reason."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "module": "body-structure",
+                "rule": {
+                  "ruleId": "note-shape",
+                  "intent": "A note opens with a title and says why it exists."
+                },
+                "requirements": {
+                  "headings": [
+                    {
+                      "level": 1,
+                      "presence": "required",
+                      "intent": "The note names its subject here."
+                    },
+                    {
+                      "level": 2,
+                      "presence": "optional",
+                      "allowed": [
+                        {
+                          "title": "Outcome",
+                          "intent": "What was decided."
+                        }
+                      ],
+                      "headings": [
+                        {
+                          "level": 3,
+                          "pattern": "^Why$",
+                          "intent": "The reason, in one paragraph."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "governance": "invisible",
+            "path": "docs/elsewhere/new.md"
+          },
+          {
+            "governance": "governed",
+            "path": "docs/notes/new.md",
+            "modules": [
+              {
+                "module": "frontmatter",
+                "rule": {
+                  "ruleId": "note",
+                  "intent": "Every note says what it is."
+                },
+                "requirements": {
+                  "fields": [
+                    {
+                      "field": "type",
+                      "presence": "required",
+                      "intent": "The kind of note, so a reader can pick one without opening it.",
+                      "allowed": [
+                        {
+                          "value": "decision",
+                          "intent": "A choice made, with the reason."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "module": "body-structure",
+                "rule": {
+                  "ruleId": "note-shape",
+                  "intent": "A note opens with a title and says why it exists."
+                },
+                "requirements": {
+                  "headings": [
+                    {
+                      "level": 1,
+                      "presence": "required",
+                      "intent": "The note names its subject here."
+                    },
+                    {
+                      "level": 2,
+                      "presence": "optional",
+                      "allowed": [
+                        {
+                          "title": "Outcome",
+                          "intent": "What was decided."
+                        }
+                      ],
+                      "headings": [
+                        {
+                          "level": 3,
+                          "pattern": "^Why$",
+                          "intent": "The reason, in one paragraph."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "a Module scope composes with the view",
+    "args": [
+      "body-structure",
+      "query",
+      "--intents",
+      "docs/notes/new.md"
+    ],
+    "code": 0,
+    "stderr": "",
+    "stdout": {
+      "command": "query",
+      "intents": true,
+      "modules": [
+        "body-structure"
+      ],
+      "path": "docs/notes/new.md",
+      "config": "markdown-harness.config.yaml",
+      "result": {
+        "governance": "governed",
+        "path": "docs/notes/new.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "rule": {
+              "ruleId": "note-shape",
+              "intent": "A note opens with a title and says why it exists."
+            },
+            "requirements": {
+              "headings": [
+                {
+                  "level": 1,
+                  "presence": "required",
+                  "intent": "The note names its subject here."
+                },
+                {
+                  "level": 2,
+                  "presence": "optional",
+                  "allowed": [
+                    {
+                      "title": "Outcome",
+                      "intent": "What was decided."
+                    }
+                  ],
+                  "headings": [
+                    {
+                      "level": 3,
+                      "pattern": "^Why$",
+                      "intent": "The reason, in one paragraph."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "a second --intents is a usage error",
+    "args": [
+      "query",
+      "--intents",
+      "--intents",
+      "docs/notes/new.md"
+    ],
+    "code": 2,
+    "stderr": "usage",
+    "stdout": ""
+  },
+  {
+    "name": "check refuses --intents",
+    "args": [
+      "check",
+      "--intents"
+    ],
+    "code": 2,
+    "stderr": "usage",
+    "stdout": ""
+  }
+]

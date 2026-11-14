@@ -40,7 +40,7 @@ export const CONFORMANCE_TIERS = [
     name: 'integrated',
     caseKind: 'spec-folder',
     configFile: ADOPTER_CONFIG_FILE,
-    caseCount: 33,
+    caseCount: 35,
   },
   {
     name: 'rejected-config',

@@ -11,7 +11,7 @@
 import type { Unreadable } from '../../../foundation/read-corpus.ts';
 import type { AssessResult, AuditResult, ConfigFault } from '../../../response-contract/index.ts';
 import type { Invocation } from '../argv/argv.types.ts';
-import type { DeclaredCheckResult, DeclaredQueryResult } from './declared-module.types.ts';
+import type { DeclaredCheckResult, DeclaredQueryView } from './declared-module.types.ts';
 
 /** Refused before a command could even be identified. */
 export type Refusal =
@@ -34,15 +34,17 @@ interface QueryQuestion {
   readonly modules: readonly string[];
   readonly path: string;
   readonly config: string;
+  /** Whether the answer is the intents view. */
+  readonly intents?: true;
 }
 
 export type QueryGathered = QueryQuestion &
   (
-    | { readonly batch?: undefined; readonly outcome: ConfigOutcome<DeclaredQueryResult> }
+    | { readonly batch?: undefined; readonly outcome: ConfigOutcome<DeclaredQueryView> }
     | {
         readonly batch: true;
         readonly paths: readonly string[];
-        readonly outcome: ConfigOutcome<readonly DeclaredQueryResult[]>;
+        readonly outcome: ConfigOutcome<readonly DeclaredQueryView[]>;
       }
   );
 

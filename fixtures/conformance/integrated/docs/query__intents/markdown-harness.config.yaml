@@ -1,0 +1,47 @@
+# Spec: The intents view of `query` keeps each Module's Rule and only the nodes that carry an `intent`, with what places them; a path no Module governs answers as it does without the view.
+#
+# `body-structure:` is written first so the response order (`frontmatter`, then `body-structure`) is the declared Module order, not file order.
+# Both Modules govern docs/notes/. Several keys carry no intent on purpose — `description`,
+# the `format` of `updated`, `unknownKeys`, `undefinedHeadings`, the `Context` heading's
+# `presence` — so the view's drops are as visible as its keeps.
+body-structure:
+  rules:
+    - ruleId: note-shape
+      folders: [docs/notes/]
+      intent: 'A note opens with a title and says why it exists.'
+      undefinedHeadings: allow
+      headings:
+        - purpose: heading
+          level: 1
+          presence: required
+          intent: 'The note names its subject here.'
+        - purpose: heading
+          level: 2
+          pattern: '^Context$'
+        - purpose: heading
+          level: 2
+          presence: optional
+          allowed:
+            - { title: Outcome, intent: 'What was decided.' }
+            - { title: Rejected }
+          headings:
+            - purpose: heading
+              level: 3
+              pattern: '^Why$'
+              intent: 'The reason, in one paragraph.'
+
+frontmatter:
+  rules:
+    - ruleId: note
+      folders: [docs/notes/]
+      intent: 'Every note says what it is.'
+      unknownKeys: allowed
+      fields:
+        type:
+          presence: required
+          intent: 'The kind of note, so a reader can pick one without opening it.'
+          allowed:
+            - { value: decision, intent: 'A choice made, with the reason.' }
+            - { value: scratch }
+        description: { presence: required }
+        updated: { presence: optional, format: datetime }

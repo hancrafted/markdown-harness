@@ -26,6 +26,8 @@ export const DEFAULT_ROOT = '.';
 export const USAGE = `usage: mh [[<module>] check] [--root <dir>] [--config <file>]
        mh [<module>]  query  <path> [--config <file>]
        mh [<module>]  query  --batch <path> [<path> ...] [--config <file>]
+       mh [<module>]  query  --intents <path> [--config <file>]
+       mh [<module>]  query  --batch --intents <path> [<path> ...] [--config <file>]
        mh [<module>]  audit  [--root <dir>]  [--config <file>]
        mh [<module>]  assess <path> [--now <iso>] [--config <file>]
        mh --help
@@ -34,6 +36,7 @@ export const USAGE = `usage: mh [[<module>] check] [--root <dir>] [--config <fil
             Exits 1 when the corpus is wrong.
   query     what the config asks of one path, before anything exists there. Never exits 1.
             --batch returns the batch envelope for one or more paths.
+            --intents returns only the Steering content.
   audit     how every rule fared across the corpus, so a rule that governs nothing is visible.
             Never exits 1.
   assess    what one file is worth believing, at one instant. Reads the file and
@@ -80,6 +83,13 @@ export const HELP = `${USAGE}
   --batch          query only; accepts one or more paths. result.results[n]
                    answers the raw paths[n], retaining duplicates and order.
                    A rejected config occupies result directly.
+  --intents        query only; may combine with --batch. Keeps each Module's
+                   ruleId and Rule intent, and every frontmatter field, allowed
+                   value and heading entry that carries an intent, with its
+                   field name, value, level, pattern or title, and presence.
+                   Drops every other requirement key. The envelope says
+                   \`intents: true\`. An invisible path and a rejected config
+                   answer as they do without it.
   --now <iso>      the instant assess judges against, as RFC 3339 with an
                    explicit offset: \`2026-12-01T00:00:00Z\`. Defaults to the host
                    clock, and is echoed in the response either way — so a run you

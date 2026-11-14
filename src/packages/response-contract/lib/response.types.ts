@@ -50,6 +50,8 @@ export interface QueryResponse<TRequirements = unknown> {
    * config rejection too, naming the scope that was asked.
    */
   modules: readonly string[];
+  /** Present only when the answer is the intents view rather than the full requirements. */
+  intents?: true;
   /** The path asked about, echoed exactly as the caller wrote it. It need not exist. */
   path: string;
   /** The config path, echoed exactly as the caller wrote it — never resolved. */
@@ -62,6 +64,8 @@ export interface QueryResponse<TRequirements = unknown> {
 export interface BatchQueryResponse<TRequirements = unknown> {
   command: 'query';
   batch: true;
+  /** Present only when each answer is the intents view rather than the full requirements. */
+  intents?: true;
   modules: readonly string[];
   paths: readonly string[];
   config: string;

@@ -24,6 +24,9 @@
  */
 export type QueryResult<TRequirements = unknown> = GovernedPath<TRequirements> | InvisiblePath;
 
+/** What the intents view keeps of one Module's requirements: only the intent-carrying nodes and what places them. */
+export type IntentRequirements = Readonly<Record<string, unknown>>;
+
 /** A path at least one Module claims, and everything each of them asks of it. */
 export interface GovernedPath<TRequirements = unknown> {
   /** The discriminant. */

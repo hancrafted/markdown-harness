@@ -51,6 +51,8 @@ export interface Invocation {
   path: string;
   /** Whether the query asks for the batch response envelope. */
   batch?: true;
+  /** Whether the query asks for the intents view of its answer. */
+  intents?: true;
   /** The ordered raw path operands of a batch query. */
   paths?: readonly string[];
 

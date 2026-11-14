@@ -121,11 +121,10 @@ function fromConfigOutcome<Result>(
 
 function queryTermination(gathered: QueryGathered): Termination {
   if (gathered.batch) {
-    const question = { modules: gathered.modules, paths: gathered.paths, config: gathered.config };
     return fromConfigOutcome(
       gathered.outcome,
-      (faults) => responseTermination(batchQueryResponse(question, configError(faults))),
-      (results) => responseTermination(batchQueryResponse(question, { results })),
+      (faults) => responseTermination(batchQueryResponse(gathered, configError(faults))),
+      (results) => responseTermination(batchQueryResponse(gathered, { results })),
     );
   }
   return fromConfigOutcome(

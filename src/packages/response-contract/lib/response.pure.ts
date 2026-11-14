@@ -42,20 +42,20 @@ export function checkResponse<TViolation>(
 
 /** Construct the envelope for `query`. */
 export function queryResponse<TRequirements>(
-  invocation: Pick<QueryResponse, 'modules' | 'path' | 'config'>,
+  invocation: Pick<QueryResponse, 'modules' | 'path' | 'config' | 'intents'>,
   result: QueryResult<TRequirements> | ConfigErrorResult,
 ): QueryResponse<TRequirements> {
-  const { modules, path, config } = invocation;
-  return { command: 'query', modules, path, config, result };
+  const { modules, path, config, intents } = invocation;
+  return { command: 'query', ...(intents ? { intents } : {}), modules, path, config, result };
 }
 
 /** Construct the batch query envelope. */
 export function batchQueryResponse<TRequirements>(
-  invocation: Pick<BatchQueryResponse, 'modules' | 'paths' | 'config'>,
+  invocation: Pick<BatchQueryResponse, 'modules' | 'paths' | 'config' | 'intents'>,
   result: BatchQueryResponse<TRequirements>['result'],
 ): BatchQueryResponse<TRequirements> {
-  const { modules, paths, config } = invocation;
-  return { command: 'query', batch: true, modules, paths, config, result };
+  const { modules, paths, config, intents } = invocation;
+  return { command: 'query', batch: true, ...(intents ? { intents } : {}), modules, paths, config, result };
 }
 
 /** Construct the envelope for `audit`. */

@@ -3,7 +3,7 @@
  *
  * The grammar is `mh [<module-key>] <command> [<path> ...] [flags]`: the command is
  * a word, a Module's config key in front of it scopes the run to that Module,
- * and `--root`, `--config`, `--now`, `--batch` and `--help` are flags, written anywhere.
+ * and `--root`, `--config`, `--now`, `--batch`, `--intents` and `--help` are flags, written anywhere.
  *
  * Conflicting input is refused rather than resolved by precedence. A *missing*
  * command is not conflicting input, which is why it has a default and the
@@ -31,6 +31,8 @@ const VALUE_FLAGS: readonly string[] = ['--root', '--config', '--now'];
 /** The flags that take no value. */
 const HELP_FLAG = '--help';
 const BATCH_FLAG = '--batch';
+const INTENTS_FLAG = '--intents';
+const VALUELESS_FLAGS: readonly string[] = [HELP_FLAG, BATCH_FLAG, INTENTS_FLAG];
 
 /** The refusing half of what the parser answers. */
 type Refused = Extract<ParsedArgv, { kind: 'refused' }>;
@@ -74,7 +76,7 @@ function tokensOf(argv: readonly string[]): Tokens | undefined {
     const value = flagValue(token, argv[index + 1]);
     if (value === undefined || flags.has(token)) return undefined;
     flags.set(token, value);
-    if (token !== HELP_FLAG && token !== BATCH_FLAG) index += 1;
+    if (!VALUELESS_FLAGS.includes(token)) index += 1;
   }
   return { flags, words };
 }
@@ -85,7 +87,7 @@ function tokensOf(argv: readonly string[]): Tokens | undefined {
  * begins with `--`.
  */
 function flagValue(flag: string, next: string | undefined): string | undefined {
-  if (flag === HELP_FLAG || flag === BATCH_FLAG) return '';
+  if (VALUELESS_FLAGS.includes(flag)) return '';
   if (!VALUE_FLAGS.includes(flag)) return undefined;
   if (next === undefined || next.startsWith('--')) return undefined;
   return next;
@@ -109,9 +111,9 @@ interface Resolved {
   readonly operands: readonly string[];
 }
 
-/** A batch envelope is a query-only question. */
+/** A batch envelope and the intents view are query-only questions. */
 function invalidBatch(flags: Map<string, string>, command: ReportingCommand): boolean {
-  return flags.has(BATCH_FLAG) && command !== 'query';
+  return (flags.has(BATCH_FLAG) || flags.has(INTENTS_FLAG)) && command !== 'query';
 }
 
 /** A batch query takes one or more paths; other path commands take exactly one. */
@@ -196,6 +198,7 @@ function invocationOf(flags: Map<string, string>, { command, modules, operands }
     modules,
     path: operands[0] ?? '',
     ...(flags.has(BATCH_FLAG) ? { batch: true as const, paths: operands } : {}),
+    ...(flags.has(INTENTS_FLAG) ? { intents: true as const } : {}),
     root: flags.get('--root') ?? DEFAULT_ROOT,
     config: flags.get('--config') ?? DEFAULT_CONFIG,
     now: flags.get('--now') ?? '',
