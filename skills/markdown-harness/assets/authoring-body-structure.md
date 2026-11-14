@@ -379,9 +379,10 @@ Read the candidates back: the `types`, `undefinedHeadings` and every entry at ev
 and `mayHold` included, should be what the Operator approved. Exit 2 names the key to fix in `location`, as `authoring-a-config.md` step 4 says, and
 `mh audit` (step 5 there) shows whether the Rule wins the files meant.
 
-Then run `mh check`. It takes no path and reads the whole corpus, so read the findings for the files
-the new Rule governs, filtered by `ruleId`; when the report is large, group it by code before deciding
-anything. Each spine violation names its `entry`, the path of zero-based indexes from the Rule's
+Then run `mh check <path>` on a file or folder the new Rule governs, or bare `mh check` for the whole
+corpus. A path narrows the report, never the evaluation, so a governed file's verdict is the same
+either way. Read the findings for the files the new Rule governs, filtered by `ruleId`; when the report
+is large, group it by code before deciding anything. Each spine violation names its `entry`, the path of zero-based indexes from the Rule's
 `headings:` down (`[1]` is the second top-level entry, `[1, 0]` the first entry of its nested list), and
 a violation inside a nested list also names `under`, the raw text of the heading the list was checked
 under, so the Contributor knows which release to fix. `HEADING_UNDEFINED` names a `level` and the

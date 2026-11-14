@@ -129,6 +129,13 @@ parses is not yet a config that asks for what the user meant.
 Edit that key and re-run. Faults come back all at once, so work the list rather than re-running after
 each edit.
 
+**Several paths take one batch.** `mh query --batch <path> [<path> ...]` loads the config once and
+answers each path in order, as `result.results[n]` beside the echoed `paths[n]`; zero paths is a usage
+error. Add `--intents` (`mh query --batch --intents <path> ...`, or one path without `--batch`) to read
+back only each rule's `intent` and the requirement nodes that carry one — the Steering content, which
+is what "asks for what the user meant" checks. A rejected config answers as `CONFIG_REJECTED` directly in
+`result`, with no `results` array.
+
 Two mechanical points that cost real time otherwise. **Capture the exit code directly** — piping into
 `head` or `jq` puts _that_ command's status in `$?`, which reports success over a failed run. Use
 `out=$(mh ...); code=$?`.
@@ -174,7 +181,9 @@ each rule asks for, what contributors have to add to existing files, and any fol
 YAML dump is not a summary — the user already has the file.
 
 Then run `mh check` and tell them the count. A config that governs existing files usually goes red
-on the first run, and that number is the real cost of the rules they just approved.
+on the first run, and that number is the real cost of the rules they just approved. To see one
+document or folder, run `mh check <path> [<path> ...]`: it reports only governed files at or under the
+paths, plus any ungoverned input. A governed file's verdict equals its verdict in the full run.
 
 _Done when_ the user has approved the change, the file is written, and they know what `mh check`
 currently reports.

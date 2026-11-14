@@ -4,7 +4,8 @@ Reference for the "Put `mh check` in the gate on its own" row of `SKILL.md`.
 
 `mh check` reports every governed file's violations and sets its exit code from the result. Putting
 it in the command CI already runs is what turns "the build is green" into a claim about the corpus
-rather than only about the code.
+rather than only about the code. The gate runs it bare; `mh check <path> ...` is the
+narrower form for one document or folder, and not a substitute in the gate.
 
 ## 1. Find the real gate
 
