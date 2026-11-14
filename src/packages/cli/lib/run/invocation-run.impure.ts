@@ -12,9 +12,11 @@
  * every branch below.
  */
 
+import { readCheckPaths } from '../../../foundation/check-paths.ts';
 import { listMarkdownFiles } from '../../../foundation/list-markdown-files.ts';
 import { loadConfig } from '../../../foundation/load-config.ts';
 import { normalisePath } from '../../../foundation/path-shape.ts';
+import { scopedCheck } from '../../../response-contract/index.ts';
 import { MODULE_SET } from '../../module-set.ts';
 import type { Invocation, ReportingCommand } from '../argv/argv.types.ts';
 import { auditVerdict } from './audit-report.pure.ts';
@@ -139,11 +141,13 @@ function gatherAssess(invocation: Invocation): AssessGathered {
  * `gatherConfig` is never evaluated when the corpus root is invalid.
  */
 function gatherCheck(invocation: Invocation): CheckGathered {
-  const { root, config } = invocation;
+  const { root, config, paths } = invocation;
   const checking = asked(invocation, 'check');
   const outcome = withCorpusGuard(listMarkdownFiles(root), (files) => {
     const cfg = gatherConfig(config);
     if (cfg.kind === 'rejected') return cfg;
+    const selection = readCheckPaths(root, paths ?? []);
+    if (selection.kind === 'path-refused') return selection;
 
     // Composed on the same terms as the steering command, and the counts with
     // it: `governedFiles` is a union over Modules, which no Module can see to
@@ -153,9 +157,14 @@ function gatherCheck(invocation: Invocation): CheckGathered {
       gatherAnswers(checking, (module) => module.check(root, files, cfg.result)),
     );
     if (verdict.kind === 'unreadable') return verdict;
-    return { kind: 'answered' as const, result: verdict.result };
+    const result = scopedCheck(
+      verdict.result,
+      verdict.governed,
+      paths?.map((_, index) => selection.paths[index]),
+    );
+    return { kind: 'answered' as const, result };
   });
-  return { kind: 'check', modules: keysOf(checking), root, config, outcome };
+  return { kind: 'check', modules: keysOf(checking), root, config, paths, outcome };
 }
 
 /** Compile-time exhaustiveness: reached only if a switch left a case unhandled. */

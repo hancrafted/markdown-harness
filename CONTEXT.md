@@ -167,6 +167,11 @@ projected from the full answer, never re-evaluated. Names the spec-folder family
 shapes.
 _Avoid_: lookup (for the command)
 
+**check**:
+The command reporting Rule violations and counts over Governed files. A scoped check is that
+verdict restricted to named paths, not a separate evaluation.
+_Avoid_: assessment (for the command)
+
 **Assessment**:
 What one document's own frontmatter says about how much of it to believe, judged against a
 stated instant rather than against whatever the clock reads. A Steering query asks the config

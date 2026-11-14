@@ -104,12 +104,13 @@ export function corpusVerdict<TViolation>(
 export function checkVerdict<TViolation>(
   corpus: readonly string[],
   answers: readonly ModuleAnswer<CheckAnswer<TViolation>>[],
-): { kind: 'checked'; result: CheckResult<TViolation> } | Unreadable {
+): { kind: 'checked'; result: CheckResult<TViolation>; governed: readonly string[] } | Unreadable {
   const settled = settledAnswers<Extract<CheckAnswer<TViolation>, { kind: 'checked' }>>(answers);
   if ('kind' in settled) return settled;
 
   return {
     kind: 'checked',
+    governed: [...new Set(settled.flatMap(({ answer }) => [...answer.result.governed]))],
     result: corpusVerdict(
       corpus,
       settled.map(({ module, answer }) => ({ module, answer: answer.result })),

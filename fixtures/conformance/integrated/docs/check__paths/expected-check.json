@@ -1,0 +1,106 @@
+{
+  "command": "check",
+  "modules": [
+    "frontmatter",
+    "body-structure"
+  ],
+  "root": ".",
+  "config": "markdown-harness.config.yaml",
+  "result": {
+    "summary": {
+      "governedFiles": 4,
+      "invalidFiles": 3,
+      "totalViolations": 5
+    },
+    "files": [
+      {
+        "path": "docs/outside/broken.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "scoped-type",
+            "ruleIntent": "Governed pages declare their type.",
+            "violations": [
+              {
+                "field": "type",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required"
+                }
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "scoped-depth",
+            "ruleIntent": "Governed pages have only level-one headings.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 2,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/scoped/body-only.md",
+        "modules": [
+          {
+            "module": "body-structure",
+            "ruleId": "scoped-depth",
+            "ruleIntent": "Governed pages have only level-one headings.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 2,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "path": "docs/scoped/broken.md",
+        "modules": [
+          {
+            "module": "frontmatter",
+            "ruleId": "scoped-type",
+            "ruleIntent": "Governed pages declare their type.",
+            "violations": [
+              {
+                "field": "type",
+                "violation": "FRONTMATTER__MISSING_REQUIRED_FIELD",
+                "requirement": {
+                  "presence": "required"
+                }
+              }
+            ]
+          },
+          {
+            "module": "body-structure",
+            "ruleId": "scoped-depth",
+            "ruleIntent": "Governed pages have only level-one headings.",
+            "violations": [
+              {
+                "violation": "BODY_STRUCTURE__LEVEL_TOO_DEEP",
+                "level": 2,
+                "found": 1,
+                "requirement": {
+                  "maxLevel": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

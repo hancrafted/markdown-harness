@@ -33,7 +33,9 @@ export type {
   RuleRef,
   SelectorRef,
 } from './lib/audit.types.ts';
+export { scopedCheck } from './lib/check-scope.pure.ts';
 export type {
+  CheckPath,
   CheckResult,
   CheckSummary,
   FileViolations,

@@ -100,8 +100,10 @@ inside the file; a sound one comes back with the rule that governs the path.
 mh check
 ```
 
-Exit **0** clean, exit **1** the corpus is wrong. A path no rule matches is invisible — a correct
-answer, not an error — so a fresh install reports nothing on a corpus it has never seen.
+Exit **0** clean, exit **1** the corpus is wrong. Without path arguments, a path no rule matches is
+invisible — a correct answer, not an error — so a fresh install reports nothing on a corpus it has
+never seen. To check what you wrote, use `mh check docs/research/new.md` or
+`mh check docs/research/`; [scoped checks](#scoped-checks) report explicit ungoverned inputs too.
 
 ### 5. Put it in your gate
 
@@ -125,15 +127,16 @@ what it deliberately stays quiet about.
 
 Four commands, and a `--help` that is the only one not answering in JSON.
 
-| command                                | answers                                                         |
-| -------------------------------------- | --------------------------------------------------------------- |
-| `mh check`                             | every governed file's violations, and the counts. The default   |
-| `mh query <path>`                      | what the config asks of a path, before the file exists          |
-| `mh query --batch <path> [<path> ...]` | ordered answers in a batch envelope                             |
-| `mh query --intents <path>`            | only the Steering content: every node that carries an `intent`  |
-| `mh audit`                             | how every rule fared, so a rule that governs nothing is visible |
-| `mh assess <path>`                     | what one file is worth believing, at one instant                |
-| `mh --help`                            | the commands, the flag defaults and the exit-code contract      |
+| command                                | answers                                                           |
+| -------------------------------------- | ----------------------------------------------------------------- |
+| `mh check`                             | every governed file's violations, and the counts. The default     |
+| `mh check <path> [<path> ...]`         | only governed files at or under the paths, plus ungoverned inputs |
+| `mh query <path>`                      | what the config asks of a path, before the file exists            |
+| `mh query --batch <path> [<path> ...]` | ordered answers in a batch envelope                               |
+| `mh query --intents <path>`            | only the Steering content: every node that carries an `intent`    |
+| `mh audit`                             | how every rule fared, so a rule that governs nothing is visible   |
+| `mh assess <path>`                     | what one file is worth believing, at one instant                  |
+| `mh --help`                            | the commands, the flag defaults and the exit-code contract        |
 
 The exit codes are the contract: **0** nothing wrong, **1** the corpus is wrong — `check` alone
 ever exits this — and **2** it could not report at all, which is either a usage error on stderr or a
@@ -149,7 +152,8 @@ And around them:
 
 - **One config, ordered rules, first match wins, nothing merges.** For any file the first matching
   rule is the complete set of constraints.
-- **Governance is opt-in by path.** A file no rule names is never reported and never counted.
+- **Governance is opt-in by path.** A file no rule names is never counted; a scoped check lists
+  an explicit input that reaches no governed file as ungoverned.
 - **Every rule states its `intent` in your words**, and that sentence travels with any violation it
   reports — so a failure says why the rule exists, not just which check fired.
 - **The check path is hermetic.** No network, no model, no external service, no git call, no clock.
@@ -162,10 +166,61 @@ And around them:
   gate, wire the hook.
 - **A Claude Code freshness hook**, and an activity log that proves it ran.
 
+### Scoped checks
+
+```text
+mh [<module>] check [<path> ...] [--root <dir>] [--config <file>]
+```
+
+Paths may be files or directories, and several can be checked in one call:
+
+```bash
+mh check docs/research/new.md
+mh check docs/research/
+mh check docs/research/new.md docs/decisions/
+mh frontmatter check docs/research/new.md
+mh check skills/research/ --root skills
+mh frontmatter check skills/research/SKILL.md --root skills --config configs/skills.yaml
+```
+
+Path arguments resolve from the current working directory, like `--config`, not from the config's
+directory or from `--root`. The corpus root defaults to the current working directory; `--root`
+selects a different corpus root. In the last example, run from the repo root, the input is
+`skills/research/SKILL.md`, the corpus root is `skills`, and the config is `configs/skills.yaml`.
+Module and path filters compose: `mh frontmatter check <path>` reports only that Module's findings
+within the requested paths.
+
+Scoping narrows the report, not evaluation. The config loads and validates once, the full corpus is
+walked, and Rules run as in a full check. A governed file's scoped verdict equals its verdict in a
+full run with the same config, root and Module selection. This is not a faster partial-corpus check.
+
+The response echoes the paths exactly as given, in input order. Its file results and summary counts
+cover only governed files at or under those paths: governed files, invalid files and total
+violations are all scoped. Duplicate or overlapping inputs never count a governed file twice.
+
+Each explicit input that reaches no governed file is listed as **ungoverned**, in input order.
+That includes an existing ungoverned file and a directory with no governed file beneath it, under
+the selected Modules. These inputs are not passes, do not contribute to summary counts, and do not
+change the exit code.
+
+- **Exit 1**: at least one in-scope governed file has a violation in a selected Module. Violations
+  elsewhere in the corpus do not affect a scoped check's exit status.
+- **Exit 0**: no in-scope governed file has a violation, including when every input is ungoverned.
+  Read the ungoverned list before treating this as evidence that your files passed.
+- **Exit 2, usage error**: an input does not exist or lies outside the corpus root. Stderr contains
+  the synopsis and one line naming the path; stdout is empty.
+- **Exit 2, rejected config**: the response is `CONFIG_REJECTED`, whether or not paths were supplied.
+  Nothing is reported per path.
+
+Without paths, `mh check` retains its full-corpus report, counts, exit status and response envelope
+byte for byte; it does not echo paths. Path scoping applies to `check` only; `assess` and `audit`
+retain their own behaviour.
+
 ## How it works
 
 **One config declares what each path must carry.** Rules are an ordered list; for any file the first
-match is the complete set of constraints, and a file no rule names is invisible.
+match is the complete set of constraints. A file no rule names is ungoverned: it is absent from
+full-corpus checks, while scoped checks identify explicit inputs that reach no governed file.
 
 ```yaml
 # markdown-harness.config.yaml
@@ -395,7 +450,7 @@ pin. The product outlives any spec it carries.
 | **Operator**      | Whoever writes the config. The only role that opens it                            |
 | **Contributor**   | Whoever writes documents and never sees the config                                |
 | **Rule**          | One entry in the ordered list: a path selector, an `intent`, and what it requires |
-| **Governed file** | A file some rule matches. Everything else is invisible to the tool                |
+| **Governed file** | A file some rule matches. Ungoverned files are not counted by `check`             |
 | **Preset**        | A shipped config you can delete without changing behaviour                        |
 
 "Harness" alone is ambiguous — the industry calls a host harness a harness too. This product is
