@@ -280,13 +280,36 @@ function mhOnNode(
 
 describe('mh', () => {
   describe('success cases', () => {
-    it('documents the one-path batch contract in help', () => {
+    it('associates every batch occurrence with its normalized answer', () => {
+      // ARRANGE
+      const envelope = {
+        command: 'query',
+        batch: true,
+        modules: ['frontmatter', 'body-structure'],
+        paths: ['./README.md', 'README.md', './README.md'],
+        config: CONFIG,
+        result: {
+          results: [
+            { governance: 'invisible', path: 'README.md' },
+            { governance: 'invisible', path: 'README.md' },
+            { governance: 'invisible', path: 'README.md' },
+          ],
+        },
+      };
+      const expected = { code: 0, stdout: `${JSON.stringify(envelope, null, 2)}\n`, stderr: '' };
+      // ACT
+      const run = mh('query', '--batch', './README.md', 'README.md', './README.md', '--config', CONFIG);
+      // ASSERT
+      expect(run).toEqual(expected);
+    });
+
+    it('documents the multi-path batch contract in help', () => {
       // ARRANGE
       const expected = [
-        'query  [--batch] <path>',
-        '--batch          query only; accepts exactly one path',
-        'result.results[0]',
-        'Multiple paths are refused.',
+        'query  --batch <path> [<path> ...]',
+        '--batch          query only; accepts one or more paths',
+        'result.results[n]',
+        'raw paths[n]',
       ];
       // ACT
       const run = mh('--help');
@@ -306,12 +329,20 @@ describe('mh', () => {
         '      intent: Every candidate names its type.',
         '      fields:',
         '        type: { presence: required }',
+        '    - ruleId: front-only',
+        '      folders: [docs/front/]',
+        '      excludeFiles:',
+        '        - { folders: [docs/front/], fileNames: [excluded.md] }',
+        '      intent: Frontmatter only.',
+        '      fields:',
+        '        title: { presence: required }',
         'body-structure:',
         '  rules:',
         '    - { ruleId: guide, folders: [docs/candidates/], types: [guide], intent: Guide heading., headings: [{ purpose: heading, level: 1 }] }',
         '    - { ruleId: report, folders: [docs/candidates/], types: [report], intent: Report heading., headings: [{ purpose: heading, level: 2 }] }',
         '    - { ruleId: fallback, folders: [docs/candidates/], intent: Fallback heading., headings: [{ purpose: heading, level: 1 }] }',
         '    - { ruleId: shadowed, folders: [docs/candidates/], intent: Shadowed heading., headings: [{ purpose: heading, level: 1 }] }',
+        '    - { ruleId: body-only, folders: [docs/body/], intent: Body only., headings: [{ purpose: heading, level: 2 }] }',
         '',
       ].join('\n');
       const configPath = join(canaryRoot, 'markdown-harness.config.yaml');
@@ -323,7 +354,14 @@ describe('mh', () => {
         command: 'query',
         batch: true,
         modules: ['frontmatter', 'body-structure'],
-        paths: ['docs/candidates/new.md'],
+        paths: [
+          'docs/candidates/new.md',
+          'docs/front/new.md',
+          'docs/body/new.md',
+          'docs/front/excluded.md',
+          'node_modules/docs/front/new.md',
+          'docs/unselected.md',
+        ],
         config: 'markdown-harness.config.yaml',
         result: {
           results: [
@@ -353,24 +391,52 @@ describe('mh', () => {
                 },
               ],
             },
+            {
+              governance: 'governed',
+              path: 'docs/front/new.md',
+              modules: [
+                {
+                  module: 'frontmatter',
+                  rule: { ruleId: 'front-only', intent: 'Frontmatter only.' },
+                  requirements: { fields: [{ field: 'title', presence: 'required' }] },
+                },
+              ],
+            },
+            {
+              governance: 'governed',
+              path: 'docs/body/new.md',
+              modules: [
+                {
+                  module: 'body-structure',
+                  rule: { ruleId: 'body-only', intent: 'Body only.' },
+                  requirements: { headings: [{ purpose: 'heading', level: 2 }] },
+                },
+              ],
+            },
+            { governance: 'invisible', path: 'docs/front/excluded.md' },
+            { governance: 'invisible', path: 'node_modules/docs/front/new.md' },
+            { governance: 'invisible', path: 'docs/unselected.md' },
           ],
         },
       };
       const expectedRun = { code: 0, stdout: `${JSON.stringify(expected, null, 2)}\n`, stderr: '' };
       const beforeAbsent = existsSync(directory);
+      const beforePaths = expected.paths.map((path) => existsSync(join(canaryRoot, path)));
       // ACT
-      const absent = mhIn(canaryRoot, 'query', '--batch', 'docs/candidates/new.md');
+      const absent = mhIn(canaryRoot, 'query', '--batch', ...expected.paths);
       const afterAbsent = existsSync(directory);
+      const afterPaths = expected.paths.map((path) => existsSync(join(canaryRoot, path)));
       mkdirSync(directory);
       writeFileSync(document, content);
       const beforeContent = readFileSync(document, 'utf8');
-      const written = mhIn(canaryRoot, 'query', '--batch', 'docs/candidates/new.md');
+      const written = mhIn(canaryRoot, 'query', '--batch', ...expected.paths);
       const afterContent = readFileSync(document, 'utf8');
       // ASSERT
       expect(absent).toEqual(expectedRun);
       expect(written).toEqual(expectedRun);
       expect(beforeAbsent).toBe(false);
       expect(afterAbsent).toBe(beforeAbsent);
+      expect(afterPaths).toEqual(beforePaths);
       expect(afterContent).toBe(beforeContent);
     });
 
@@ -474,7 +540,7 @@ describe('mh', () => {
         command: 'query',
         batch: true,
         modules: ['body-structure'],
-        paths: ['docs/new.md'],
+        paths: ['docs/new.md', 'docs/other.md'],
         config,
         result: {
           error: 'CONFIG_REJECTED',
@@ -489,7 +555,7 @@ describe('mh', () => {
       };
       const expected = { code: 2, stdout: `${JSON.stringify(envelope, null, 2)}\n`, stderr: '' };
       // ACT
-      const run = mh('body-structure', 'query', '--batch', 'docs/new.md', '--config', config);
+      const run = mh('body-structure', 'query', '--batch', 'docs/new.md', 'docs/other.md', '--config', config);
       // ASSERT
       expect(run).toEqual(expected);
     });
@@ -516,7 +582,6 @@ describe('mh', () => {
       // ARRANGE
       const invocations = [
         ['query', '--batch'],
-        ['query', '--batch', 'one.md', 'two.md'],
         ['query', 'one.md', 'two.md'],
         ['query', '--batch', '--batch', 'one.md'],
         ['check', '--batch'],
@@ -666,22 +731,25 @@ describe('mh', () => {
     it('treats command and Module words as paths and normalises Windows-shaped paths', () => {
       // ARRANGE
       const paths = ['query', 'frontmatter', '.\\docs\\missing.md'];
-      const expectedPaths = ['query', 'frontmatter', 'docs/missing.md'];
-      const expected = paths.map((path, index) => ({
+      const expected = {
         command: 'query',
         batch: true,
         modules: ['frontmatter', 'body-structure'],
-        paths: [path],
+        paths,
         config: CONFIG,
-        result: { results: [{ governance: 'invisible', path: expectedPaths[index] }] },
-      }));
+        result: {
+          results: [
+            { governance: 'invisible', path: 'query' },
+            { governance: 'invisible', path: 'frontmatter' },
+            { governance: 'invisible', path: 'docs/missing.md' },
+          ],
+        },
+      };
+      const expectedRun = { code: 0, stdout: `${JSON.stringify(expected, null, 2)}\n`, stderr: '' };
       // ACT
-      const actual = paths.map((path) => {
-        const run = mh('--batch', 'query', path, '--config', CONFIG);
-        return { code: run.code, stderr: run.stderr, body: JSON.parse(run.stdout) };
-      });
+      const actual = mh('--batch', 'query', ...paths, '--config', CONFIG);
       // ASSERT
-      expect(actual).toEqual(expected.map((body) => ({ code: 0, stderr: '', body })));
+      expect(actual).toEqual(expectedRun);
     });
 
     it('preserves the single-path envelope and config refusal byte for byte', () => {

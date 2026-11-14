@@ -1,7 +1,7 @@
 /**
  * Read argv into an invocation, or refuse it.
  *
- * The grammar is `mh [<module-key>] <command> [<path>] [flags]`: the command is
+ * The grammar is `mh [<module-key>] <command> [<path> ...] [flags]`: the command is
  * a word, a Module's config key in front of it scopes the run to that Module,
  * and `--root`, `--config`, `--now`, `--batch` and `--help` are flags, written anywhere.
  *
@@ -22,7 +22,7 @@ import { isAssessmentInstant } from './assessment-instant.pure.ts';
 import { REPORTING_COMMANDS } from './reporting-commands.pure.ts';
 import { DEFAULT_CONFIG, DEFAULT_ROOT } from './usage.pure.ts';
 
-/** The commands that take one path after the command word. */
+/** The commands that take paths after the command word. */
 const PATH_COMMANDS: readonly ReportingCommand[] = ['query', 'assess'];
 
 /** The flags that take a value. */
@@ -114,6 +114,12 @@ function invalidBatch(flags: Map<string, string>, command: ReportingCommand): bo
   return flags.has(BATCH_FLAG) && command !== 'query';
 }
 
+/** A batch query takes one or more paths; other path commands take exactly one. */
+function invalidOperandCount(flags: Map<string, string>, { command, operands }: Resolved): boolean {
+  if (command === 'query' && flags.has(BATCH_FLAG)) return operands.length === 0;
+  return operands.length !== (PATH_COMMANDS.includes(command) ? 1 : 0);
+}
+
 /**
  * The Module scope one scoped invocation names, or the refusal naming why not.
  *
@@ -169,9 +175,9 @@ function resolved(words: readonly string[], modules: readonly ModuleCommands[]):
  * silently dropped would let a caller believe they had asked something they had
  * not.
  */
-function conflicts(flags: Map<string, string>, { command, operands }: Resolved): boolean {
-  // `query` and `assess` take exactly one path; the other two take none.
-  if (operands.length !== (PATH_COMMANDS.includes(command) ? 1 : 0)) return true;
+function conflicts(flags: Map<string, string>, resolution: Resolved): boolean {
+  const { command } = resolution;
+  if (invalidOperandCount(flags, resolution)) return true;
 
   // A query has no corpus, so a `--root` beside one is conflicting input, not
   // an argument to ignore. An assessment answers about one path on the same
@@ -189,7 +195,7 @@ function invocationOf(flags: Map<string, string>, { command, modules, operands }
     command,
     modules,
     path: operands[0] ?? '',
-    ...(flags.has(BATCH_FLAG) ? { batch: true as const } : {}),
+    ...(flags.has(BATCH_FLAG) ? { batch: true as const, paths: operands } : {}),
     root: flags.get('--root') ?? DEFAULT_ROOT,
     config: flags.get('--config') ?? DEFAULT_CONFIG,
     now: flags.get('--now') ?? '',

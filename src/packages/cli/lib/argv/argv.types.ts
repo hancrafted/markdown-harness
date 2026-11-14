@@ -51,6 +51,8 @@ export interface Invocation {
   path: string;
   /** Whether the query asks for the batch response envelope. */
   batch?: true;
+  /** The ordered raw path operands of a batch query. */
+  paths?: readonly string[];
 
   /**
    * `--now`, exactly as the caller wrote it, or empty when it was not given.

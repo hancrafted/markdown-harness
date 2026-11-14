@@ -12,8 +12,14 @@
  * only the composing Package can see that none of them claimed it.
  */
 
+import type { LoadedConfig } from '../../../config-contract/index.ts';
+import { normalisePath } from '../../../foundation/path-shape.ts';
 import type { ModuleRequirements, QueryResult } from '../../../response-contract/index.ts';
+import type { Invocation } from '../argv/argv.types.ts';
+import type { DeclaredRequirements } from './declared-module.types.ts';
+import { gatherAnswers } from './module-answers.pure.ts';
 import type { ModuleAnswer, QueryAnswer } from './module-answers.types.ts';
+import type { ConfigOutcome, QueryGathered } from './termination.types.ts';
 
 /**
  * What the config asks of one path, across every Module that answered.
@@ -36,4 +42,28 @@ export function pathGovernance<TRequirements>(
   if (modules.length === 0) return { governance: 'invisible', path };
 
   return { governance: 'governed', path, modules };
+}
+
+/** Compose a complete query from one validated configuration and the selected Modules. */
+export function queryGathered(
+  invocation: Invocation,
+  modules: readonly {
+    readonly key: string;
+    readonly query: (path: string, config: LoadedConfig) => QueryAnswer<DeclaredRequirements>;
+  }[],
+  cfg: ConfigOutcome<LoadedConfig>,
+): QueryGathered {
+  const { path, config, batch } = invocation;
+  const question = { kind: 'query' as const, modules: modules.map((module) => module.key), path, config };
+  const paths = invocation.paths ?? [path];
+  if (cfg.kind === 'rejected') {
+    return batch ? { ...question, batch, paths, outcome: cfg } : { ...question, outcome: cfg };
+  }
+  const answer = (requestedPath: string) =>
+    pathGovernance<DeclaredRequirements>(
+      normalisePath(requestedPath),
+      gatherAnswers(modules, (module) => module.query(requestedPath, cfg.result)),
+    );
+  if (batch) return { ...question, batch, paths, outcome: { kind: 'answered', result: paths.map(answer) } };
+  return { ...question, outcome: { kind: 'answered', result: answer(path) } };
 }

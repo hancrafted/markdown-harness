@@ -28,15 +28,23 @@ export type ConfigOutcome<Result> =
   | { readonly kind: 'answered'; readonly result: Result };
 
 /** What `query` gathered. */
-export interface QueryGathered {
+interface QueryQuestion {
   readonly kind: 'query';
   /** The keys of the Modules asked, in declared order — echoed as the response's `modules`. */
   readonly modules: readonly string[];
   readonly path: string;
-  readonly batch?: true;
   readonly config: string;
-  readonly outcome: ConfigOutcome<DeclaredQueryResult>;
 }
+
+export type QueryGathered = QueryQuestion &
+  (
+    | { readonly batch?: undefined; readonly outcome: ConfigOutcome<DeclaredQueryResult> }
+    | {
+        readonly batch: true;
+        readonly paths: readonly string[];
+        readonly outcome: ConfigOutcome<readonly DeclaredQueryResult[]>;
+      }
+  );
 
 /** What `audit` gathered. */
 export interface AuditGathered {
