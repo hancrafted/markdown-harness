@@ -5,9 +5,7 @@
  * a word, a Module's config key in front of it scopes the run to that Module,
  * and `--root`, `--config`, `--now`, `--batch`, `--intents` and `--help` are flags, written anywhere.
  *
- * Conflicting input is refused rather than resolved by precedence. A *missing*
- * command is not conflicting input, which is why it has a default and the
- * conflicts do not.
+ * Conflicting input is refused. A missing command defaults to `check`.
  *
  * Most refusals carry no reason: stderr's one job for argv is the usage text,
  * so the caller learns THAT argv was refused and reads the synopsis to learn
@@ -116,8 +114,9 @@ function invalidBatch(flags: Map<string, string>, command: ReportingCommand): bo
   return (flags.has(BATCH_FLAG) || flags.has(INTENTS_FLAG)) && command !== 'query';
 }
 
-/** A batch query takes one or more paths; other path commands take exactly one. */
+/** Checks take any number of paths; batch queries need at least one, other path commands exactly one. */
 function invalidOperandCount(flags: Map<string, string>, { command, operands }: Resolved): boolean {
+  if (command === 'check') return false;
   if (command === 'query' && flags.has(BATCH_FLAG)) return operands.length === 0;
   return operands.length !== (PATH_COMMANDS.includes(command) ? 1 : 0);
 }
@@ -191,13 +190,22 @@ function conflicts(flags: Map<string, string>, resolution: Resolved): boolean {
   return (flags.has('--now') && command !== 'assess') || invalidBatch(flags, command);
 }
 
+/** Raw operands carried by path-scoped commands. */
+function pathOperands(
+  flags: Map<string, string>,
+  { command, operands }: Resolved,
+): Pick<Invocation, 'batch' | 'paths'> {
+  if (flags.has(BATCH_FLAG)) return { batch: true, paths: operands };
+  return command === 'check' && operands.length > 0 ? { paths: operands } : {};
+}
+
 /** The invocation, with the two documented defaults applied. */
 function invocationOf(flags: Map<string, string>, { command, modules, operands }: Resolved): Invocation {
   return {
     command,
     modules,
     path: operands[0] ?? '',
-    ...(flags.has(BATCH_FLAG) ? { batch: true as const, paths: operands } : {}),
+    ...pathOperands(flags, { kind: 'resolved', command, modules, operands }),
     ...(flags.has(INTENTS_FLAG) ? { intents: true as const } : {}),
     root: flags.get('--root') ?? DEFAULT_ROOT,
     config: flags.get('--config') ?? DEFAULT_CONFIG,

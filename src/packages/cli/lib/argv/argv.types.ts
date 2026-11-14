@@ -53,7 +53,7 @@ export interface Invocation {
   batch?: true;
   /** Whether the query asks for the intents view of its answer. */
   intents?: true;
-  /** The ordered raw path operands of a batch query. */
+  /** The ordered raw path operands of a batch query or a scoped check. */
   paths?: readonly string[];
 
   /**

@@ -32,6 +32,15 @@ export interface CheckResult<TViolation = unknown> {
    * reason that nothing ever read them.
    */
   files: readonly FileViolations<TViolation>[];
+  /** Raw operands reaching no governed file, in input order; present only on scoped checks. */
+  ungovernedPaths?: readonly string[];
+}
+
+/** A validated check operand, with its raw echo and root-relative selection. */
+export interface CheckPath {
+  readonly path: string;
+  readonly relative: string;
+  readonly directory: boolean;
 }
 
 /**
