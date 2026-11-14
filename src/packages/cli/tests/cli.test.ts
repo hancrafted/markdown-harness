@@ -604,6 +604,78 @@ describe('mh', () => {
       expect(actual).toEqual(expected);
     });
 
+    it('refuses --intents outside query and when repeated', () => {
+      // ARRANGE
+      const invocations = [
+        ['check', '--intents'],
+        ['audit', '--intents'],
+        ['assess', '--intents', 'one.md'],
+        ['--help', '--intents'],
+        ['query', '--intents', '--intents', 'one.md'],
+        ['query', '--intents'],
+        ['query', '--intents', 'one.md', '--root', '.'],
+      ];
+      const expected = invocations.map(() => ({ code: 2, stdout: '', lead: USAGE_LEAD }));
+      // ACT
+      const actual = invocations.map((args) => {
+        const run = mh(...args);
+        return { code: run.code, stdout: run.stdout, lead: run.stderr.slice(0, USAGE_LEAD.length) };
+      });
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
+    it('marks the intents view and answers an invisible path as the full view does', () => {
+      // ARRANGE
+      const expected = {
+        code: 0,
+        stdout: `${JSON.stringify(
+          {
+            command: 'query',
+            batch: true,
+            intents: true,
+            modules: ['frontmatter', 'body-structure'],
+            paths: ['./README.md', 'README.md'],
+            config: CONFIG,
+            result: {
+              results: [
+                { governance: 'invisible', path: 'README.md' },
+                { governance: 'invisible', path: 'README.md' },
+              ],
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        stderr: '',
+      };
+      // ACT
+      const run = mh('query', '--batch', '--intents', './README.md', 'README.md', '--config', CONFIG);
+      // ASSERT
+      expect(run).toEqual(expected);
+    });
+
+    it('answers a rejected config under --intents with the same CONFIG_REJECTED result', () => {
+      // ARRANGE
+      const config =
+        'fixtures/conformance/rejected-config/body-structure__invalid-purpose/markdown-harness.config.yaml';
+      const full = mh('query', 'docs/new.md', '--config', config);
+      const expected = { code: full.code, result: (JSON.parse(full.stdout) as { result: unknown }).result };
+      // ACT
+      const run = mh('query', '--intents', 'docs/new.md', '--config', config);
+      // ASSERT
+      expect({ code: run.code, result: (JSON.parse(run.stdout) as { result: unknown }).result }).toEqual(expected);
+    });
+
+    it('describes --intents in help', () => {
+      // ARRANGE
+      const expected = ['query  --intents <path>', '--intents        query only; may combine with --batch'];
+      // ACT
+      const run = mh('--help');
+      // ASSERT
+      expect(expected.filter((line) => !run.stdout.includes(line))).toEqual([]);
+    });
+
     it('rejects a fault outside the selected Module in one batch envelope', () => {
       // ARRANGE
       const config =

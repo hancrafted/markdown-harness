@@ -160,6 +160,13 @@ after. It reads the config and never opens the file, which is what separates it 
 Assessment.
 _Avoid_: lookup, dry run, preflight
 
+**query**:
+The command that asks a Steering query. `--batch` answers many paths in one envelope; `--intents`
+answers each as the intents view — only the nodes that carry an `intent`, with what places them —
+projected from the full answer, never re-evaluated. Names the spec-folder family that freezes those
+shapes.
+_Avoid_: lookup (for the command)
+
 **Assessment**:
 What one document's own frontmatter says about how much of it to believe, judged against a
 stated instant rather than against whatever the clock reads. A Steering query asks the config

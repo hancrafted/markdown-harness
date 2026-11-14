@@ -13,7 +13,12 @@
  */
 
 import type { ConfigFaultCode } from '../../../config-contract/index.ts';
-import type { CheckResult, MarkdownHarnessResponse, QueryResult } from '../../../response-contract/index.ts';
+import type {
+  CheckResult,
+  IntentRequirements,
+  MarkdownHarnessResponse,
+  QueryResult,
+} from '../../../response-contract/index.ts';
 import type { MODULE_SET } from '../../module-set.ts';
 import type { ReportingCommand } from '../argv/argv.types.ts';
 import type { Implementing } from './module-answers.types.ts';
@@ -60,8 +65,11 @@ export type DeclaredFaultCode =
 /** What `query` answers once the declared set has answered it. */
 export type DeclaredQueryResult = QueryResult<DeclaredRequirements>;
 
+/** What `query` answers for one path, in the full view or the intents view. */
+export type DeclaredQueryView = QueryResult<DeclaredRequirements | IntentRequirements>;
+
 /** What `check` answers once the declared set has answered it. */
 export type DeclaredCheckResult = CheckResult<DeclaredViolation>;
 
 /** Everything `mh` can write to stdout, with every Module-owned shape filled in. */
-export type DeclaredResponse = MarkdownHarnessResponse<DeclaredRequirements, DeclaredViolation>;
+export type DeclaredResponse = MarkdownHarnessResponse<DeclaredRequirements | IntentRequirements, DeclaredViolation>;

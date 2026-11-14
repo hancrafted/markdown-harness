@@ -15,8 +15,9 @@
 import type { LoadedConfig } from '../../../config-contract/index.ts';
 import { normalisePath } from '../../../foundation/path-shape.ts';
 import type { ModuleRequirements, QueryResult } from '../../../response-contract/index.ts';
+import { intentsOf } from '../../../response-contract/index.ts';
 import type { Invocation } from '../argv/argv.types.ts';
-import type { DeclaredRequirements } from './declared-module.types.ts';
+import type { DeclaredQueryView, DeclaredRequirements } from './declared-module.types.ts';
 import { gatherAnswers } from './module-answers.pure.ts';
 import type { ModuleAnswer, QueryAnswer } from './module-answers.types.ts';
 import type { ConfigOutcome, QueryGathered } from './termination.types.ts';
@@ -53,17 +54,25 @@ export function queryGathered(
   }[],
   cfg: ConfigOutcome<LoadedConfig>,
 ): QueryGathered {
-  const { path, config, batch } = invocation;
-  const question = { kind: 'query' as const, modules: modules.map((module) => module.key), path, config };
+  const { path, config, batch, intents } = invocation;
+  const question = {
+    kind: 'query' as const,
+    modules: modules.map((module) => module.key),
+    path,
+    config,
+    ...(intents ? { intents } : {}),
+  };
   const paths = invocation.paths ?? [path];
   if (cfg.kind === 'rejected') {
     return batch ? { ...question, batch, paths, outcome: cfg } : { ...question, outcome: cfg };
   }
-  const answer = (requestedPath: string) =>
-    pathGovernance<DeclaredRequirements>(
+  const answer = (requestedPath: string): DeclaredQueryView => {
+    const full = pathGovernance<DeclaredRequirements>(
       normalisePath(requestedPath),
       gatherAnswers(modules, (module) => module.query(requestedPath, cfg.result)),
     );
+    return intents ? intentsOf(full) : full;
+  };
   if (batch) return { ...question, batch, paths, outcome: { kind: 'answered', result: paths.map(answer) } };
   return { ...question, outcome: { kind: 'answered', result: answer(path) } };
 }

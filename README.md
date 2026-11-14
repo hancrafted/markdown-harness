@@ -130,6 +130,7 @@ Four commands, and a `--help` that is the only one not answering in JSON.
 | `mh check`                             | every governed file's violations, and the counts. The default   |
 | `mh query <path>`                      | what the config asks of a path, before the file exists          |
 | `mh query --batch <path> [<path> ...]` | ordered answers in a batch envelope                             |
+| `mh query --intents <path>`            | only the Steering content: every node that carries an `intent`  |
 | `mh audit`                             | how every rule fared, so a rule that governs nothing is visible |
 | `mh assess <path>`                     | what one file is worth believing, at one instant                |
 | `mh --help`                            | the commands, the flag defaults and the exit-code contract      |
@@ -197,6 +198,16 @@ that normalize alike. A rejected config occupies `result` directly as the existi
 `CONFIG_REJECTED` object, with no `results` array. Success exits 0 on stdout; rejected configs exit 2
 on stdout, and usage errors exit 2 on stderr. Ordinary `mh query <path>` keeps its single-path
 envelope and behavior.
+
+For only the Steering content, run `mh query --intents docs/research/new.md`, or combine it with
+`--batch`: `mh query --batch --intents docs/research/new.md docs/research/other.md`. The answer is
+the same JSON envelope with `intents: true` after `command` (and after `batch: true`). Per Module,
+in the full answer's order, it keeps `module`, `rule.ruleId`, `rule.intent` and every requirement
+node that carries an `intent`: a frontmatter field with its name and `presence`, an `allowed`
+value with its value, a heading entry with its `level`, its `pattern` or `allowed` titles and its
+`presence`. Every other requirement key and every node without an intent is dropped. Invisible
+paths and `CONFIG_REJECTED` answer as without `--intents`. `--intents` is query-only and may
+appear once; `mh <module> query --intents <path>` scopes it to one Module.
 
 **The signal lives in the file, not in our report.** A governed document carries its own trust state:
 
