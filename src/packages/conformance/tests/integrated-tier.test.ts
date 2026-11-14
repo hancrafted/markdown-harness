@@ -164,6 +164,22 @@ describe('each integrated spec folder answers as its frozen files state', () => 
   });
 
   describe('failure cases', () => {
+    it('holds every frozen batch query case even if a fixture disappears', () => {
+      // ARRANGE
+      const expected = { folders: 1, cases: 6 };
+      // ACT
+      const batches = folders.map((folder) => optional(folder.root, 'expected-batch-query.json'));
+      const actual = {
+        folders: batches.filter((text) => text !== undefined).length,
+        cases: batches.reduce<number>(
+          (sum, text) => sum + (text === undefined ? 0 : (JSON.parse(text) as unknown[]).length),
+          0,
+        ),
+      };
+      // ASSERT
+      expect(actual).toEqual(expected);
+    });
+
     it.each(FOLDER_NAMES)(
       '%s exits 1 on check, because it holds a failing case, and 0 on each frozen query',
       (name) => {

@@ -19,7 +19,10 @@ fails rather than sitting unnoticed.
 **A spec folder is a synthetic repo root.** The `body-structure` and `integrated` tiers are split into spec folders:
 each directory directly under its `docs/` holds `markdown-harness.config.yaml`, whose first line is
 `# Spec: <sentence>`, the frozen `expected-check.json` (plus `expected-audit.json` and
-`expected-query.json` where Rules compete), and its cases. A folder is named `<key>__<behaviour>`
+`expected-query.json` where Rules compete), and its cases. An `expected-batch-query.json` contains
+independently stated invocations, exit codes, stdout envelopes, and stderr outcomes; `usage` denotes
+stderr beginning with `usage: mh`. The shared comparison runs each invocation at the compiled CLI
+boundary. A folder is named `<key>__<behaviour>`
 after the config key it exercises. Run one by hand, or through the runner's own comparison:
 
 ```sh

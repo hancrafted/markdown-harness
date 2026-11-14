@@ -19,11 +19,11 @@ import { MODULE_SET } from '../../module-set.ts';
 import type { Invocation, ReportingCommand } from '../argv/argv.types.ts';
 import { auditVerdict } from './audit-report.pure.ts';
 import { checkVerdict } from './corpus-verdict.pure.ts';
-import type { DeclaredRequirements, DeclaredViolation } from './declared-module.types.ts';
+import type { DeclaredViolation } from './declared-module.types.ts';
 import { hostInstant } from './host-instant.impure.ts';
 import { gatherAnswers, implementing, inScope, moduleCommands } from './module-answers.pure.ts';
 import { pathAssessment } from './path-assessment.pure.ts';
-import { pathGovernance } from './path-governance.pure.ts';
+import { queryGathered } from './path-governance.pure.ts';
 import { resolvedInstant, route, terminationFor, withCorpusGuard } from './termination.pure.ts';
 import type {
   AssessGathered,
@@ -76,17 +76,9 @@ function gatherConfig(config: string): ConfigOutcome<LoadedConfiguration> {
  * A Module without the verb is skipped, never asked.
  */
 function gatherQuery(invocation: Invocation): QueryGathered {
-  const { path, config } = invocation;
   const querying = asked(invocation, 'query');
-  const modules = keysOf(querying);
-  const cfg = gatherConfig(config);
-  if (cfg.kind === 'rejected') return { kind: 'query', modules, path, config, outcome: cfg };
-
-  const result = pathGovernance<DeclaredRequirements>(
-    normalisePath(path),
-    gatherAnswers(querying, (module) => module.query(path, cfg.result)),
-  );
-  return { kind: 'query', modules, path, config, outcome: { kind: 'answered', result } };
+  const cfg = gatherConfig(invocation.config);
+  return queryGathered(invocation, querying, cfg);
 }
 
 /**

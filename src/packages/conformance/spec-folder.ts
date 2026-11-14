@@ -42,6 +42,8 @@ export const EXPECTED_CHECK = 'expected-check.json';
 const EXPECTED_AUDIT = 'expected-audit.json';
 /** The frozen `query` responses a folder holds, keyed by the path asked. */
 const EXPECTED_QUERY = 'expected-query.json';
+/** Process-boundary query cases with their frozen envelopes and channel outcomes. */
+const EXPECTED_BATCH_QUERY = 'expected-batch-query.json';
 /** The manifest that states a verbatim case's verdict, because its bytes cannot carry a marker. */
 export const VERBATIM_MANIFEST = 'verbatim-cases.json';
 
@@ -119,6 +121,35 @@ function queryComparisons(folder: string, frozenText: string): readonly FrozenCo
   });
 }
 
+/** Hold each independently stated query invocation against its process outcome. */
+function batchQueryComparisons(folder: string, frozenText: string): readonly FrozenComparison[] {
+  const cases = JSON.parse(frozenText) as readonly {
+    name: string;
+    args: readonly string[];
+    code: number;
+    stdout: unknown;
+    stderr: string;
+  }[];
+  return cases.map(({ name, args, code, stdout, stderr }) => {
+    const run = mhIn(folder, args);
+    const expected = {
+      code,
+      stdout: typeof stdout === 'string' ? stdout : `${JSON.stringify(stdout, null, 2)}\n`,
+      stderr,
+    };
+    const actual = {
+      code: run.code,
+      stdout: run.stdout,
+      stderr: stderr === 'usage' && run.stderr.startsWith('usage: mh') ? 'usage' : run.stderr,
+    };
+    return frozenComparison(
+      `${EXPECTED_BATCH_QUERY} ${name}`,
+      JSON.stringify(expected, null, 2),
+      JSON.stringify(actual, null, 2),
+    );
+  });
+}
+
 /** Every frozen file the folder holds, each held against a fresh run. */
 function frozenComparisons(folder: string, checkStdout: string): readonly FrozenComparison[] {
   const frozen: FrozenComparison[] = [
@@ -128,6 +159,8 @@ function frozenComparisons(folder: string, checkStdout: string): readonly Frozen
   if (audit !== undefined) frozen.push(frozenComparison(EXPECTED_AUDIT, audit, mhIn(folder, ['audit']).stdout));
   const query = textIn(folder, EXPECTED_QUERY);
   if (query !== undefined) frozen.push(...queryComparisons(folder, query));
+  const batchQuery = textIn(folder, EXPECTED_BATCH_QUERY);
+  if (batchQuery !== undefined) frozen.push(...batchQueryComparisons(folder, batchQuery));
   return frozen;
 }
 

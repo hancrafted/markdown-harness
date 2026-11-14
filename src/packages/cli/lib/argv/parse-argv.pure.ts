@@ -1,9 +1,9 @@
 /**
  * Read argv into an invocation, or refuse it.
  *
- * The grammar is `mh [<module-key>] <command> [<path>] [flags]`: the command is
+ * The grammar is `mh [<module-key>] <command> [<path> ...] [flags]`: the command is
  * a word, a Module's config key in front of it scopes the run to that Module,
- * and `--root`, `--config`, `--now` and `--help` stay flags, written anywhere.
+ * and `--root`, `--config`, `--now`, `--batch` and `--help` are flags, written anywhere.
  *
  * Conflicting input is refused rather than resolved by precedence. A *missing*
  * command is not conflicting input, which is why it has a default and the
@@ -22,14 +22,15 @@ import { isAssessmentInstant } from './assessment-instant.pure.ts';
 import { REPORTING_COMMANDS } from './reporting-commands.pure.ts';
 import { DEFAULT_CONFIG, DEFAULT_ROOT } from './usage.pure.ts';
 
-/** The commands that take one path after the command word. */
+/** The commands that take paths after the command word. */
 const PATH_COMMANDS: readonly ReportingCommand[] = ['query', 'assess'];
 
 /** The flags that take a value. */
 const VALUE_FLAGS: readonly string[] = ['--root', '--config', '--now'];
 
-/** The one flag that takes none. */
+/** The flags that take no value. */
 const HELP_FLAG = '--help';
+const BATCH_FLAG = '--batch';
 
 /** The refusing half of what the parser answers. */
 type Refused = Extract<ParsedArgv, { kind: 'refused' }>;
@@ -73,18 +74,18 @@ function tokensOf(argv: readonly string[]): Tokens | undefined {
     const value = flagValue(token, argv[index + 1]);
     if (value === undefined || flags.has(token)) return undefined;
     flags.set(token, value);
-    if (token !== HELP_FLAG) index += 1;
+    if (token !== HELP_FLAG && token !== BATCH_FLAG) index += 1;
   }
   return { flags, words };
 }
 
 /**
- * What one flag carries — empty for `--help`, the next token for a value flag —
+ * What one flag carries — empty for a value-less flag, the next token for a value flag —
  * or `undefined` when the flag is unknown or its value is missing or itself
  * begins with `--`.
  */
 function flagValue(flag: string, next: string | undefined): string | undefined {
-  if (flag === HELP_FLAG) return '';
+  if (flag === HELP_FLAG || flag === BATCH_FLAG) return '';
   if (!VALUE_FLAGS.includes(flag)) return undefined;
   if (next === undefined || next.startsWith('--')) return undefined;
   return next;
@@ -106,6 +107,17 @@ interface Resolved {
   readonly command: ReportingCommand;
   readonly modules: readonly string[];
   readonly operands: readonly string[];
+}
+
+/** A batch envelope is a query-only question. */
+function invalidBatch(flags: Map<string, string>, command: ReportingCommand): boolean {
+  return flags.has(BATCH_FLAG) && command !== 'query';
+}
+
+/** A batch query takes one or more paths; other path commands take exactly one. */
+function invalidOperandCount(flags: Map<string, string>, { command, operands }: Resolved): boolean {
+  if (command === 'query' && flags.has(BATCH_FLAG)) return operands.length === 0;
+  return operands.length !== (PATH_COMMANDS.includes(command) ? 1 : 0);
 }
 
 /**
@@ -163,9 +175,9 @@ function resolved(words: readonly string[], modules: readonly ModuleCommands[]):
  * silently dropped would let a caller believe they had asked something they had
  * not.
  */
-function conflicts(flags: Map<string, string>, { command, operands }: Resolved): boolean {
-  // `query` and `assess` take exactly one path; the other two take none.
-  if (operands.length !== (PATH_COMMANDS.includes(command) ? 1 : 0)) return true;
+function conflicts(flags: Map<string, string>, resolution: Resolved): boolean {
+  const { command } = resolution;
+  if (invalidOperandCount(flags, resolution)) return true;
 
   // A query has no corpus, so a `--root` beside one is conflicting input, not
   // an argument to ignore. An assessment answers about one path on the same
@@ -174,7 +186,7 @@ function conflicts(flags: Map<string, string>, { command, operands }: Resolved):
 
   // `--now` beside any command but `assess` would let a caller believe a
   // `check` had been pinned to an instant, and `check` reads no clock.
-  return flags.has('--now') && command !== 'assess';
+  return (flags.has('--now') && command !== 'assess') || invalidBatch(flags, command);
 }
 
 /** The invocation, with the two documented defaults applied. */
@@ -183,6 +195,7 @@ function invocationOf(flags: Map<string, string>, { command, modules, operands }
     command,
     modules,
     path: operands[0] ?? '',
+    ...(flags.has(BATCH_FLAG) ? { batch: true as const, paths: operands } : {}),
     root: flags.get('--root') ?? DEFAULT_ROOT,
     config: flags.get('--config') ?? DEFAULT_CONFIG,
     now: flags.get('--now') ?? '',

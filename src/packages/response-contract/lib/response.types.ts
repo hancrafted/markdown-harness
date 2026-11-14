@@ -58,6 +58,16 @@ export interface QueryResponse<TRequirements = unknown> {
   result: QueryResult<TRequirements> | ConfigErrorResult;
 }
 
+/** The `query --batch` envelope, with each answer associated by position. */
+export interface BatchQueryResponse<TRequirements = unknown> {
+  command: 'query';
+  batch: true;
+  modules: readonly string[];
+  paths: readonly string[];
+  config: string;
+  result: { results: readonly QueryResult<TRequirements>[] } | ConfigErrorResult;
+}
+
 /** The `audit` envelope. */
 export interface AuditResponse {
   /** The discriminant, naming what was asked. */
@@ -119,4 +129,8 @@ export interface AssessResponse {
  * to separate an answer from a rejection.
  */
 export type MarkdownHarnessResponse<TRequirements = unknown, TViolation = unknown> =
-  CheckResponse<TViolation> | QueryResponse<TRequirements> | AuditResponse | AssessResponse;
+  | CheckResponse<TViolation>
+  | QueryResponse<TRequirements>
+  | BatchQueryResponse<TRequirements>
+  | AuditResponse
+  | AssessResponse;

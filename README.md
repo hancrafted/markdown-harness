@@ -125,13 +125,14 @@ what it deliberately stays quiet about.
 
 Four commands, and a `--help` that is the only one not answering in JSON.
 
-| command            | answers                                                         |
-| ------------------ | --------------------------------------------------------------- |
-| `mh check`         | every governed file's violations, and the counts. The default   |
-| `mh query <path>`  | what the config asks of a path, before the file exists          |
-| `mh audit`         | how every rule fared, so a rule that governs nothing is visible |
-| `mh assess <path>` | what one file is worth believing, at one instant                |
-| `mh --help`        | the commands, the flag defaults and the exit-code contract      |
+| command                                | answers                                                         |
+| -------------------------------------- | --------------------------------------------------------------- |
+| `mh check`                             | every governed file's violations, and the counts. The default   |
+| `mh query <path>`                      | what the config asks of a path, before the file exists          |
+| `mh query --batch <path> [<path> ...]` | ordered answers in a batch envelope                             |
+| `mh audit`                             | how every rule fared, so a rule that governs nothing is visible |
+| `mh assess <path>`                     | what one file is worth believing, at one instant                |
+| `mh --help`                            | the commands, the flag defaults and the exit-code contract      |
 
 The exit codes are the contract: **0** nothing wrong, **1** the corpus is wrong — `check` alone
 ever exits this — and **2** it could not report at all, which is either a usage error on stderr or a
@@ -182,6 +183,20 @@ frontmatter:
 linter cannot offer, and the reason this is a command rather than a lint rule: an agent about to write
 `docs/research/new.md` can ask what is expected of it first. `git check-attr` has worked this way for
 years; this applies the same idea to a knowledge base.
+
+For a batch-shaped response, run `mh query --batch docs/research/new.md docs/research/other.md`.
+This form accepts **one or more paths**; zero paths is a usage error. `--batch` is query-only and
+may appear once wherever flags are accepted. Module scope and `--config` work as with an ordinary
+query; `--root` is refused. The invocation loads and validates the config once; requested documents
+need not exist and are not opened or written.
+
+The JSON envelope has `command`, `batch: true`, `modules`, `paths`, `config`, and `result`, in
+that order. `paths[n]` echoes each supplied spelling; `result.results[n]` is its ordinary query
+result with its normalized `path`. Order and duplicate occurrences are retained, including inputs
+that normalize alike. A rejected config occupies `result` directly as the existing
+`CONFIG_REJECTED` object, with no `results` array. Success exits 0 on stdout; rejected configs exit 2
+on stdout, and usage errors exit 2 on stderr. Ordinary `mh query <path>` keeps its single-path
+envelope and behavior.
 
 **The signal lives in the file, not in our report.** A governed document carries its own trust state:
 
