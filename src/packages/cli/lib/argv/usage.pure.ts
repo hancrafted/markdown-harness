@@ -23,7 +23,7 @@ export const DEFAULT_ROOT = '.';
  * Printed on stderr for any usage error, and nothing else ever is — save the one
  * line `usageRefusal` appends when a Module name was involved.
  */
-export const USAGE = `usage: mh [[<module>] check] [--root <dir>] [--config <file>]
+export const USAGE = `usage: mh [[<module>] check [<path> ...]] [--root <dir>] [--config <file>]
        mh [<module>]  query  <path> [--config <file>]
        mh [<module>]  query  --batch <path> [<path> ...] [--config <file>]
        mh [<module>]  audit  [--root <dir>]  [--config <file>]
@@ -31,7 +31,8 @@ export const USAGE = `usage: mh [[<module>] check] [--root <dir>] [--config <fil
        mh --help
 
   check     every governed file with a violation, and the counts. The default command.
-            Exits 1 when the corpus is wrong.
+            Paths narrow the report, not evaluation. Exits 1 for in-scope violations.
+            Existing paths reaching no governed file are listed as ungoverned.
   query     what the config asks of one path, before anything exists there. Never exits 1.
             --batch returns the batch envelope for one or more paths.
   audit     how every rule fared across the corpus, so a rule that governs nothing is visible.
@@ -97,6 +98,17 @@ Assessing one file:
   \`check\` stays clock-free, so a corpus cannot go red overnight on a tree
   nobody touched.
 
+Checking paths:
+  \`mh check <path> [<path> ...]\` accepts files and directories, resolved from
+  the current directory like --config. --root still names the full corpus.
+  Missing paths and paths outside --root are usage errors.
+  The report counts only governed files at or under the paths, once per file
+  even when paths overlap. result.ungovernedPaths lists raw paths that reach
+  no governed file, in input order; these neither count as passes nor affect
+  the exit code. The envelope echoes paths as supplied, including on
+  CONFIG_REJECTED, which carries no per-path report.
+  Module and path scope compose. With no paths, the full report is unchanged.
+
 Reading the output:
   Every command answers as JSON on stdout. This help text is the one exception.
   Every response names the Modules that ran in \`modules\`, so a clean run scoped
@@ -104,7 +116,7 @@ Reading the output:
 
     0  ran, nothing wrong
     1  ran, the corpus is wrong — only check ever exits this. A run scoped to
-       one Module exits 1 only for that Module's findings.
+       one Module exits 1 only for that Module's in-scope findings.
     2  could not report at all
 
   Exit 2 has two flavours, told apart by the channel and never by the number: a

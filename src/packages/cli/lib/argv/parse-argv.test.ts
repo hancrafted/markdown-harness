@@ -189,9 +189,9 @@ describe('parseArgv', () => {
       expect(actual).toEqual(REFUSED);
     });
 
-    it('refuses two command words', () => {
+    it('refuses operands on audit', () => {
       // ARRANGE
-      const argv = [CHECK, AUDIT];
+      const argv = [AUDIT, CHECK];
       // ACT
       const actual = parseArgv(argv, MODULES);
       // ASSERT
@@ -288,11 +288,11 @@ describe('parseArgv', () => {
   });
 
   describe('edge cases', () => {
-    it('refuses a query with no path, and a check with one', () => {
+    it('refuses a query with no path', () => {
       // ARRANGE
-      const expected = [REFUSED, REFUSED];
+      const expected = REFUSED;
       // ACT
-      const actual = [parseArgv([QUERY], MODULES), parseArgv([CHECK, 'docs/a.md'], MODULES)];
+      const actual = parseArgv([QUERY], MODULES);
       // ASSERT
       expect(actual).toEqual(expected);
     });

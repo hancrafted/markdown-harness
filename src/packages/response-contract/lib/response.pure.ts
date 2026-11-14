@@ -33,11 +33,11 @@ export function configError(faults: readonly ConfigFault<string>[]): ConfigError
  * without an extra key reaching the wire.
  */
 export function checkResponse<TViolation>(
-  invocation: Pick<CheckResponse, 'modules' | 'root' | 'config'>,
+  invocation: Pick<CheckResponse, 'modules' | 'root' | 'config' | 'paths'>,
   result: CheckResult<TViolation> | ConfigErrorResult,
 ): CheckResponse<TViolation> {
-  const { modules, root, config } = invocation;
-  return { command: 'check', modules, root, config, result };
+  const { modules, root, config, paths } = invocation;
+  return { command: 'check', modules, root, config, ...(paths === undefined ? {} : { paths }), result };
 }
 
 /** Construct the envelope for `query`. */

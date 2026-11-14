@@ -1,8 +1,7 @@
 /**
  * Decide what one invocation should emit, from what the impure shell gathered.
  *
- * Extracted per #184: keeps exit codes, stdout/stderr split, JSON formatting,
- * rejection payloads, and deterministic rules pure and assertable without host I/O.
+ * Exit codes, channel split, JSON formatting and rejection payloads depend only on gathered inputs.
  */
 
 import type { ConfigFault } from '../../../response-contract/index.ts';
@@ -189,6 +188,7 @@ function assessTermination(gathered: AssessGathered): Termination {
 
 function checkTermination(gathered: CheckGathered): Termination {
   return withCorpus(gathered.outcome, (outcome) => {
+    if (outcome.kind === 'path-refused') return cannotReport(usageRefusal(outcome.reason));
     if (outcome.kind === 'unreadable') {
       return cannotReport(unreadableGovernedFile(outcome.path));
     }

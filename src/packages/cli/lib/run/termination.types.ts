@@ -74,7 +74,12 @@ export interface CheckGathered {
   readonly modules: readonly string[];
   readonly root: string;
   readonly config: string;
-  readonly outcome: { readonly kind: 'no-root' } | Unreadable | ConfigOutcome<DeclaredCheckResult>;
+  readonly paths?: readonly string[];
+  readonly outcome:
+    | { readonly kind: 'no-root' }
+    | { readonly kind: 'path-refused'; readonly reason: string }
+    | Unreadable
+    | ConfigOutcome<DeclaredCheckResult>;
 }
 
 /**

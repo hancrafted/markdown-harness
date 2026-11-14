@@ -22,7 +22,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
-import { basename, join, normalize } from 'node:path';
+import { basename, dirname, join, normalize, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { HostEntry, HostEntryKind, HostRead, HostRun } from './node-host.types.ts';
 
@@ -131,6 +131,22 @@ export function hostPathOf(root: string, segments: readonly string[]): string {
  */
 export function normaliseHostPath(location: string): string {
   return normalize(location);
+}
+
+/** Absolute lexical location, resolved from the host's current directory. */
+export function absoluteHostPath(location: string): string {
+  return resolve(location);
+}
+
+/** One host location relative to another, without following symlinks. */
+export function relativeHostPath(root: string, location: string): string {
+  return relative(root, location);
+}
+
+/** Canonicalize a location's parent while retaining the entry's own name. */
+export function namedHostPath(location: string): string | undefined {
+  const parent = realHostPath(dirname(location));
+  return parent === undefined ? undefined : join(parent, basename(location));
 }
 
 /**

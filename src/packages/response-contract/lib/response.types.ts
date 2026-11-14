@@ -36,6 +36,8 @@ export interface CheckResponse<TViolation = unknown> {
   root: string;
   /** The config path, echoed exactly as the caller wrote it — never resolved. */
   config: string;
+  /** Scoped operands, echoed as supplied, including on config rejection. */
+  paths?: readonly string[];
   /** Every governed file's findings, or the reason the config could not be trusted. */
   result: CheckResult<TViolation> | ConfigErrorResult;
 }
