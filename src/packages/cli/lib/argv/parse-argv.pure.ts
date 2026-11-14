@@ -121,13 +121,7 @@ function invalidOperandCount(flags: Map<string, string>, { command, operands }: 
   return operands.length !== (PATH_COMMANDS.includes(command) ? 1 : 0);
 }
 
-/**
- * The Module scope one scoped invocation names, or the refusal naming why not.
- *
- * Every reason names the alternatives, so a typo or a missing word is caught
- * with the fix beside it, and "not supported" is never answered as "nothing to
- * report".
- */
+/** Resolve Module scope, refusing unsupported commands with the available alternatives. */
 function scoped(
   module: ModuleCommands,
   words: readonly string[],
